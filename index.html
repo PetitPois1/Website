@@ -27,19 +27,18 @@
     <input type="text" id="websiteInput" placeholder="Enter website URL" />
     <button onclick="loadWebsite()">Go</button>
     <br><br>
-    <iframe id="websiteFrame" src="https://www.example.com"></iframe>
+    <iframe id="websiteFrame" src="https://www.google.com"></iframe> <!-- Start with Google -->
 
     <script>
         // Function to load the website from input
         function loadWebsite() {
             var website = document.getElementById("websiteInput").value;
-            if (website) {
-                // Check if the URL starts with "https://" or "http://"
-                if (!website.startsWith("http://") && !website.startsWith("https://")) {
-                    website = "https://" + website; // Add https:// if not present
-                }
-                document.getElementById("websiteFrame").src = website;
+            if (website === "") {
+                website = "https://www.google.com";  // Default to Google if input is empty
+            } else if (!website.startsWith("http://") && !website.startsWith("https://")) {
+                website = "https://" + website; // Add https:// if not present
             }
+            document.getElementById("websiteFrame").src = website; // Update iframe source
         }
 
         // Allow users to press Enter as well to load the website
