@@ -155,6 +155,12 @@
             }
 
             snake.unshift(newHead); // Add new head to the front
+
+            // Draw snake
+            ctx.fillStyle = snakeColor;
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
         }
 
         function generateFood() {
