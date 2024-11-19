@@ -18,8 +18,14 @@
         canvas {
             border: 2px solid #6200ea;
         }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
         button {
-            margin: 20px;
+            margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
             color: white;
@@ -31,17 +37,34 @@
         button:hover {
             background-color: #3700b3;
         }
+        .scoreboard {
+            font-size: 20px;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
     <canvas id="pong" width="800" height="600"></canvas>
-    <button id="startButton">Start Game</button>
-    <button onclick="window.location.href='index.html'">Back to Home</button>
+    <div class="controls">
+        <div class="scoreboard">
+            Player: <span id="playerScore">0</span> | AI: <span id="aiScore">0</span>
+        </div>
+        <button id="startButton">Start Game</button>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+    </div>
 
     <script>
         const canvas = document.getElementById("pong");
         const ctx = canvas.getContext("2d");
         const startButton = document.getElementById("startButton");
+        const difficultySelect = document.getElementById("difficulty");
+        const playerScoreElem = document.getElementById("playerScore");
+        const aiScoreElem = document.getElementById("aiScore");
 
         const paddleWidth = 10, paddleHeight = 100;
         const ballRadius = 8;
@@ -52,7 +75,15 @@
         let ballY = canvas.height / 2;
         let ballSpeedX = 5, ballSpeedY = 5;
         let isGameRunning = false;
-        let touchStartY1 = null, touchStartY2 = null;
+        let playerScore = 0, aiScore = 0;
+
+        let difficulty = "medium";
+
+        const difficultySettings = {
+            easy: { ballSpeed: 3, aiSpeed: 2 },
+            medium: { ballSpeed: 5, aiSpeed: 4 },
+            hard: { ballSpeed: 7, aiSpeed: 6 }
+        };
 
         function drawPaddles() {
             ctx.fillStyle = "#6200ea";
@@ -66,6 +97,11 @@
             ctx.fillStyle = "#6200ea";
             ctx.fill();
             ctx.closePath();
+        }
+
+        function drawScores() {
+            playerScoreElem.textContent = playerScore;
+            aiScoreElem.textContent = aiScore;
         }
 
         function updateBall() {
@@ -88,18 +124,30 @@
                 ballSpeedX = -ballSpeedX;
             }
 
-            if (ballX - ballRadius < 0 || ballX + ballRadius > canvas.width) resetBall();
+            if (ballX - ballRadius < 0) {
+                aiScore++;
+                resetBall();
+            } else if (ballX + ballRadius > canvas.width) {
+                playerScore++;
+                resetBall();
+            }
         }
 
         function resetBall() {
             ballX = canvas.width / 2;
             ballY = canvas.height / 2;
-            ballSpeedX = -ballSpeedX;
+            ballSpeedX = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+            ballSpeedY = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
         }
 
         function computerAI() {
-            if (ballY < player2Y + paddleHeight / 2) player2Y -= 3;
-            if (ballY > player2Y + paddleHeight / 2) player2Y += 3;
+            const aiSpeed = difficultySettings[difficulty].aiSpeed;
+
+            if (ballY < player2Y + paddleHeight / 2) player2Y -= aiSpeed;
+            if (ballY > player2Y + paddleHeight / 2) player2Y += aiSpeed;
+
+            // Prevent AI paddle from leaving canvas
+            player2Y = Math.max(0, Math.min(canvas.height - paddleHeight, player2Y));
         }
 
         function draw() {
@@ -114,48 +162,28 @@
             updateBall();
             computerAI();
             draw();
+            drawScores();
         }
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "w") player1Y -= 10;
             if (e.key === "s") player1Y += 10;
-        });
 
-        canvas.addEventListener("touchstart", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const touchX = e.touches[0].clientX - rect.left;
-            const touchY = e.touches[0].clientY - rect.top;
-
-            if (touchX < canvas.width / 2) {
-                touchStartY1 = touchY;
-            } else {
-                touchStartY2 = touchY;
-            }
-        });
-
-        canvas.addEventListener("touchmove", (e) => {
-            e.preventDefault(); // Prevent page scrolling
-
-            const rect = canvas.getBoundingClientRect();
-            const touchX = e.touches[0].clientX - rect.left;
-            const touchY = e.touches[0].clientY - rect.top;
-
-            if (touchX < canvas.width / 2 && touchStartY1 !== null) {
-                player1Y += touchY - touchStartY1;
-                touchStartY1 = touchY;
-            } else if (touchX >= canvas.width / 2 && touchStartY2 !== null) {
-                player2Y += touchY - touchStartY2;
-                touchStartY2 = touchY;
-            }
-        });
-
-        canvas.addEventListener("touchend", () => {
-            touchStartY1 = null;
-            touchStartY2 = null;
+            // Prevent player paddle from leaving canvas
+            player1Y = Math.max(0, Math.min(canvas.height - paddleHeight, player1Y));
         });
 
         startButton.addEventListener("click", () => {
             isGameRunning = true;
+        });
+
+        difficultySelect.addEventListener("change", (e) => {
+            difficulty = e.target.value;
+            ballSpeedX = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+            ballSpeedY = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+            playerScore = 0;
+            aiScore = 0;
+            drawScores();
         });
 
         setInterval(update, 1000 / 60);
