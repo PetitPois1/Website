@@ -71,6 +71,7 @@
         let lastUpdate = 0;
         let highScore = 0;
         let currentScore = 0;
+        let shouldUpdate = true; // Flag to track if input is already handled
 
         // Touch support
         let startX, startY;
@@ -91,20 +92,22 @@
                 if (dy > 0 && direction !== 'UP') direction = 'DOWN';
                 else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
             }
+            shouldUpdate = true; // Ensure input is processed immediately
         });
 
         // Keyboard support
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-            else if (event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-            else if (event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-            else if (event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+            if (event.key === 'ArrowUp' && direction !== 'DOWN' && shouldUpdate) direction = 'UP';
+            else if (event.key === 'ArrowDown' && direction !== 'UP' && shouldUpdate) direction = 'DOWN';
+            else if (event.key === 'ArrowLeft' && direction !== 'RIGHT' && shouldUpdate) direction = 'LEFT';
+            else if (event.key === 'ArrowRight' && direction !== 'LEFT' && shouldUpdate) direction = 'RIGHT';
+            shouldUpdate = true; // Ensure input is processed immediately
         });
 
         function draw(time) {
-            if (time - lastUpdate > speed) {
+            if (shouldUpdate) {
                 updateGame();
-                lastUpdate = time;
+                shouldUpdate = false; // Prevent multiple updates per input
             }
             requestAnimationFrame(draw);
         }
@@ -118,14 +121,6 @@
             ctx.beginPath();
             ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, Math.PI * 2);
             ctx.fill();
-
-            // Draw snake
-            for (let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = i === 0 ? snakeColor : '#3700b3';
-                ctx.shadowBlur = i === 0 ? 20 : 0;
-                ctx.shadowColor = '#6200ea';
-                ctx.fillRect(snake[i].x, snake[i].y, box, box);
-            }
 
             // Move snake
             let headX = snake[0].x;
