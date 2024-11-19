@@ -13,42 +13,75 @@
             height: 100vh;
             margin: 0;
             background-color: #1e1e2f;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             color: white;
         }
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            font-weight: 600;
+            color: #bb86fc;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
         }
-        .game-button {
-            background-color: #6200ea;
-            color: white;
-            font-size: 16px;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px;
-            transition: background-color 0.3s ease;
+        .game-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
-        .game-button:hover {
+        .game-item {
             background-color: #3700b3;
-        }
-        .home-content {
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 250px;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+        }
+        .game-item:hover {
+            background-color: #6200ea;
+            transform: translateY(-5px);
+        }
+        .game-item:active {
+            background-color: #3700b3;
+            transform: translateY(0);
+        }
+        footer {
+            position: fixed;
+            bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #bbb;
+        }
+        footer a {
+            color: #6200ea;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        footer a:hover {
+            color: #bb86fc;
         }
     </style>
 </head>
 <body>
     <div class="home-content">
         <h1>Upcoming Games</h1>
-        <ul>
-          <li>Tower defence</li>
-          <li>clicker game</li>
-          <li>battle io</li>
-</ul>
+        <ul class="game-list">
+            <li class="game-item">Tower Defence</li>
+            <li class="game-item">Clicker Game</li>
+            <li class="game-item">Battle IO</li>
+        </ul>
     </div>
+    <footer>
+        <p>Powered by GameHub | <a href="index.html">Back to Home</a></p>
+    </footer>
 </body>
 </html>
-
