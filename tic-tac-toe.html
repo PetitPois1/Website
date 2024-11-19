@@ -133,17 +133,15 @@
         let oScore = 0;
         let currentMode = 'medium';
         let aiDifficulty = "Medium";
-        let isGameOver = false;
-        let isPlayerTurn = true; // Track if it's the player's turn or AI's
-        let isGameInProgress = false; // Block clicks while AI is making its move
 
         const difficultySelect = document.getElementById("difficulty");
         let difficulty = "medium"; // Default difficulty
 
+        let isGameOver = false;
+
         // AI Logic Placeholder Functions (Easy, Medium, Hard)
         function aiMove() {
             if (difficulty === 'coop') return; // Coop mode is for 2 players, no AI move needed
-            if (isPlayerTurn || isGameOver) return; // Prevent AI from moving if it's player's turn or game over
 
             setTimeout(() => { // Simulate delay for AI move
                 if (difficulty === 'easy') {
@@ -162,8 +160,6 @@
             const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             gameBoard[randomCell] = 'O';
             currentPlayer = 'X';
-            isPlayerTurn = true; // Allow player to move again
-            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -183,8 +179,6 @@
                 }
             }
             currentPlayer = 'X';
-            isPlayerTurn = true; // Allow player to move again
-            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -194,8 +188,6 @@
             const bestMove = minimax(gameBoard, 'O');
             gameBoard[bestMove] = 'O';
             currentPlayer = 'X';
-            isPlayerTurn = true; // Allow player to move again
-            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -238,19 +230,43 @@
                 [0, 4, 8],
                 [2, 4, 6],
             ];
-            return winningCombinations.some(combo => combo.every(index => board[index] === player));
+
+            return winningCombinations.some(combo => {
+                const [a, b, c] = combo;
+                return board[a] === player && board[b] === player && board[c] === player;
+            });
         }
 
-        // Update turn indicator based on current player
-        function updateTurnIndicator() {
-            if (isGameOver) {
-                turnIndicator.textContent = `Game Over!`;
-            } else {
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+        // Find a winning move for the AI or block the opponent
+        function findWinningMove(player) {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            for (let combo of winningCombinations) {
+                const [a, b, c] = combo;
+                if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) {
+                    return c;
+                }
+                if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) {
+                    return b;
+                }
+                if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) {
+                    return a;
+                }
             }
+
+            return -1; // No winning move
         }
 
-        // Render the board
+        // Render the board with animations for X and O
         function renderBoard() {
             board.innerHTML = '';
             gameBoard.forEach((cell, index) => {
@@ -265,20 +281,24 @@
                 cellElement.addEventListener('click', () => handleCellClick(index));
                 board.appendChild(cellElement);
             });
+
             updateScores();
-            updateTurnIndicator();
         }
 
         // Handle cell clicks
         function handleCellClick(index) {
-            if (gameBoard[index] !== null || isGameOver || !isPlayerTurn || isGameInProgress) return;
-            gameBoard[index] = 'X'; // Player's move
-            isPlayerTurn = false;
-            isGameInProgress = true; // Block clicks while AI is taking its turn
+            if (gameBoard[index] !== null || isGameOver) return;
+
+            gameBoard[index] = currentPlayer;
             renderBoard();
             checkForWinner();
-            currentPlayer = 'O';
-            aiMove(); // AI's turn after player move
+
+            if (currentPlayer === 'X') {
+                currentPlayer = 'O';
+                aiMove();
+            } else {
+                currentPlayer = 'X';
+            }
         }
 
         // Check for winner or tie
@@ -312,6 +332,8 @@
                 turnIndicator.textContent = 'It\'s a tie!';
                 showWinnerMessage('It\'s a Tie!');
                 resetGame();
+            } else {
+                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
         }
 
@@ -328,12 +350,10 @@
         function resetGame() {
             gameBoard = Array(9).fill(null);
             currentPlayer = 'X'; // Always start with Player X
-            isPlayerTurn = true;
             renderBoard();
             updateScores();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             isGameOver = false;
-            isGameInProgress = false; // Allow clicks again
         }
 
         // Update scores display
