@@ -256,20 +256,12 @@
         function handleCellClick(index) {
             if (gameBoard[index] || (currentPlayer === 'O' && currentMode !== 'coop')) return;
             gameBoard[index] = currentPlayer;
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Switch player
             renderBoard();
             checkForWinner();
-
-            if (currentMode === 'coop' && currentPlayer === 'O') return;
-
-            if (currentMode !== 'coop' && currentPlayer === 'O') {
-                aiMove();
-            } else {
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-            }
         }
 
-        // Check for winner
+        // Check for winner or tie
         function checkForWinner() {
             const winningCombinations = [
                 [0, 1, 2],
@@ -298,6 +290,8 @@
             if (!gameBoard.includes(null)) {
                 turnIndicator.textContent = 'It\'s a tie!';
                 resetGame();
+            } else {
+                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
         }
 
