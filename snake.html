@@ -7,6 +7,7 @@
     <style>
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -16,11 +17,26 @@
         }
         canvas {
             border: 2px solid #6200ea;
+            touch-action: none; /* Prevent gestures interfering with the game */
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #6200ea;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3700b3;
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <button onclick="window.location.href='index.html'">Back to Home</button>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -31,6 +47,27 @@
             y: Math.floor(Math.random() * 19 + 1) * box 
         };
         let direction = null;
+
+        // Add swipe support for touch devices
+        let startX, startY;
+
+        canvas.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0 && direction !== 'LEFT') direction = 'RIGHT';
+                else if (dx < 0 && direction !== 'RIGHT') direction = 'LEFT';
+            } else {
+                if (dy > 0 && direction !== 'UP') direction = 'DOWN';
+                else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
+            }
+        });
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
