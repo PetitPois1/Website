@@ -238,10 +238,7 @@
                 [0, 4, 8],
                 [2, 4, 6],
             ];
-
-            return winningCombinations.some(combo => {
-                return combo.every(index => board[index] === player);
-            });
+            return winningCombinations.some(combo => combo.every(index => board[index] === player));
         }
 
         // Update turn indicator based on current player
