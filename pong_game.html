@@ -19,7 +19,7 @@
             border: 2px solid #6200ea;
         }
         button {
-            margin-top: 20px;
+            margin: 20px;
             padding: 10px 20px;
             font-size: 16px;
             color: white;
@@ -35,11 +35,13 @@
 </head>
 <body>
     <canvas id="pong" width="800" height="600"></canvas>
+    <button id="startButton">Start Game</button>
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script>
         const canvas = document.getElementById("pong");
         const ctx = canvas.getContext("2d");
+        const startButton = document.getElementById("startButton");
 
         const paddleWidth = 10, paddleHeight = 100;
         const ballRadius = 8;
@@ -48,16 +50,14 @@
         let player2Y = (canvas.height - paddleHeight) / 2;
         let ballX = canvas.width / 2;
         let ballY = canvas.height / 2;
-        let ballSpeedX = 5;
-        let ballSpeedY = 5;
-        let isComputerMode = true; // Computer or 2-player mode
-
+        let ballSpeedX = 5, ballSpeedY = 5;
+        let isGameRunning = false;
         let touchStartY1 = null, touchStartY2 = null;
 
         function drawPaddles() {
             ctx.fillStyle = "#6200ea";
-            ctx.fillRect(0, player1Y, paddleWidth, paddleHeight); // Player 1 paddle
-            ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight); // Player 2 paddle
+            ctx.fillRect(0, player1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight);
         }
 
         function drawBall() {
@@ -72,9 +72,7 @@
             ballX += ballSpeedX;
             ballY += ballSpeedY;
 
-            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
-                ballSpeedY = -ballSpeedY;
-            }
+            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) ballSpeedY = -ballSpeedY;
 
             if (
                 ballX - ballRadius < paddleWidth &&
@@ -90,9 +88,7 @@
                 ballSpeedX = -ballSpeedX;
             }
 
-            if (ballX - ballRadius < 0 || ballX + ballRadius > canvas.width) {
-                resetBall();
-            }
+            if (ballX - ballRadius < 0 || ballX + ballRadius > canvas.width) resetBall();
         }
 
         function resetBall() {
@@ -102,7 +98,6 @@
         }
 
         function computerAI() {
-            if (!isComputerMode) return;
             if (ballY < player2Y + paddleHeight / 2) player2Y -= 3;
             if (ballY > player2Y + paddleHeight / 2) player2Y += 3;
         }
@@ -114,18 +109,18 @@
         }
 
         function update() {
+            if (!isGameRunning) return;
+
             updateBall();
             computerAI();
             draw();
         }
 
-        // Keyboard controls
         document.addEventListener("keydown", (e) => {
             if (e.key === "w") player1Y -= 10;
             if (e.key === "s") player1Y += 10;
         });
 
-        // Touch controls
         canvas.addEventListener("touchstart", (e) => {
             const rect = canvas.getBoundingClientRect();
             const touchX = e.touches[0].clientX - rect.left;
@@ -139,6 +134,8 @@
         });
 
         canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault(); // Prevent page scrolling
+
             const rect = canvas.getBoundingClientRect();
             const touchX = e.touches[0].clientX - rect.left;
             const touchY = e.touches[0].clientY - rect.top;
@@ -155,6 +152,10 @@
         canvas.addEventListener("touchend", () => {
             touchStartY1 = null;
             touchStartY2 = null;
+        });
+
+        startButton.addEventListener("click", () => {
+            isGameRunning = true;
         });
 
         setInterval(update, 1000 / 60);
