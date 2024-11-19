@@ -82,8 +82,8 @@
 </head>
 <body>
     <div class="score-board">
-        <span id="high-score">High Score: 0</span>
-        <span id="current-score">Score: 0</span>
+        <span id="x-score">X Score: 0</span>
+        <span id="o-score">O Score: 0</span>
         <div>
             Difficulty:
             <select id="difficulty">
@@ -105,8 +105,9 @@
         const turnIndicator = document.getElementById('turn-indicator');
         let currentPlayer = 'X';
         let gameBoard = Array(9).fill(null);
-        let currentScore = 0;
-        let highScore = 0;
+        let xScore = 0;
+        let oScore = 0;
+        let currentMode = 'medium';
 
         const difficultySelect = document.getElementById("difficulty");
         let difficulty = "medium";
@@ -250,15 +251,16 @@
 
         // Handle click on a cell
         function handleCellClick(index) {
-            if (gameBoard[index] || currentPlayer === 'O') return; // Block clicks if AI's turn or cell is already filled
+            if (gameBoard[index] || (currentPlayer === 'O' && currentMode !== 'coop')) return;
             gameBoard[index] = currentPlayer;
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            checkForWinner();
             renderBoard();
+            checkForWinner();
+            if (currentMode === 'coop' && currentPlayer === 'O') return;
+            if (currentMode !== 'coop' && currentPlayer === 'O') aiMove();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-
-            if (currentPlayer === 'O' && difficulty !== 'coop') {
-                setTimeout(aiMove, 500); // AI makes move after a short delay
+            if (currentMode !== 'coop') {
+                turnIndicator.textContent = `AI ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} (${currentPlayer})'s Turn`;
             }
         }
 
@@ -279,8 +281,10 @@
                 const [a, b, c] = combo;
                 if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
                     alert(`${gameBoard[a]} wins!`);
-                    currentScore++;
-                    highScore = Math.max(highScore, currentScore);
+                    if (gameBoard[a] === 'X') xScore++;
+                    else oScore++;
+                    renderBoard();
+                    updateScores();
                     resetGame();
                     return;
                 }
@@ -295,7 +299,7 @@
         // Reset the game
         function resetGame() {
             gameBoard = Array(9).fill(null);
-            currentPlayer = 'X';
+            currentPlayer = Math.random() < 0.5 ? 'X' : 'O'; // Alternate who starts
             renderBoard();
             updateScores();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
@@ -303,8 +307,8 @@
 
         // Update scores display
         function updateScores() {
-            document.getElementById('high-score').textContent = `High Score: ${highScore}`;
-            document.getElementById('current-score').textContent = `Score: ${currentScore}`;
+            document.getElementById('x-score').textContent = `X Score: ${xScore}`;
+            document.getElementById('o-score').textContent = `O Score: ${oScore}`;
         }
 
         // Difficulty change handler
