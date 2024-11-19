@@ -1,177 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cool Website</title>
-  <style>
-    /* Global styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Arial', sans-serif;
-      line-height: 1.6;
-      color: #333;
-    }
-
-    /* Header section */
-    header {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    header h1 {
-      color: #fff;
-      font-size: 1.5rem;
-    }
-
-    header nav a {
-      color: #fff;
-      text-decoration: none;
-      margin-left: 1.5rem;
-      font-size: 1.1rem;
-      transition: color 0.3s;
-    }
-
-    header nav a:hover {
-      color: #ffd700;
-    }
-
-    /* Hero section */
-    .hero {
-      height: 100vh;
-      background: url('https://source.unsplash.com/random/1920x1080') no-repeat center center/cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: #fff;
-      position: relative;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1;
-    }
-
-    .hero h2 {
-      z-index: 2;
-      font-size: 3rem;
-    }
-
-    .hero p {
-      z-index: 2;
-      font-size: 1.5rem;
-    }
-
-    .hero a {
-      z-index: 2;
-      margin-top: 1rem;
-      padding: 0.8rem 1.5rem;
-      font-size: 1.2rem;
-      color: #fff;
-      background: #ff5733;
-      text-decoration: none;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-
-    .hero a:hover {
-      background: #c70039;
-    }
-
-    /* Sections */
-    section {
-      padding: 4rem 2rem;
-      text-align: center;
-    }
-
-    section:nth-of-type(odd) {
-      background: #f4f4f4;
-    }
-
-    section:nth-of-type(even) {
-      background: #e8e8e8;
-    }
-
-    section h3 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-
-    section p {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-    }
-
-    /* Footer */
-    footer {
-      background: #333;
-      color: #fff;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    footer a {
-      color: #ffd700;
-      text-decoration: none;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background-color: #6200ea;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+        }
+        main {
+            padding: 20px;
+        }
+        .game-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 600px;
+            text-align: center;
+        }
+        .game-card h2 {
+            margin-top: 0;
+        }
+        .game-card a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            color: white;
+            background-color: #6200ea;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .game-card a:hover {
+            background-color: #3700b3;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Cool Website</h1>
-    <nav>
-      <a href="#hero">Home</a>
-      <a href="#about">About</a>
-      <a href="#services">Services</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
-
-  <div class="hero" id="hero">
-    <div>
-      <h2>Welcome to Our Cool Website</h2>
-      <p>Scroll down to see the magic!</p>
-      <a href="#about">Learn More</a>
-    </div>
-  </div>
-
-  <section id="about">
-    <h3>About Us</h3>
-    <p>We are dedicated to creating cool, visually stunning, and functional websites for everyone!</p>
-  </section>
-
-  <section id="services">
-    <h3>Our Services</h3>
-    <p>We offer web design, development, and consultation to bring your ideas to life.</p>
-  </section>
-
-  <section id="contact">
-    <h3>Contact Us</h3>
-    <p>Have a question? <a href="mailto:info@coolwebsite.com">Email us</a> anytime!</p>
-  </section>
-
-  <footer>
-    <p>© 2024 Cool Website. Built with love by <a href="#">Our Team</a>.</p>
-  </footer>
+    <header>
+        <h1>Games Hub</h1>
+        <p>Choose a game and have fun!</p>
+    </header>
+    <main>
+        <!-- Game 1 -->
+        <div class="game-card">
+            <h2>Loopy Puzzle</h2>
+            <p>Test your logic with this challenging puzzle game.</p>
+            <a href="loopy-puzzle.html">Play Now</a>
+        </div>
+        <!-- Game 2 -->
+        <div class="game-card">
+            <h2>Snake</h2>
+            <p>Classic snake game, now on your browser!</p>
+            <a href="snake.html">Play Now</a>
+        </div>
+        <!-- Game 3 -->
+        <div class="game-card">
+            <h2>Tic Tac Toe</h2>
+            <p>Challenge your friends in this timeless classic.</p>
+            <a href="tic-tac-toe.html">Play Now</a>
+        </div>
+    </main>
 </body>
 </html>
