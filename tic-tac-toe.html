@@ -250,15 +250,19 @@
                 cellElement.addEventListener('click', () => handleCellClick(index));
                 board.appendChild(cellElement);
             });
+            updateScores();
         }
 
-        // Handle click on a cell
+        // Handle cell click
         function handleCellClick(index) {
-            if (gameBoard[index] || (currentPlayer === 'O' && currentMode !== 'coop')) return;
+            if (gameBoard[index] !== null || currentPlayer === 'O') return;
             gameBoard[index] = currentPlayer;
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Switch player
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             renderBoard();
             checkForWinner();
+            if (currentPlayer === 'O' && difficulty !== 'coop') {
+                aiMove();
+            }
         }
 
         // Check for winner or tie
