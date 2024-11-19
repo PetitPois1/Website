@@ -135,6 +135,7 @@
         let aiDifficulty = "Medium";
         let isGameOver = false;
         let isPlayerTurn = true; // Track if it's the player's turn or AI's
+        let isGameInProgress = false; // Track if game is in progress to block clicks
 
         const difficultySelect = document.getElementById("difficulty");
         let difficulty = "medium"; // Default difficulty
@@ -142,7 +143,7 @@
         // AI Logic Placeholder Functions (Easy, Medium, Hard)
         function aiMove() {
             if (difficulty === 'coop') return; // Coop mode is for 2 players, no AI move needed
-            if (isPlayerTurn) return; // Prevent AI from moving if it's player's turn
+            if (isPlayerTurn || isGameOver) return; // Prevent AI from moving if it's player's turn or game over
 
             setTimeout(() => { // Simulate delay for AI move
                 if (difficulty === 'easy') {
@@ -285,28 +286,28 @@
                 board.appendChild(cellElement);
             });
             updateScores();
+            updateTurnIndicator();
         }
 
         // Handle cell clicks
         function handleCellClick(index) {
-            if (gameBoard[index] !== null || isGameOver || !isPlayerTurn) return;
-            gameBoard[index] = currentPlayer;
-            isPlayerTurn = false; // Block further clicks while AI is taking its turn
+            if (gameBoard[index] !== null || isGameOver || !isPlayerTurn || isGameInProgress) return;
+            gameBoard[index] = 'X'; // Player's move
+            isPlayerTurn = false;
+            isGameInProgress = true; // Block clicks while AI is taking its turn
             renderBoard();
             checkForWinner();
-
-            if (currentPlayer === 'X') {
-                currentPlayer = 'O';
-                aiMove();
-            } else {
-                currentPlayer = 'X';
-            }
-            updateTurnIndicator();
+            currentPlayer = 'O';
+            aiMove(); // AI's turn after player move
         }
 
         // Update turn indicator based on current player
         function updateTurnIndicator() {
-            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+            if (isGameOver) {
+                turnIndicator.textContent = `Game Over!`;
+            } else {
+                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+            }
         }
 
         // Check for winner or tie
@@ -361,6 +362,7 @@
             updateScores();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             isGameOver = false;
+            isGameInProgress = false; // Allow clicks again
         }
 
         // Update scores display
