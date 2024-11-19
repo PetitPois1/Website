@@ -6,252 +6,238 @@
     <title>Pong Game</title>
     <style>
         body {
+            margin: 0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #1e1e2f;
-            font-family: 'Arial', sans-serif;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #6200ea;
             color: white;
         }
-        h1 {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #bb86fc;
-        }
-        .game-container {
+        header div {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 15px;
         }
         canvas {
-            border: 3px solid #6200ea;
-        }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .button {
-            background-color: #6200ea;
-            color: white;
-            font-size: 18px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .button:hover {
-            background-color: #3700b3;
+            border: 2px solid #6200ea;
+            margin-top: 10px;
         }
         select {
-            font-size: 16px;
+            margin-left: 10px;
             padding: 5px;
+            font-size: 16px;
             background-color: #3700b3;
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            border-radius: 4px;
         }
-        select:hover {
+        select:focus {
+            outline: none;
+        }
+        button {
+            margin-left: 20px;
+            padding: 5px 15px;
+            font-size: 16px;
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4a00e0;
+        }
+        #startButton {
+            margin-top: 20px;
             background-color: #6200ea;
+        }
+        #startButton:hover {
+            background-color: #4a00e0;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>Pong Game</h1>
-        <canvas id="pong" width="800" height="400"></canvas>
-        <div class="controls">
-            <button id="startButton" class="button">Start Game</button>
-            <div>
-                <label for="difficulty">Select Difficulty:</label>
-                <select id="difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </div>
+    <header>
+        <div>
+            Player: <span id="playerScore">0</span> | AI: <span id="aiScore">0</span>
         </div>
-    </div>
+        <div>
+            Difficulty:
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+    </header>
+    <canvas id="pong"></canvas>
+    <button id="startButton" onclick="toggleGame()">Start Game</button>
 
     <script>
         const canvas = document.getElementById("pong");
         const ctx = canvas.getContext("2d");
-        const startButton = document.getElementById("startButton");
+
+        const paddleWidth = 10, paddleHeight = 100;
+        const ballRadius = 8;
+
+        let player1Y = 0, player2Y = 0;
+        let ballX = 0, ballY = 0;
+        let ballSpeedX = 5, ballSpeedY = 5;
+
+        let isDragging = false, lastTouchY = 0;
+        let playerScore = 0, aiScore = 0;
+        let gameRunning = false; // Track if the game is running
+
         const difficultySelect = document.getElementById("difficulty");
+        const playerScoreElem = document.getElementById("playerScore");
+        const aiScoreElem = document.getElementById("aiScore");
+        const startButton = document.getElementById("startButton");
 
-        let gameStarted = false;
-        let playerPaddle, computerPaddle, ball;
-        let playerScore = 0, computerScore = 0;
-        let ballSpeed = 4, paddleSpeed = 20;
-        let difficulty = "easy";  // Default difficulty
+        const difficultySettings = {
+            easy: { ballSpeed: 3, aiSpeed: 2 },
+            medium: { ballSpeed: 5, aiSpeed: 4 },
+            hard: { ballSpeed: 7, aiSpeed: 6 }
+        };
 
-        // Paddle Constructor
-        function Paddle(x, y, width, height, color) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-            this.color = color;
-            this.dy = 0;
-            this.move = function() {
-                if (this.y + this.height > canvas.height || this.y < 0) {
-                    this.dy = 0;
-                }
-                this.y += this.dy;
-            };
-            this.draw = function() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-            };
+        let difficulty = "medium";
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = window.innerHeight * 0.6;
+
+            player1Y = (canvas.height - paddleHeight) / 2;
+            player2Y = (canvas.height - paddleHeight) / 2;
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
         }
 
-        // Ball Constructor
-        function Ball(x, y, radius, speedX, speedY, color) {
-            this.x = x;
-            this.y = y;
-            this.radius = radius;
-            this.speedX = speedX;
-            this.speedY = speedY;
-            this.color = color;
-            this.move = function() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
-                    this.speedY = -this.speedY;
-                }
-
-                if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
-                    this.reset();
-                }
-            };
-            this.reset = function() {
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
-                this.speedX = (Math.random() < 0.5 ? 1 : -1) * ballSpeed;
-                this.speedY = (Math.random() * 2 - 1) * ballSpeed;
-            };
-            this.draw = function() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.closePath();
-            };
+        function drawPaddles() {
+            ctx.fillStyle = "#6200ea";
+            ctx.fillRect(0, player1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight);
         }
 
-        // Initialize the game objects
-        function init() {
-            playerPaddle = new Paddle(10, canvas.height / 2 - 30, 10, 60, "#6200ea");
-            computerPaddle = new Paddle(canvas.width - 20, canvas.height / 2 - 30, 10, 60, "#bb86fc");
-            ball = new Ball(canvas.width / 2, canvas.height / 2, 10, (Math.random() < 0.5 ? 1 : -1) * ballSpeed, (Math.random() * 2 - 1) * ballSpeed, "#ffffff");
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#6200ea";
+            ctx.fill();
+            ctx.closePath();
         }
 
-        // Update the difficulty level
-        function updateDifficulty() {
-            difficulty = difficultySelect.value;
-            switch (difficulty) {
-                case "easy":
-                    ballSpeed = 4;
-                    paddleSpeed = 20;
-                    break;
-                case "medium":
-                    ballSpeed = 6;
-                    paddleSpeed = 25;
-                    break;
-                case "hard":
-                    ballSpeed = 8;
-                    paddleSpeed = 30;
-                    break;
-            }
-            resetGame();
+        function drawScores() {
+            playerScoreElem.textContent = playerScore;
+            aiScoreElem.textContent = aiScore;
         }
 
-        // Game Reset
-        function resetGame() {
-            playerScore = 0;
-            computerScore = 0;
-            ball.reset();
-            gameStarted = false;
-            startButton.style.display = "inline-block";
-        }
+        function updateBall() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
 
-        // Draw the score
-        function drawScore() {
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "24px Arial";
-            ctx.fillText("Player: " + playerScore, 50, 30);
-            ctx.fillText("Computer: " + computerScore, canvas.width - 150, 30);
-        }
+            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) ballSpeedY = -ballSpeedY;
 
-        // Game Loop
-        function gameLoop() {
-            if (!gameStarted) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ball.move();
-            playerPaddle.move();
-            computerPaddle.move();
-
-            ball.draw();
-            playerPaddle.draw();
-            computerPaddle.draw();
-            drawScore();
-
-            // Computer AI movement
-            if (computerPaddle.y + computerPaddle.height / 2 < ball.y) {
-                computerPaddle.dy = paddleSpeed;
-            } else if (computerPaddle.y + computerPaddle.height / 2 > ball.y) {
-                computerPaddle.dy = -paddleSpeed;
-            } else {
-                computerPaddle.dy = 0;
+            if (
+                ballX - ballRadius < paddleWidth &&
+                ballY > player1Y &&
+                ballY < player1Y + paddleHeight
+            ) {
+                ballSpeedX = -ballSpeedX;
+            } else if (
+                ballX + ballRadius > canvas.width - paddleWidth &&
+                ballY > player2Y &&
+                ballY < player2Y + paddleHeight
+            ) {
+                ballSpeedX = -ballSpeedX;
             }
 
-            if (ball.x - ball.radius < playerPaddle.x + playerPaddle.width && ball.y > playerPaddle.y && ball.y < playerPaddle.y + playerPaddle.height) {
-                ball.speedX = -ball.speedX;
+            if (ballX - ballRadius < 0) {
+                aiScore++;
+                resetBall();
+            } else if (ballX + ballRadius > canvas.width) {
                 playerScore++;
+                resetBall();
             }
-
-            if (ball.x + ball.radius > computerPaddle.x && ball.y > computerPaddle.y && ball.y < computerPaddle.y + computerPaddle.height) {
-                ball.speedX = -ball.speedX;
-                computerScore++;
-            }
-
-            requestAnimationFrame(gameLoop);
         }
 
-        // Event listeners
-        startButton.addEventListener("click", function() {
-            gameStarted = true;
-            startButton.style.display = "none";
-            gameLoop();
-        });
+        function resetBall() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+            ballSpeedY = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+        }
 
-        difficultySelect.addEventListener("change", updateDifficulty);
+        function computerAI() {
+            const aiSpeed = difficultySettings[difficulty].aiSpeed;
 
-        document.addEventListener("keydown", function(e) {
-            if (e.key === "ArrowUp") {
-                playerPaddle.dy = -paddleSpeed;
-            } else if (e.key === "ArrowDown") {
-                playerPaddle.dy = paddleSpeed;
+            if (ballY < player2Y + paddleHeight / 2) player2Y -= aiSpeed;
+            if (ballY > player2Y + paddleHeight / 2) player2Y += aiSpeed;
+
+            player2Y = Math.max(0, Math.min(canvas.height - paddleHeight, player2Y));
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddles();
+            drawBall();
+        }
+
+        function update() {
+            if (gameRunning) {
+                updateBall();
+                computerAI();
+                draw();
+                drawScores();
             }
+        }
+
+        function onTouchMove(e) {
+            const touchY = e.touches[0].clientY - canvas.offsetTop;
+            player1Y = Math.max(0, Math.min(canvas.height - paddleHeight, touchY - paddleHeight / 2));
+        }
+
+        function onMouseMove(e) {
+            const mouseY = e.clientY - canvas.offsetTop;
+            player1Y = Math.max(0, Math.min(canvas.height - paddleHeight, mouseY - paddleHeight / 2));
+        }
+
+        function toggleGame() {
+            gameRunning = !gameRunning;
+            if (gameRunning) {
+                startButton.textContent = "Stop Game";
+                resetBall();
+                playerScore = 0;
+                aiScore = 0;
+                drawScores();
+            } else {
+                startButton.textContent = "Start Game";
+            }
+        }
+
+        difficultySelect.addEventListener("change", (e) => {
+            difficulty = e.target.value;
+            resetBall();
+            playerScore = 0;
+            aiScore = 0;
+            drawScores();
         });
 
-        document.addEventListener("keyup", function() {
-            playerPaddle.dy = 0;
-        });
+        canvas.addEventListener("touchmove", onTouchMove);
+        canvas.addEventListener("mousemove", onMouseMove);
 
-        init();
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        setInterval(update, 1000 / 60);
     </script>
 </body>
 </html>
