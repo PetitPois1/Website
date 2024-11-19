@@ -14,30 +14,38 @@
             margin: 0;
             background-color: #1e1e2f;
             font-family: Arial, sans-serif;
-            overflow: hidden;
+            color: white;
+        }
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
         }
         .game-button {
-            padding: 10px 20px;
-            margin: 15px;
             background-color: #6200ea;
             color: white;
+            font-size: 16px;
+            padding: 15px 30px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin: 10px;
+            transition: background-color 0.3s ease;
         }
         .game-button:hover {
             background-color: #3700b3;
         }
-        h1 {
-            color: white;
+        .home-content {
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>Welcome to the Game Hub</h1>
-    <button class="game-button" onclick="window.location.href='snake_game.html'">Play Snake Game</button>
-    <button class="game-button" onclick="window.location.href='tshirt_page.html'">T-shirt Shop</button>
+    <div class="home-content">
+        <h1>Welcome to the Game Hub</h1>
+        <button class="game-button" onclick="window.location.href='snake_game.html'">Play Snake Game</button>
+        <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Play Tic-Tac-Toe</button>
+        <button class="game-button" onclick="window.location.href='pong_game.html'">Play Pong</button>
+    </div>
 </body>
 </html>
