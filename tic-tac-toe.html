@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe</title>
+    <title>Tic-Tac-Toe Game</title>
     <style>
         body {
             display: flex;
@@ -12,13 +12,26 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f4f4f9;
+            background-color: #1e1e2f;
             font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .score-board {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: 18px;
+            color: #fff;
         }
         .board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
-            grid-gap: 5px;
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-top: 20px;
         }
         .cell {
             width: 100px;
@@ -26,13 +39,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #fff;
+            font-size: 36px;
+            background-color: #2a2a40;
+            color: white;
             border: 2px solid #6200ea;
-            font-size: 2rem;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-        .cell.taken {
-            cursor: not-allowed;
+        .cell:hover {
+            background-color: #3700b3;
         }
         button {
             margin-top: 20px;
@@ -50,61 +65,87 @@
     </style>
 </head>
 <body>
-    <div class="board" id="board"></div>
+    <div class="score-board">
+        <span id="high-score">High Score: 0</span>
+        <span id="current-score">Score: 0</span>
+    </div>
+    <div class="board" id="board">
+        <!-- Tic-Tac-Toe cells will go here -->
+    </div>
     <button onclick="window.location.href='index.html'">Back to Home</button>
+
     <script>
         const board = document.getElementById('board');
-        const cells = Array(9).fill(null);
         let currentPlayer = 'X';
+        let gameBoard = Array(9).fill(null);
+        let currentScore = 0;
+        let highScore = 0;
 
-        function checkWinner() {
+        // Render the Tic-Tac-Toe board
+        function renderBoard() {
+            board.innerHTML = '';
+            gameBoard.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.textContent = cell;
+                cellElement.addEventListener('click', () => handleCellClick(index));
+                board.appendChild(cellElement);
+            });
+        }
+
+        // Handle click on a cell
+        function handleCellClick(index) {
+            if (gameBoard[index]) return; // Ignore if the cell is already filled
+            gameBoard[index] = currentPlayer;
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            checkForWinner();
+            renderBoard();
+        }
+
+        // Check if a player has won
+        function checkForWinner() {
             const winningCombinations = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], 
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], 
-                [0, 4, 8], [2, 4, 6]
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
             ];
 
-            for (const combination of winningCombinations) {
-                const [a, b, c] = combination;
-                if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
-                    alert(`${cells[a]} wins!`);
+            for (let combo of winningCombinations) {
+                const [a, b, c] = combo;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    alert(`${gameBoard[a]} wins!`);
+                    currentScore++;
+                    highScore = Math.max(highScore, currentScore);
                     resetGame();
                     return;
                 }
             }
 
-            if (!cells.includes(null)) {
-                alert("It's a draw!");
+            if (!gameBoard.includes(null)) {
+                alert('It\'s a tie!');
                 resetGame();
             }
         }
 
+        // Reset the game
         function resetGame() {
-            cells.fill(null);
-            board.innerHTML = '';
-            createBoard();
+            gameBoard = Array(9).fill(null);
+            currentPlayer = 'X';
+            renderBoard();
+            updateScores();
         }
 
-        function handleClick(e, index) {
-            if (!cells[index]) {
-                cells[index] = currentPlayer;
-                e.target.textContent = currentPlayer;
-                e.target.classList.add('taken');
-                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                checkWinner();
-            }
+        function updateScores() {
+            document.getElementById('high-score').textContent = `High Score: ${highScore}`;
+            document.getElementById('current-score').textContent = `Score: ${currentScore}`;
         }
 
-        function createBoard() {
-            cells.forEach((_, index) => {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.addEventListener('click', (e) => handleClick(e, index));
-                board.appendChild(cell);
-            });
-        }
-
-        createBoard();
+        renderBoard();
     </script>
 </body>
 </html>
