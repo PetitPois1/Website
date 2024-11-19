@@ -108,6 +108,7 @@
         let xScore = 0;
         let oScore = 0;
         let currentMode = 'medium';
+        let aiDifficulty = "Medium";
 
         const difficultySelect = document.getElementById("difficulty");
         let difficulty = "medium";
@@ -116,13 +117,15 @@
         function aiMove() {
             if (difficulty === 'coop') return; // Coop mode is for 2 players
 
-            if (difficulty === 'easy') {
-                easyAI();
-            } else if (difficulty === 'medium') {
-                mediumAI();
-            } else if (difficulty === 'hard') {
-                hardAI();
-            }
+            setTimeout(() => { // Simulate delay for AI move
+                if (difficulty === 'easy') {
+                    easyAI();
+                } else if (difficulty === 'medium') {
+                    mediumAI();
+                } else if (difficulty === 'hard') {
+                    hardAI();
+                }
+            }, 1000); // Delay of 1 second to make it feel more realistic
         }
 
         // Easy AI (Random Move)
@@ -256,11 +259,13 @@
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             renderBoard();
             checkForWinner();
+
             if (currentMode === 'coop' && currentPlayer === 'O') return;
-            if (currentMode !== 'coop' && currentPlayer === 'O') aiMove();
-            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-            if (currentMode !== 'coop') {
-                turnIndicator.textContent = `AI ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} (${currentPlayer})'s Turn`;
+
+            if (currentMode !== 'coop' && currentPlayer === 'O') {
+                aiMove();
+            } else {
+                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
         }
 
@@ -280,7 +285,7 @@
             for (let combo of winningCombinations) {
                 const [a, b, c] = combo;
                 if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
-                    alert(`${gameBoard[a]} wins!`);
+                    turnIndicator.textContent = `${gameBoard[a]} wins!`;
                     if (gameBoard[a] === 'X') xScore++;
                     else oScore++;
                     renderBoard();
@@ -291,7 +296,7 @@
             }
 
             if (!gameBoard.includes(null)) {
-                alert('It\'s a tie!');
+                turnIndicator.textContent = 'It\'s a tie!';
                 resetGame();
             }
         }
@@ -308,12 +313,13 @@
         // Update scores display
         function updateScores() {
             document.getElementById('x-score').textContent = `X Score: ${xScore}`;
-            document.getElementById('o-score').textContent = `O Score: ${oScore}`;
+            document.getElementById('o-score').textContent = `O Score: ${oScore} (${aiDifficulty} AI)`;
         }
 
         // Difficulty change handler
         difficultySelect.addEventListener('change', (event) => {
             difficulty = event.target.value;
+            aiDifficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1); // Capitalize difficulty
             resetGame();
         });
 
