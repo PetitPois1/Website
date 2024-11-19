@@ -78,6 +78,28 @@
             color: #fff;
             margin-top: 10px;
         }
+        .fade-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            opacity: 0;
+            animation: fadeInOut 2s forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .appear {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -98,11 +120,13 @@
     <div class="board" id="board">
         <!-- Tic-Tac-Toe cells will go here -->
     </div>
+    <div id="winner-message" class="fade-message"></div>
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script>
         const board = document.getElementById('board');
         const turnIndicator = document.getElementById('turn-indicator');
+        const winnerMessage = document.getElementById('winner-message');
         let currentPlayer = 'X';
         let gameBoard = Array(9).fill(null);
         let xScore = 0;
@@ -242,21 +266,26 @@
             return -1; // No winning move
         }
 
-        // Initialize game board rendering
+        // Render the board with animations for X and O
         function renderBoard() {
             board.innerHTML = '';
             gameBoard.forEach((cell, index) => {
                 const cellElement = document.createElement('div');
                 cellElement.classList.add('cell');
-                cellElement.textContent = cell;
+                if (cell) {
+                    const span = document.createElement('span');
+                    span.textContent = cell;
+                    span.classList.add('appear');
+                    cellElement.appendChild(span);
+                }
                 cellElement.addEventListener('click', () => handleCellClick(index));
                 board.appendChild(cellElement);
             });
 
-            // Update scores
             updateScores();
         }
 
+        // Handle cell clicks
         function handleCellClick(index) {
             if (gameBoard[index] !== null || isGameOver) return;
 
@@ -293,6 +322,7 @@
                     else oScore++;
                     renderBoard();
                     updateScores();
+                    showWinnerMessage(`${gameBoard[a]} Wins!`);
                     resetGame();
                     return;
                 }
@@ -300,10 +330,20 @@
 
             if (!gameBoard.includes(null)) {
                 turnIndicator.textContent = 'It\'s a tie!';
+                showWinnerMessage('It\'s a Tie!');
                 resetGame();
             } else {
                 turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
+        }
+
+        // Show the winner message
+        function showWinnerMessage(message) {
+            winnerMessage.textContent = message;
+            winnerMessage.classList.add('appear');
+            setTimeout(() => {
+                winnerMessage.classList.remove('appear');
+            }, 2000); // Fade out after 2 seconds
         }
 
         // Reset the game
