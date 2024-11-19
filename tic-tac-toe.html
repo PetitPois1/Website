@@ -349,7 +349,7 @@
         // Reset the game
         function resetGame() {
             gameBoard = Array(9).fill(null);
-            currentPlayer = Math.random() < 0.5 ? 'X' : 'O'; // Alternate who starts (X or O)
+            currentPlayer = 'X'; // Always start with Player X
             renderBoard();
             updateScores();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
