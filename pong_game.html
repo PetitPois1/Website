@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
+    <title>Pong Game</title>
     <style>
         body {
             display: flex;
@@ -34,107 +34,131 @@
     </style>
 </head>
 <body>
-    <canvas id="snake" width="400" height="400"></canvas>
+    <canvas id="pong" width="800" height="600"></canvas>
     <button id="startButton">Start Game</button>
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script>
-        const canvas = document.getElementById("snake");
+        const canvas = document.getElementById("pong");
         const ctx = canvas.getContext("2d");
         const startButton = document.getElementById("startButton");
 
-        const box = 20; // Size of each grid cell
-        const rows = canvas.height / box;
-        const cols = canvas.width / box;
+        const paddleWidth = 10, paddleHeight = 100;
+        const ballRadius = 8;
 
-        let snake = [{ x: 5 * box, y: 5 * box }];
-        let direction = null;
-        let food = { x: Math.floor(Math.random() * cols) * box, y: Math.floor(Math.random() * rows) * box };
-        let gameRunning = false;
+        let player1Y = (canvas.height - paddleHeight) / 2;
+        let player2Y = (canvas.height - paddleHeight) / 2;
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballSpeedX = 5, ballSpeedY = 5;
+        let isGameRunning = false;
+        let touchStartY1 = null, touchStartY2 = null;
 
-        function drawGrid() {
-            ctx.fillStyle = "#1e1e2f";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw food
+        function drawPaddles() {
             ctx.fillStyle = "#6200ea";
-            ctx.fillRect(food.x, food.y, box, box);
-
-            // Draw snake
-            for (let segment of snake) {
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(segment.x, segment.y, box, box);
-            }
+            ctx.fillRect(0, player1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight);
         }
 
-        function moveSnake() {
-            if (!direction) return;
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#6200ea";
+            ctx.fill();
+            ctx.closePath();
+        }
 
-            const head = { ...snake[0] };
+        function updateBall() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
 
-            if (direction === "UP") head.y -= box;
-            if (direction === "DOWN") head.y += box;
-            if (direction === "LEFT") head.x -= box;
-            if (direction === "RIGHT") head.x += box;
+            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) ballSpeedY = -ballSpeedY;
 
-            // Add new head
-            snake.unshift(head);
-
-            // Check if food eaten
-            if (head.x === food.x && head.y === food.y) {
-                food = { x: Math.floor(Math.random() * cols) * box, y: Math.floor(Math.random() * rows) * box };
-            } else {
-                snake.pop(); // Remove tail if no food eaten
-            }
-
-            // Check collisions
             if (
-                head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
-                snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+                ballX - ballRadius < paddleWidth &&
+                ballY > player1Y &&
+                ballY < player1Y + paddleHeight
             ) {
-                resetGame();
+                ballSpeedX = -ballSpeedX;
+            } else if (
+                ballX + ballRadius > canvas.width - paddleWidth &&
+                ballY > player2Y &&
+                ballY < player2Y + paddleHeight
+            ) {
+                ballSpeedX = -ballSpeedX;
             }
+
+            if (ballX - ballRadius < 0 || ballX + ballRadius > canvas.width) resetBall();
         }
 
-        function resetGame() {
-            snake = [{ x: 5 * box, y: 5 * box }];
-            direction = null;
-            food = { x: Math.floor(Math.random() * cols) * box, y: Math.floor(Math.random() * rows) * box };
-            gameRunning = false;
+        function resetBall() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = -ballSpeedX;
+        }
+
+        function computerAI() {
+            if (ballY < player2Y + paddleHeight / 2) player2Y -= 3;
+            if (ballY > player2Y + paddleHeight / 2) player2Y += 3;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddles();
+            drawBall();
         }
 
         function update() {
-            if (gameRunning) {
-                moveSnake();
-                drawGrid();
-            }
+            if (!isGameRunning) return;
+
+            updateBall();
+            computerAI();
+            draw();
         }
 
-        function handleSwipe(e) {
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
-            if (!direction && gameRunning) {
-                const head = snake[0];
-
-                if (Math.abs(x - head.x) > Math.abs(y - head.y)) {
-                    direction = x > head.x ? "RIGHT" : "LEFT";
-                } else {
-                    direction = y > head.y ? "DOWN" : "UP";
-                }
-            }
-        }
-
-        startButton.addEventListener("click", () => {
-            gameRunning = true;
-            drawGrid();
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "w") player1Y -= 10;
+            if (e.key === "s") player1Y += 10;
         });
 
-        canvas.addEventListener("touchstart", handleSwipe);
+        canvas.addEventListener("touchstart", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
 
-        setInterval(update, 1000 / 10);
+            if (touchX < canvas.width / 2) {
+                touchStartY1 = touchY;
+            } else {
+                touchStartY2 = touchY;
+            }
+        });
+
+        canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault(); // Prevent page scrolling
+
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+
+            if (touchX < canvas.width / 2 && touchStartY1 !== null) {
+                player1Y += touchY - touchStartY1;
+                touchStartY1 = touchY;
+            } else if (touchX >= canvas.width / 2 && touchStartY2 !== null) {
+                player2Y += touchY - touchStartY2;
+                touchStartY2 = touchY;
+            }
+        });
+
+        canvas.addEventListener("touchend", () => {
+            touchStartY1 = null;
+            touchStartY2 = null;
+        });
+
+        startButton.addEventListener("click", () => {
+            isGameRunning = true;
+        });
+
+        setInterval(update, 1000 / 60);
     </script>
 </body>
 </html>
