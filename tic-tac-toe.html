@@ -62,13 +62,39 @@
         button:hover {
             background-color: #3700b3;
         }
+        select {
+            padding: 5px;
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        select:focus {
+            outline: none;
+        }
+        .turn-indicator {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="score-board">
         <span id="high-score">High Score: 0</span>
         <span id="current-score">Score: 0</span>
+        <div>
+            Difficulty:
+            <select id="difficulty">
+                <option value="coop">Coop (2 Player)</option>
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
     </div>
+    <div class="turn-indicator" id="turn-indicator">Player X's Turn</div>
     <div class="board" id="board">
         <!-- Tic-Tac-Toe cells will go here -->
     </div>
@@ -76,10 +102,139 @@
 
     <script>
         const board = document.getElementById('board');
+        const turnIndicator = document.getElementById('turn-indicator');
         let currentPlayer = 'X';
         let gameBoard = Array(9).fill(null);
         let currentScore = 0;
         let highScore = 0;
+
+        const difficultySelect = document.getElementById("difficulty");
+        let difficulty = "medium";
+
+        // AI Logic Placeholder Functions (Easy, Medium, Hard)
+        function aiMove() {
+            if (difficulty === 'coop') return; // Coop mode is for 2 players
+
+            if (difficulty === 'easy') {
+                easyAI();
+            } else if (difficulty === 'medium') {
+                mediumAI();
+            } else if (difficulty === 'hard') {
+                hardAI();
+            }
+        }
+
+        // Easy AI (Random Move)
+        function easyAI() {
+            const emptyCells = gameBoard.map((cell, index) => cell === null ? index : null).filter(cell => cell !== null);
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            gameBoard[randomCell] = 'O';
+            currentPlayer = 'X';
+            renderBoard();
+            checkForWinner();
+        }
+
+        // Medium AI (Blocks or Plays Random)
+        function mediumAI() {
+            // Check for blocking or winning move
+            const winningMove = findWinningMove('O');
+            if (winningMove !== -1) {
+                gameBoard[winningMove] = 'O';
+            } else {
+                const blockMove = findWinningMove('X');
+                if (blockMove !== -1) {
+                    gameBoard[blockMove] = 'O';
+                } else {
+                    easyAI();
+                }
+            }
+            currentPlayer = 'X';
+            renderBoard();
+            checkForWinner();
+        }
+
+        // Hard AI (Minimax Algorithm for Optimal Move)
+        function hardAI() {
+            const bestMove = minimax(gameBoard, 'O');
+            gameBoard[bestMove] = 'O';
+            currentPlayer = 'X';
+            renderBoard();
+            checkForWinner();
+        }
+
+        // Minimax Algorithm for Optimal Move (Hard AI)
+        function minimax(board, player) {
+            const availableMoves = board.map((cell, index) => cell === null ? index : null).filter(cell => cell !== null);
+            const opponent = player === 'O' ? 'X' : 'O';
+            
+            if (checkWinner(board, 'O')) return 10;
+            if (checkWinner(board, 'X')) return -10;
+            if (availableMoves.length === 0) return 0;
+
+            let bestScore = player === 'O' ? -Infinity : Infinity;
+            let bestMove = null;
+
+            availableMoves.forEach(move => {
+                board[move] = player;
+                let score = minimax(board, opponent);
+                board[move] = null;
+
+                if (player === 'O' && score > bestScore || player === 'X' && score < bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            });
+
+            return bestMove;
+        }
+
+        // Check for winner (Minimax helper)
+        function checkWinner(board, player) {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            return winningCombinations.some(combo => {
+                const [a, b, c] = combo;
+                return board[a] === player && board[b] === player && board[c] === player;
+            });
+        }
+
+        // Find a winning move for the AI or block the opponent
+        function findWinningMove(player) {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            for (let combo of winningCombinations) {
+                const [a, b, c] = combo;
+                if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) {
+                    return c;
+                }
+                if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) {
+                    return b;
+                }
+                if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) {
+                    return a;
+                }
+            }
+
+            return -1; // No winning move
+        }
 
         // Render the Tic-Tac-Toe board
         function renderBoard() {
@@ -95,14 +250,19 @@
 
         // Handle click on a cell
         function handleCellClick(index) {
-            if (gameBoard[index]) return; // Ignore if the cell is already filled
+            if (gameBoard[index] || currentPlayer === 'O') return; // Block clicks if AI's turn or cell is already filled
             gameBoard[index] = currentPlayer;
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             checkForWinner();
             renderBoard();
+            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+
+            if (currentPlayer === 'O' && difficulty !== 'coop') {
+                setTimeout(aiMove, 500); // AI makes move after a short delay
+            }
         }
 
-        // Check if a player has won
+        // Check for winner
         function checkForWinner() {
             const winningCombinations = [
                 [0, 1, 2],
@@ -138,12 +298,20 @@
             currentPlayer = 'X';
             renderBoard();
             updateScores();
+            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
         }
 
+        // Update scores display
         function updateScores() {
             document.getElementById('high-score').textContent = `High Score: ${highScore}`;
             document.getElementById('current-score').textContent = `Score: ${currentScore}`;
         }
+
+        // Difficulty change handler
+        difficultySelect.addEventListener('change', (event) => {
+            difficulty = event.target.value;
+            resetGame();
+        });
 
         renderBoard();
     </script>
