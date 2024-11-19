@@ -59,16 +59,14 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const box = 20; // Size of a single grid block
-        const frameRate = 120; // Frames per second
         const snakeColor = ctx.createRadialGradient(200, 200, 10, 200, 200, 200);
         snakeColor.addColorStop(0, '#6200ea');
         snakeColor.addColorStop(1, '#3700b3');
 
         let snake = [{ x: 9 * box, y: 10 * box }];
         let food = generateFood();
-        let direction = null;
+        let direction = 'RIGHT';
         let speed = 200; // Time (ms) per snake update
-        let lastUpdate = 0;
         let highScore = 0;
         let currentScore = 0;
         let shouldUpdate = true; // Flag to track if input is already handled
@@ -104,12 +102,9 @@
             shouldUpdate = true; // Ensure input is processed immediately
         });
 
-        function draw(time) {
-            if (shouldUpdate) {
-                updateGame();
-                shouldUpdate = false; // Prevent multiple updates per input
-            }
-            requestAnimationFrame(draw);
+        function draw() {
+            updateGame();
+            setTimeout(draw, speed); // Control snake speed with delay
         }
 
         function updateGame() {
@@ -178,12 +173,12 @@
         function resetGame() {
             snake = [{ x: 9 * box, y: 10 * box }];
             food = generateFood();
-            direction = null;
+            direction = 'RIGHT';
             speed = 200;
             currentScore = 0;
         }
 
-        draw(0); // Start the game loop
+        draw(); // Start the game loop
     </script>
 </body>
 </html>
