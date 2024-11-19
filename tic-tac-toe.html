@@ -115,7 +115,7 @@
 
         // AI Logic Placeholder Functions (Easy, Medium, Hard)
         function aiMove() {
-            if (difficulty === 'coop') return; // Coop mode is for 2 players
+            if (difficulty === 'coop') return; // Coop mode is for 2 players, no AI move needed
 
             setTimeout(() => { // Simulate delay for AI move
                 if (difficulty === 'easy') {
@@ -255,7 +255,7 @@
 
         // Handle cell click
         function handleCellClick(index) {
-            if (gameBoard[index] !== null || currentPlayer === 'O') return;
+            if (gameBoard[index] !== null || (difficulty === 'coop' && currentPlayer === 'O')) return;
             gameBoard[index] = currentPlayer;
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             renderBoard();
@@ -311,7 +311,11 @@
         // Update scores display
         function updateScores() {
             document.getElementById('x-score').textContent = `X Score: ${xScore}`;
-            document.getElementById('o-score').textContent = `O Score: ${oScore} (${aiDifficulty} AI)`;
+            if (difficulty !== 'coop') {
+                document.getElementById('o-score').textContent = `O Score: ${oScore} (${aiDifficulty} AI)`;
+            } else {
+                document.getElementById('o-score').textContent = `O Score: ${oScore}`;
+            }
         }
 
         // Difficulty change handler
