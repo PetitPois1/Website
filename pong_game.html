@@ -7,13 +7,13 @@
     <style>
         body {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             margin: 0;
             background-color: #1e1e2f;
             color: white;
-            font-family: Arial, sans-serif;
         }
         canvas {
             border: 2px solid #6200ea;
@@ -38,25 +38,24 @@
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script>
-        const canvas = document.getElementById('pong');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById("pong");
+        const ctx = canvas.getContext("2d");
 
         const paddleWidth = 10, paddleHeight = 100;
         const ballRadius = 8;
 
         let player1Y = (canvas.height - paddleHeight) / 2;
         let player2Y = (canvas.height - paddleHeight) / 2;
-        let player1Dy = 0;
-        let player2Dy = 0;
         let ballX = canvas.width / 2;
         let ballY = canvas.height / 2;
         let ballSpeedX = 5;
         let ballSpeedY = 5;
-        let player1Score = 0;
-        let player2Score = 0;
+        let isComputerMode = true; // Computer or 2-player mode
+
+        let touchStartY1 = null, touchStartY2 = null;
 
         function drawPaddles() {
-            ctx.fillStyle = '#6200ea';
+            ctx.fillStyle = "#6200ea";
             ctx.fillRect(0, player1Y, paddleWidth, paddleHeight); // Player 1 paddle
             ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight); // Player 2 paddle
         }
@@ -64,7 +63,7 @@
         function drawBall() {
             ctx.beginPath();
             ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = '#6200ea';
+            ctx.fillStyle = "#6200ea";
             ctx.fill();
             ctx.closePath();
         }
@@ -73,24 +72,25 @@
             ballX += ballSpeedX;
             ballY += ballSpeedY;
 
-            // Ball collisions with top and bottom
-            if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
                 ballSpeedY = -ballSpeedY;
             }
 
-            // Ball collision with paddles
-            if (ballX - ballRadius < paddleWidth && ballY > player1Y && ballY < player1Y + paddleHeight) {
+            if (
+                ballX - ballRadius < paddleWidth &&
+                ballY > player1Y &&
+                ballY < player1Y + paddleHeight
+            ) {
                 ballSpeedX = -ballSpeedX;
-            } else if (ballX + ballRadius > canvas.width - paddleWidth && ballY > player2Y && ballY < player2Y + paddleHeight) {
+            } else if (
+                ballX + ballRadius > canvas.width - paddleWidth &&
+                ballY > player2Y &&
+                ballY < player2Y + paddleHeight
+            ) {
                 ballSpeedX = -ballSpeedX;
             }
 
-            // Ball out of bounds (Player 1 or Player 2 scores)
-            if (ballX - ballRadius < 0) {
-                player2Score++;
-                resetBall();
-            } else if (ballX + ballRadius > canvas.width) {
-                player1Score++;
+            if (ballX - ballRadius < 0 || ballX + ballRadius > canvas.width) {
                 resetBall();
             }
         }
@@ -101,56 +101,63 @@
             ballSpeedX = -ballSpeedX;
         }
 
-        function drawScores() {
-            ctx.font = '32px Arial';
-            ctx.fillStyle = 'white';
-            ctx.fillText(player1Score, canvas.width / 4, 50);
-            ctx.fillText(player2Score, 3 * canvas.width / 4, 50);
+        function computerAI() {
+            if (!isComputerMode) return;
+            if (ballY < player2Y + paddleHeight / 2) player2Y -= 3;
+            if (ballY > player2Y + paddleHeight / 2) player2Y += 3;
         }
 
-        function movePaddles() {
-            player1Y += player1Dy;
-            player2Y += player2Dy;
-
-            // Prevent paddles from going out of bounds
-            player1Y = Math.max(0, Math.min(player1Y, canvas.height - paddleHeight));
-            player2Y = Math.max(0, Math.min(player2Y, canvas.height - paddleHeight));
-        }
-
-        function gameLoop() {
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             drawPaddles();
             drawBall();
-            drawScores();
-            movePaddles();
-            updateBall();
-
-            requestAnimationFrame(gameLoop);
         }
 
-        // Control player 1 paddle (up and down with W/S keys)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'w') player1Dy = -5;
-            if (e.key === 's') player1Dy = 5;
+        function update() {
+            updateBall();
+            computerAI();
+            draw();
+        }
+
+        // Keyboard controls
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "w") player1Y -= 10;
+            if (e.key === "s") player1Y += 10;
         });
 
-        document.addEventListener('keyup', function(e) {
-            if (e.key === 'w' || e.key === 's') player1Dy = 0;
+        // Touch controls
+        canvas.addEventListener("touchstart", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+
+            if (touchX < canvas.width / 2) {
+                touchStartY1 = touchY;
+            } else {
+                touchStartY2 = touchY;
+            }
         });
 
-        // Control player 2 paddle (up and down with Arrow keys)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowUp') player2Dy = -5;
-            if (e.key === 'ArrowDown') player2Dy = 5;
+        canvas.addEventListener("touchmove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+
+            if (touchX < canvas.width / 2 && touchStartY1 !== null) {
+                player1Y += touchY - touchStartY1;
+                touchStartY1 = touchY;
+            } else if (touchX >= canvas.width / 2 && touchStartY2 !== null) {
+                player2Y += touchY - touchStartY2;
+                touchStartY2 = touchY;
+            }
         });
 
-        document.addEventListener('keyup', function(e) {
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') player2Dy = 0;
+        canvas.addEventListener("touchend", () => {
+            touchStartY1 = null;
+            touchStartY2 = null;
         });
 
-        // Start the game
-        gameLoop();
+        setInterval(update, 1000 / 60);
     </script>
 </body>
 </html>
