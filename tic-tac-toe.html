@@ -142,7 +142,7 @@
         // AI Logic Placeholder Functions (Easy, Medium, Hard)
         function aiMove() {
             if (difficulty === 'coop') return; // Coop mode is for 2 players, no AI move needed
-            if (!isPlayerTurn) return; // Don't let the AI move if it's still the player's turn
+            if (isPlayerTurn) return; // Prevent AI from moving if it's player's turn
 
             setTimeout(() => { // Simulate delay for AI move
                 if (difficulty === 'easy') {
@@ -269,7 +269,7 @@
             return -1;
         }
 
-        // Render the board with animations for X and O
+        // Render the board
         function renderBoard() {
             board.innerHTML = '';
             gameBoard.forEach((cell, index) => {
@@ -284,16 +284,14 @@
                 cellElement.addEventListener('click', () => handleCellClick(index));
                 board.appendChild(cellElement);
             });
-
             updateScores();
         }
 
         // Handle cell clicks
         function handleCellClick(index) {
             if (gameBoard[index] !== null || isGameOver || !isPlayerTurn) return;
-
             gameBoard[index] = currentPlayer;
-            isPlayerTurn = false; // Prevent multiple clicks during the same turn
+            isPlayerTurn = false; // Block further clicks while AI is taking its turn
             renderBoard();
             checkForWinner();
 
