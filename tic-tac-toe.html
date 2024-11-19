@@ -301,6 +301,12 @@
             } else {
                 currentPlayer = 'X';
             }
+            updateTurnIndicator();
+        }
+
+        // Update turn indicator based on current player
+        function updateTurnIndicator() {
+            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
         }
 
         // Check for winner or tie
@@ -334,8 +340,6 @@
                 turnIndicator.textContent = 'It\'s a tie!';
                 showWinnerMessage('It\'s a Tie!');
                 resetGame();
-            } else {
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
         }
 
