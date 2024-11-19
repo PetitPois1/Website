@@ -135,7 +135,7 @@
         let aiDifficulty = "Medium";
         let isGameOver = false;
         let isPlayerTurn = true; // Track if it's the player's turn or AI's
-        let isGameInProgress = false; // Track if game is in progress to block clicks
+        let isGameInProgress = false; // Block clicks while AI is making its move
 
         const difficultySelect = document.getElementById("difficulty");
         let difficulty = "medium"; // Default difficulty
@@ -163,6 +163,7 @@
             gameBoard[randomCell] = 'O';
             currentPlayer = 'X';
             isPlayerTurn = true; // Allow player to move again
+            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -183,6 +184,7 @@
             }
             currentPlayer = 'X';
             isPlayerTurn = true; // Allow player to move again
+            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -193,6 +195,7 @@
             gameBoard[bestMove] = 'O';
             currentPlayer = 'X';
             isPlayerTurn = true; // Allow player to move again
+            isGameInProgress = false; // Unblock player clicks
             renderBoard();
             checkForWinner();
         }
@@ -237,37 +240,17 @@
             ];
 
             return winningCombinations.some(combo => {
-                const [a, b, c] = combo;
-                return board[a] === player && board[b] === player && board[c] === player;
+                return combo.every(index => board[index] === player);
             });
         }
 
-        // Find Winning Move (for Blocking or Winning)
-        function findWinningMove(player) {
-            const winningCombinations = [
-                [0, 1, 2],
-                [3, 4, 5],
-                [6, 7, 8],
-                [0, 3, 6],
-                [1, 4, 7],
-                [2, 5, 8],
-                [0, 4, 8],
-                [2, 4, 6],
-            ];
-
-            for (let combo of winningCombinations) {
-                const [a, b, c] = combo;
-                if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) {
-                    return c;
-                }
-                if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) {
-                    return b;
-                }
-                if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) {
-                    return a;
-                }
+        // Update turn indicator based on current player
+        function updateTurnIndicator() {
+            if (isGameOver) {
+                turnIndicator.textContent = `Game Over!`;
+            } else {
+                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
             }
-            return -1;
         }
 
         // Render the board
@@ -299,15 +282,6 @@
             checkForWinner();
             currentPlayer = 'O';
             aiMove(); // AI's turn after player move
-        }
-
-        // Update turn indicator based on current player
-        function updateTurnIndicator() {
-            if (isGameOver) {
-                turnIndicator.textContent = `Game Over!`;
-            } else {
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-            }
         }
 
         // Check for winner or tie
