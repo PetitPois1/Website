@@ -111,7 +111,9 @@
         let aiDifficulty = "Medium";
 
         const difficultySelect = document.getElementById("difficulty");
-        let difficulty = "medium";
+        let difficulty = "medium"; // Default difficulty
+
+        let isGameOver = false;
 
         // AI Logic Placeholder Functions (Easy, Medium, Hard)
         function aiMove() {
@@ -240,7 +242,7 @@
             return -1; // No winning move
         }
 
-        // Render the Tic-Tac-Toe board
+        // Initialize game board rendering
         function renderBoard() {
             board.innerHTML = '';
             gameBoard.forEach((cell, index) => {
@@ -250,18 +252,23 @@
                 cellElement.addEventListener('click', () => handleCellClick(index));
                 board.appendChild(cellElement);
             });
+
+            // Update scores
             updateScores();
         }
 
-        // Handle cell click
         function handleCellClick(index) {
-            if (gameBoard[index] !== null || (difficulty === 'coop' && currentPlayer === 'O')) return;
+            if (gameBoard[index] !== null || isGameOver) return;
+
             gameBoard[index] = currentPlayer;
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             renderBoard();
             checkForWinner();
-            if (currentPlayer === 'O' && difficulty !== 'coop') {
+
+            if (currentPlayer === 'X') {
+                currentPlayer = 'O';
                 aiMove();
+            } else {
+                currentPlayer = 'X';
             }
         }
 
@@ -302,10 +309,11 @@
         // Reset the game
         function resetGame() {
             gameBoard = Array(9).fill(null);
-            currentPlayer = Math.random() < 0.5 ? 'X' : 'O'; // Alternate who starts
+            currentPlayer = Math.random() < 0.5 ? 'X' : 'O'; // Alternate who starts (X or O)
             renderBoard();
             updateScores();
             turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+            isGameOver = false;
         }
 
         // Update scores display
