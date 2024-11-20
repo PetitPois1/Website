@@ -109,16 +109,16 @@
         let xScore = 0;
         let oScore = 0;
         let gameOver = false;
-
         const cells = document.querySelectorAll('.cell');
         const turnIndicator = document.getElementById('turn-indicator');
         const xScoreDisplay = document.getElementById('x-score');
         const oScoreDisplay = document.getElementById('o-score');
-
+        const difficultySelect = document.getElementById('difficulty');
+        
         // Listen for clicks on the cells to make a move
         cells.forEach((cell, index) => {
             cell.addEventListener('click', () => {
-                if (gameBoard[index] === '' && !gameOver) {
+                if (gameBoard[index] === '' && !gameOver && currentPlayer === 'X') {
                     gameBoard[index] = currentPlayer;
                     cell.textContent = currentPlayer;
                     if (checkWin(currentPlayer)) {
@@ -130,8 +130,9 @@
                         setTimeout(startNewGame, 1000); // Start a new game if it's a draw
                     } else {
                         // Switch player
-                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                        turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+                        currentPlayer = 'O';
+                        turnIndicator.textContent = `It's O's turn!`;
+                        aiMove();
                     }
                 }
             });
@@ -163,11 +164,35 @@
             }
         }
 
+        function aiMove() {
+            if (gameOver) return;
+
+            // AI makes a move
+            const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
+            const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+
+            gameBoard[move] = 'O';
+            cells[move].textContent = 'O';
+
+            if (checkWin('O')) {
+                gameOver = true;
+                updateScore('O');
+                setTimeout(startNewGame, 1000);
+            } else if (gameBoard.every(cell => cell !== '')) {
+                gameOver = true;
+                setTimeout(startNewGame, 1000); // Start a new game if it's a draw
+            } else {
+                // Switch player back to X
+                currentPlayer = 'X';
+                turnIndicator.textContent = `It's X's turn!`;
+            }
+        }
+
         function startNewGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Alternate the first player
-            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+            currentPlayer = 'X'; // Always start with X
+            turnIndicator.textContent = `It's X's turn!`;
             gameOver = false;
         }
 
