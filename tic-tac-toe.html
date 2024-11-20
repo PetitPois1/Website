@@ -77,6 +77,15 @@
             font-size: 20px;
             color: #fff;
             margin-top: 10px;
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .fade-in {
+            opacity: 1 !important;
         }
     </style>
 </head>
@@ -107,7 +116,7 @@
         <div class="cell" id="cell-7"></div>
         <div class="cell" id="cell-8"></div>
     </div>
-    <button id="go-home" onclick="startNewGame()">Go to Home</button>
+    <button id="go-home" onclick="goHome()">Go to Home</button>
 
     <script>
         let currentPlayer = 'X'; // X always starts
@@ -133,11 +142,19 @@
                         gameOver = true;
                         updateScore(currentPlayer);
                         gameStatus.textContent = `${currentPlayer} wins!`;
-                        setTimeout(startNewGame, 1000); // Start a new game after a short delay
+                        gameStatus.classList.add('fade-in'); // Fade in the winning message
+                        setTimeout(() => {
+                            gameStatus.classList.remove('fade-in');
+                            startNewGame();
+                        }, 2000); // Fade out and restart the game
                     } else if (gameBoard.every(cell => cell !== '')) {
                         gameOver = true;
                         gameStatus.textContent = "It's a draw!";
-                        setTimeout(startNewGame, 1000); // Start a new game if it's a draw
+                        gameStatus.classList.add('fade-in');
+                        setTimeout(() => {
+                            gameStatus.classList.remove('fade-in');
+                            startNewGame();
+                        }, 2000); // Fade out and restart the game
                     } else {
                         // Switch player
                         currentPlayer = 'O';
@@ -193,11 +210,19 @@
                 gameOver = true;
                 updateScore('O');
                 gameStatus.textContent = "O wins!";
-                setTimeout(startNewGame, 1000);
+                gameStatus.classList.add('fade-in');
+                setTimeout(() => {
+                    gameStatus.classList.remove('fade-in');
+                    startNewGame();
+                }, 2000); // Fade out and restart the game
             } else if (gameBoard.every(cell => cell !== '')) {
                 gameOver = true;
                 gameStatus.textContent = "It's a draw!";
-                setTimeout(startNewGame, 1000); // Start a new game if it's a draw
+                gameStatus.classList.add('fade-in');
+                setTimeout(() => {
+                    gameStatus.classList.remove('fade-in');
+                    startNewGame();
+                }, 2000); // Fade out and restart the game
             } else {
                 // Switch player back to X
                 currentPlayer = 'X';
@@ -220,16 +245,20 @@
                 currentPlayer = 'X';
                 turnIndicator.textContent = `It's X's turn!`;
             }
-
             round++;
         }
 
         function resetGameOnModeChange() {
-            // Reset the game completely when the mode is changed, but not the score
-            startNewGame();
+            xScore = 0;
+            oScore = 0;
+            xScoreDisplay.textContent = `X Score: ${xScore}`;
+            oScoreDisplay.textContent = `O Score: ${oScore}`;
+            startNewGame(); // Reset the game on mode change
         }
 
-        startNewGame(); // Start the first game automatically
+        function goHome() {
+            window.location.href = 'index.html'; // Redirect to the homepage
+        }
     </script>
 </body>
 </html>
