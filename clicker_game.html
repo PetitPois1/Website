@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Clicker Game</title>
+    <title>Simple Clicker Game</title>
     <style>
         body {
             display: flex;
@@ -22,26 +22,26 @@
             margin-bottom: 20px;
         }
         .circle {
-            width: 100px;
-            height: 100px;
+            width: 200px;
+            height: 200px;
             background-color: #6200ea;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 2rem;
             cursor: pointer;
-            margin: 20px;
+            margin: 30px;
             transition: transform 0.1s ease;
         }
         .circle:active {
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
-        .shop, .achievements {
+        .shop {
             width: 80%;
             margin: 20px auto;
         }
-        .shop-item, .achievement {
+        .shop-item {
             background-color: #3700b3;
             color: white;
             padding: 10px 20px;
@@ -49,38 +49,23 @@
             border-radius: 5px;
             border: none;
             font-size: 1rem;
+            cursor: pointer;
             text-align: center;
+            transition: background-color 0.3s ease;
         }
         .shop-item:hover {
             background-color: #6200ea;
         }
-        .disabled {
+        .shop-item.disabled {
             background-color: #adacac;
             cursor: not-allowed;
-        }
-        .achievement {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-        }
-        .achievement.unlocked {
-            background-color: #28a745;
         }
     </style>
 </head>
 <body>
-    <h1>Ultimate Clicker Game</h1>
+    <h1>Simple Clicker Game</h1>
     <div class="circle" id="circle">+1</div>
     <p>Clicks: <span id="clickCount">0</span></p>
-
-    <!-- Achievements Section -->
-    <div class="achievements">
-        <h2>Achievements</h2>
-        <div class="achievement" id="achievement-100">Reach 100 Clicks</div>
-        <div class="achievement" id="achievement-500">Reach 500 Clicks</div>
-        <div class="achievement" id="achievement-1000">Reach 1,000 Clicks</div>
-        <div class="achievement" id="achievement-5000">Reach 5,000 Clicks</div>
-    </div>
 
     <!-- Shop Section -->
     <div class="shop">
@@ -90,11 +75,6 @@
         <button class="shop-item disabled" id="goldenClick">Golden Click (+5 per click) - 100 clicks</button>
         <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
         <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
-        <button class="shop-item disabled" id="ultraAutoClicker">Ultra Auto Clicker (+10 clicks/sec) - 1000 clicks</button>
-        <button class="shop-item disabled" id="clickMultiplier">Double Click Value - 2000 clicks</button>
-        <button class="shop-item disabled" id="stormAutoClicker">Storm Auto Clicker (+20 clicks/sec) - 5000 clicks</button>
-        <button class="shop-item disabled" id="prestigeBoost">Prestige Boost (Click Value x5) - 10000 clicks</button>
-        <button class="shop-item disabled" id="clickGod">Click God Mode (+50 per click) - 20000 clicks</button>
     </div>
 
     <script>
@@ -106,27 +86,15 @@
             autoClicker: { cost: 50, effect: () => autoClick(1) },
             goldenClick: { cost: 100, effect: () => clickValue += 5 },
             superAutoClicker: { cost: 200, effect: () => autoClick(5) },
-            megaClick: { cost: 500, effect: () => clickValue += 10 },
-            ultraAutoClicker: { cost: 1000, effect: () => autoClick(10) },
-            clickMultiplier: { cost: 2000, effect: () => clickValue *= 2 },
-            stormAutoClicker: { cost: 5000, effect: () => autoClick(20) },
-            prestigeBoost: { cost: 10000, effect: () => clickValue *= 5 },
-            clickGod: { cost: 20000, effect: () => clickValue += 50 }
+            megaClick: { cost: 500, effect: () => clickValue += 10 }
         };
-
-        const achievements = [
-            { id: "achievement-100", required: 100 },
-            { id: "achievement-500", required: 500 },
-            { id: "achievement-1000", required: 1000 },
-            { id: "achievement-5000", required: 5000 }
-        ];
 
         const clickCount = document.getElementById('clickCount');
         const circle = document.getElementById('circle');
 
         // Update UI
         function updateUI() {
-            clickCount.textContent = clicks;
+            clickCount.textContent = Math.round(clicks);
 
             // Update shop buttons
             for (const id in items) {
@@ -134,17 +102,8 @@
                 const item = items[id];
                 button.disabled = clicks < item.cost;
                 button.classList.toggle('disabled', clicks < item.cost);
-                button.textContent = `${button.dataset.text} - ${Math.ceil(item.cost)} clicks`;
+                button.textContent = `${button.dataset.text} - ${Math.round(item.cost)} clicks`;
             }
-
-            // Update achievements
-            achievements.forEach(achievement => {
-                const achievementElement = document.getElementById(achievement.id);
-                if (clicks >= achievement.required) {
-                    achievementElement.classList.add('unlocked');
-                    achievementElement.textContent = `Unlocked: ${achievement.required} Clicks`;
-                }
-            });
         }
 
         // Handle circle click
