@@ -73,6 +73,11 @@
             color: #fff;
             margin-top: 10px;
         }
+        .game-status {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -90,6 +95,7 @@
         </div>
     </div>
     <div id="turn-indicator" class="turn-indicator">It's X's turn!</div>
+    <div id="game-status" class="game-status"></div>
     <div class="board" id="board">
         <div class="cell" id="cell-0"></div>
         <div class="cell" id="cell-1"></div>
@@ -114,6 +120,7 @@
         const turnIndicator = document.getElementById('turn-indicator');
         const xScoreDisplay = document.getElementById('x-score');
         const oScoreDisplay = document.getElementById('o-score');
+        const gameStatus = document.getElementById('game-status');
         const difficultySelect = document.getElementById('difficulty');
         
         // Listen for clicks on the cells to make a move
@@ -125,9 +132,11 @@
                     if (checkWin(currentPlayer)) {
                         gameOver = true;
                         updateScore(currentPlayer);
+                        gameStatus.textContent = `${currentPlayer} wins!`;
                         setTimeout(startNewGame, 1000); // Start a new game after a short delay
                     } else if (gameBoard.every(cell => cell !== '')) {
                         gameOver = true;
+                        gameStatus.textContent = "It's a draw!";
                         setTimeout(startNewGame, 1000); // Start a new game if it's a draw
                     } else {
                         // Switch player
@@ -183,9 +192,11 @@
             if (checkWin('O')) {
                 gameOver = true;
                 updateScore('O');
+                gameStatus.textContent = "O wins!";
                 setTimeout(startNewGame, 1000);
             } else if (gameBoard.every(cell => cell !== '')) {
                 gameOver = true;
+                gameStatus.textContent = "It's a draw!";
                 setTimeout(startNewGame, 1000); // Start a new game if it's a draw
             } else {
                 // Switch player back to X
@@ -198,13 +209,8 @@
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
             gameOver = false;
-            
-            // Reset the score when starting a new game
-            xScore = 0;
-            oScore = 0;
-            xScoreDisplay.textContent = `X Score: ${xScore}`;
-            oScoreDisplay.textContent = `O Score: ${oScore}`;
-            
+            gameStatus.textContent = '';
+
             // Alternate who starts
             if (round % 2 === 0) {
                 currentPlayer = 'O';
@@ -219,7 +225,7 @@
         }
 
         function resetGameOnModeChange() {
-            // Reset the game completely when the mode is changed
+            // Reset the game completely when the mode is changed, but not the score
             startNewGame();
         }
 
