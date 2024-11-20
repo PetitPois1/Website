@@ -3,76 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom</title>
+    <title>Game Hub</title>
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1e1e2f;
-            color: white;
-        }
+        /* General Navbar Styling */
         .navbar {
             width: 100%;
             background-color: #333;
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px;
+            align-items: center;
+            padding: 15px 30px; /* Increased padding for more space */
             position: fixed;
             top: 0;
             left: 0;
             z-index: 100;
-            align-items: center;
         }
-        .navbar a, .navbar button {
+
+        .navbar button, .navbar a {
             color: white;
             text-decoration: none;
-            font-size: 16px;
+            font-size: 18px;
             padding: 10px 20px;
-            margin: 0 10px;
-            background: none;
-            border: none;
+            margin: 0 15px; /* Increased gap between elements */
+            background-color: transparent;
+            border: 2px solid transparent;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
+
         .navbar a:hover, .navbar button:hover {
-            background-color: #444;
+            background-color: #6200ea;
+            border-color: #6200ea; /* Add border color on hover for effect */
         }
-        .navbar .search-container {
+
+        .navbar .nav-left {
             display: flex;
             align-items: center;
-            background-color: #444;
-            border-radius: 20px;
-            padding: 5px;
         }
-        .navbar .search-container input {
-            padding: 8px;
-            font-size: 14px;
-            border: none;
-            border-radius: 15px;
-            outline: none;
-            background-color: transparent;
+
+        .navbar .nav-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar a, .navbar button {
+            font-weight: 600; /* Slightly bolder text */
+        }
+
+        /* Main Content Styling */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e2f;
             color: white;
+            padding-top: 80px; /* Adjust to make room for navbar */
         }
+
         .home-content {
-            margin-top: 80px; /* Adjust to make room for navbar */
             text-align: center;
         }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #adacac;
-        }
-        .game-buttons-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            justify-items: center;
-            margin-bottom: 30px;
-        }
+
         .game-button {
             background-color: #6200ea;
             color: white;
@@ -81,58 +72,48 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin: 10px;
             transition: background-color 0.3s ease;
-            width: 100%; /* Ensure buttons fill their grid cells */
-            text-align: center;
         }
+
         .game-button:hover {
             background-color: #3700b3;
         }
-        .more-games-container {
+
+        /* Search Bar Styling */
+        .search-container {
             display: flex;
             justify-content: center;
-            width: 100%;
+            margin: 20px 0;
         }
-        .more-games-button {
-            background-color: #6200ea;
-            color: white;
+
+        .search-bar {
+            padding: 10px;
             font-size: 16px;
-            padding: 15px 30px;
-            border: none;
+            border: 2px solid #6200ea;
             border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            max-width: 200px;
-            text-align: center;
+            width: 300px;
         }
-        .more-games-button:hover {
-            background-color: #3700b3;
+
+        .clear-btn {
+            background-color: transparent;
+            border: none;
+            color: #6200ea;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: -35px;
+            margin-top: 5px;
         }
     </style>
-    <script>
-        function searchGames() {
-            const searchQuery = document.getElementById('search').value.toLowerCase();
-            const gameButtons = document.querySelectorAll('.game-button');
-            gameButtons.forEach(button => {
-                const gameName = button.textContent.toLowerCase();
-                if (gameName.includes(searchQuery)) {
-                    button.style.display = 'block'; // Show game button
-                } else {
-                    button.style.display = 'none'; // Hide game button
-                }
-            });
-        }
-    </script>
 </head>
 <body>
 
     <!-- Navbar -->
     <div class="navbar">
-        <button onclick="window.location.href='index.html'">Home</button>
-        <div class="search-container">
-            <input type="text" id="search" placeholder="Search games..." oninput="searchGames()">
+        <div class="nav-left">
+            <button onclick="window.location.href='index.html'">Home</button>
         </div>
-        <div>
+        <div class="nav-right">
             <a href="about.html">About</a>
             <a href="feedback.html">Feedback</a>
             <a href="bugs.html">Bugs</a>
@@ -143,20 +124,26 @@
     <div class="home-content">
         <h1>Welcome to Game Hub</h1>
         <h2>Beta games may not work</h2>
-        
-        <!-- Game Buttons Container -->
-        <div class="game-buttons-container">
-            <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
-            <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
-            <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
-            <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game..." />
+            <button class="clear-btn" id="clear-btn" onclick="clearSearch()">X</button>
         </div>
 
-        <!-- More Games Button -->
-        <div class="more-games-container">
-            <button class="more-games-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
-        </div>
+        <!-- Game Buttons -->
+        <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
+        <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
+        <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
+        <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
+        <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
     </div>
+
+    <script>
+        function clearSearch() {
+            document.getElementById('search-bar').value = '';
+        }
+    </script>
 
 </body>
 </html>
