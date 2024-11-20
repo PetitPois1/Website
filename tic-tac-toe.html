@@ -124,140 +124,164 @@
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script>
-        const board = document.getElementById('board');
-        const turnIndicator = document.getElementById('turn-indicator');
-        const winnerMessage = document.getElementById('winner-message');
         let currentPlayer = 'X';
-        let gameBoard = Array(9).fill(null);
-        let xScore = 0;
-        let oScore = 0;
-        let difficulty = "medium";
-        let isGameOver = false;
+let gameBoard = Array(9).fill(null);
+let xScore = 0;
+let oScore = 0;
+let difficulty = "medium";
+let isGameOver = false;
 
-        const difficultySelect = document.getElementById("difficulty");
+// AI Difficulty Selector
+const difficultySelect = document.getElementById("difficulty");
 
-        function aiMove() {
-            if (difficulty === 'coop') return;
-            setTimeout(() => {
-                if (difficulty === 'easy') easyAI();
-                else if (difficulty === 'medium') mediumAI();
-                else if (difficulty === 'hard') hardAI();
-            }, 1000);
-        }
+// Render the game board
+function renderBoard() {
+    board.innerHTML = '';
+    gameBoard.forEach((c, i) => {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.textContent = c || ''; // Display 'X' or 'O', or keep empty
+        cell.addEventListener('click', () => handleCellClick(i));
+        board.appendChild(cell);
+    });
+}
 
-        function easyAI() {
-            const emptyCells = gameBoard.map((c, i) => c === null ? i : null).filter(i => i !== null);
-            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-            makeMove(randomCell, 'O');
-        }
+// Handle cell clicks
+function handleCellClick(i) {
+    if (isGameOver || gameBoard[i] !== null) return; // Ignore clicks on occupied cells or after game over
 
-        function mediumAI() {
-            const blockOrWin = findWinningMove('O') || findWinningMove('X');
-            const move = blockOrWin !== -1 ? blockOrWin : gameBoard.findIndex(c => c === null);
-            makeMove(move, 'O');
-        }
+    if (currentPlayer === 'X') {
+        makeMove(i, 'X');
+        if (!isGameOver && difficulty !== 'coop') aiMove();
+    }
+}
 
-        function hardAI() {
-            const bestMove = minimax(gameBoard, 'O').index;
-            makeMove(bestMove, 'O');
-        }
+// Make a move on the board
+function makeMove(index, player) {
+    gameBoard[index] = player;
+    renderBoard();
 
-        function findWinningMove(player) {
-            const winningCombos = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
-            ];
-            for (let combo of winningCombos) {
-                const [a, b, c] = combo;
-                if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) return c;
-                if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) return b;
-                if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) return a;
-            }
-            return -1;
-        }
+    if (checkWinner(gameBoard, player)) {
+        endGame(`${player} wins!`);
+        updateScore(player);
+    } else if (!gameBoard.includes(null)) {
+        endGame("It's a Tie!");
+    } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        updateTurnIndicator();
+    }
+}
 
-        function minimax(board, player) {
-            const empty = board.map((c, i) => c === null ? i : null).filter(i => i !== null);
-            if (checkWinner(board, 'O')) return { score: 10 };
-            if (checkWinner(board, 'X')) return { score: -10 };
-            if (!empty.length) return { score: 0 };
+// Update turn indicator
+function updateTurnIndicator() {
+    turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+}
 
-            const scores = [];
-            empty.forEach(i => {
-                board[i] = player;
-                const score = minimax(board, player === 'O' ? 'X' : 'O').score;
-                scores.push({ index: i, score });
-                board[i] = null;
-            });
+// End the game and display a message
+function endGame(message) {
+    isGameOver = true;
+    winnerMessage.textContent = message;
+    winnerMessage.classList.add('appear');
+    setTimeout(() => winnerMessage.classList.remove('appear'), 2000);
+}
 
-            return player === 'O'
-                ? scores.reduce((best, s) => (s.score > best.score ? s : best))
-                : scores.reduce((best, s) => (s.score < best.score ? s : best));
-        }
+// Reset the game
+function resetGame() {
+    gameBoard = Array(9).fill(null);
+    currentPlayer = 'X';
+    isGameOver = false;
+    updateTurnIndicator();
+    renderBoard();
+}
 
-        function checkWinner(board, player) {
-            const combos = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
-            ];
-            return combos.some(([a, b, c]) => board[a] === player && board[b] === player && board[c] === player);
-        }
+// AI Move Logic
+function aiMove() {
+    if (isGameOver || difficulty === 'coop') return;
 
-        function renderBoard() {
-            board.innerHTML = '';
-            gameBoard.forEach((c, i) => {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.textContent = c;
-                cell.addEventListener('click', () => handleCellClick(i));
-                board.appendChild(cell);
-            });
-        }
+    setTimeout(() => {
+        if (difficulty === 'easy') easyAI();
+        else if (difficulty === 'medium') mediumAI();
+        else if (difficulty === 'hard') hardAI();
+    }, 500); // Delay for a better user experience
+}
 
-        function handleCellClick(i) {
-            if (gameBoard[i] || isGameOver) return;
-            makeMove(i, currentPlayer);
-            if (!isGameOver && currentPlayer === 'X') aiMove();
-        }
+function easyAI() {
+    const emptyCells = gameBoard.map((c, i) => (c === null ? i : null)).filter(i => i !== null);
+    const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    makeMove(randomCell, 'O');
+}
 
-        function makeMove(i, player) {
-            gameBoard[i] = player;
-            renderBoard();
-            if (checkWinner(gameBoard, player)) {
-                endGame(`${player} wins!`);
-                player === 'X' ? xScore++ : oScore++;
-            } else if (!gameBoard.includes(null)) {
-                endGame('It\'s a Tie!');
-            } else {
-                currentPlayer = player === 'X' ? 'O' : 'X';
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-            }
-        }
+function mediumAI() {
+    const move = findWinningMove('O') || findWinningMove('X') || gameBoard.findIndex(c => c === null);
+    makeMove(move, 'O');
+}
 
-        function endGame(msg) {
-            turnIndicator.textContent = msg;
-            winnerMessage.textContent = msg;
-            winnerMessage.classList.add('appear');
-            setTimeout(() => winnerMessage.classList.remove('appear'), 2000);
-            isGameOver = true;
-        }
+function hardAI() {
+    const bestMove = minimax(gameBoard, 'O').index;
+    makeMove(bestMove, 'O');
+}
 
-        function resetGame() {
-            gameBoard = Array(9).fill(null);
-            currentPlayer = 'X';
-            isGameOver = false;
-            turnIndicator.textContent = 'Player X\'s Turn';
-            renderBoard();
-        }
+function findWinningMove(player) {
+    const winningCombos = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+    ];
+    for (let combo of winningCombos) {
+        const [a, b, c] = combo;
+        if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) return c;
+        if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) return b;
+        if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) return a;
+    }
+    return null;
+}
 
-        difficultySelect.addEventListener('change', () => {
-            difficulty = difficultySelect.value;
-            resetGame();
-        });
+function minimax(board, player) {
+    const emptyCells = board.map((c, i) => (c === null ? i : null)).filter(i => i !== null);
 
-        renderBoard();
+    if (checkWinner(board, 'O')) return { score: 10 };
+    if (checkWinner(board, 'X')) return { score: -10 };
+    if (emptyCells.length === 0) return { score: 0 };
+
+    const moves = [];
+    for (let index of emptyCells) {
+        const newBoard = [...board];
+        newBoard[index] = player;
+        const result = minimax(newBoard, player === 'O' ? 'X' : 'O');
+        moves.push({ index, score: result.score });
+    }
+
+    return player === 'O'
+        ? moves.reduce((best, move) => (move.score > best.score ? move : best))
+        : moves.reduce((best, move) => (move.score < best.score ? move : best));
+}
+
+function checkWinner(board, player) {
+    const winningCombos = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+    ];
+    return winningCombos.some(combo => combo.every(i => board[i] === player));
+}
+
+function updateScore(player) {
+    if (player === 'X') xScore++;
+    else oScore++;
+
+    document.getElementById('x-score').textContent = `X Score: ${xScore}`;
+    document.getElementById('o-score').textContent = `O Score: ${oScore}`;
+}
+
+// Difficulty change listener
+difficultySelect.addEventListener('change', () => {
+    difficulty = difficultySelect.value;
+    resetGame();
+});
+
+// Initial rendering
+resetGame();
+
     </script>
 </body>
 </html>
