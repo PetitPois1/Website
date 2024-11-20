@@ -24,7 +24,7 @@
             text-decoration: none;
             font-size: 18px;
             padding: 10px 20px;
-            margin: 0 15px; /* Increased gap between elements */
+            margin: 0 25px; /* Increased gap between elements */
             background-color: transparent;
             border: 2px solid transparent;
             border-radius: 5px;
@@ -62,6 +62,14 @@
 
         .home-content {
             text-align: center;
+        }
+
+        /* Flexbox Layout for Buttons */
+        .game-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Always center the buttons */
+            margin-bottom: 20px;
         }
 
         .game-button {
@@ -104,6 +112,11 @@
             margin-left: -35px;
             margin-top: 5px;
         }
+
+        /* More Games Button Styling */
+        .more-games {
+            margin-top: 20px; /* Give extra margin to push it down */
+        }
     </style>
 </head>
 <body>
@@ -132,11 +145,17 @@
         </div>
 
         <!-- Game Buttons -->
-        <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
-        <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
-        <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
-        <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
-        <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+        <div class="game-buttons">
+            <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
+            <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
+            <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
+            <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
+        </div>
+
+        <!-- More Games Button -->
+        <div class="more-games">
+            <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+        </div>
     </div>
 
     <script>
