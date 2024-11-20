@@ -3,159 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom</title>
+    <title>Tic-Tac-Toe Game</title>
     <style>
         body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             margin: 0;
-            font-family: Arial, sans-serif;
             background-color: #1e1e2f;
-            color: white;
+            font-family: Arial, sans-serif;
         }
-        .navbar {
+        .score-board {
             width: 100%;
-            background-color: #333;
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
             align-items: center;
-        }
-        .navbar a, .navbar button {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .navbar a:hover, .navbar button:hover {
-            background-color: #444;
-        }
-        .navbar .search-container {
-            display: flex;
-            align-items: center;
-            background-color: #444;
-            border-radius: 20px;
-            padding: 5px;
-        }
-        .navbar .search-container input {
-            padding: 8px;
-            font-size: 14px;
-            border: none;
-            border-radius: 15px;
-            outline: none;
-            background-color: transparent;
-            color: white;
-        }
-        .home-content {
-            margin-top: 80px; /* Adjust to make room for navbar */
-            text-align: center;
-        }
-        h1 {
-            font-size: 2.5rem;
             margin-bottom: 20px;
+            padding: 10px;
+            font-size: 18px;
+            color: #fff;
         }
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #adacac;
-        }
-        .game-buttons-container {
+        .board {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            justify-items: center;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-top: 20px;
         }
-        .game-button {
-            background-color: #6200ea;
-            color: white;
-            font-size: 16px;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            width: 100%; /* Ensure buttons fill their grid cells */
-            text-align: center;
-        }
-        .game-button:hover {
-            background-color: #3700b3;
-        }
-        .more-games-container {
+        .cell {
+            width: 100px;
+            height: 100px;
             display: flex;
             justify-content: center;
-            width: 100%;
-        }
-        .more-games-button {
-            background-color: #6200ea;
+            align-items: center;
+            font-size: 36px;
+            background-color: #2a2a40;
             color: white;
-            font-size: 16px;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
+            border: 2px solid #6200ea;
             cursor: pointer;
-            width: 100%;
-            max-width: 200px;
-            text-align: center;
         }
-        .more-games-button:hover {
+        .cell:hover {
             background-color: #3700b3;
         }
-    </style>
-    <script>
-        function searchGames() {
-            const searchQuery = document.getElementById('search').value.toLowerCase();
-            const gameButtons = document.querySelectorAll('.game-button');
-            gameButtons.forEach(button => {
-                const gameName = button.textContent.toLowerCase();
-                if (gameName.includes(searchQuery)) {
-                    button.style.display = 'block'; // Show game button
-                } else {
-                    button.style.display = 'none'; // Hide game button
-                }
-            });
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #6200ea;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
-    </script>
+        button:hover {
+            background-color: #3700b3;
+        }
+        select {
+            padding: 5px;
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .turn-indicator {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 10px;
+        }
+        .game-status {
+            font-size: 40px; /* Larger size for the winning message */
+            color: #fff;
+            margin-top: 10px;
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            text-align: center;
+        }
+        .fade-in {
+            opacity: 1 !important;
+        }
+    </style>
 </head>
 <body>
-
-    <!-- Navbar -->
-    <div class="navbar">
-        <button onclick="window.location.href='index.html'">Home</button>
-        <div class="search-container">
-            <input type="text" id="search" placeholder="Search games..." oninput="searchGames()">
-        </div>
+    <div class="score-board">
+        <span id="x-score">X Score: 0</span>
+        <span id="o-score">O Score: 0</span>
         <div>
-            <a href="about.html">About</a>
-            <a href="feedback.html">Feedback</a>
+            Difficulty:
+            <select id="difficulty" onchange="resetGameOnModeChange()">
+                <option value="coop">2 Player</option>
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
         </div>
     </div>
+    <div id="turn-indicator" class="turn-indicator">It's X's turn!</div>
+    <div id="game-status" class="game-status"></div>
+    <div class="board" id="board">
+        <div class="cell" id="cell-0"></div>
+        <div class="cell" id="cell-1"></div>
+        <div class="cell" id="cell-2"></div>
+        <div class="cell" id="cell-3"></div>
+        <div class="cell" id="cell-4"></div>
+        <div class="cell" id="cell-5"></div>
+        <div class="cell" id="cell-6"></div>
+        <div class="cell" id="cell-7"></div>
+        <div class="cell" id="cell-8"></div>
+    </div>
+    <button id="go-home" onclick="goHome()">Go to Home</button>
 
-    <!-- Main Content -->
-    <div class="home-content">
-        <h1>Welcome to Game Hub</h1>
-        <h2>Beta games may not work</h2>
+    <script>
+        let currentPlayer = 'X'; // X always starts
+        let gameBoard = ['', '', '', '', '', '', '', '', '']; // Empty game board
+        let xScore = 0;
+        let oScore = 0;
+        let gameOver = false;
+        let round = 1; // Track rounds to switch starting player
+        const cells = document.querySelectorAll('.cell');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const xScoreDisplay = document.getElementById('x-score');
+        const oScoreDisplay = document.getElementById('o-score');
+        const gameStatus = document.getElementById('game-status');
+        const difficultySelect = document.getElementById('difficulty');
         
-        <!-- Game Buttons Container -->
-        <div class="game-buttons-container">
-            <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
-            <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
-            <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
-            <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
-        </div>
+        // Listen for clicks on the cells to make a move
+        cells.forEach((cell, index) => {
+            cell.addEventListener('click', () => {
+                if (gameBoard[index] === '' && !gameOver && currentPlayer === 'X') {
+                    gameBoard[index] = currentPlayer;
+                    cell.textContent = currentPlayer;
+                    if (checkWin(currentPlayer)) {
+                        gameOver = true;
+                        updateScore(currentPlayer);
+                        gameStatus.textContent = `${currentPlayer} wins!`;
+                        gameStatus.classList.add('fade-in'); // Fade in the winning message
+                        setTimeout(() => {
+                            gameStatus.classList.remove('fade-in');
+                            startNewGame();
+                        }, 2000); // Fade out and restart the game
+                    } else if (gameBoard.every(cell => cell !== '')) {
+                        gameOver = true;
+                        gameStatus.textContent = "It's a draw!";
+                        gameStatus.classList.add('fade-in');
+                        setTimeout(() => {
+                            gameStatus.classList.remove('fade-in');
+                            startNewGame();
+                        }, 2000); // Fade out and restart the game
+                    } else {
+                        // Switch player
+                        currentPlayer = 'O';
+                        turnIndicator.textContent = `It's O's turn!`;
+                        if (difficultySelect.value === 'coop') {
+                            // If it's 2-player mode, let O move
+                            return;
+                        } else {
+                            setTimeout(aiMove, 500); // AI move after 500ms delay
+                        }
+                    }
+                }
+            });
+        });
 
-        <!-- More Games Button -->
-        <div class="more-games-container">
-            <button class="more-games-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
-        </div>
-    </div>
+        function checkWin(player) {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+            return winningCombinations.some(combination => 
+                combination.every(index => gameBoard[index] === player)
+            );
+        }
 
+        function updateScore(winner) {
+            if (winner === 'X') {
+                xScore++;
+                xScoreDisplay.textContent = `X Score: ${xScore}`;
+            } else {
+                oScore++;
+                oScoreDisplay.textContent = `O Score: ${oScore}`;
+            }
+        }
+
+        function aiMove() {
+            if (gameOver || difficultySelect.value === 'coop') return; // Skip AI move in 2-player mode
+
+            // AI makes a move
+            const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
+            const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+
+            gameBoard[move] = 'O';
+            cells[move].textContent = 'O';
+
+            if (checkWin('O')) {
+                gameOver = true;
+                updateScore('O');
+                gameStatus.textContent = "O wins!";
+                gameStatus.classList.add('fade-in');
+                setTimeout(() => {
+                    gameStatus.classList.remove('fade-in');
+                    startNewGame();
+                }, 2000); // Fade out and restart the game
+            } else if (gameBoard.every(cell => cell !== '')) {
+                gameOver = true;
+                gameStatus.textContent = "It's a draw!";
+                gameStatus.classList.add('fade-in');
+                setTimeout(() => {
+                    gameStatus.classList.remove('fade-in');
+                    startNewGame();
+                }, 2000); // Fade out and restart the game
+            } else {
+                // Switch player back to X
+                currentPlayer = 'X';
+                turnIndicator.textContent = `It's X's turn!`;
+            }
+        }
+
+        function startNewGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            cells.forEach(cell => cell.textContent = ''); // Clear the board
+            gameOver = false;
+            round++;
+            currentPlayer = round % 2 === 0 ? 'O' : 'X'; // Switch starting player after each game
+            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+        }
+
+        function resetGameOnModeChange() {
+            xScore = 0;
+            oScore = 0;
+            xScoreDisplay.textContent = `X Score: ${xScore}`;
+            oScoreDisplay.textContent = `O Score: ${oScore}`;
+            startNewGame(); // Reset the game on mode change
+        }
+
+        function goHome() {
+            window.location.href = 'index.html'; // Redirect to the homepage
+        }
+    </script>
 </body>
 </html>
