@@ -39,13 +39,6 @@
         button:hover {
             background-color: #4a00e0;
         }
-        #startButton {
-            margin-top: 20px;
-            background-color: #6200ea;
-        }
-        #startButton:hover {
-            background-color: #4a00e0;
-        }
         #gameButton {
             background-color: red;
             font-size: 24px;
@@ -81,44 +74,6 @@
         <div>
             Player Score: <span id="playerScore">0</span>
         </div>
-        <button onclick="window.location.href='index.html'">Back to Home</button>
-    </header>
+        <button onclick="window.location.href='inde
 
-    <button id="gameButton" onclick="handleClick()">Click Me</button>
-
-    <div id="levelCompleteScreen">Level Complete!</div>
-
-    <button id="startButton" onclick="startGame()">Start Game</button>
-
-    <script>
-        let level = 1;
-        let playerScore = 0;
-        let gameRunning = false;
-        let gameButton = document.getElementById('gameButton');
-        let playerScoreElem = document.getElementById('playerScore');
-        let startButton = document.getElementById('startButton');
-        let levelCompleteScreen = document.getElementById('levelCompleteScreen');
-
-        function startGame() {
-            level = 1;
-            playerScore = 0;
-            updateScore();
-            gameRunning = true;
-            startButton.style.display = 'none'; // Hide Start Button
-            showButton(); // Show the game button
-        }
-
-        function updateScore() {
-            playerScoreElem.textContent = playerScore;
-        }
-
-        function showButton() {
-            gameButton.disabled = false;
-            gameButton.classList.remove('green', 'disabled');
-            gameButton.style.backgroundColor = "red";
-
-            if (level === 1) {
-                gameButton.classList.remove('green');
-                gameButton.style.backgroundColor = "red"; // Start with red
-            } else if (level === 2) {
-                // Wait 
+   
