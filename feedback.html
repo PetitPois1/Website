@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback - Game Hub</title>
+    <style>
+        /* General Navbar Styling */
+        .navbar {
+            width: 100%;
+            background-color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .navbar button, .navbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 0 25px;
+            background-color: transparent;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .navbar a:hover, .navbar button:hover {
+            background-color: #6200ea;
+            border-color: #6200ea;
+        }
+
+        /* Main Content Styling */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e2f;
+            color: white;
+            padding-top: 80px; /* Adjust to make room for navbar */
+        }
+
+        .feedback-content {
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #adacac;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #444;
+            border-radius: 10px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 1000px;
+            border: none;
+            border-radius: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="nav-left">
+            <button onclick="window.location.href='index.html'">Home</button>
+        </div>
+        <div class="nav-right">
+            <a href="about.html">About</a>
+            <a href="feedback.html">Feedback</a>
+            <a href="bugs.html">Bugs</a>
+        </div>
+    </div>
+
+    <!-- Feedback Form -->
+    <div class="feedback-content">
+        <h1>Feedback</h1>
+        <h2>Your feedback helps us improve!</h2>
+
+        <div class="form-container">
+            <!-- Google Form Embed -->
+            <<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd45FeCAKo9HHLZmavNfuoJwF2P9-XarllMdlfOJqXRQGIGVQ/viewform?embedded=true" width="640" height="672" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+    </div>
+
+</body>
+</html>
 
