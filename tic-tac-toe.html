@@ -109,6 +109,7 @@
         let xScore = 0;
         let oScore = 0;
         let gameOver = false;
+        let round = 1; // Track rounds to switch starting player
         const cells = document.querySelectorAll('.cell');
         const turnIndicator = document.getElementById('turn-indicator');
         const xScoreDisplay = document.getElementById('x-score');
@@ -132,7 +133,12 @@
                         // Switch player
                         currentPlayer = 'O';
                         turnIndicator.textContent = `It's O's turn!`;
-                        aiMove();
+                        if (difficultySelect.value === 'coop') {
+                            // If it's 2-player mode, wait for O's move
+                            return;
+                        } else {
+                            setTimeout(aiMove, 500); // AI move after 500ms delay
+                        }
                     }
                 }
             });
@@ -191,9 +197,18 @@
         function startNewGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
-            currentPlayer = 'X'; // Always start with X
-            turnIndicator.textContent = `It's X's turn!`;
             gameOver = false;
+            
+            // Alternate who starts
+            if (round % 2 === 0) {
+                currentPlayer = 'O';
+                turnIndicator.textContent = `It's O's turn!`;
+            } else {
+                currentPlayer = 'X';
+                turnIndicator.textContent = `It's X's turn!`;
+            }
+
+            round++;
         }
 
         startNewGame(); // Start the first game automatically
