@@ -27,6 +27,41 @@
             margin-bottom: 30px;
             color: #adacac;
         }
+        .navbar {
+            width: 100%;
+            background-color: #333;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        .navbar a, .navbar button {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .navbar a:hover, .navbar button:hover {
+            background-color: #444;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+        .search-container input {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+        }
         .game-button {
             background-color: #6200ea;
             color: white;
@@ -43,10 +78,22 @@
         }
         .home-content {
             text-align: center;
+            margin-top: 80px; /* Adjust to make room for navbar */
         }
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <button onclick="window.location.href='index.html'">Home</button>
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search games...">
+        </div>
+        <div>
+            <a href="about.html">About</a>
+            <a href="feedback.html">Feedback</a>
+        </div>
+    </div>
+
     <div class="home-content">
         <h1>Welcome to Game Hub</h1>
         <h2>Beta games may not work</h2>
