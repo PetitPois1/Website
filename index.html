@@ -6,26 +6,10 @@
     <title>Classroom</title>
     <style>
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #1e1e2f;
             font-family: Arial, sans-serif;
+            background-color: #1e1e2f;
             color: white;
-        }
-        h1 {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        h2 {
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 30px;
-            color: #adacac;
         }
         .navbar {
             width: 100%;
@@ -36,7 +20,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 10;
+            z-index: 100;
+            align-items: center;
         }
         .navbar a, .navbar button {
             color: white;
@@ -44,23 +29,42 @@
             font-size: 16px;
             padding: 10px 20px;
             margin: 0 10px;
-            border: none;
             background: none;
+            border: none;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s ease;
         }
         .navbar a:hover, .navbar button:hover {
             background-color: #444;
         }
-        .search-container {
+        .navbar .search-container {
             display: flex;
             align-items: center;
-        }
-        .search-container input {
+            background-color: #444;
+            border-radius: 20px;
             padding: 5px;
-            font-size: 16px;
-            border-radius: 5px;
+        }
+        .navbar .search-container input {
+            padding: 8px;
+            font-size: 14px;
             border: none;
+            border-radius: 15px;
+            outline: none;
+            background-color: transparent;
+            color: white;
+        }
+        .home-content {
+            margin-top: 80px; /* Adjust to make room for navbar */
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #adacac;
         }
         .game-button {
             background-color: #6200ea;
@@ -72,21 +76,40 @@
             cursor: pointer;
             margin: 10px;
             transition: background-color 0.3s ease;
+            width: 200px;
+            text-align: center;
         }
         .game-button:hover {
             background-color: #3700b3;
         }
-        .home-content {
-            text-align: center;
-            margin-top: 80px; /* Adjust to make room for navbar */
+        .game-buttons-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
     </style>
+    <script>
+        function searchGames() {
+            const searchQuery = document.getElementById('search').value.toLowerCase();
+            const gameButtons = document.querySelectorAll('.game-button');
+            gameButtons.forEach(button => {
+                const gameName = button.textContent.toLowerCase();
+                if (gameName.includes(searchQuery)) {
+                    button.style.display = 'block'; // Show game button
+                } else {
+                    button.style.display = 'none'; // Hide game button
+                }
+            });
+        }
+    </script>
 </head>
 <body>
+
+    <!-- Navbar -->
     <div class="navbar">
         <button onclick="window.location.href='index.html'">Home</button>
         <div class="search-container">
-            <input type="text" id="search" placeholder="Search games...">
+            <input type="text" id="search" placeholder="Search games..." oninput="searchGames()">
         </div>
         <div>
             <a href="about.html">About</a>
@@ -94,14 +117,20 @@
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="home-content">
         <h1>Welcome to Game Hub</h1>
         <h2>Beta games may not work</h2>
-        <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
-        <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
-        <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
-        <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
-        <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+        
+        <!-- Game Buttons -->
+        <div class="game-buttons-container">
+            <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
+            <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
+            <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
+            <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
+            <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+        </div>
     </div>
+
 </body>
 </html>
