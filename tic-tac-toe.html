@@ -89,74 +89,56 @@
             </select>
         </div>
     </div>
-    <div class="turn-indicator" id="turn-indicator">Player X's Turn</div>
-    <div class="board" id="board"></div>
-    <button onclick="resetGame()">Restart Game</button>
+    <div id="turn-indicator" class="turn-indicator">It's X's turn!</div>
+    <div class="board" id="board">
+        <div class="cell" id="cell-0"></div>
+        <div class="cell" id="cell-1"></div>
+        <div class="cell" id="cell-2"></div>
+        <div class="cell" id="cell-3"></div>
+        <div class="cell" id="cell-4"></div>
+        <div class="cell" id="cell-5"></div>
+        <div class="cell" id="cell-6"></div>
+        <div class="cell" id="cell-7"></div>
+        <div class="cell" id="cell-8"></div>
+    </div>
+    <button id="go-home" onclick="startNewGame()">Go to Home</button>
 
     <script>
-        const board = document.getElementById('board');
-        const turnIndicator = document.getElementById('turn-indicator');
-        let gameBoard = Array(9).fill(null);
-        let currentPlayer = 'X';
+        let currentPlayer = 'X'; // X always starts
+        let gameBoard = ['', '', '', '', '', '', '', '', '']; // Empty game board
         let xScore = 0;
         let oScore = 0;
-        let isGameOver = false;
-        let difficulty = 'medium';
+        let gameOver = false;
 
-        const difficultySelect = document.getElementById("difficulty");
-        difficultySelect.addEventListener('change', () => {
-            difficulty = difficultySelect.value;
-            resetGame();
+        const cells = document.querySelectorAll('.cell');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const xScoreDisplay = document.getElementById('x-score');
+        const oScoreDisplay = document.getElementById('o-score');
+
+        // Listen for clicks on the cells to make a move
+        cells.forEach((cell, index) => {
+            cell.addEventListener('click', () => {
+                if (gameBoard[index] === '' && !gameOver) {
+                    gameBoard[index] = currentPlayer;
+                    cell.textContent = currentPlayer;
+                    if (checkWin(currentPlayer)) {
+                        gameOver = true;
+                        updateScore(currentPlayer);
+                        setTimeout(startNewGame, 1000); // Start a new game after a short delay
+                    } else if (gameBoard.every(cell => cell !== '')) {
+                        gameOver = true;
+                        setTimeout(startNewGame, 1000); // Start a new game if it's a draw
+                    } else {
+                        // Switch player
+                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                        turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+                    }
+                }
+            });
         });
 
-        function renderBoard() {
-            board.innerHTML = '';
-            gameBoard.forEach((cell, index) => {
-                const cellElement = document.createElement('div');
-                cellElement.classList.add('cell');
-                cellElement.textContent = cell;
-                cellElement.addEventListener('click', () => handleCellClick(index));
-                board.appendChild(cellElement);
-            });
-        }
-
-        function handleCellClick(index) {
-            if (gameBoard[index] || isGameOver || (currentPlayer === 'O' && difficulty !== 'coop')) {
-                return;
-            }
-
-            gameBoard[index] = currentPlayer;
-            renderBoard();
-            checkForWinner();
-
-            if (!isGameOver) {
-                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-
-                if (currentPlayer === 'O' && difficulty !== 'coop') {
-                    aiMove();
-                }
-            }
-        }
-
-        function aiMove() {
-            setTimeout(() => {
-                const emptyCells = gameBoard.map((val, idx) => val === null ? idx : null).filter(idx => idx !== null);
-                const randomMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-
-                gameBoard[randomMove] = 'O';
-                renderBoard();
-                checkForWinner();
-
-                if (!isGameOver) {
-                    currentPlayer = 'X';
-                    turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-                }
-            }, 500); // 500ms delay
-        }
-
-        function checkForWinner() {
-            const winningCombos = [
+        function checkWin(player) {
+            const winningCombinations = [
                 [0, 1, 2],
                 [3, 4, 5],
                 [6, 7, 8],
@@ -166,40 +148,30 @@
                 [0, 4, 8],
                 [2, 4, 6],
             ];
+            return winningCombinations.some(combination => 
+                combination.every(index => gameBoard[index] === player)
+            );
+        }
 
-            for (const combo of winningCombos) {
-                const [a, b, c] = combo;
-                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
-                    isGameOver = true;
-                    turnIndicator.textContent = `${gameBoard[a]} Wins!`;
-
-                    if (gameBoard[a] === 'X') xScore++;
-                    else oScore++;
-                    updateScores();
-                    return;
-                }
-            }
-
-            if (!gameBoard.includes(null)) {
-                isGameOver = true;
-                turnIndicator.textContent = "It's a Tie!";
+        function updateScore(winner) {
+            if (winner === 'X') {
+                xScore++;
+                xScoreDisplay.textContent = `X Score: ${xScore}`;
+            } else {
+                oScore++;
+                oScoreDisplay.textContent = `O Score: ${oScore}`;
             }
         }
 
-        function updateScores() {
-            document.getElementById('x-score').textContent = `X Score: ${xScore}`;
-            document.getElementById('o-score').textContent = `O Score: ${oScore}`;
+        function startNewGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            cells.forEach(cell => cell.textContent = '');
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Alternate the first player
+            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+            gameOver = false;
         }
 
-        function resetGame() {
-            gameBoard = Array(9).fill(null);
-            currentPlayer = 'X';
-            isGameOver = false;
-            renderBoard();
-            turnIndicator.textContent = "Player X's Turn";
-        }
-
-        renderBoard();
+        startNewGame(); // Start the first game automatically
     </script>
 </body>
 </html>
