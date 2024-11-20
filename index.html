@@ -86,6 +86,26 @@
             display: flex;
             align-items: center;
         }
+           .other-button {
+            background-color: #6200ea;
+            color: white;
+            font-size: 16px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s ease;
+            width: 200px;
+            text-align: center;
+        }
+        .other-button:hover {
+            background-color: #3700b3;
+        }
+        .other-buttons-container {
+            display: flex;
+            align-items: center;
+        }
     </style>
     <script>
         function searchGames() {
@@ -127,7 +147,7 @@
             <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
             <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
             <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
-            <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+            <button class="other-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
         </div>
     </div>
 
