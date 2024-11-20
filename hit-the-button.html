@@ -61,6 +61,19 @@
             background-color: gray;
             cursor: not-allowed;
         }
+        #levelCompleteScreen {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 24px;
+            padding: 30px;
+            border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +86,8 @@
 
     <button id="gameButton" onclick="handleClick()">Click Me</button>
 
+    <div id="levelCompleteScreen">Level Complete!</div>
+
     <button id="startButton" onclick="startGame()">Start Game</button>
 
     <script>
@@ -82,7 +97,8 @@
         let gameButton = document.getElementById('gameButton');
         let playerScoreElem = document.getElementById('playerScore');
         let startButton = document.getElementById('startButton');
-        
+        let levelCompleteScreen = document.getElementById('levelCompleteScreen');
+
         function startGame() {
             level = 1;
             playerScore = 0;
@@ -97,70 +113,12 @@
         }
 
         function showButton() {
-            if (level === 1) {
-                gameButton.style.backgroundColor = "red"; // Start with red
-                gameButton.classList.remove('green', 'disabled');
-                gameButton.disabled = false;
-            } else if (level === 2) {
-                // Wait for green light
-                gameButton.style.backgroundColor = "red";
-                gameButton.disabled = false;
-                gameButton.classList.remove('green');
-                setTimeout(() => {
-                    gameButton.classList.add('green'); // Turn green after a delay
-                }, Math.random() * 3000 + 1000); // Green after 1-4 seconds
-            } else if (level === 3) {
-                // Avoid clicking when red
-                gameButton.style.backgroundColor = "red";
-                gameButton.disabled = false;
-                gameButton.classList.remove('green');
-                setTimeout(() => {
-                    gameButton.classList.add('green'); // Turn green after a delay
-                }, Math.random() * 3000 + 1000); // Green after 1-4 seconds
-            }
-        }
-
-        function handleClick() {
-            if (!gameRunning) return;
-
-            if (level === 1) {
-                // Just hit the button on level 1
-                playerScore++;
-                level++;
-                updateScore();
-                showButton();
-            } else if (level === 2) {
-                // Wait for the green light on level 2
-                if (gameButton.classList.contains('green')) {
-                    playerScore++;
-                    level++;
-                    updateScore();
-                    showButton();
-                } else {
-                    alert("Oops! You clicked too early.");
-                    resetGame();
-                }
-            } else if (level === 3) {
-                // Avoid clicking when red on level 3
-                if (gameButton.classList.contains('green')) {
-                    playerScore++;
-                    alert("Congratulations! You completed all 3 levels.");
-                    resetGame();
-                } else {
-                    alert("Oops! You clicked when the button was red.");
-                    resetGame();
-                }
-            }
-        }
-
-        function resetGame() {
-            gameRunning = false;
-            startButton.style.display = 'inline-block'; // Show the start button again
-            gameButton.disabled = true; // Disable the button
+            gameButton.disabled = false;
             gameButton.classList.remove('green', 'disabled');
-            gameButton.style.backgroundColor = 'gray'; // Disable button appearance
-        }
-    </script>
-</body>
-</html>
+            gameButton.style.backgroundColor = "red";
 
+            if (level === 1) {
+                gameButton.classList.remove('green');
+                gameButton.style.backgroundColor = "red"; // Start with red
+            } else if (level === 2) {
+                // Wait 
