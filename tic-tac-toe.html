@@ -74,15 +74,16 @@
             margin-top: 10px;
         }
         .game-status {
-            font-size: 20px;
+            font-size: 40px; /* Larger size for the winning message */
             color: #fff;
             margin-top: 10px;
             position: absolute;
-            top: 30%;
+            top: 35%;
             left: 50%;
             transform: translateX(-50%);
             opacity: 0;
             transition: opacity 1s ease-in-out;
+            text-align: center;
         }
         .fade-in {
             opacity: 1 !important;
@@ -237,14 +238,15 @@
             gameStatus.textContent = '';
 
             // Alternate who starts
-            if (round % 2 === 0) {
+            if (round % 2 === 0 && difficultySelect.value !== 'coop') {
                 currentPlayer = 'O';
                 turnIndicator.textContent = `It's O's turn!`;
-                setTimeout(aiMove, 500); // AI starts immediately
+                setTimeout(aiMove, 500); // AI makes the first move
             } else {
                 currentPlayer = 'X';
                 turnIndicator.textContent = `It's X's turn!`;
             }
+
             round++;
         }
 
