@@ -235,18 +235,8 @@
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
             gameOver = false;
-            gameStatus.textContent = '';
-
-            // Alternate who starts
-            if (round % 2 === 0 && difficultySelect.value !== 'coop') {
-                currentPlayer = 'O';
-                turnIndicator.textContent = `It's O's turn!`;
-                setTimeout(aiMove, 500); // AI makes the first move
-            } else {
-                currentPlayer = 'X';
-                turnIndicator.textContent = `It's X's turn!`;
-            }
-
+            currentPlayer = round % 2 === 1 ? 'X' : 'O';
+            turnIndicator.textContent = currentPlayer === 'X' ? "It's X's turn!" : "It's O's turn!";
             round++;
         }
 
