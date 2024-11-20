@@ -66,6 +66,13 @@
             margin-bottom: 30px;
             color: #adacac;
         }
+        .game-buttons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            justify-items: center;
+            margin-bottom: 30px;
+        }
         .game-button {
             background-color: #6200ea;
             color: white;
@@ -74,19 +81,19 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin: 10px;
             transition: background-color 0.3s ease;
-            width: 200px;
+            width: 100%; /* Ensure buttons fill their grid cells */
             text-align: center;
         }
         .game-button:hover {
             background-color: #3700b3;
         }
-        .game-buttons-container {
+        .more-games-container {
             display: flex;
-            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
-           .other-button {
+        .more-games-button {
             background-color: #6200ea;
             color: white;
             font-size: 16px;
@@ -94,17 +101,12 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin: 10px;
-            transition: background-color 0.3s ease;
-            width: 200px;
+            width: 100%;
+            max-width: 200px;
             text-align: center;
         }
-        .other-button:hover {
+        .more-games-button:hover {
             background-color: #3700b3;
-        }
-        .other-buttons-container {
-            display: flex;
-            align-items: center;
         }
     </style>
     <script>
@@ -141,15 +143,17 @@
         <h1>Welcome to Game Hub</h1>
         <h2>Beta games may not work</h2>
         
-        <!-- Game Buttons -->
+        <!-- Game Buttons Container -->
         <div class="game-buttons-container">
             <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
             <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe (BETA)</button>
             <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
             <button class="game-button" onclick="window.location.href='clicker_game.html'">Circle Clicker (BETA)</button>
-        <\div>
-        <div>
-            <button class="other-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
+        </div>
+
+        <!-- More Games Button -->
+        <div class="more-games-container">
+            <button class="more-games-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
         </div>
     </div>
 
