@@ -161,7 +161,7 @@
                         currentPlayer = 'O';
                         turnIndicator.textContent = `It's O's turn!`;
                         if (difficultySelect.value === 'coop') {
-                            // If it's 2-player mode, let O move
+                            // If it's 2-player mode, wait for O's move
                             return;
                         } else {
                             setTimeout(aiMove, 500); // AI move after 500ms delay
@@ -198,7 +198,7 @@
         }
 
         function aiMove() {
-            if (gameOver || difficultySelect.value === 'coop') return; // Skip AI move in 2-player mode
+            if (gameOver) return;
 
             // AI makes a move
             const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
@@ -233,11 +233,11 @@
 
         function startNewGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
-            cells.forEach(cell => cell.textContent = ''); // Clear the board
+            cells.forEach(cell => cell.textContent = '');
             gameOver = false;
+            currentPlayer = round % 2 === 1 ? 'X' : 'O';
+            turnIndicator.textContent = currentPlayer === 'X' ? "It's X's turn!" : "It's O's turn!";
             round++;
-            currentPlayer = round % 2 === 0 ? 'O' : 'X'; // Switch starting player after each game
-            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
         }
 
         function resetGameOnModeChange() {
