@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugs - Game Hub</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1e1e2f;
+            color: white;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #333;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            align-items: center;
+        }
+        .navbar a, .navbar button {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .navbar a:hover, .navbar button:hover {
+            background-color: #444;
+        }
+        .bugs-content {
+            margin-top: 80px; /* Adjust to make room for navbar */
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #adacac;
+        }
+        .bug-list {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 15px;
+            background-color: #444;
+            border-radius: 10px;
+        }
+        .bug-item {
+            padding: 10px;
+            border-bottom: 1px solid #fff;
+        }
+        .feedback-link {
+            background-color: #6200ea;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        .feedback-link:hover {
+            background-color: #3700b3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <button onclick="window.location.href='index.html'">Home</button>
+        <div>
+            <a href="about.html">About</a>
+            <a href="feedback.html">Feedback</a>
+            <a href="bugs.html">Bugs</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bugs-content">
+        <h1>Known Bugs</h1>
+        <h2>Game-specific bugs can be reported here</h2>
+
+        <!-- Bug List -->
+        <div class="bug-list">
+            <div class="bug-item"><strong>Snake Game:</strong> Slow response on mobile</div>
+            <div class="bug-item"><strong>Tic-Tac-Toe:</strong> AI occasionally gets stuck</div>
+        </div>
+
+        <!-- Feedback Link -->
+        <button class="feedback-link" onclick="window.location.href='feedback.html'">Submit Feedback</button>
+    </div>
+
+</body>
+</html>
 
