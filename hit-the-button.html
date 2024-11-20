@@ -1,1 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Just Hit the Button</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1e1e2f;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #6200ea;
+            color: white;
+        }
+        header div {
+            display: flex;
+            align-items: center;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4a00e0;
+        }
+        #startButton {
+            margin-top: 20px;
+            background-color: #6200ea;
+        }
+        #startButton:hover {
+            background-color: #4a00e0;
+        }
+        #gameButton {
+            background-color: red;
+            font-size: 24px;
+            padding: 20px 50px;
+            border-radius: 10px;
+            margin-top: 50px;
+            cursor: pointer;
+        }
+        #gameButton.green {
+            background-color: green;
+        }
+        #gameButton.disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            Player Score: <span id="playerScore">0</span>
+        </div>
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+    </header>
+
+    <button id="gameButton" onclick="handleClick()">Click Me</button>
+
+    <button id="startButton" onclick="startGame()">Start Game</button>
+
+    <script>
+        let level = 1;
+        let playerScore = 0;
+        let gameRunning = false;
+        let gameButton = document.getElementById('gameButton');
+        let playerScoreElem = document.getElementById('playerScore');
+        let startButton = document.getElementById('startButton');
+        
+        function startGame() {
+            level = 1;
+            playerScore = 0;
+            updateScore();
+            gameRunning = true;
+            startButton.style.display = 'none'; // Hide Start Button
+            showButton(); // Show the game button
+        }
+
+        function updateScore() {
+            playerScoreElem.textContent = playerScore;
+        }
+
+        function showButton() {
+            if (level === 1) {
+                gameButton.style.backgroundColor = "red"; // Start with red
+                gameButton.classList.remove('green', 'disabled');
+                gameButton.disabled = false;
+            } else if (level === 2) {
+                // Wait for green light
+                gameButton.style.backgroundColor = "red";
+                gameButton.disabled = false;
+                gameButton.classList.remove('green');
+                setTimeout(() => {
+                    gameButton.classList.add('green'); // Turn green after a delay
+                }, Math.random() * 3000 + 1000); // Green after 1-4 seconds
+            } else if (level === 3) {
+                // Avoid clicking when red
+                gameButton.style.backgroundColor = "red";
+                gameButton.disabled = false;
+                gameButton.classList.remove('green');
+                setTimeout(() => {
+                    gameButton.classList.add('green'); // Turn green after a delay
+                }, Math.random() * 3000 + 1000); // Green after 1-4 seconds
+            }
+        }
+
+        function handleClick() {
+            if (!gameRunning) return;
+
+            if (level === 1) {
+                // Just hit the button on level 1
+                playerScore++;
+                level++;
+                updateScore();
+                showButton();
+            } else if (level === 2) {
+                // Wait for the green light on level 2
+                if (gameButton.classList.contains('green')) {
+                    playerScore++;
+                    level++;
+                    updateScore();
+                    showButton();
+                } else {
+                    alert("Oops! You clicked too early.");
+                    resetGame();
+                }
+            } else if (level === 3) {
+                // Avoid clicking when red on level 3
+                if (gameButton.classList.contains('green')) {
+                    playerScore++;
+                    alert("Congratulations! You completed all 3 levels.");
+                    resetGame();
+                } else {
+                    alert("Oops! You clicked when the button was red.");
+                    resetGame();
+                }
+            }
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            startButton.style.display = 'inline-block'; // Show the start button again
+            gameButton.disabled = true; // Disable the button
+            gameButton.classList.remove('green', 'disabled');
+            gameButton.style.backgroundColor = 'gray'; // Disable button appearance
+        }
+    </script>
+</body>
+</html>
 
