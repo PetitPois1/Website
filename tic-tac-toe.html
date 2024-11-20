@@ -109,7 +109,7 @@
         <div>
             Difficulty:
             <select id="difficulty">
-                <option value="coop">Coop (2 Player)</option>
+                <option value="coop">2 Player</option>
                 <option value="easy">Easy</option>
                 <option value="medium" selected>Medium</option>
                 <option value="hard">Hard</option>
@@ -121,167 +121,146 @@
         <!-- Tic-Tac-Toe cells will go here -->
     </div>
     <div id="winner-message" class="fade-message"></div>
-    <button onclick="window.location.href='index.html'">Back to Home</button>
+    <button onclick="window.location.reload()">Restart Game</button>
 
     <script>
+        const board = document.getElementById('board');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const winnerMessage = document.getElementById('winner-message');
+        const difficultySelect = document.getElementById('difficulty');
+
+        let gameBoard = Array(9).fill(null);
         let currentPlayer = 'X';
-let gameBoard = Array(9).fill(null);
-let xScore = 0;
-let oScore = 0;
-let difficulty = "medium";
-let isGameOver = false;
+        let xScore = 0;
+        let oScore = 0;
+        let difficulty = 'medium';
+        let isGameOver = false;
 
-// AI Difficulty Selector
-const difficultySelect = document.getElementById("difficulty");
+        const winningCombinations = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
 
-// Render the game board
-function renderBoard() {
-    board.innerHTML = '';
-    gameBoard.forEach((c, i) => {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.textContent = c || ''; // Display 'X' or 'O', or keep empty
-        cell.addEventListener('click', () => handleCellClick(i));
-        board.appendChild(cell);
-    });
-}
+        function renderBoard() {
+            board.innerHTML = '';
+            gameBoard.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.textContent = cell;
+                cellElement.addEventListener('click', () => handleCellClick(index));
+                board.appendChild(cellElement);
+            });
+            turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
+        }
 
-// Handle cell clicks
-function handleCellClick(i) {
-    if (isGameOver || gameBoard[i] !== null) return; // Ignore clicks on occupied cells or after game over
+        function handleCellClick(index) {
+            if (gameBoard[index] || isGameOver) return;
 
-    if (currentPlayer === 'X') {
-        makeMove(i, 'X');
-        if (!isGameOver && difficulty !== 'coop') aiMove();
-    }
-}
+            gameBoard[index] = currentPlayer;
+            renderBoard();
+            checkForWinner();
 
-// Make a move on the board
-function makeMove(index, player) {
-    gameBoard[index] = player;
-    renderBoard();
+            if (!isGameOver && currentPlayer === 'X' && difficulty !== 'coop') {
+                currentPlayer = 'O';
+                turnIndicator.textContent = `Player O's Turn`;
+                setTimeout(aiMove, 500); // AI delay set to 500ms
+            } else if (!isGameOver) {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
+        }
 
-    if (checkWinner(gameBoard, player)) {
-        endGame(`${player} wins!`);
-        updateScore(player);
-    } else if (!gameBoard.includes(null)) {
-        endGame("It's a Tie!");
-    } else {
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-        updateTurnIndicator();
-    }
-}
+        function aiMove() {
+            const emptyCells = gameBoard
+                .map((cell, index) => (cell === null ? index : null))
+                .filter((index) => index !== null);
 
-// Update turn indicator
-function updateTurnIndicator() {
-    turnIndicator.textContent = `Player ${currentPlayer}'s Turn`;
-}
+            if (difficulty === 'easy') {
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                gameBoard[randomCell] = 'O';
+            } else if (difficulty === 'medium') {
+                const move = findWinningMove('O') || findWinningMove('X') || emptyCells[0];
+                gameBoard[move] = 'O';
+            }
 
-// End the game and display a message
-function endGame(message) {
-    isGameOver = true;
-    winnerMessage.textContent = message;
-    winnerMessage.classList.add('appear');
-    setTimeout(() => winnerMessage.classList.remove('appear'), 2000);
-}
+            renderBoard();
+            checkForWinner();
+            currentPlayer = 'X';
+            turnIndicator.textContent = `Player X's Turn`;
+        }
 
-// Reset the game
-function resetGame() {
-    gameBoard = Array(9).fill(null);
-    currentPlayer = 'X';
-    isGameOver = false;
-    updateTurnIndicator();
-    renderBoard();
-}
+        function findWinningMove(player) {
+            for (const [a, b, c] of winningCombinations) {
+                if (
+                    gameBoard[a] === player &&
+                    gameBoard[b] === player &&
+                    !gameBoard[c]
+                )
+                    return c;
+                if (
+                    gameBoard[a] === player &&
+                    !gameBoard[b] &&
+                    gameBoard[c] === player
+                )
+                    return b;
+                if (
+                    !gameBoard[a] &&
+                    gameBoard[b] === player &&
+                    gameBoard[c] === player
+                )
+                    return a;
+            }
+            return null;
+        }
 
-// AI Move Logic
-function aiMove() {
-    if (isGameOver || difficulty === 'coop') return;
+        function checkForWinner() {
+            for (const [a, b, c] of winningCombinations) {
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    isGameOver = true;
+                    turnIndicator.textContent = `Player ${gameBoard[a]} Wins!`;
+                    winnerMessage.textContent = `Player ${gameBoard[a]} Wins!`;
+                    winnerMessage.classList.add('appear');
+                    setTimeout(() => winnerMessage.classList.remove('appear'), 2000);
 
-    setTimeout(() => {
-        if (difficulty === 'easy') easyAI();
-        else if (difficulty === 'medium') mediumAI();
-        else if (difficulty === 'hard') hardAI();
-    }, 500); // Delay for a better user experience
-}
+                    if (gameBoard[a] === 'X') xScore++;
+                    else oScore++;
+                    updateScores();
+                    return;
+                }
+            }
 
-function easyAI() {
-    const emptyCells = gameBoard.map((c, i) => (c === null ? i : null)).filter(i => i !== null);
-    const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    makeMove(randomCell, 'O');
-}
+            if (!gameBoard.includes(null)) {
+                isGameOver = true;
+                turnIndicator.textContent = "It's a Tie!";
+                winnerMessage.textContent = "It's a Tie!";
+                winnerMessage.classList.add('appear');
+                setTimeout(() => winnerMessage.classList.remove('appear'), 2000);
+            }
+        }
 
-function mediumAI() {
-    const move = findWinningMove('O') || findWinningMove('X') || gameBoard.findIndex(c => c === null);
-    makeMove(move, 'O');
-}
+        function updateScores() {
+            document.getElementById('x-score').textContent = `X Score: ${xScore}`;
+            document.getElementById('o-score').textContent = `O Score: ${oScore}`;
+        }
 
-function hardAI() {
-    const bestMove = minimax(gameBoard, 'O').index;
-    makeMove(bestMove, 'O');
-}
+        difficultySelect.addEventListener('change', (e) => {
+            difficulty = e.target.value;
+            resetGame();
+        });
 
-function findWinningMove(player) {
-    const winningCombos = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],
-        [0, 4, 8], [2, 4, 6]
-    ];
-    for (let combo of winningCombos) {
-        const [a, b, c] = combo;
-        if (gameBoard[a] === player && gameBoard[b] === player && gameBoard[c] === null) return c;
-        if (gameBoard[a] === player && gameBoard[c] === player && gameBoard[b] === null) return b;
-        if (gameBoard[b] === player && gameBoard[c] === player && gameBoard[a] === null) return a;
-    }
-    return null;
-}
+        function resetGame() {
+            gameBoard = Array(9).fill(null);
+            currentPlayer = 'X';
+            isGameOver = false;
+            renderBoard();
+        }
 
-function minimax(board, player) {
-    const emptyCells = board.map((c, i) => (c === null ? i : null)).filter(i => i !== null);
-
-    if (checkWinner(board, 'O')) return { score: 10 };
-    if (checkWinner(board, 'X')) return { score: -10 };
-    if (emptyCells.length === 0) return { score: 0 };
-
-    const moves = [];
-    for (let index of emptyCells) {
-        const newBoard = [...board];
-        newBoard[index] = player;
-        const result = minimax(newBoard, player === 'O' ? 'X' : 'O');
-        moves.push({ index, score: result.score });
-    }
-
-    return player === 'O'
-        ? moves.reduce((best, move) => (move.score > best.score ? move : best))
-        : moves.reduce((best, move) => (move.score < best.score ? move : best));
-}
-
-function checkWinner(board, player) {
-    const winningCombos = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],
-        [0, 4, 8], [2, 4, 6]
-    ];
-    return winningCombos.some(combo => combo.every(i => board[i] === player));
-}
-
-function updateScore(player) {
-    if (player === 'X') xScore++;
-    else oScore++;
-
-    document.getElementById('x-score').textContent = `X Score: ${xScore}`;
-    document.getElementById('o-score').textContent = `O Score: ${oScore}`;
-}
-
-// Difficulty change listener
-difficultySelect.addEventListener('change', () => {
-    difficulty = difficultySelect.value;
-    resetGame();
-});
-
-// Initial rendering
-resetGame();
-
+        renderBoard();
     </script>
 </body>
 </html>
