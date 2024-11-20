@@ -101,6 +101,8 @@
             border: 2px solid #6200ea;
             border-radius: 5px;
             width: 300px;
+            background-color: #555; /* Gray background */
+            color: white; /* White text */
         }
 
         .clear-btn {
@@ -140,7 +142,7 @@
 
         <!-- Search Bar -->
         <div class="search-container">
-            <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game..." />
+            <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game..." oninput="filterGames()" />
             <button class="clear-btn" id="clear-btn" onclick="clearSearch()">X</button>
         </div>
 
@@ -159,8 +161,25 @@
     </div>
 
     <script>
+        // Clear the search bar
         function clearSearch() {
             document.getElementById('search-bar').value = '';
+            filterGames(); // Apply filter after clearing
+        }
+
+        // Filter the game buttons based on search input
+        function filterGames() {
+            const searchQuery = document.getElementById('search-bar').value.toLowerCase();
+            const buttons = document.querySelectorAll('.game-button');
+            
+            buttons.forEach(button => {
+                const gameName = button.innerText.toLowerCase();
+                if (gameName.includes(searchQuery)) {
+                    button.style.display = 'inline-block'; // Show the button
+                } else {
+                    button.style.display = 'none'; // Hide the button
+                }
+            });
         }
     </script>
 
