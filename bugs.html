@@ -5,51 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bugs - Game Hub</title>
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1e1e2f;
-            color: white;
-        }
+        /* General Navbar Styling */
         .navbar {
             width: 100%;
             background-color: #333;
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px;
+            align-items: center;
+            padding: 15px 30px; /* Increased padding for more space */
             position: fixed;
             top: 0;
             left: 0;
             z-index: 100;
-            align-items: center;
         }
-        .navbar a, .navbar button {
+
+        .navbar button, .navbar a {
             color: white;
             text-decoration: none;
-            font-size: 16px;
+            font-size: 18px;
             padding: 10px 20px;
-            margin: 0 10px;
-            background: none;
-            border: none;
+            margin: 0 15px; /* Increased gap between elements */
+            background-color: transparent;
+            border: 2px solid transparent;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
+
         .navbar a:hover, .navbar button:hover {
-            background-color: #444;
+            background-color: #6200ea;
+            border-color: #6200ea; /* Add border color on hover for effect */
         }
+
+        .navbar .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar .nav-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar a, .navbar button {
+            font-weight: 600; /* Slightly bolder text */
+        }
+
+        /* Main Content Styling */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e2f;
+            color: white;
+            padding-top: 80px; /* Adjust to make room for navbar */
+        }
+
         .bugs-content {
-            margin-top: 80px; /* Adjust to make room for navbar */
             text-align: center;
         }
+
         h1 {
             font-size: 2.5rem;
             margin-bottom: 20px;
         }
+
         h2 {
             font-size: 1.5rem;
             margin-bottom: 30px;
             color: #adacac;
         }
+
         .bug-list {
             text-align: left;
             margin: 20px auto;
@@ -58,21 +83,20 @@
             background-color: #444;
             border-radius: 10px;
         }
+
         .bug-item {
             padding: 10px;
             border-bottom: 1px solid #fff;
         }
+
         .feedback-link {
-            background-color: #6200ea;
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 30px;
+            color: #6200ea;
+            font-size: 16px;
+            text-decoration: none;
         }
+
         .feedback-link:hover {
-            background-color: #3700b3;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -80,8 +104,10 @@
 
     <!-- Navbar -->
     <div class="navbar">
-        <button onclick="window.location.href='index.html'">Home</button>
-        <div>
+        <div class="nav-left">
+            <button onclick="window.location.href='index.html'">Home</button>
+        </div>
+        <div class="nav-right">
             <a href="about.html">About</a>
             <a href="feedback.html">Feedback</a>
             <a href="bugs.html">Bugs</a>
@@ -100,9 +126,8 @@
         </div>
 
         <!-- Feedback Link -->
-        <button class="feedback-link" onclick="window.location.href='feedback.html'">Submit Feedback</button>
+        <p>If you have found a bug, please report it <a href="feedback.html" class="feedback-link">here</a>.</p>
     </div>
 
 </body>
 </html>
-
