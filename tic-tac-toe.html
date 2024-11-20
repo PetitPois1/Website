@@ -81,7 +81,7 @@
         <span id="o-score">O Score: 0</span>
         <div>
             Difficulty:
-            <select id="difficulty">
+            <select id="difficulty" onchange="resetGameOnModeChange()">
                 <option value="coop">2 Player</option>
                 <option value="easy">Easy</option>
                 <option value="medium" selected>Medium</option>
@@ -199,16 +199,28 @@
             cells.forEach(cell => cell.textContent = '');
             gameOver = false;
             
+            // Reset the score when starting a new game
+            xScore = 0;
+            oScore = 0;
+            xScoreDisplay.textContent = `X Score: ${xScore}`;
+            oScoreDisplay.textContent = `O Score: ${oScore}`;
+            
             // Alternate who starts
             if (round % 2 === 0) {
                 currentPlayer = 'O';
                 turnIndicator.textContent = `It's O's turn!`;
+                setTimeout(aiMove, 500); // AI starts immediately
             } else {
                 currentPlayer = 'X';
                 turnIndicator.textContent = `It's X's turn!`;
             }
 
             round++;
+        }
+
+        function resetGameOnModeChange() {
+            // Reset the game completely when the mode is changed
+            startNewGame();
         }
 
         startNewGame(); // Start the first game automatically
