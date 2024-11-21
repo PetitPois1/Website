@@ -84,6 +84,18 @@
             text-align: center;
             z-index: 2;
         }
+        #startScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.9); /* Slight dark background */
+        }
         #startScreen h1 {
             font-size: 48px;
             margin-bottom: 20px;
@@ -255,26 +267,32 @@
             if (moveInterval) clearInterval(moveInterval);
         }
 
+        // Go to home screen
+        function goHome() {
+            level = 1;
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('levelCompleteScreen').style.display = 'none';
+            document.getElementById('losingScreen').style.display = 'none';
+        }
+
+        // Reset the game
+        function resetGame() {
+            level = 1;
+            startNewLevel();
+        }
+
+        // Retry the current level after losing
         function retryLevel() {
             document.getElementById('losingScreen').style.display = 'none';
             startNewLevel();
         }
 
-        function resetGame() {
-            level = 1;
-            buttonClicked = false;
+        // Go to the next level
+        function nextLevel() {
             document.getElementById('levelCompleteScreen').style.display = 'none';
-            document.getElementById('losingScreen').style.display = 'none';
+            level++;
             startNewLevel();
         }
-
-        function goHome() {
-            window.location.href = 'index.html'; // Takes user back to the home page
-        }
-
-        window.onload = function() {
-            document.getElementById('startScreen').style.display = 'block';
-        };
     </script>
 </body>
 </html>
