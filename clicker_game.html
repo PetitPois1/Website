@@ -138,6 +138,29 @@
             }
         }
 
+        function saveProgress() {
+            const data = {
+                clicks,
+                clickValue,
+                itemCosts: Object.keys(items).reduce((acc, id) => {
+                    acc[id] = items[id].cost;
+                    return acc;
+                }, {})
+            };
+            localStorage.setItem('clickerGameSave', JSON.stringify(data));
+        }
+
+        function loadProgress() {
+            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
+            if (savedData) {
+                clicks = savedData.clicks;
+                clickValue = savedData.clickValue;
+                for (const id in savedData.itemCosts) {
+                    items[id].cost = savedData.itemCosts[id];
+                }
+            }
+        }
+
         function updateUI() {
             clickCount.textContent = formatNumber(Math.round(clicks));
             for (const id in items) {
@@ -152,6 +175,7 @@
         circle.addEventListener('click', () => {
             clicks += clickValue;
             updateUI();
+            saveProgress();
         });
 
         let autoClickValue = 0;
@@ -162,6 +186,7 @@
         setInterval(() => {
             clicks += autoClickValue;
             updateUI();
+            saveProgress();
         }, 1000);
 
         for (const id in items) {
@@ -174,10 +199,12 @@
                     item.effect();
                     item.cost *= 1.125;
                     updateUI();
+                    saveProgress();
                 }
             });
         }
 
+        loadProgress();
         updateUI();
     </script>
 </body>
