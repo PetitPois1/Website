@@ -89,7 +89,7 @@
             { x: 400, y: 300 },
             { x: 400, y: 100 },
             { x: 800, y: 100 },
-        ]; // Editable path
+        ]; // Fixed path
         let selectedTurret = null;
 
         // Turret details (damage per second and range)
@@ -178,7 +178,7 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the thicker path
+            // Draw the fixed path
             ctx.beginPath();
             ctx.moveTo(path[0].x, path[0].y);
             for (let i = 1; i < path.length; i++) {
@@ -238,9 +238,6 @@
                     turretPreview.x = x;
                     turretPreview.y = y;
                 }
-            } else {
-                // Handle editing the path
-                path.push({ x: e.offsetX, y: e.offsetY });
             }
         });
 
