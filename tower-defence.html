@@ -217,18 +217,14 @@
             requestAnimationFrame(render);
         }
 
-        // Handle click for placing turret
+        // Handle click for previewing turret placement
         canvas.addEventListener("click", (e) => {
-            if (selectedTurret && gold >= selectedTurret.cost && canPlaceTurret) {
+            if (selectedTurret && canPlaceTurret) {
                 const x = Math.floor(e.offsetX / gridSize) * gridSize;
                 const y = Math.floor(e.offsetY / gridSize) * gridSize;
                 if (turretPreview) {
-                    turrets.push(new Turret(x, y, selectedTurret.damage, selectedTurret.range));
-                    gold -= selectedTurret.cost;
-                    goldDisplay.innerText = gold;
-                    turretPreview = null; // Clear preview
-                    canPlaceTurret = false; // Disable further placements
-                    confirmButton.style.display = "none"; // Hide confirm button
+                    turretPreview.x = x;
+                    turretPreview.y = y;
                 }
             }
         });
@@ -245,9 +241,13 @@
         // Confirm placement button action
         confirmButton.addEventListener("click", () => {
             if (selectedTurret && gold >= selectedTurret.cost) {
-                canPlaceTurret = false;
-                turretPreview = null;
+                const newTurret = new Turret(turretPreview.x, turretPreview.y, selectedTurret.damage, selectedTurret.range);
+                turrets.push(newTurret);
+                gold -= selectedTurret.cost;
+                goldDisplay.innerText = gold;
+                turretPreview = null; // Clear preview
                 confirmButton.style.display = "none"; // Hide confirm button
+                canPlaceTurret = false; // Disable further placements
             }
         });
 
