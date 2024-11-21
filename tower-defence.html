@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background-color: #1b1b2f;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        .section {
+            display: none;
+            text-align: center;
+            margin: 20px;
+        }
+        .active {
+            display: block;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #66cc66;
+        }
+        button {
+            background-color: #004d00;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #66cc66;
+        }
+        canvas {
+            border: 2px solid white;
+            background-color: #2d2d44;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Page -->
+    <div id="startPage" class="section active">
+        <h1>Welcome to Tower Defense</h1>
+        <button onclick="goTo('levelSelect')">Start Game</button>
+    </div>
+
+    <!-- Level Select Page -->
+    <div id="levelSelectPage" class="section">
+        <h1>Select a Level</h1>
+        <button onclick="startGame(1)">Level 1</button>
+        <button onclick="startGame(2)">Level 2</button>
+        <button onclick="startGame(3)">Level 3</button>
+        <button onclick="goTo('startPage')">Back</button>
+    </div>
+
+    <!-- Game Page -->
+    <div id="gamePage" class="section">
+        <h1>Game in Progress</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <p id="gameInfo">Level: <span id="currentLevel">1</span></p>
+        <button onclick="goTo('levelSelect')">Back to Level Select</button>
+    </div>
+
+    <script>
+        // Navigation between sections
+        function goTo(page) {
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(page + 'Page').classList.add('active');
+        }
+
+        // Start the game at a selected level
+        function startGame(level) {
+            document.getElementById('currentLevel').textContent = level;
+            goTo('game');
+            initializeGame(level);
+        }
+
+        // Game logic
+        function initializeGame(level) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Define enemy path (you can extend this easily for different levels)
+            const paths = {
+                1: [{ x: 50, y: 550 }, { x: 300, y: 300 }, { x: 700, y: 50 }],
+                2: [{ x: 50, y: 50 }, { x: 300, y: 300 }, { x: 700, y: 550 }],
+                3: [{ x: 50, y: 300 }, { x: 400, y: 300 }, { x: 750, y: 300 }]
+            };
+
+            const currentPath = paths[level];
+            let enemies = [];
+            let spawnInterval;
+
+            // Create enemies
+            function spawnEnemy() {
+                enemies.push({ x: currentPath[0].x, y: currentPath[0].y, pathIndex: 0 });
+            }
+
+            // Move enemies
+            function moveEnemies() {
+                enemies.forEach(enemy => {
+                    const nextPoint = currentPath[enemy.pathIndex + 1];
+                    if (!nextPoint) return; // Enemy has reached the end
+
+                    const dx = nextPoint.x - enemy.x;
+                    const dy = nextPoint.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 5) {
+                        enemy.pathIndex++;
+                    } else {
+                        const speed = 2;
+                        enemy.x += (dx / distance) * speed;
+                        enemy.y += (dy / distance) * speed;
+                    }
+                });
+
+                // Remove enemies that reach the end
+                enemies = enemies.filter(enemy => enemy.pathIndex < currentPath.length - 1);
+            }
+
+            // Draw the game
+            function draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw path
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(currentPath[0].x, currentPath[0].y);
+                for (const point of currentPath) {
+                    ctx.lineTo(point.x, point.y);
+                }
+                ctx.stroke();
+
+                // Draw enemies
+                ctx.fillStyle = 'red';
+                enemies.forEach(enemy => {
+                    ctx.beginPath();
+                    ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Move enemies
+                moveEnemies();
+
+                // Loop the draw function
+                requestAnimationFrame(draw);
+            }
+
+            // Start game
+            enemies = [];
+            clearInterval(spawnInterval);
+            spawnInterval = setInterval(spawnEnemy, 1000);
+            draw();
+        }
+    </script>
+</body>
+</html>
 
