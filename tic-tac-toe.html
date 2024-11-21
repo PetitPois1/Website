@@ -74,7 +74,7 @@
             margin-top: 10px;
         }
         .game-status {
-            font-size: 40px; /* Larger size for the winning message */
+            font-size: 40px;
             color: #fff;
             margin-top: 10px;
             position: absolute;
@@ -120,12 +120,12 @@
     <button id="go-home" onclick="goHome()">Go to Home</button>
 
     <script>
-        let currentPlayer = 'X'; // X always starts
-        let gameBoard = ['', '', '', '', '', '', '', '', '']; // Empty game board
+        let currentPlayer = 'X'; 
+        let gameBoard = ['', '', '', '', '', '', '', '', '']; 
         let xScore = 0;
         let oScore = 0;
         let gameOver = false;
-        let round = 1; // Track rounds to switch starting player
+        let round = 1; 
         const cells = document.querySelectorAll('.cell');
         const turnIndicator = document.getElementById('turn-indicator');
         const xScoreDisplay = document.getElementById('x-score');
@@ -133,10 +133,9 @@
         const gameStatus = document.getElementById('game-status');
         const difficultySelect = document.getElementById('difficulty');
         
-        // Listen for clicks on the cells to make a move
         cells.forEach((cell, index) => {
             cell.addEventListener('click', () => {
-                if (gameBoard[index] === '' && !gameOver && (currentPlayer === 'X' || difficultySelect.value === 'coop')) {
+                if (gameBoard[index] === '' && !gameOver && currentPlayer === 'X') {
                     gameBoard[index] = currentPlayer;
                     cell.textContent = currentPlayer;
                     if (checkWin(currentPlayer)) {
@@ -147,7 +146,7 @@
                         setTimeout(() => {
                             gameStatus.classList.remove('fade-in');
                             startNewGame();
-                        }, 2000); // Fade out and restart the game
+                        }, 2000);
                     } else if (gameBoard.every(cell => cell !== '')) {
                         gameOver = true;
                         gameStatus.textContent = "It's a draw!";
@@ -157,14 +156,12 @@
                             startNewGame();
                         }, 2000);
                     } else {
-                        // Switch player
-                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                        turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+                        currentPlayer = 'O';
+                        turnIndicator.textContent = `It's O's turn!`;
                         if (difficultySelect.value === 'coop') {
-                            // If it's 2-player mode, wait for O's move
-                            return;
+                            return; // Wait for player O's move in 2-player mode
                         } else {
-                            setTimeout(aiMove, 500); // AI move after 500ms delay
+                            setTimeout(aiMove, 500);
                         }
                     }
                 }
@@ -198,7 +195,7 @@
         }
 
         function aiMove() {
-            if (gameOver || difficultySelect.value === 'coop') return;
+            if (gameOver) return;
 
             const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
             const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
@@ -224,7 +221,6 @@
                     startNewGame();
                 }, 2000);
             } else {
-                // Switch to the next player's turn
                 currentPlayer = 'X';
                 turnIndicator.textContent = `It's X's turn!`;
             }
@@ -233,16 +229,21 @@
         function startNewGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
-            currentPlayer = round % 2 === 0 ? 'X' : 'O'; // Switch first player every round
-            round++;
             gameOver = false;
+            round++;
+            currentPlayer = (difficultySelect.value === 'coop' || round % 2 === 1) ? 'X' : 'O';
             turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+            if (currentPlayer === 'O' && difficultySelect.value !== 'coop') {
+                setTimeout(aiMove, 500); // AI makes the first move if O starts
+            }
         }
 
         function resetGameOnModeChange() {
-            gameOver = false;
-            gameStatus.textContent = '';
-            startNewGame();
+            xScore = 0;
+            oScore = 0;
+            xScoreDisplay.textContent = `X Score: ${xScore}`;
+            oScoreDisplay.textContent = `O Score: ${oScore}`;
+            startNewGame(); 
         }
 
         function goHome() {
