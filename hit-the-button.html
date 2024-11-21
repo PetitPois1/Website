@@ -124,11 +124,13 @@
         let buttonClicked = false;
         let colorInterval, moveInterval;
 
+        // Start the game when the Start button is clicked
         function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none'; // Hide the start screen
             startNewLevel();
         }
 
+        // Game button clicked, checks the button color and advances the level
         function hitButton() {
             if (buttonClicked) return;
 
@@ -144,17 +146,20 @@
             showLevelComplete();
         }
 
+        // Show level completion screen
         function showLevelComplete() {
             document.getElementById('levelCompleteScreen').style.display = 'block';
             document.getElementById('levelMessage').textContent = `Level ${level} complete!`;
             clearLevelEffects();
         }
 
+        // Show losing screen if wrong button is clicked
         function showLosingScreen() {
             document.getElementById('losingScreen').style.display = 'block';
             clearLevelEffects();
         }
 
+        // Start a new level
         function startNewLevel() {
             buttonClicked = false;
             const button = document.getElementById('gameButton');
@@ -263,14 +268,8 @@
             startNewLevel();
         }
 
-        function nextLevel() {
-            level++;
-            document.getElementById('levelCompleteScreen').style.display = 'none';
-            startNewLevel();
-        }
-
         function goHome() {
-            window.location.href = 'index.html';
+            window.location.href = 'index.html'; // Takes user back to the home page
         }
 
         window.onload = function() {
