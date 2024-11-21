@@ -135,7 +135,7 @@
         
         cells.forEach((cell, index) => {
             cell.addEventListener('click', () => {
-                if (gameBoard[index] === '' && !gameOver && currentPlayer === 'X') {
+                if (gameBoard[index] === '' && !gameOver) {
                     gameBoard[index] = currentPlayer;
                     cell.textContent = currentPlayer;
                     if (checkWin(currentPlayer)) {
@@ -156,10 +156,10 @@
                             startNewGame();
                         }, 2000);
                     } else {
-                        currentPlayer = 'O';
-                        turnIndicator.textContent = `It's O's turn!`;
-                        if (difficultySelect.value === 'coop') {
-                            return; // Wait for player O's move in 2-player mode
+                        currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+                        turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+                        if (difficultySelect.value === 'coop' || currentPlayer === 'X') {
+                            return; // Wait for player O's move in 2-player mode or switch to the next player
                         } else {
                             setTimeout(aiMove, 500);
                         }
@@ -195,10 +195,15 @@
         }
 
         function aiMove() {
-            if (gameOver) return;
+            if (gameOver || difficultySelect.value === 'coop') return;
 
-            const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
-            const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            let move;
+            if (difficultySelect.value === 'hard') {
+                move = getBestMove();
+            } else {
+                const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
+                move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            }
 
             gameBoard[move] = 'O';
             cells[move].textContent = 'O';
@@ -226,28 +231,68 @@
             }
         }
 
-        function startNewGame() {
-            gameBoard = ['', '', '', '', '', '', '', '', ''];
-            cells.forEach(cell => cell.textContent = '');
-            gameOver = false;
-            round++;
-            currentPlayer = (difficultySelect.value === 'coop' || round % 2 === 1) ? 'X' : 'O';
-            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
-            if (currentPlayer === 'O' && difficultySelect.value !== 'coop') {
-                setTimeout(aiMove, 500); // AI makes the first move if O starts
+        function getBestMove() {
+            // Implement the logic for the best move (medium/hard AI)
+            // For simplicity, I’ll make the AI block or win if possible.
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            // Try to win or block
+            for (let combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (gameBoard[a] === gameBoard[b] && gameBoard[a] === 'O' && gameBoard[c] === '') {
+                    return c;
+                } else if (gameBoard[b] === gameBoard[c] && gameBoard[b] === 'O' && gameBoard[a] === '') {
+                    return a;
+                } else if (gameBoard[a] === gameBoard[c] && gameBoard[a] === 'O' && gameBoard[b] === '') {
+                    return b;
+                }
             }
+
+            // Block opponent from winning
+            for (let combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (gameBoard[a] === gameBoard[b] && gameBoard[a] === 'X' && gameBoard[c] === '') {
+                    return c;
+                } else if (gameBoard[b] === gameBoard[c] && gameBoard[b] === 'X' && gameBoard[a] === '') {
+                    return a;
+                } else if (gameBoard[a] === gameBoard[c] && gameBoard[a] === 'X' && gameBoard[b] === '') {
+                    return b;
+                }
+            }
+
+            // Otherwise, choose a random move
+            const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
         }
 
         function resetGameOnModeChange() {
-            xScore = 0;
-            oScore = 0;
-            xScoreDisplay.textContent = `X Score: ${xScore}`;
-            oScoreDisplay.textContent = `O Score: ${oScore}`;
-            startNewGame(); 
+            gameOver = false;
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            cells.forEach(cell => cell.textContent = '');
+            turnIndicator.textContent = `It's X's turn!`;
         }
 
+        function startNewGame() {
+            setTimeout(() => {
+                gameOver = false;
+                gameBoard = ['', '', '', '', '', '', '', '', ''];
+                cells.forEach(cell => cell.textContent = '');
+                currentPlayer = 'X';
+                turnIndicator.textContent = `It's X's turn!`;
+            }, 1000);
+        }
+        
         function goHome() {
-            window.location.href = '/';
+            window.location.href = 'index.html';
         }
     </script>
 </body>
