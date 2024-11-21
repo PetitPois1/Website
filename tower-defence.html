@@ -21,232 +21,203 @@
         }
         .sidebar {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 100%;
-            background-color: #333;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
             padding: 10px;
-            box-sizing: border-box;
+            border-radius: 8px;
+            color: white;
         }
-        .turret-info {
-            margin-top: 20px;
-        }
-        .turret-button {
-            display: block;
+        .sidebar p {
             margin: 10px 0;
-            padding: 10px;
-            background-color: #004d00;
+        }
+        .button {
+            background-color: #66cc66;
+            padding: 5px 10px;
+            margin: 5px;
             border: none;
-            color: white;
-            font-size: 16px;
+            border-radius: 5px;
             cursor: pointer;
         }
-        .turret-button:hover {
-            background-color: #66cc66;
-        }
-        .preview-confirm {
-            margin-top: 10px;
-            display: none;
-            text-align: center;
-        }
-        .confirm-button {
-            padding: 10px 15px;
-            background-color: #004d00;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .confirm-button:hover {
-            background-color: #66cc66;
+        .button:hover {
+            background-color: #55bb55;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div class="sidebar">
-        <h3>Turrets</h3>
-        <button class="turret-button" data-turret="basic">Basic Turret (Damage: 10, Range: 50) - 50 Gold</button>
-        <button class="turret-button" data-turret="sniper">Sniper Turret (Damage: 30, Range: 100) - 150 Gold</button>
-        <button class="turret-button" data-turret="cannon">Cannon Turret (Damage: 50, Range: 75) - 300 Gold</button>
-        <div class="preview-confirm">
-            <p>Confirm turret placement?</p>
-            <button class="confirm-button">Confirm</button>
-        </div>
-        <div class="turret-info">
-            <h4>Gold: <span id="goldCount">100</span></h4>
-        </div>
+        <p>Gold: <span id="goldCount">0</span></p>
+        <p>Turret Preview:</p>
+        <div id="turretPreview" style="width: 50px; height: 50px; background-color: gray; border-radius: 50%;"></div>
+        <p>Damage Per Second (DPS): <span id="turretDPS">0</span></p>
+        <p>Range: <span id="turretRange">0</span></p>
+        <button class="button" id="placeTurret">Place Turret</button>
     </div>
+    <canvas id="gameCanvas"></canvas>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const goldDisplay = document.getElementById('goldCount');
-        const previewConfirmDiv = document.querySelector('.preview-confirm');
-        const confirmButton = document.querySelector('.confirm-button');
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        let gold = 100;
-        let enemies = [];
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game variables
+        let gold = 0;
         let turrets = [];
-        let previewTurret = null;
-
-        // Path for enemies
-        const path = [
-            { x: 50, y: 50 }, { x: 50, y: 300 }, { x: 300, y: 300 },
-            { x: 300, y: 500 }, { x: 750, y: 500 },
+        let enemies = [];
+        let path = [
+            {x: 0, y: 100},
+            {x: canvas.width / 4, y: 100},
+            {x: canvas.width / 4, y: canvas.height / 2},
+            {x: canvas.width / 2, y: canvas.height / 2},
+            {x: canvas.width / 2, y: canvas.height - 100}
         ];
 
-        // Turret types
-        const turretTypes = {
-            basic: { cost: 50, damage: 10, range: 50 },
-            sniper: { cost: 150, damage: 30, range: 100 },
-            cannon: { cost: 300, damage: 50, range: 75 },
-        };
+        // Turret class
+        class Turret {
+            constructor(x, y, damage, range) {
+                this.x = x;
+                this.y = y;
+                this.damage = damage;
+                this.range = range;
+                this.dps = damage; // Turret's damage per second
+                this.target = null;
+            }
 
-        // Enemy configuration
-        const enemyTemplate = {
-            x: path[0].x,
-            y: path[0].y,
-            speed: 1,
-            health: 50,
-        };
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.range, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.stroke();
+                ctx.fillStyle = 'green';
+                ctx.fill();
+            }
 
-        // Update gold display
-        function updateGoldDisplay() {
-            goldDisplay.textContent = gold;
+            findTarget() {
+                for (let enemy of enemies) {
+                    const distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+                    if (distance <= this.range && !enemy.dead) {
+                        this.target = enemy;
+                        break;
+                    }
+                }
+            }
+
+            attack() {
+                if (this.target) {
+                    this.target.health -= this.dps / 60;  // Attack once per frame, scaled by FPS (60)
+                    if (this.target.health <= 0) {
+                        this.target.dead = true;
+                        gold += 10; // Reward gold on death
+                    }
+                }
+            }
         }
 
-        // Draw path
-        function drawPath() {
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 10;
+        // Enemy class
+        class Enemy {
+            constructor(path) {
+                this.x = path[0].x;
+                this.y = path[0].y;
+                this.path = path;
+                this.index = 0;
+                this.speed = 2; // Speed of enemy movement
+                this.health = 100;
+                this.dead = false;
+            }
+
+            move() {
+                if (this.index < this.path.length - 1) {
+                    const target = this.path[this.index + 1];
+                    const angle = Math.atan2(target.y - this.y, target.x - this.x);
+                    this.x += Math.cos(angle) * this.speed;
+                    this.y += Math.sin(angle) * this.speed;
+
+                    // Check if reached next path point
+                    const distance = Math.hypot(this.x - target.x, this.y - target.y);
+                    if (distance < 5) {
+                        this.index++;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+            }
+        }
+
+        // Function to update the game state
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw path
             ctx.beginPath();
             ctx.moveTo(path[0].x, path[0].y);
-            for (const point of path) {
+            for (let point of path) {
                 ctx.lineTo(point.x, point.y);
             }
+            ctx.strokeStyle = "white";
             ctx.stroke();
-        }
 
-        // Draw enemies
-        function drawEnemies() {
-            ctx.fillStyle = 'red';
-            for (const enemy of enemies) {
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
-                ctx.fill();
+            // Update and draw turrets
+            for (let turret of turrets) {
+                turret.findTarget();
+                turret.attack();
+                turret.draw();
             }
-        }
 
-        // Move enemies along the path
-        function moveEnemies() {
-            for (const enemy of enemies) {
-                let target = path[enemy.targetIndex];
-                let dx = target.x - enemy.x;
-                let dy = target.y - enemy.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < 2) {
-                    enemy.targetIndex++;
-                    if (enemy.targetIndex >= path.length) {
-                        // Enemy reached the end
-                        enemies.splice(enemies.indexOf(enemy), 1);
-                        continue;
-                    }
-                } else {
-                    enemy.x += (dx / distance) * enemy.speed;
-                    enemy.y += (dy / distance) * enemy.speed;
+            // Update and draw enemies
+            for (let enemy of enemies) {
+                if (!enemy.dead) {
+                    enemy.move();
+                    enemy.draw();
                 }
             }
-        }
 
-        // Draw turrets
-        function drawTurrets() {
-            ctx.fillStyle = 'blue';
-            for (const turret of turrets) {
-                ctx.beginPath();
-                ctx.arc(turret.x, turret.y, 10, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
-                ctx.stroke();
-            }
-        }
-
-        // Turret shooting
-        function turretShoot() {
-            for (const turret of turrets) {
-                for (const enemy of enemies) {
-                    let dx = turret.x - enemy.x;
-                    let dy = turret.y - enemy.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance <= turret.range) {
-                        enemy.health -= turret.damage;
-                        if (enemy.health <= 0) {
-                            gold += 10;
-                            enemies.splice(enemies.indexOf(enemy), 1);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Turret preview
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            // Draw preview turret
+            const turretPreview = document.getElementById("turretPreview");
+            const turretDPS = document.getElementById("turretDPS");
+            const turretRange = document.getElementById("turretRange");
 
             if (previewTurret) {
-                previewTurret.x = x;
-                previewTurret.y = y;
-                previewConfirmDiv.style.display = 'block';
+                turretPreview.style.left = `${previewTurret.x - 25}px`;
+                turretPreview.style.top = `${previewTurret.y - 25}px`;
+                turretDPS.textContent = previewTurret.dps;
+                turretRange.textContent = previewTurret.range;
             }
-        });
 
-        // Confirm turret placement
-        confirmButton.addEventListener('click', () => {
-            if (previewTurret && gold >= turretTypes[previewTurret.type].cost) {
-                gold -= turretTypes[previewTurret.type].cost;
-                turrets.push(previewTurret);
-                previewTurret = null;
-                previewConfirmDiv.style.display = 'none';
-                updateGoldDisplay();
-            }
-        });
+            // Update gold
+            document.getElementById("goldCount").textContent = gold;
 
-        // Select turret
-        document.querySelectorAll('.turret-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const turretType = button.dataset.turret;
-                if (gold >= turretTypes[turretType].cost) {
-                    previewTurret = {
-                        ...turretTypes[turretType],
-                        type: turretType,
-                    };
-                }
-            });
-        });
-
-        // Spawn enemies
-        setInterval(() => {
-            enemies.push({ ...enemyTemplate, targetIndex: 1 });
-        }, 2000);
-
-        // Game loop
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPath();
-            drawEnemies();
-            drawTurrets();
-            moveEnemies();
-            turretShoot();
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(update);
         }
 
-        updateGoldDisplay();
-        gameLoop();
+        // Turret preview and placement
+        let previewTurret = null;
+        canvas.addEventListener("click", (e) => {
+            if (!previewTurret) {
+                previewTurret = new Turret(e.clientX, e.clientY, 10, 100); // Sample turret with 10 DPS and 100 range
+            }
+        });
+
+        document.getElementById("placeTurret").addEventListener("click", () => {
+            if (previewTurret) {
+                turrets.push(previewTurret);
+                previewTurret = null; // Clear preview after placing
+            }
+        });
+
+        // Create enemies periodically
+        setInterval(() => {
+            enemies.push(new Enemy(path));
+        }, 2000);
+
+        // Start the game loop
+        update();
     </script>
 </body>
 </html>
