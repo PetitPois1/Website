@@ -169,20 +169,23 @@
         }
 
         function generateEnemies() {
-            enemies.push(new Enemy(0, 300, 100, 1)); // First enemy spawn
+            // Add multiple enemies to follow the path
+            for (let i = 0; i < 5; i++) {
+                enemies.push(new Enemy(0, 300, 100, 1)); // Add 5 enemies
+            }
         }
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the path
+            // Draw the thicker path
             ctx.beginPath();
             ctx.moveTo(path[0].x, path[0].y);
             for (let i = 1; i < path.length; i++) {
                 ctx.lineTo(path[i].x, path[i].y);
             }
+            ctx.lineWidth = 6; // Make the path thicker
             ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
             ctx.stroke();
 
             // Draw enemies
@@ -257,11 +260,11 @@
                 turrets.push(newTurret);
                 gold -= selectedTurret.cost;
                 goldDisplay.innerText = gold;
-                confirmButton.style.display = "none"; // Hide the confirm button
+                confirmButton.style.display = "none";
                 canPlaceTurret = false;
-                turretPreview = null; // Remove preview
+                turretPreview = null;
             } else {
-                alert("Not enough gold to place turret!");
+                alert("Not enough gold!");
             }
         });
 
