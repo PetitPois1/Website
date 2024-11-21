@@ -42,14 +42,31 @@
         .button:hover {
             background-color: #55bb55;
         }
+        .turret-button {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            color: white;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .turret-button:hover {
+            background-color: #666;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <p>Gold: <span id="goldCount">0</span></p>
+        <p>Gold: <span id="goldCount">100</span></p>
         <p>Turret Stats:</p>
         <p id="turretInfo">Select a turret to place.</p>
         <button id="confirmButton" class="button" style="display:none;">Confirm Placement</button>
+        <div id="turretSelection">
+            <button class="turret-button" onclick="selectTurret('basic')">Basic Turret - 50 Gold</button>
+            <button class="turret-button" onclick="selectTurret('advanced')">Advanced Turret - 100 Gold</button>
+            <button class="turret-button" onclick="selectTurret('elite')">Elite Turret - 200 Gold</button>
+        </div>
     </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -60,11 +77,14 @@
         const goldDisplay = document.getElementById("goldCount");
         const turretInfo = document.getElementById("turretInfo");
         const confirmButton = document.getElementById("confirmButton");
+        const turretSelection = document.getElementById("turretSelection");
         const gridSize = 40; // Size of each cell in the grid
         let gold = 100;
         let turrets = [];
         let enemies = [];
         let turretPreview = null; // Preview turret before placement
+        let selectedTurret = null;
+        let canPlaceTurret = false; // Prevent automatic placement before confirming
 
         // Turret details (damage per second and range)
         const turretsData = {
@@ -72,7 +92,6 @@
             "advanced": { damagePerSec: 20, range: 150, cost: 100 },
             "elite": { damagePerSec: 30, range: 200, cost: 200 },
         };
-        let selectedTurret = null;
 
         // Enemy class
         class Enemy {
@@ -204,7 +223,7 @@
 
         // Handle click for placing turret
         canvas.addEventListener("click", (e) => {
-            if (selectedTurret && gold >= selectedTurret.cost) {
+            if (selectedTurret && canPlaceTurret && gold >= selectedTurret.cost) {
                 const x = Math.floor(e.offsetX / gridSize) * gridSize;
                 const y = Math.floor(e.offsetY / gridSize) * gridSize;
                 if (turretPreview) {
@@ -212,33 +231,29 @@
                     gold -= selectedTurret.cost;
                     goldDisplay.innerText = gold;
                     turretPreview = null; // Clear preview
+                    canPlaceTurret = false; // Disable placement until confirmed
+                    confirmButton.style.display = "none"; // Hide confirm button after placement
                 }
             }
         });
 
         // Handle turret selection and preview
-        function setTurret(type) {
+        function selectTurret(type) {
             selectedTurret = turretsData[type];
             turretInfo.innerText = `Damage: ${selectedTurret.damagePerSec} /sec, Range: ${selectedTurret.range}, Cost: ${selectedTurret.cost}`;
             confirmButton.style.display = "block";
-            // Show preview when mouse clicks
-            canvas.addEventListener("mousemove", (e) => {
-                if (selectedTurret) {
-                    turretPreview = { 
-                        x: Math.floor(e.offsetX / gridSize) * gridSize, 
-                        y: Math.floor(e.offsetY / gridSize) * gridSize, 
-                        range: selectedTurret.range 
-                    };
-                }
-            });
-
-            confirmButton.onclick = () => {
-                turretPreview = null; // Confirm placement, hide preview
-            };
+            canPlaceTurret = true; // Allow placement after selecting turret
+            turretPreview = { x: 0, y: 0, range: selectedTurret.range }; // Show preview for the turret
         }
 
-        // Set a turret from the selection (use "basic", "advanced", or "elite")
-        setTurret("basic"); // For example, select the "basic" turret
+        // Confirm placement button action
+        confirmButton.addEventListener("click", () => {
+            if (selectedTurret && gold >= selectedTurret.cost) {
+                canPlaceTurret = false;
+                turretPreview = null;
+                confirmButton.style.display = "none"; // Hide confirm button
+            }
+        });
 
         init();
     </script>
