@@ -46,9 +46,18 @@
             border-radius: 10px;
             margin-top: 50px;
             cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
         }
         #gameButton.green {
             background-color: green;
+        }
+        #gameButton.large {
+            font-size: 30px;
+            padding: 25px 60px;
+        }
+        #gameButton.small {
+            font-size: 18px;
+            padding: 10px 20px;
         }
         #gameButton.disabled {
             background-color: gray;
@@ -82,6 +91,7 @@
     <div id="levelCompleteScreen">
         <p>Level Complete!</p>
         <p>Your Score: <span id="finalScore">0</span></p>
+        <p id="levelMessage"></p>
         <button onclick="nextLevel()">Next Level</button>
     </div>
 
@@ -89,14 +99,14 @@
         let score = 0;
         let level = 1;
         let buttonClicked = false;
+        let levelTime = 5000;  // Default time limit for each level (in milliseconds)
 
         // Function to handle button clicks
         function hitButton() {
-            if (buttonClicked) return;
+            if (buttonClicked) return; // Don't allow more clicks until the level is complete
 
             score += 10;
             document.getElementById('playerScore').textContent = score;
-            document.getElementById('gameButton').classList.remove('green');
             buttonClicked = true;
             setTimeout(showLevelComplete, 1000);  // Simulate the end of the level
         }
@@ -104,40 +114,3 @@
         // Show the level complete screen
         function showLevelComplete() {
             document.getElementById('levelCompleteScreen').style.display = 'block';
-            document.getElementById('finalScore').textContent = score;
-        }
-
-        // Reset the game
-        function resetGame() {
-            score = 0;
-            level = 1;
-            buttonClicked = false;
-            document.getElementById('playerScore').textContent = score;
-            document.getElementById('gameButton').classList.remove('green');
-            document.getElementById('levelCompleteScreen').style.display = 'none';
-            startNewLevel();
-        }
-
-        // Start a new level
-        function startNewLevel() {
-            buttonClicked = false;
-            document.getElementById('gameButton').textContent = "Hit Me!";
-            document.getElementById('gameButton').classList.add('green');  // Button turns green for new level
-        }
-
-        // Next level function
-        function nextLevel() {
-            level++;
-            document.getElementById('levelCompleteScreen').style.display = 'none';
-            startNewLevel();
-        }
-
-        // Start the first level when the page loads
-        window.onload = function() {
-            startNewLevel();
-        };
-    </script>
-</body>
-</html>
-
-        
