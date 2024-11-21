@@ -41,7 +41,7 @@
             background-color: #4a00e0;
         }
         #gameButton {
-            background-color: red;
+            background-color: green;
             font-size: 24px;
             padding: 20px 50px;
             border-radius: 10px;
@@ -132,6 +132,7 @@
 
             switch (level) {
                 case 1: // Basic button click
+                    button.classList.add('green');
                     break;
                 case 2: // Wait for green button
                     toggleButtonColor(1000);
