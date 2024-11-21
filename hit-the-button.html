@@ -150,7 +150,7 @@
                     button.classList.add('green'); // Level 1 should always start with green
                     break;
                 case 2:
-                    button.classList.add('green'); // Start green for Level 2
+                    button.classList.add('red'); // Start red for Level 2
                     changeButtonColorOnLevel2();
                     break;
                 case 3:
@@ -171,7 +171,7 @@
 
         function changeButtonColorOnLevel2() {
             const button = document.getElementById('gameButton');
-            let isGreen = true;
+            let isGreen = false; // Start with red on level 2
 
             colorInterval = setInterval(() => {
                 if (isGreen) {
@@ -182,12 +182,12 @@
                     button.classList.add('red');
                 }
                 isGreen = !isGreen;
-            }, 1000); // Toggle color every 1 second (green -> red -> green)
+            }, 1000); // Toggle color every 1 second (red -> green -> red)
         }
 
         function changeButtonColorRapidlyForLevel3() {
             const button = document.getElementById('gameButton');
-            let isGreen = true;
+            let isGreen = false; // Start with red on level 3
 
             colorInterval = setInterval(() => {
                 if (isGreen) {
@@ -198,7 +198,7 @@
                     button.classList.add('red');
                 }
                 isGreen = !isGreen;
-            }, 200); // Rapid toggle between red and green every 200 milliseconds
+            }, 350); // Rapid toggle between red and green every 350 milliseconds
         }
 
         function moveButtonInCircle() {
