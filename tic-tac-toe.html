@@ -133,6 +133,20 @@
         const gameStatus = document.getElementById('game-status');
         const difficultySelect = document.getElementById('difficulty');
         
+        // Reset board and scores on mode change
+        function resetGameOnModeChange() {
+            gameOver = false;
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            cells.forEach(cell => cell.textContent = '');
+            xScore = 0;
+            oScore = 0;
+            xScoreDisplay.textContent = `X Score: ${xScore}`;
+            oScoreDisplay.textContent = `O Score: ${oScore}`;
+            currentPlayer = (round % 2 === 0) ? 'O' : 'X'; // Ensure alternating starts
+            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+            gameStatus.textContent = '';
+        }
+
         cells.forEach((cell, index) => {
             cell.addEventListener('click', () => {
                 if (gameBoard[index] === '' && !gameOver) {
@@ -232,8 +246,6 @@
         }
 
         function getBestMove() {
-            // Implement the logic for the best move (medium/hard AI)
-            // For simplicity, I’ll make the AI block or win if possible.
             const winningCombinations = [
                 [0, 1, 2],
                 [3, 4, 5],
@@ -245,7 +257,6 @@
                 [2, 4, 6],
             ];
 
-            // Try to win or block
             for (let combination of winningCombinations) {
                 const [a, b, c] = combination;
                 if (gameBoard[a] === gameBoard[b] && gameBoard[a] === 'O' && gameBoard[c] === '') {
@@ -272,14 +283,6 @@
             // Otherwise, choose a random move
             const availableMoves = gameBoard.map((value, index) => value === '' ? index : null).filter(value => value !== null);
             return availableMoves[Math.floor(Math.random() * availableMoves.length)];
-        }
-
-        function resetGameOnModeChange() {
-            gameOver = false;
-            gameBoard = ['', '', '', '', '', '', '', '', ''];
-            cells.forEach(cell => cell.textContent = '');
-            turnIndicator.textContent = `It's X's turn!`;
-            gameStatus.textContent = '';
         }
 
         function startNewGame() {
