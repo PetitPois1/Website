@@ -120,7 +120,7 @@
     <button id="go-home" onclick="goHome()">Go to Home</button>
 
     <script>
-        let currentPlayer = 'X'; 
+        let currentPlayer = 'X'; // X starts first
         let gameBoard = ['', '', '', '', '', '', '', '', '']; 
         let xScore = 0;
         let oScore = 0;
@@ -174,10 +174,10 @@
                             currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
                             turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
                         } else {
-                            currentPlayer = 'X';
-                            turnIndicator.textContent = `It's X's turn!`;
-                            if (currentPlayer === 'O') {
-                                setTimeout(aiMove, 500);
+                            if (currentPlayer === 'X') {
+                                currentPlayer = 'O'; // AI's turn after X
+                                turnIndicator.textContent = `It's O's turn!`;
+                                setTimeout(aiMove, 500); // AI makes its move
                             }
                         }
                     }
@@ -243,12 +243,13 @@
                     startNewGame();
                 }, 2000);
             } else {
-                currentPlayer = 'X';
-                turnIndicator.textContent = `It's X's turn!`;
+                currentPlayer = 'X'; // back to player X
+                turnIndicator.textContent = "It's X's turn!";
             }
         }
 
         function getBestMove() {
+            // AI logic for the hardest difficulty
             const winningCombinations = [
                 [0, 1, 2],
                 [3, 4, 5],
