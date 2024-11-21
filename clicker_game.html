@@ -171,67 +171,11 @@
             cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500), count: 0 },
             universalClick: { cost: 250000, effect: () => clickValue += 1000, count: 0 },
             infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000), count: 0 },
-            omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 }
+            omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 },
         };
 
-        const clickCount = document.getElementById('clickCount');
-        const circle = document.getElementById('circle');
-        
-        // Format large numbers
-        function formatNumber(num) {
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(1) + "M";
-            } else if (num >= 10000) {
-                return (num / 1000).toFixed(1) + "k";
-            } else {
-                return num;
-            }
-        }
-
-        function saveProgress() {
-            const data = {
-                clicks,
-                clickValue,
-                items: Object.keys(items).reduce((acc, id) => {
-                    acc[id] = { cost: items[id].cost, count: items[id].count };
-                    return acc;
-                }, {})
-            };
-            localStorage.setItem('clickerGameSave', JSON.stringify(data));
-        }
-
-        function loadProgress() {
-            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
-            if (savedData) {
-                clicks = savedData.clicks;
-                clickValue = savedData.clickValue;
-                for (const id in savedData.items) {
-                    items[id].cost = savedData.items[id].cost;
-                    items[id].count = savedData.items[id].count;
-                }
-            }
-        }
-
-        function updateUI() {
-            clickCount.textContent = formatNumber(Math.round(clicks));
-            for (const id in items) {
-                const button = document.getElementById(id);
-                const item = items[id];
-                const countElement = document.getElementById(`${id}Count`);
-                button.disabled = clicks < item.cost;
-                button.classList.toggle('disabled', clicks < item.cost);
-                button.textContent = `${button.dataset.text} - ${formatNumber(Math.round(item.cost))} clicks`;
-                countElement.textContent = `Purchased: ${item.count}`;
-            }
-        }
-
-        circle.addEventListener('click', () => {
-            clicks += clickValue;
-            updateUI();
-            saveProgress();
-        });
-
         let autoClickValue = 0;
+
         function autoClick(value) {
             autoClickValue += value;
         }
@@ -239,27 +183,80 @@
         setInterval(() => {
             clicks += autoClickValue;
             updateUI();
-            saveProgress();
         }, 1000);
 
+        const circle = document.getElementById('circle');
+        circle.addEventListener('click', () => {
+            clicks += clickValue;
+            updateUI();
+        });
+
+        function updateUI() {
+            document.getElementById('clickCount').textContent = clicks;
+            for (const id in items) {
+                const item = items[id];
+                const button = document.getElementById(id);
+                const count = document.getElementById(`${id}Count`);
+                count.textContent = `Purchased: ${item.count}`;
+                if (clicks >= item.cost) {
+                    button.classList.remove('disabled');
+                } else {
+                    button.classList.add('disabled');
+                }
+            }
+        }
+
         for (const id in items) {
-            const button = document.getElementById(id);
-            const item = items[id];
-            button.dataset.text = button.textContent.split('-')[0].trim();
-            button.addEventListener('click', () => {
+            document.getElementById(id).addEventListener('click', () => {
+                const item = items[id];
                 if (clicks >= item.cost) {
                     clicks -= item.cost;
+                    item.cost = Math.ceil(item.cost * 1.15);
                     item.effect();
                     item.count += 1;
-                    item.cost *= 1.125;
                     updateUI();
-                    saveProgress();
                 }
             });
         }
 
-        loadProgress();
-        updateUI();
+        function saveProgress() {
+            const saveData = {
+                clicks,
+                clickValue,
+                items: {},
+            };
+            for (const id in items) {
+                saveData.items[id] = {
+                    cost: items[id].cost,
+                    count: items[id].count,
+                };
+            }
+            localStorage.setItem('clickerGameSave', JSON.stringify(saveData));
+        }
+
+        function loadProgress() {
+            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
+            if (savedData) {
+                clicks = savedData.clicks;
+                clickValue = savedData.clickValue;
+                autoClickValue = 0; // Reset autoClickValue
+                for (const id in savedData.items) {
+                    items[id].cost = savedData.items[id].cost;
+                    items[id].count = savedData.items[id].count;
+                    // Recalculate autoClickValue for auto-clickers
+                    if (id.includes("AutoClicker")) {
+                        const autoClicksPerSecond = parseInt(items[id].effect.toString().match(/\d+/), 10);
+                        autoClickValue += autoClicksPerSecond * items[id].count;
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', saveProgress);
+        window.addEventListener('load', () => {
+            loadProgress();
+            updateUI();
+        });
     </script>
 </body>
 </html>
