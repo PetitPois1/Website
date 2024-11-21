@@ -74,6 +74,11 @@
         .back-button:hover {
             background-color: #66cc66;
         }
+        .upgrade-count {
+            font-size: 1rem;
+            color: #66cc66;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -83,21 +88,66 @@
 
     <div class="shop">
         <h2>Shop</h2>
-        <button class="shop-item disabled" id="upgradeClick">Upgrade Click (+1 per click) - 10 clicks</button>
-        <button class="shop-item disabled" id="autoClicker">Auto Clicker (+1 click/sec) - 50 clicks</button>
-        <button class="shop-item disabled" id="goldenClick">Golden Click (+5 per click) - 100 clicks</button>
-        <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
-        <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
-        <button class="shop-item disabled" id="ultraAutoClicker">Ultra Auto Clicker (+20 clicks/sec) - 1000 clicks</button>
-        <button class="shop-item disabled" id="platinumClick">Platinum Click (+50 per click) - 2500 clicks</button>
-        <button class="shop-item disabled" id="hyperAutoClicker">Hyper Auto Clicker (+50 clicks/sec) - 5000 clicks</button>
-        <button class="shop-item disabled" id="diamondClick">Diamond Click (+100 per click) - 10000 clicks</button>
-        <button class="shop-item disabled" id="ultimateAutoClicker">Ultimate Auto Clicker (+200 clicks/sec) - 20000 clicks</button>
-        <button class="shop-item disabled" id="galacticClick">Galactic Click (+500 per click) - 50000 clicks</button>
-        <button class="shop-item disabled" id="cosmicAutoClicker">Cosmic Auto Clicker (+500 clicks/sec) - 100000 clicks</button>
-        <button class="shop-item disabled" id="universalClick">Universal Click (+1000 per click) - 250000 clicks</button>
-        <button class="shop-item disabled" id="infinityAutoClicker">Infinity Auto Clicker (+1000 clicks/sec) - 500000 clicks</button>
-        <button class="shop-item disabled" id="omegaClick">Omega Click (+5000 per click) - 1000000 clicks</button>
+        <div id="upgradeClickDiv">
+            <button class="shop-item disabled" id="upgradeClick">Upgrade Click (+1 per click) - 10 clicks</button>
+            <p class="upgrade-count" id="upgradeClickCount">Purchased: 0</p>
+        </div>
+        <div id="autoClickerDiv">
+            <button class="shop-item disabled" id="autoClicker">Auto Clicker (+1 click/sec) - 50 clicks</button>
+            <p class="upgrade-count" id="autoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="goldenClickDiv">
+            <button class="shop-item disabled" id="goldenClick">Golden Click (+5 per click) - 100 clicks</button>
+            <p class="upgrade-count" id="goldenClickCount">Purchased: 0</p>
+        </div>
+        <div id="superAutoClickerDiv">
+            <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
+            <p class="upgrade-count" id="superAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="megaClickDiv">
+            <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
+            <p class="upgrade-count" id="megaClickCount">Purchased: 0</p>
+        </div>
+        <div id="ultraAutoClickerDiv">
+            <button class="shop-item disabled" id="ultraAutoClicker">Ultra Auto Clicker (+20 clicks/sec) - 1000 clicks</button>
+            <p class="upgrade-count" id="ultraAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="platinumClickDiv">
+            <button class="shop-item disabled" id="platinumClick">Platinum Click (+50 per click) - 2500 clicks</button>
+            <p class="upgrade-count" id="platinumClickCount">Purchased: 0</p>
+        </div>
+        <div id="hyperAutoClickerDiv">
+            <button class="shop-item disabled" id="hyperAutoClicker">Hyper Auto Clicker (+50 clicks/sec) - 5000 clicks</button>
+            <p class="upgrade-count" id="hyperAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="diamondClickDiv">
+            <button class="shop-item disabled" id="diamondClick">Diamond Click (+100 per click) - 10000 clicks</button>
+            <p class="upgrade-count" id="diamondClickCount">Purchased: 0</p>
+        </div>
+        <div id="ultimateAutoClickerDiv">
+            <button class="shop-item disabled" id="ultimateAutoClicker">Ultimate Auto Clicker (+200 clicks/sec) - 20000 clicks</button>
+            <p class="upgrade-count" id="ultimateAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="galacticClickDiv">
+            <button class="shop-item disabled" id="galacticClick">Galactic Click (+500 per click) - 50000 clicks</button>
+            <p class="upgrade-count" id="galacticClickCount">Purchased: 0</p>
+        </div>
+        <div id="cosmicAutoClickerDiv">
+            <button class="shop-item disabled" id="cosmicAutoClicker">Cosmic Auto Clicker (+500 clicks/sec) - 100000 clicks</button>
+            <p class="upgrade-count" id="cosmicAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="universalClickDiv">
+            <button class="shop-item disabled" id="universalClick">Universal Click (+1000 per click) - 250000 clicks</button>
+            <p class="upgrade-count" id="universalClickCount">Purchased: 0</p>
+        </div>
+        <div id="infinityAutoClickerDiv">
+            <button class="shop-item disabled" id="infinityAutoClicker">Infinity Auto Clicker (+1000 clicks/sec) - 500000 clicks</button>
+            <p class="upgrade-count" id="infinityAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="omegaClickDiv">
+            <button class="shop-item disabled" id="omegaClick">Omega Click (+5000 per click) - 1000000 clicks</button>
+            <p class="upgrade-count" id="omegaClickCount">Purchased: 0</p>
+        </div>
     </div>
 
     <a href="index.html" class="back-button">Back to Home</a>
@@ -107,21 +157,21 @@
         let clickValue = 1;
 
         const items = {
-            upgradeClick: { cost: 10, effect: () => clickValue += 1 },
-            autoClicker: { cost: 50, effect: () => autoClick(1) },
-            goldenClick: { cost: 100, effect: () => clickValue += 5 },
-            superAutoClicker: { cost: 200, effect: () => autoClick(5) },
-            megaClick: { cost: 500, effect: () => clickValue += 10 },
-            ultraAutoClicker: { cost: 1000, effect: () => autoClick(20) },
-            platinumClick: { cost: 2500, effect: () => clickValue += 50 },
-            hyperAutoClicker: { cost: 5000, effect: () => autoClick(50) },
-            diamondClick: { cost: 10000, effect: () => clickValue += 100 },
-            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200) },
-            galacticClick: { cost: 50000, effect: () => clickValue += 500 },
-            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500) },
-            universalClick: { cost: 250000, effect: () => clickValue += 1000 },
-            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000) },
-            omegaClick: { cost: 1000000, effect: () => clickValue += 5000 }
+            upgradeClick: { cost: 10, effect: () => clickValue += 1, count: 0 },
+            autoClicker: { cost: 50, effect: () => autoClick(1), count: 0 },
+            goldenClick: { cost: 100, effect: () => clickValue += 5, count: 0 },
+            superAutoClicker: { cost: 200, effect: () => autoClick(5), count: 0 },
+            megaClick: { cost: 500, effect: () => clickValue += 10, count: 0 },
+            ultraAutoClicker: { cost: 1000, effect: () => autoClick(20), count: 0 },
+            platinumClick: { cost: 2500, effect: () => clickValue += 50, count: 0 },
+            hyperAutoClicker: { cost: 5000, effect: () => autoClick(50), count: 0 },
+            diamondClick: { cost: 10000, effect: () => clickValue += 100, count: 0 },
+            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200), count: 0 },
+            galacticClick: { cost: 50000, effect: () => clickValue += 500, count: 0 },
+            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500), count: 0 },
+            universalClick: { cost: 250000, effect: () => clickValue += 1000, count: 0 },
+            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000), count: 0 },
+            omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 }
         };
 
         const clickCount = document.getElementById('clickCount');
@@ -142,8 +192,8 @@
             const data = {
                 clicks,
                 clickValue,
-                itemCosts: Object.keys(items).reduce((acc, id) => {
-                    acc[id] = items[id].cost;
+                items: Object.keys(items).reduce((acc, id) => {
+                    acc[id] = { cost: items[id].cost, count: items[id].count };
                     return acc;
                 }, {})
             };
@@ -155,8 +205,9 @@
             if (savedData) {
                 clicks = savedData.clicks;
                 clickValue = savedData.clickValue;
-                for (const id in savedData.itemCosts) {
-                    items[id].cost = savedData.itemCosts[id];
+                for (const id in savedData.items) {
+                    items[id].cost = savedData.items[id].cost;
+                    items[id].count = savedData.items[id].count;
                 }
             }
         }
@@ -166,9 +217,11 @@
             for (const id in items) {
                 const button = document.getElementById(id);
                 const item = items[id];
+                const countElement = document.getElementById(`${id}Count`);
                 button.disabled = clicks < item.cost;
                 button.classList.toggle('disabled', clicks < item.cost);
                 button.textContent = `${button.dataset.text} - ${formatNumber(Math.round(item.cost))} clicks`;
+                countElement.textContent = `Purchased: ${item.count}`;
             }
         }
 
@@ -197,6 +250,7 @@
                 if (clicks >= item.cost) {
                     clicks -= item.cost;
                     item.effect();
+                    item.count += 1;
                     item.cost *= 1.125;
                     updateUI();
                     saveProgress();
@@ -209,3 +263,4 @@
     </script>
 </body>
 </html>
+
