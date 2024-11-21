@@ -167,8 +167,14 @@
 
         function toggleButtonColor(interval = 1000) {
             const button = document.getElementById('gameButton');
+            let isGreen = true;
             colorInterval = setInterval(() => {
-                button.classList.toggle('green');
+                if (isGreen) {
+                    button.classList.remove('green');
+                } else {
+                    button.classList.add('green');
+                }
+                isGreen = !isGreen;
             }, interval);
         }
 
@@ -178,12 +184,13 @@
             const radius = 150;
 
             moveInterval = setInterval(() => {
-                angle += 5;
+                angle += 2; // Smaller increments for smoother motion
                 const x = Math.cos(angle * (Math.PI / 180)) * radius;
                 const y = Math.sin(angle * (Math.PI / 180)) * radius;
-                button.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-                button.classList.add('green'); // Ensures button color resets on movement
-            }, 30);
+                button.style.left = `calc(50% + ${x}px)`;
+                button.style.top = `calc(50% + ${y}px)`;
+                button.classList.add('green'); // Ensures button color is consistent
+            }, 16); // Approximately 60 frames per second
         }
 
         function randomizeButtonPosition() {
