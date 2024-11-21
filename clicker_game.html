@@ -87,9 +87,19 @@
         <h2>Shop</h2>
         <button class="shop-item disabled" id="upgradeClick">Upgrade Click (+1 per click) - 10 clicks</button>
         <button class="shop-item disabled" id="autoClicker">Auto Clicker (+1 click/sec) - 50 clicks</button>
-        <button class="shop-item disabled" id="goldenClick">Golden Click (+5 per click) - 100 clicks</button>
+        <button class="shop-item disabled" id="goldenClick">Wooden Click (+5 per click) - 100 clicks</button>
         <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
-        <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
+        <button class="shop-item disabled" id="megaClick">Silver Click (+10 per click) - 500 clicks</button>
+        <button class="shop-item disabled" id="ultraAutoClicker">Ultra Auto Clicker (+20 clicks/sec) - 1000 clicks</button>
+        <button class="shop-item disabled" id="platinumClick">Golden Click (+50 per click) - 2500 clicks</button>
+        <button class="shop-item disabled" id="hyperAutoClicker">Hyper Auto Clicker (+50 clicks/sec) - 5000 clicks</button>
+        <button class="shop-item disabled" id="diamondClick">Diamond Click (+100 per click) - 10000 clicks</button>
+        <button class="shop-item disabled" id="ultimateAutoClicker">Ultimate Auto Clicker (+200 clicks/sec) - 20000 clicks</button>
+        <button class="shop-item disabled" id="galacticClick">Platinum Click (+500 per click) - 50000 clicks</button>
+        <button class="shop-item disabled" id="cosmicAutoClicker">Auto Booster (+500 clicks/sec) - 100000 clicks</button>
+        <button class="shop-item disabled" id="universalClick">Super Click (+1000 per click) - 250000 clicks</button>
+        <button class="shop-item disabled" id="infinityAutoClicker">Super Auto Booster (+1000 clicks/sec) - 500000 clicks</button>
+        <button class="shop-item disabled" id="omegaClick">Omega Click (+5000 per click) - 1000000 clicks</button>
     </div>
 
     <!-- Back to Home Button -->
@@ -104,13 +114,22 @@
             autoClicker: { cost: 50, effect: () => autoClick(1) },
             goldenClick: { cost: 100, effect: () => clickValue += 5 },
             superAutoClicker: { cost: 200, effect: () => autoClick(5) },
-            megaClick: { cost: 500, effect: () => clickValue += 10 }
+            megaClick: { cost: 500, effect: () => clickValue += 10 },
+            ultraAutoClicker: { cost: 1000, effect: () => autoClick(20) },
+            platinumClick: { cost: 2500, effect: () => clickValue += 50 },
+            hyperAutoClicker: { cost: 5000, effect: () => autoClick(50) },
+            diamondClick: { cost: 10000, effect: () => clickValue += 100 },
+            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200) },
+            galacticClick: { cost: 50000, effect: () => clickValue += 500 },
+            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500) },
+            universalClick: { cost: 250000, effect: () => clickValue += 1000 },
+            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000) },
+            omegaClick: { cost: 1000000, effect: () => clickValue += 5000 }
         };
 
         const clickCount = document.getElementById('clickCount');
         const circle = document.getElementById('circle');
 
-        // Save progress to localStorage
         function saveProgress() {
             const data = {
                 clicks,
@@ -123,7 +142,6 @@
             localStorage.setItem('clickerGameSave', JSON.stringify(data));
         }
 
-        // Load progress from localStorage
         function loadProgress() {
             const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
             if (savedData) {
@@ -135,11 +153,9 @@
             }
         }
 
-        // Update UI
         function updateUI() {
             clickCount.textContent = Math.round(clicks);
 
-            // Update shop buttons
             for (const id in items) {
                 const button = document.getElementById(id);
                 const item = items[id];
@@ -149,23 +165,24 @@
             }
         }
 
-        // Handle circle click
         circle.addEventListener('click', () => {
             clicks += clickValue;
             updateUI();
             saveProgress();
         });
 
-        // Auto Clicker logic
+        let autoClickValue = 0;
+
         function autoClick(value) {
-            setInterval(() => {
-                clicks += value;
-                updateUI();
-                saveProgress();
-            }, 1000);
+            autoClickValue += value;
         }
 
-        // Shop item purchase
+        setInterval(() => {
+            clicks += autoClickValue;
+            updateUI();
+            saveProgress();
+        }, 1000);
+
         for (const id in items) {
             const button = document.getElementById(id);
             const item = items[id];
@@ -174,14 +191,13 @@
                 if (clicks >= item.cost) {
                     clicks -= item.cost;
                     item.effect();
-                    item.cost *= 1.125; // Increase price by 12.5%
+                    item.cost *= 1.125;
                     updateUI();
                     saveProgress();
                 }
             });
         }
 
-        // Load saved progress and initialize UI
         loadProgress();
         updateUI();
     </script>
