@@ -3,250 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Defense</title>
+    <title>Industrial Clicker</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             margin: 0;
-            padding: 0;
-            overflow: hidden;
+            padding: 20px;
             background-color: #1b2a1d;
+            font-family: Arial, sans-serif;
             color: white;
         }
-        canvas {
-            display: block;
-            margin: auto;
-            background-color: #2d2d2d;
-            border: 1px solid white;
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #66cc66;
         }
-        .sidebar {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 100%;
-            background-color: #333;
-            padding: 10px;
-            box-sizing: border-box;
+        .circle {
+            width: 200px;
+            height: 200px;
+            background-color: #004d00;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            margin: 30px;
+            transition: transform 0.1s ease;
         }
-        .turret-info {
-            margin-top: 20px;
+        .circle:active {
+            transform: scale(0.95);
         }
-        .turret-button {
-            display: block;
+        .shop {
+            width: 80%;
+            margin: 20px auto;
+        }
+        .shop-item {
+            background-color: #004d00;
+            color: white;
+            padding: 10px 20px;
             margin: 10px 0;
-            padding: 10px;
-            background-color: #004d00;
+            border-radius: 5px;
             border: none;
-            color: white;
-            font-size: 16px;
+            font-size: 1rem;
             cursor: pointer;
-        }
-        .turret-button:hover {
-            background-color: #66cc66;
-        }
-        .preview-confirm {
-            margin-top: 10px;
-            display: none;
             text-align: center;
+            transition: background-color 0.3s ease;
         }
-        .confirm-button {
-            padding: 10px 15px;
+        .shop-item:hover {
+            background-color: #66cc66;
+        }
+        .shop-item.disabled {
+            background-color: #adacac;
+            cursor: not-allowed;
+        }
+        .back-button {
+            margin-top: 20px;
             background-color: #004d00;
             color: white;
-            border: none;
-            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+            transition: background-color 0.3s ease;
         }
-        .confirm-button:hover {
+        .back-button:hover {
             background-color: #66cc66;
+        }
+        .upgrade-count {
+            font-size: 1rem;
+            color: #66cc66;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div class="sidebar">
-        <h3>Turrets</h3>
-        <button class="turret-button" data-turret="basic">Basic Turret (Damage: 10, Range: 50) - 50 Gold</button>
-        <button class="turret-button" data-turret="sniper">Sniper Turret (Damage: 30, Range: 100) - 150 Gold</button>
-        <button class="turret-button" data-turret="cannon">Cannon Turret (Damage: 50, Range: 75) - 300 Gold</button>
-        <div class="preview-confirm">
-            <p>Confirm turret placement?</p>
-            <button class="confirm-button">Confirm</button>
+    <h1>Industrial Clicker</h1>
+    <div class="circle" id="circle">+1</div>
+    <p>Clicks: <span id="clickCount">0</span></p>
+
+    <div class="shop">
+        <h2>Shop</h2>
+        <div id="upgradeClickDiv">
+            <button class="shop-item disabled" id="upgradeClick">Broken Tool (+1 per click) - 10 clicks</button>
+            <p class="upgrade-count" id="upgradeClickCount">Purchased: 0</p>
         </div>
-        <div class="turret-info">
-            <h4>Gold: <span id="goldCount">100</span></h4>
+        <div id="autoClickerDiv">
+            <button class="shop-item disabled" id="autoClicker">Worker (+1 click/sec) - 50 clicks</button>
+            <p class="upgrade-count" id="autoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="goldenClickDiv">
+            <button class="shop-item disabled" id="goldenClick">Rusty Tool (+5 per click) - 100 clicks</button>
+            <p class="upgrade-count" id="goldenClickCount">Purchased: 0</p>
+        </div>
+        <div id="superAutoClickerDiv">
+            <button class="shop-item disabled" id="superAutoClicker">Qualified Worker (+5 clicks/sec) - 200 clicks</button>
+            <p class="upgrade-count" id="superAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="megaClickDiv">
+            <button class="shop-item disabled" id="megaClick">Metal Tool (+10 per click) - 500 clicks</button>
+            <p class="upgrade-count" id="megaClickCount">Purchased: 0</p>
+        </div>
+        <div id="ultraAutoClickerDiv">
+            <button class="shop-item disabled" id="ultraAutoClicker">Manager (+20 clicks/sec) - 1000 clicks</button>
+            <p class="upgrade-count" id="ultraAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="platinumClickDiv">
+            <button class="shop-item disabled" id="platinumClick">Golden Tool (+50 per click) - 2500 clicks</button>
+            <p class="upgrade-count" id="platinumClickCount">Purchased: 0</p>
+        </div>
+        <div id="hyperAutoClickerDiv">
+            <button class="shop-item disabled" id="hyperAutoClicker">Broken Machinery (+50 clicks/sec) - 5000 clicks</button>
+            <p class="upgrade-count" id="hyperAutoClickCount">Purchased: 0</p>
+        </div>
+        <div id="diamondClickDiv">
+            <button class="shop-item disabled" id="diamondClick">Platinum Tool (+100 per click) - 10000 clicks</button>
+            <p class="upgrade-count" id="diamondClickCount">Purchased: 0</p>
+        </div>
+        <div id="ultimateAutoClickerDiv">
+            <button class="shop-item disabled" id="ultimateAutoClicker">Mended Machinery (+200 clicks/sec) - 20000 clicks</button>
+            <p class="upgrade-count" id="ultimateAutoClickerCount">Purchased: 0</p>
+        </div>
+        <div id="galacticClickDiv">
+            <button class="shop-item disabled" id="galacticClick">Radioactive Tool (+500 per click) - 50000 clicks</button>
+            <p class="upgrade-count" id="galacticClickCount">Purchased: 0</p>
+        </div>
+        <div id="cosmicAutoClickerDiv">
+            <button class="shop-item disabled" id="cosmicAutoClicker">Diamond Machinery (+500 clicks/sec) - 100000 clicks</button>
+            <p class="upgrade-count" id="cosmicAutoClickCount">Purchased: 0</p>
+        </div>
+        <div id="universalClickDiv">
+            <button class="shop-item disabled" id="universalClick">Nuclear Tool (+1000 per click) - 250000 clicks</button>
+            <p class="upgrade-count" id="universalClickCount">Purchased: 0</p>
+        </div>
+        <div id="infinityAutoClickerDiv">
+            <button class="shop-item disabled" id="infinityAutoClicker">New Factory Branch (+1000 clicks/sec) - 500000 clicks</button>
+            <p class="upgrade-count" id="infinityAutoClickCount">Purchased: 0</p>
+        </div>
+        <div id="omegaClickDiv">
+            <button class="shop-item disabled" id="omegaClick">Plasma Tool (+5000 per click) - 1000000 clicks</button>
+            <p class="upgrade-count" id="omegaClickCount">Purchased: 0</p>
         </div>
     </div>
+
+    <a href="index.html" class="back-button">Back to Home</a>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const goldDisplay = document.getElementById('goldCount');
-        const previewConfirmDiv = document.querySelector('.preview-confirm');
-        const confirmButton = document.querySelector('.confirm-button');
+        let clicks = 0;
+        let clickValue = 1;
 
-        let gold = 100;
-        let enemies = [];
-        let turrets = [];
-        let previewTurret = null;
-
-        // Path for enemies
-        const path = [
-            { x: 50, y: 50 }, { x: 50, y: 300 }, { x: 300, y: 300 },
-            { x: 300, y: 500 }, { x: 750, y: 500 },
-        ];
-
-        // Turret types
-        const turretTypes = {
-            basic: { cost: 50, damage: 10, range: 50 },
-            sniper: { cost: 150, damage: 30, range: 100 },
-            cannon: { cost: 300, damage: 50, range: 75 },
+        const items = {
+            upgradeClick: { cost: 10, effect: () => clickValue += 1, count: 0 },
+            autoClicker: { cost: 50, effect: () => autoClick(1), count: 0 },
+            goldenClick: { cost: 100, effect: () => clickValue += 5, count: 0 },
+            superAutoClicker: { cost: 200, effect: () => autoClick(5), count: 0 },
+            megaClick: { cost: 500, effect: () => clickValue += 10, count: 0 },
+            ultraAutoClicker: { cost: 1000, effect: () => autoClick(20), count: 0 },
+            platinumClick: { cost: 2500, effect: () => clickValue += 50, count: 0 },
+            hyperAutoClicker: { cost: 5000, effect: () => autoClick(50), count: 0 },
+            diamondClick: { cost: 10000, effect: () => clickValue += 100, count: 0 },
+            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200), count: 0 },
+            galacticClick: { cost: 50000, effect: () => clickValue += 500, count: 0 },
+            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500), count: 0 },
+            universalClick: { cost: 250000, effect: () => clickValue += 1000, count: 0 },
+            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000), count: 0 },
+            omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 },
         };
 
-        // Enemy configuration
-        const enemyTemplate = {
-            x: path[0].x,
-            y: path[0].y,
-            speed: 1,
-            health: 50,
-        };
+        let autoClickValue = 0;
 
-        // Update gold display
-        function updateGoldDisplay() {
-            goldDisplay.textContent = gold;
+        function autoClick(value) {
+            autoClickValue += value;
         }
 
-        // Draw path
-        function drawPath() {
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 10;
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (const point of path) {
-                ctx.lineTo(point.x, point.y);
-            }
-            ctx.stroke();
-        }
+        setInterval(() => {
+            clicks += autoClickValue;
+            updateUI();
+        }, 1000);
 
-        // Draw enemies
-        function drawEnemies() {
-            ctx.fillStyle = 'red';
-            for (const enemy of enemies) {
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        const circle = document.getElementById('circle');
+        circle.addEventListener('click', () => {
+            clicks += clickValue;
+            updateUI();
+        });
 
-        // Move enemies along the path
-        function moveEnemies() {
-            for (const enemy of enemies) {
-                let target = path[enemy.targetIndex];
-                let dx = target.x - enemy.x;
-                let dy = target.y - enemy.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < 2) {
-                    enemy.targetIndex++;
-                    if (enemy.targetIndex >= path.length) {
-                        // Enemy reached the end
-                        enemies.splice(enemies.indexOf(enemy), 1);
-                        continue;
-                    }
+        function updateUI() {
+            document.getElementById('clickCount').textContent = Math.round(clicks);
+            for (const id in items) {
+                const item = items[id];
+                const button = document.getElementById(id);
+                const count = document.getElementById(`${id}Count`);
+                count.textContent = `Purchased: ${item.count}`;
+                if (clicks >= item.cost) {
+                    button.classList.remove('disabled');
                 } else {
-                    enemy.x += (dx / distance) * enemy.speed;
-                    enemy.y += (dy / distance) * enemy.speed;
+                    button.classList.add('disabled');
                 }
             }
         }
 
-        // Draw turrets
-        function drawTurrets() {
-            ctx.fillStyle = 'blue';
-            for (const turret of turrets) {
-                ctx.beginPath();
-                ctx.arc(turret.x, turret.y, 10, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
-                ctx.stroke();
-            }
-        }
-
-        // Turret shooting
-        function turretShoot() {
-            for (const turret of turrets) {
-                for (const enemy of enemies) {
-                    let dx = turret.x - enemy.x;
-                    let dy = turret.y - enemy.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance <= turret.range) {
-                        enemy.health -= turret.damage;
-                        if (enemy.health <= 0) {
-                            gold += 10;
-                            enemies.splice(enemies.indexOf(enemy), 1);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Turret preview
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            if (previewTurret) {
-                previewTurret.x = x;
-                previewTurret.y = y;
-                previewConfirmDiv.style.display = 'block';
-            }
-        });
-
-        // Confirm turret placement
-        confirmButton.addEventListener('click', () => {
-            if (previewTurret && gold >= turretTypes[previewTurret.type].cost) {
-                gold -= turretTypes[previewTurret.type].cost;
-                turrets.push(previewTurret);
-                previewTurret = null;
-                previewConfirmDiv.style.display = 'none';
-                updateGoldDisplay();
-            }
-        });
-
-        // Select turret
-        document.querySelectorAll('.turret-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const turretType = button.dataset.turret;
-                if (gold >= turretTypes[turretType].cost) {
-                    previewTurret = {
-                        ...turretTypes[turretType],
-                        type: turretType,
-                    };
+        for (const id in items) {
+            document.getElementById(id).addEventListener('click', () => {
+                const item = items[id];
+                if (clicks >= item.cost) {
+                    clicks -= item.cost;
+                    item.cost = Math.round(item.cost * 1.15);
+                    item.effect();
+                    item.count += 1;
+                    updateUI();
                 }
             });
-        });
-
-        // Spawn enemies
-        setInterval(() => {
-            enemies.push({ ...enemyTemplate, targetIndex: 1 });
-        }, 2000);
-
-        // Game loop
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPath();
-            drawEnemies();
-            drawTurrets();
-            moveEnemies();
-            turretShoot();
-            requestAnimationFrame(gameLoop);
         }
 
-        updateGoldDisplay();
-        gameLoop();
+        function saveProgress() {
+            const saveData = {
+                clicks: Math.round(clicks),
+                clickValue: Math.round(clickValue),
+                items: {},
+            };
+            for (const id in items) {
+                saveData.items[id] = {
+                    cost: Math.round(items[id].cost),
+                    count: items[id].count,
+                };
+            }
+            localStorage.setItem('clickerGameSave', JSON.stringify(saveData));
+        }
+
+        function loadProgress() {
+            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
+            if (savedData) {
+                clicks = savedData.clicks;
+                clickValue = savedData.clickValue;
+                autoClickValue = 0; // Reset autoClickValue
+                for (const id in savedData.items) {
+                    items[id].cost = savedData.items[id].cost;
+                    items[id].count = savedData.items[id].count;
+                    // Recalculate autoClickValue for auto-clickers
+                    if (id.includes("AutoClicker")) {
+                        const autoClicksPerSecond = Math.round(parseInt(items[id].effect.toString().match(/\d+/), 10));
+                        autoClickValue += autoClicksPerSecond * items[id].count;
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', saveProgress);
+        window.addEventListener('load', () => {
+            loadProgress();
+            updateUI();
+        });
     </script>
 </body>
 </html>
