@@ -10,9 +10,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             background-color: #1e1e2f;
             color: white;
             font-family: Arial, sans-serif;
+            height: 100vh;
             overflow: hidden;
             position: relative;
         }
@@ -23,6 +25,8 @@
             padding: 10px 20px;
             background-color: #6200ea;
             color: white;
+            position: absolute;
+            top: 0;
         }
         button {
             padding: 15px 30px;
@@ -41,7 +45,6 @@
             font-size: 24px;
             padding: 20px 50px;
             border-radius: 10px;
-            margin-top: 50px;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.3s ease;
             position: absolute;
@@ -101,11 +104,12 @@
         function hitButton() {
             if (buttonClicked) return;
 
+            const button = document.getElementById('gameButton');
+
+            // For level 2 and 3, check if the button is green before proceeding
+            if ((level === 2 || level === 3) && !button.classList.contains('green')) return;
+
             buttonClicked = true;
-
-            if (level === 2 && !document.getElementById('gameButton').classList.contains('green')) return;
-            if (level === 3 && !document.getElementById('gameButton').classList.contains('green')) return;
-
             showLevelComplete();
         }
 
@@ -117,8 +121,12 @@
 
         function startNewLevel() {
             buttonClicked = false;
-            document.getElementById('gameButton').style.transform = "translate(0, 0)";
-            document.getElementById('gameButton').classList.remove('green', 'disabled');
+            const button = document.getElementById('gameButton');
+            button.style.transform = "translate(0, 0)";
+            button.style.top = "50%";
+            button.style.left = "50%";
+            button.style.transform = "translate(-50%, -50%)";
+            button.classList.remove('green', 'disabled');
             document.getElementById('darkOverlay').style.display = 'none';
             clearLevelEffects();
 
@@ -126,7 +134,7 @@
                 case 1: // Basic button click
                     break;
                 case 2: // Wait for green button
-                    toggleButtonColor();
+                    toggleButtonColor(1000);
                     break;
                 case 3: // Flashing button
                     toggleButtonColor(500);
@@ -159,7 +167,7 @@
                 angle += 5;
                 const x = Math.cos(angle * (Math.PI / 180)) * radius;
                 const y = Math.sin(angle * (Math.PI / 180)) * radius;
-                button.style.transform = `translate(${x}px, ${y}px)`;
+                button.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
             }, 30);
         }
 
