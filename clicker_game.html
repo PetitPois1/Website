@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Clicker Game</title>
+    <title>Simple Clicker Game</title>
     <style>
         body {
             display: flex;
@@ -45,7 +45,7 @@
             background-color: #3700b3;
             color: white;
             padding: 10px 20px;
-            margin: 10px 5px;
+            margin: 10px 0;
             border-radius: 5px;
             border: none;
             font-size: 1rem;
@@ -78,14 +78,18 @@
     </style>
 </head>
 <body>
-    <h1>Advanced Clicker Game</h1>
+    <h1>Simple Clicker Game</h1>
     <div class="circle" id="circle">+1</div>
     <p>Clicks: <span id="clickCount">0</span></p>
 
     <!-- Shop Section -->
     <div class="shop">
         <h2>Shop</h2>
-        <div id="shopItems"></div>
+        <button class="shop-item disabled" id="upgradeClick">Upgrade Click (+1 per click) - 10 clicks</button>
+        <button class="shop-item disabled" id="autoClicker">Auto Clicker (+1 click/sec) - 50 clicks</button>
+        <button class="shop-item disabled" id="goldenClick">Golden Click (+5 per click) - 100 clicks</button>
+        <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
+        <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
     </div>
 
     <!-- Back to Home Button -->
@@ -95,49 +99,26 @@
         let clicks = 0;
         let clickValue = 1;
 
-        const items = [
-            { name: "Plastic Click", cost: 10, effect: () => clickValue += 1 },
-            { name: "Auto Clicker", cost: 50, effect: () => autoClick(1) },
-            { name: "Wooden Click", cost: 100, effect: () => clickValue += 5 },
-            { name: "Super Auto Clicker", cost: 200, effect: () => autoClick(5) },
-            { name: "Stone Click", cost: 500, effect: () => clickValue += 10 },
-            { name: "Silver Click", cost: 1000, effect: () => clickValue += 20 },
-            { name: "Golden Click", cost: 2500, effect: () => clickValue += 50 },
-            { name: "Double Auto Clicker", cost: 5000, effect: () => autoClick(10) },
-            { name: "Triple Auto Clicker", cost: 10000, effect: () => autoClick(15) },
-            { name: "Diamond Click", cost: 25000, effect: () => clickValue += 100 },
-            { name: "Platinum Click", cost: 50000, effect: () => clickValue += 200 },
-            { name: "Auto Booster", cost: 75000, effect: () => autoClick(50) },
-            { name: "Titan Click", cost: 100000, effect: () => clickValue += 500 },
-            { name: "Galactic Click", cost: 250000, effect: () => clickValue += 1000 },
-            { name: "Universe Click", cost: 500000, effect: () => clickValue += 2000 },
-            { name: "Quantum Click", cost: 1000000, effect: () => clickValue += 5000 },
-            { name: "Titan Auto Booster", cost: 2000000, effect: () => autoClick(100) },
-            { name: "Mega Booster", cost: 5000000, effect: () => autoClick(500) },
-            { name: "Cosmic Click", cost: 10000000, effect: () => clickValue += 10000 },
-            { name: "Infinity Booster", cost: 25000000, effect: () => autoClick(1000) },
-            { name: "Eternal Click", cost: 50000000, effect: () => clickValue += 50000 },
-            { name: "Unlimited Click", cost: 100000000, effect: () => clickValue += 100000 },
-            { name: "Overload", cost: 200000000, effect: () => clickValue += 200000 },
-            { name: "Beyond Clicks", cost: 500000000, effect: () => clickValue += 500000 },
-            { name: "Timeless Click", cost: 1000000000, effect: () => clickValue += 1000000 },
-            { name: "Endless Booster", cost: 2500000000, effect: () => autoClick(10000) },
-            { name: "Endgame Click", cost: 5000000000, effect: () => clickValue += 10000000 },
-            { name: "Infinite Clicks", cost: 10000000000, effect: () => clickValue += 50000000 },
-            { name: "Godlike Clicker", cost: 50000000000, effect: () => clickValue += 100000000 },
-            { name: "Omnipotent Click", cost: 100000000000, effect: () => clickValue += 500000000 }
-        ];
+        const items = {
+            upgradeClick: { cost: 10, effect: () => clickValue += 1 },
+            autoClicker: { cost: 50, effect: () => autoClick(1) },
+            goldenClick: { cost: 100, effect: () => clickValue += 5 },
+            superAutoClicker: { cost: 200, effect: () => autoClick(5) },
+            megaClick: { cost: 500, effect: () => clickValue += 10 }
+        };
 
         const clickCount = document.getElementById('clickCount');
         const circle = document.getElementById('circle');
-        const shopItemsContainer = document.getElementById('shopItems');
 
         // Save progress to localStorage
         function saveProgress() {
             const data = {
                 clicks,
                 clickValue,
-                itemCosts: items.map(item => item.cost)
+                itemCosts: Object.keys(items).reduce((acc, id) => {
+                    acc[id] = items[id].cost;
+                    return acc;
+                }, {})
             };
             localStorage.setItem('clickerGameSave', JSON.stringify(data));
         }
@@ -148,9 +129,9 @@
             if (savedData) {
                 clicks = savedData.clicks;
                 clickValue = savedData.clickValue;
-                items.forEach((item, index) => {
-                    item.cost = savedData.itemCosts[index];
-                });
+                for (const id in savedData.itemCosts) {
+                    items[id].cost = savedData.itemCosts[id];
+                }
             }
         }
 
@@ -158,25 +139,14 @@
         function updateUI() {
             clickCount.textContent = Math.round(clicks);
 
-            // Update shop items
-            shopItemsContainer.innerHTML = '';
-            items.forEach((item, index) => {
-                const button = document.createElement('button');
-                button.classList.add('shop-item');
-                button.textContent = `${item.name} - ${Math.round(item.cost)} clicks`;
+            // Update shop buttons
+            for (const id in items) {
+                const button = document.getElementById(id);
+                const item = items[id];
                 button.disabled = clicks < item.cost;
                 button.classList.toggle('disabled', clicks < item.cost);
-                button.addEventListener('click', () => {
-                    if (clicks >= item.cost) {
-                        clicks -= item.cost;
-                        item.effect();
-                        item.cost *= 1.125; // Increase price by 12.5%
-                        updateUI();
-                        saveProgress();
-                    }
-                });
-                shopItemsContainer.appendChild(button);
-            });
+                button.textContent = `${button.dataset.text} - ${Math.round(item.cost)} clicks`;
+            }
         }
 
         // Handle circle click
@@ -193,6 +163,22 @@
                 updateUI();
                 saveProgress();
             }, 1000);
+        }
+
+        // Shop item purchase
+        for (const id in items) {
+            const button = document.getElementById(id);
+            const item = items[id];
+            button.dataset.text = button.textContent.split('-')[0].trim();
+            button.addEventListener('click', () => {
+                if (clicks >= item.cost) {
+                    clicks -= item.cost;
+                    item.effect();
+                    item.cost *= 1.125; // Increase price by 12.5%
+                    updateUI();
+                    saveProgress();
+                }
+            });
         }
 
         // Load saved progress and initialize UI
