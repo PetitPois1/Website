@@ -6,170 +6,220 @@
     <title>Tower Defense</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            background-color: #1b2a1d;
+            font-family: Arial, sans-serif;
+            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            padding: 0;
-            background-color: #1b1b2f;
-            font-family: Arial, sans-serif;
-            color: white;
         }
-        .section {
-            display: none;
-            text-align: center;
-            margin: 20px;
-        }
-        .active {
+
+        canvas {
+            background-color: #333;
             display: block;
+            margin: 20px auto;
+            border: 2px solid #66cc66;
         }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #66cc66;
+
+        #shop {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin: 10px auto;
         }
-        button {
+
+        .turret {
             background-color: #004d00;
             color: white;
-            padding: 10px 20px;
-            margin: 10px;
+            padding: 10px;
             border-radius: 5px;
-            border: none;
-            font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s;
         }
-        button:hover {
+
+        .turret:hover {
             background-color: #66cc66;
-        }
-        canvas {
-            border: 2px solid white;
-            background-color: #2d2d44;
         }
     </style>
 </head>
 <body>
-    <!-- Start Page -->
-    <div id="startPage" class="section active">
-        <h1>Welcome to Tower Defense</h1>
-        <button onclick="goTo('levelSelect')">Start Game</button>
+    <h1>Tower Defense</h1>
+    <div id="shop">
+        <div class="turret" data-damage="1" data-range="50" data-cost="10">Basic Turret (10 Gold)</div>
+        <div class="turret" data-damage="2" data-range="75" data-cost="25">Advanced Turret (25 Gold)</div>
+        <div class="turret" data-damage="5" data-range="100" data-cost="50">Elite Turret (50 Gold)</div>
     </div>
-
-    <!-- Level Select Page -->
-    <div id="levelSelectPage" class="section">
-        <h1>Select a Level</h1>
-        <button onclick="startGame(1)">Level 1</button>
-        <button onclick="startGame(2)">Level 2</button>
-        <button onclick="startGame(3)">Level 3</button>
-        <button onclick="goTo('startPage')">Back</button>
-    </div>
-
-    <!-- Game Page -->
-    <div id="gamePage" class="section">
-        <h1>Game in Progress</h1>
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <p id="gameInfo">Level: <span id="currentLevel">1</span></p>
-        <button onclick="goTo('levelSelect')">Back to Level Select</button>
-    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
     <script>
-        // Navigation between sections
-        function goTo(page) {
-            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
-            document.getElementById(page + 'Page').classList.add('active');
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const gameState = {
+            gold: 50,
+            lives: 10,
+            enemies: [],
+            turrets: [],
+            path: [
+                { x: 50, y: 100 },
+                { x: 400, y: 100 },
+                { x: 400, y: 300 },
+                { x: 750, y: 300 }
+            ],
+            selectedTurret: null
+        };
+
+        const TURRET_WIDTH = 20;
+        const TURRET_HEIGHT = 20;
+
+        // Draw the path
+        function drawPath() {
+            ctx.beginPath();
+            ctx.lineWidth = 40;
+            ctx.strokeStyle = "#555";
+            ctx.lineCap = "round";
+            ctx.moveTo(gameState.path[0].x, gameState.path[0].y);
+            for (let point of gameState.path) {
+                ctx.lineTo(point.x, point.y);
+            }
+            ctx.stroke();
         }
 
-        // Start the game at a selected level
-        function startGame(level) {
-            document.getElementById('currentLevel').textContent = level;
-            goTo('game');
-            initializeGame(level);
-        }
-
-        // Game logic
-        function initializeGame(level) {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Define enemy path (you can extend this easily for different levels)
-            const paths = {
-                1: [{ x: 50, y: 550 }, { x: 300, y: 300 }, { x: 700, y: 50 }],
-                2: [{ x: 50, y: 50 }, { x: 300, y: 300 }, { x: 700, y: 550 }],
-                3: [{ x: 50, y: 300 }, { x: 400, y: 300 }, { x: 750, y: 300 }]
-            };
-
-            const currentPath = paths[level];
-            let enemies = [];
-            let spawnInterval;
-
-            // Create enemies
-            function spawnEnemy() {
-                enemies.push({ x: currentPath[0].x, y: currentPath[0].y, pathIndex: 0 });
-            }
-
-            // Move enemies
-            function moveEnemies() {
-                enemies.forEach(enemy => {
-                    const nextPoint = currentPath[enemy.pathIndex + 1];
-                    if (!nextPoint) return; // Enemy has reached the end
-
-                    const dx = nextPoint.x - enemy.x;
-                    const dy = nextPoint.y - enemy.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < 5) {
-                        enemy.pathIndex++;
-                    } else {
-                        const speed = 2;
-                        enemy.x += (dx / distance) * speed;
-                        enemy.y += (dy / distance) * speed;
-                    }
-                });
-
-                // Remove enemies that reach the end
-                enemies = enemies.filter(enemy => enemy.pathIndex < currentPath.length - 1);
-            }
-
-            // Draw the game
-            function draw() {
-                // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Draw path
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(currentPath[0].x, currentPath[0].y);
-                for (const point of currentPath) {
-                    ctx.lineTo(point.x, point.y);
-                }
-                ctx.stroke();
-
-                // Draw enemies
-                ctx.fillStyle = 'red';
-                enemies.forEach(enemy => {
+        // Draw enemies
+        function drawEnemies() {
+            for (const enemy of gameState.enemies) {
+                if (enemy.health > 0) {
                     ctx.beginPath();
+                    ctx.fillStyle = "red";
                     ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
                     ctx.fill();
-                });
-
-                // Move enemies
-                moveEnemies();
-
-                // Loop the draw function
-                requestAnimationFrame(draw);
+                }
             }
-
-            // Start game
-            enemies = [];
-            clearInterval(spawnInterval);
-            spawnInterval = setInterval(spawnEnemy, 1000);
-            draw();
         }
+
+        // Draw turrets
+        function drawTurrets() {
+            for (const turret of gameState.turrets) {
+                ctx.beginPath();
+                ctx.fillStyle = "blue";
+                ctx.fillRect(
+                    turret.x - TURRET_WIDTH / 2,
+                    turret.y - TURRET_HEIGHT / 2,
+                    TURRET_WIDTH,
+                    TURRET_HEIGHT
+                );
+
+                // Draw turret range
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(0, 0, 255, 0.2)";
+                ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Spawn enemies
+        function spawnEnemies() {
+            gameState.enemies.push({ x: 50, y: 100, health: 5, speed: 1, progress: 0 });
+        }
+
+        // Update enemies
+        function updateEnemies() {
+            for (const enemy of gameState.enemies) {
+                if (enemy.health <= 0) continue;
+                const segment = gameState.path[enemy.progress];
+                const nextSegment = gameState.path[enemy.progress + 1];
+                if (!nextSegment) {
+                    gameState.lives--;
+                    gameState.enemies = gameState.enemies.filter(e => e !== enemy);
+                    continue;
+                }
+
+                const dx = nextSegment.x - segment.x;
+                const dy = nextSegment.y - segment.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < enemy.speed) {
+                    enemy.progress++;
+                } else {
+                    const angle = Math.atan2(dy, dx);
+                    enemy.x += Math.cos(angle) * enemy.speed;
+                    enemy.y += Math.sin(angle) * enemy.speed;
+                }
+            }
+        }
+
+        // Handle turret firing
+        function handleTurretFiring() {
+            for (const turret of gameState.turrets) {
+                for (const enemy of gameState.enemies) {
+                    const dist = Math.sqrt(
+                        (turret.x - enemy.x) ** 2 + (turret.y - enemy.y) ** 2
+                    );
+                    if (dist <= turret.range && enemy.health > 0) {
+                        enemy.health -= turret.damage;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawPath();
+            updateEnemies();
+            drawEnemies();
+            drawTurrets();
+            handleTurretFiring();
+
+            // Display lives and gold
+            ctx.fillStyle = "white";
+            ctx.fillText(`Gold: ${gameState.gold}`, 10, 20);
+            ctx.fillText(`Lives: ${gameState.lives}`, 10, 40);
+
+            if (gameState.lives > 0) {
+                requestAnimationFrame(gameLoop);
+            } else {
+                ctx.fillStyle = "red";
+                ctx.font = "30px Arial";
+                ctx.fillText("Game Over!", canvas.width / 2 - 80, canvas.height / 2);
+            }
+        }
+
+        // Turret placement
+        canvas.addEventListener("click", (e) => {
+            if (gameState.selectedTurret) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                if (gameState.gold >= gameState.selectedTurret.cost) {
+                    gameState.turrets.push({
+                        x,
+                        y,
+                        range: gameState.selectedTurret.range,
+                        damage: gameState.selectedTurret.damage
+                    });
+                    gameState.gold -= gameState.selectedTurret.cost;
+                }
+            }
+        });
+
+        // Turret selection
+        document.querySelectorAll(".turret").forEach((button) => {
+            button.addEventListener("click", () => {
+                const damage = parseInt(button.dataset.damage);
+                const range = parseInt(button.dataset.range);
+                const cost = parseInt(button.dataset.cost);
+                gameState.selectedTurret = { damage, range, cost };
+            });
+        });
+
+        // Start the game
+        setInterval(spawnEnemies, 2000);
+        gameLoop();
     </script>
 </body>
 </html>
-
