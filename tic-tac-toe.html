@@ -279,6 +279,7 @@
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             cells.forEach(cell => cell.textContent = '');
             turnIndicator.textContent = `It's X's turn!`;
+            gameStatus.textContent = '';
         }
 
         function startNewGame() {
@@ -286,11 +287,12 @@
                 gameOver = false;
                 gameBoard = ['', '', '', '', '', '', '', '', ''];
                 cells.forEach(cell => cell.textContent = '');
-                currentPlayer = 'X';
-                turnIndicator.textContent = `It's X's turn!`;
+                currentPlayer = (round % 2 === 0) ? 'O' : 'X'; // Alternate turns between X and O
+                round++;
+                turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
             }, 1000);
         }
-        
+
         function goHome() {
             window.location.href = 'index.html';
         }
