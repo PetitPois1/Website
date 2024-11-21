@@ -142,8 +142,8 @@
             oScore = 0;
             xScoreDisplay.textContent = `X Score: ${xScore}`;
             oScoreDisplay.textContent = `O Score: ${oScore}`;
-            currentPlayer = (round % 2 === 0) ? 'O' : 'X'; // Ensure alternating starts
-            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+            currentPlayer = 'X'; // X always starts
+            turnIndicator.textContent = `It's X's turn!`;
             gameStatus.textContent = '';
         }
 
@@ -170,12 +170,15 @@
                             startNewGame();
                         }, 2000);
                     } else {
-                        currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
-                        turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
-                        if (difficultySelect.value === 'coop' || currentPlayer === 'X') {
-                            return; // Wait for player O's move in 2-player mode or switch to the next player
+                        if (difficultySelect.value === 'coop') {
+                            currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+                            turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
                         } else {
-                            setTimeout(aiMove, 500);
+                            currentPlayer = 'X';
+                            turnIndicator.textContent = `It's X's turn!`;
+                            if (currentPlayer === 'O') {
+                                setTimeout(aiMove, 500);
+                            }
                         }
                     }
                 }
@@ -257,6 +260,7 @@
                 [2, 4, 6],
             ];
 
+            // AI logic for the hardest difficulty
             for (let combination of winningCombinations) {
                 const [a, b, c] = combination;
                 if (gameBoard[a] === gameBoard[b] && gameBoard[a] === 'O' && gameBoard[c] === '') {
@@ -290,9 +294,13 @@
                 gameOver = false;
                 gameBoard = ['', '', '', '', '', '', '', '', ''];
                 cells.forEach(cell => cell.textContent = '');
-                currentPlayer = (round % 2 === 0) ? 'O' : 'X'; // Alternate turns between X and O
-                round++;
+                if (difficultySelect.value === 'coop') {
+                    currentPlayer = (round % 2 === 0) ? 'X' : 'O'; // Alternate turns
+                } else {
+                    currentPlayer = 'X'; // Always start with X
+                }
                 turnIndicator.textContent = `It's ${currentPlayer}'s turn!`;
+                round++;
             }, 1000);
         }
 
