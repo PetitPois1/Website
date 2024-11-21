@@ -60,6 +60,21 @@
             background-color: #adacac;
             cursor: not-allowed;
         }
+        .back-button {
+            margin-top: 20px;
+            background-color: #3700b3;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #6200ea;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +91,9 @@
         <button class="shop-item disabled" id="superAutoClicker">Super Auto Clicker (+5 clicks/sec) - 200 clicks</button>
         <button class="shop-item disabled" id="megaClick">Mega Click (+10 per click) - 500 clicks</button>
     </div>
+
+    <!-- Back to Home Button -->
+    <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
         let clicks = 0;
