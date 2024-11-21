@@ -110,6 +110,31 @@
         const clickCount = document.getElementById('clickCount');
         const circle = document.getElementById('circle');
 
+        // Save progress to localStorage
+        function saveProgress() {
+            const data = {
+                clicks,
+                clickValue,
+                itemCosts: Object.keys(items).reduce((acc, id) => {
+                    acc[id] = items[id].cost;
+                    return acc;
+                }, {})
+            };
+            localStorage.setItem('clickerGameSave', JSON.stringify(data));
+        }
+
+        // Load progress from localStorage
+        function loadProgress() {
+            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
+            if (savedData) {
+                clicks = savedData.clicks;
+                clickValue = savedData.clickValue;
+                for (const id in savedData.itemCosts) {
+                    items[id].cost = savedData.itemCosts[id];
+                }
+            }
+        }
+
         // Update UI
         function updateUI() {
             clickCount.textContent = Math.round(clicks);
@@ -128,6 +153,7 @@
         circle.addEventListener('click', () => {
             clicks += clickValue;
             updateUI();
+            saveProgress();
         });
 
         // Auto Clicker logic
@@ -135,6 +161,7 @@
             setInterval(() => {
                 clicks += value;
                 updateUI();
+                saveProgress();
             }, 1000);
         }
 
@@ -149,11 +176,13 @@
                     item.effect();
                     item.cost *= 1.125; // Increase price by 12.5%
                     updateUI();
+                    saveProgress();
                 }
             });
         }
 
-        // Initialize UI
+        // Load saved progress and initialize UI
+        loadProgress();
         updateUI();
     </script>
 </body>
