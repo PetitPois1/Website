@@ -8,20 +8,18 @@
         body {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 20px;
             background-color: #1e1e2f;
             font-family: Arial, sans-serif;
             color: white;
-            overflow-y: auto;
         }
         h1 {
             font-size: 2.5rem;
             margin-bottom: 20px;
         }
-       .circle {
+        .circle {
             width: 200px;
             height: 200px;
             background-color: #6200ea;
@@ -95,11 +93,6 @@
         <button class="shop-item disabled" id="hyperAutoClicker">Hyper Auto Clicker (+50 clicks/sec) - 5000 clicks</button>
         <button class="shop-item disabled" id="diamondClick">Diamond Click (+100 per click) - 10000 clicks</button>
         <button class="shop-item disabled" id="ultimateAutoClicker">Ultimate Auto Clicker (+200 clicks/sec) - 20000 clicks</button>
-        <button class="shop-item disabled" id="galacticClick">Platinum Click (+500 per click) - 50000 clicks</button>
-        <button class="shop-item disabled" id="cosmicAutoClicker">Auto Booster (+500 clicks/sec) - 100000 clicks</button>
-        <button class="shop-item disabled" id="universalClick">Super Click (+1000 per click) - 250000 clicks</button>
-        <button class="shop-item disabled" id="infinityAutoClicker">Super Auto Booster (+1000 clicks/sec) - 500000 clicks</button>
-        <button class="shop-item disabled" id="omegaClick">Omega Click (+5000 per click) - 1000000 clicks</button>
     </div>
 
     <!-- Back to Home Button -->
@@ -119,12 +112,7 @@
             platinumClick: { cost: 2500, effect: () => clickValue += 50 },
             hyperAutoClicker: { cost: 5000, effect: () => autoClick(50) },
             diamondClick: { cost: 10000, effect: () => clickValue += 100 },
-            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200) },
-            galacticClick: { cost: 50000, effect: () => clickValue += 500 },
-            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500) },
-            universalClick: { cost: 250000, effect: () => clickValue += 1000 },
-            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000) },
-            omegaClick: { cost: 1000000, effect: () => clickValue += 5000 }
+            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200) }
         };
 
         const clickCount = document.getElementById('clickCount');
