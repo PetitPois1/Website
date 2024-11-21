@@ -8,7 +8,7 @@
         /* General Navbar Styling */
         .navbar {
             width: 100%;
-            background-color: #333;
+            background-color: #1b2a1d; /* Dark Green */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -23,8 +23,8 @@
             color: white;
             text-decoration: none;
             font-size: 18px;
-            padding: 10px 20px;
-            margin: 0 25px; /* Increased gap between elements */
+            padding: 10px 20px; /* Increased gap between elements */
+            margin: 0 25px; 
             background-color: transparent;
             border: 2px solid transparent;
             border-radius: 5px;
@@ -47,15 +47,11 @@
             align-items: center;
         }
 
-        .navbar a, .navbar button {
-            font-weight: 600; /* Slightly bolder text */
-        }
-
         /* Main Content Styling */
         body {
             margin: 0;
             font-family: 'Arial', sans-serif;
-            background-color: #1e1e2f;
+            background-color: #1b2a1d; /* Dark Green Background */
             color: white;
             padding-top: 80px; /* Adjust to make room for navbar */
         }
@@ -119,6 +115,23 @@
         .more-games {
             margin-top: 20px; /* Give extra margin to push it down */
         }
+
+        /* Footer Styling */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: #adacac;
+        }
+
+        .footer a {
+            color: #6200ea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -159,6 +172,11 @@
         <div class="more-games">
             <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
         </div>
+    </div>
+
+    <!-- Footer with Version Information -->
+    <div class="footer">
+        <p>Current Version: <a href="updates.html">v1.2.3</a></p>
     </div>
 
     <script>
