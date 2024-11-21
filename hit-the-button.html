@@ -52,6 +52,9 @@
         #gameButton.green {
             background-color: green;
         }
+        #gameButton.red {
+            background-color: red;
+        }
         #gameButton.disabled {
             background-color: gray;
             cursor: not-allowed;
@@ -96,7 +99,7 @@
         <button onclick="nextLevel()">Next Level</button>
     </div>
     <div id="losingScreen">
-        <p>You clicked the button when it was red! Try again!</p>
+        <p>You didn’t click it when it was green! Try again!</p>
         <button onclick="retryLevel()">Retry</button>
     </div>
 
@@ -110,7 +113,7 @@
 
             const button = document.getElementById('gameButton');
 
-            // If the button is red when clicked, show the losing screen
+            // If the button is not green when clicked, show the losing screen
             if (!button.classList.contains('green')) {
                 showLosingScreen();
                 return;
@@ -138,19 +141,19 @@
             button.style.top = "50%";
             button.style.left = "50%";
             button.style.transform = "translate(-50%, -50%)";
-            button.classList.remove('green', 'disabled');
+            button.classList.remove('green', 'red', 'disabled');
             document.getElementById('darkOverlay').style.display = 'none';
             clearLevelEffects();
 
             switch (level) {
                 case 1:
-                    button.classList.add('green');
+                    button.classList.add('green'); // Level 1 should always start with green
                     break;
                 case 2:
-                    toggleButtonColor(1000);
+                    toggleButtonColor(1000); // Level 2 should toggle between red/green every second
                     break;
                 case 3:
-                    toggleButtonColor(500);
+                    toggleButtonColor(500); // Level 3 should toggle more rapidly between red/green
                     break;
                 case 4:
                     moveButtonInCircle();
@@ -158,7 +161,7 @@
                 case 5:
                     document.getElementById('darkOverlay').style.display = 'block';
                     randomizeButtonPosition();
-                    button.classList.add('green');
+                    button.classList.add('green'); // Level 5 should always start with green
                     break;
                 default:
                     document.getElementById('levelMessage').textContent = "You've completed all levels!";
@@ -170,9 +173,11 @@
             let isGreen = true;
             colorInterval = setInterval(() => {
                 if (isGreen) {
-                    button.classList.remove('green');
-                } else {
+                    button.classList.remove('red');
                     button.classList.add('green');
+                } else {
+                    button.classList.remove('green');
+                    button.classList.add('red');
                 }
                 isGreen = !isGreen;
             }, interval);
@@ -189,7 +194,7 @@
                 const y = Math.sin(angle * (Math.PI / 180)) * radius;
                 button.style.left = `calc(50% + ${x}px)`;
                 button.style.top = `calc(50% + ${y}px)`;
-                button.classList.add('green'); // Ensures button color is consistent
+                button.classList.add('green'); // Ensures button color is green on move
             }, 16); // Approximately 60 frames per second
         }
 
