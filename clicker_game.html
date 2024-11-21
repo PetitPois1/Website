@@ -11,19 +11,19 @@
             align-items: center;
             margin: 0;
             padding: 20px;
-            background-color: #1b2a1d; /* Very dark green, almost grey */
+            background-color: #1b2a1d;
             font-family: Arial, sans-serif;
             color: white;
         }
         h1 {
             font-size: 2.5rem;
             margin-bottom: 20px;
-            color: #66cc66; /* Light green */
+            color: #66cc66;
         }
         .circle {
             width: 200px;
             height: 200px;
-            background-color: #004d00; /* Dark green */
+            background-color: #004d00;
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -41,7 +41,7 @@
             margin: 20px auto;
         }
         .shop-item {
-            background-color: #004d00;/* Green */
+            background-color: #004d00;
             color: white;
             padding: 10px 20px;
             margin: 10px 0;
@@ -53,7 +53,7 @@
             transition: background-color 0.3s ease;
         }
         .shop-item:hover {
-            background-color: #66cc66; /* Light green */
+            background-color: #66cc66;
         }
         .shop-item.disabled {
             background-color: #adacac;
@@ -61,7 +61,7 @@
         }
         .back-button {
             margin-top: 20px;
-            background-color: #004d00; /* Green */
+            background-color: #004d00;
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
@@ -72,7 +72,7 @@
             transition: background-color 0.3s ease;
         }
         .back-button:hover {
-            background-color: #66cc66; /* Light green */
+            background-color: #66cc66;
         }
     </style>
 </head>
@@ -81,7 +81,6 @@
     <div class="circle" id="circle">+1</div>
     <p>Clicks: <span id="clickCount">0</span></p>
 
-       <!-- Shop Section -->
     <div class="shop">
         <h2>Shop</h2>
         <button class="shop-item disabled" id="upgradeClick">Upgrade Click (+1 per click) - 10 clicks</button>
@@ -101,7 +100,6 @@
         <button class="shop-item disabled" id="omegaClick">Omega Click (+5000 per click) - 1000000 clicks</button>
     </div>
 
-    <!-- Back to Home Button -->
     <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
@@ -129,50 +127,34 @@
         const clickCount = document.getElementById('clickCount');
         const circle = document.getElementById('circle');
 
-
-        function saveProgress() {
-            const data = {
-                clicks,
-                clickValue,
-                itemCosts: Object.keys(items).reduce((acc, id) => {
-                    acc[id] = items[id].cost;
-                    return acc;
-                }, {})
-            };
-            localStorage.setItem('clickerGameSave', JSON.stringify(data));
-        }
-
-        function loadProgress() {
-            const savedData = JSON.parse(localStorage.getItem('clickerGameSave'));
-            if (savedData) {
-                clicks = savedData.clicks;
-                clickValue = savedData.clickValue;
-                for (const id in savedData.itemCosts) {
-                    items[id].cost = savedData.itemCosts[id];
-                }
+        // Format large numbers
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + "M";
+            } else if (num >= 10000) {
+                return (num / 1000).toFixed(1) + "k";
+            } else {
+                return num;
             }
         }
 
         function updateUI() {
-            clickCount.textContent = Math.round(clicks);
-
+            clickCount.textContent = formatNumber(Math.round(clicks));
             for (const id in items) {
                 const button = document.getElementById(id);
                 const item = items[id];
                 button.disabled = clicks < item.cost;
                 button.classList.toggle('disabled', clicks < item.cost);
-                button.textContent = `${button.dataset.text} - ${Math.round(item.cost)} clicks`;
+                button.textContent = `${button.dataset.text} - ${formatNumber(Math.round(item.cost))} clicks`;
             }
         }
 
         circle.addEventListener('click', () => {
             clicks += clickValue;
             updateUI();
-            saveProgress();
         });
 
         let autoClickValue = 0;
-
         function autoClick(value) {
             autoClickValue += value;
         }
@@ -180,7 +162,6 @@
         setInterval(() => {
             clicks += autoClickValue;
             updateUI();
-            saveProgress();
         }, 1000);
 
         for (const id in items) {
@@ -193,12 +174,10 @@
                     item.effect();
                     item.cost *= 1.125;
                     updateUI();
-                    saveProgress();
                 }
             });
         }
 
-        loadProgress();
         updateUI();
     </script>
 </body>
