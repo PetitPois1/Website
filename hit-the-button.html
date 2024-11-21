@@ -101,7 +101,7 @@
         let level = 1;
         let buttonClicked = false;
         let levelTime = 5000;  // Default time limit for each level (in milliseconds)
-        let colorInterval;
+        let colorInterval;  // Variable to store interval for color-changing button
 
         // Function to handle button clicks
         function hitButton() {
@@ -110,7 +110,7 @@
             score += 10;
             document.getElementById('playerScore').textContent = score;
             buttonClicked = true;
-            setTimeout(showLevelComplete, 1000);  // Simulate the end of the level
+            setTimeout(showLevelComplete, 1000);  // Wait a bit before showing the level complete screen
         }
 
         // Show the level complete screen
@@ -154,19 +154,22 @@
             switch(level) {
                 case 1:
                     document.getElementById('gameButton').classList.add('green');
+                    levelTime = 5000;  // Default time for level 1
                     break;
                 case 2:
                     levelTime = 4000;  // Shorter time for level 2
                     break;
                 case 3:
                     document.getElementById('gameButton').classList.add('small');
+                    levelTime = 5000;  // Default time for level 3
                     break;
                 case 4:
                     document.getElementById('gameButton').classList.add('large');
                     startColorChangingButton();
+                    levelTime = 5000;  // Default time for level 4
                     break;
                 case 5:
-                    levelTime = 3000;  // Even less time for bonus round
+                    levelTime = 3000;  // Shorter time for level 5 (bonus round)
                     break;
                 default:
                     document.getElementById('gameButton').classList.add('green');
@@ -196,7 +199,7 @@
             document.getElementById('playerScore').textContent = score;
             document.getElementById('gameButton').classList.remove('green', 'large', 'small');
             document.getElementById('levelCompleteScreen').style.display = 'none';
-            startNewLevel();
+            startNewLevel();  // Restart the first level
         }
 
         // Move to the next level
@@ -218,4 +221,3 @@
     </script>
 </body>
 </html>
-
