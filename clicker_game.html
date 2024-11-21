@@ -118,7 +118,7 @@
         </div>
         <div id="hyperAutoClickerDiv">
             <button class="shop-item disabled" id="hyperAutoClicker">Broken Machinery (+50 clicks/sec) - 5000 clicks</button>
-            <p class="upgrade-count" id="hyperAutoClickerCount">Purchased: 0</p>
+            <p class="upgrade-count" id="hyperAutoClickCount">Purchased: 0</p>
         </div>
         <div id="diamondClickDiv">
             <button class="shop-item disabled" id="diamondClick">Platinum Tool (+100 per click) - 10000 clicks</button>
@@ -134,7 +134,7 @@
         </div>
         <div id="cosmicAutoClickerDiv">
             <button class="shop-item disabled" id="cosmicAutoClicker">Diamond Machinery (+500 clicks/sec) - 100000 clicks</button>
-            <p class="upgrade-count" id="cosmicAutoClickerCount">Purchased: 0</p>
+            <p class="upgrade-count" id="cosmicAutoClickCount">Purchased: 0</p>
         </div>
         <div id="universalClickDiv">
             <button class="shop-item disabled" id="universalClick">Nuclear Tool (+1000 per click) - 250000 clicks</button>
@@ -142,7 +142,7 @@
         </div>
         <div id="infinityAutoClickerDiv">
             <button class="shop-item disabled" id="infinityAutoClicker">New Factory Branch (+1000 clicks/sec) - 500000 clicks</button>
-            <p class="upgrade-count" id="infinityAutoClickerCount">Purchased: 0</p>
+            <p class="upgrade-count" id="infinityAutoClickCount">Purchased: 0</p>
         </div>
         <div id="omegaClickDiv">
             <button class="shop-item disabled" id="omegaClick">Plasma Tool (+5000 per click) - 1000000 clicks</button>
@@ -192,7 +192,7 @@
         });
 
         function updateUI() {
-            document.getElementById('clickCount').textContent = clicks;
+            document.getElementById('clickCount').textContent = Math.round(clicks);
             for (const id in items) {
                 const item = items[id];
                 const button = document.getElementById(id);
@@ -211,7 +211,7 @@
                 const item = items[id];
                 if (clicks >= item.cost) {
                     clicks -= item.cost;
-                    item.cost = Math.ceil(item.cost * 1.15);
+                    item.cost = Math.round(item.cost * 1.15);
                     item.effect();
                     item.count += 1;
                     updateUI();
@@ -221,13 +221,13 @@
 
         function saveProgress() {
             const saveData = {
-                clicks,
-                clickValue,
+                clicks: Math.round(clicks),
+                clickValue: Math.round(clickValue),
                 items: {},
             };
             for (const id in items) {
                 saveData.items[id] = {
-                    cost: items[id].cost,
+                    cost: Math.round(items[id].cost),
                     count: items[id].count,
                 };
             }
@@ -245,7 +245,7 @@
                     items[id].count = savedData.items[id].count;
                     // Recalculate autoClickValue for auto-clickers
                     if (id.includes("AutoClicker")) {
-                        const autoClicksPerSecond = parseInt(items[id].effect.toString().match(/\d+/), 10);
+                        const autoClicksPerSecond = Math.round(parseInt(items[id].effect.toString().match(/\d+/), 10));
                         autoClickValue += autoClicksPerSecond * items[id].count;
                     }
                 }
