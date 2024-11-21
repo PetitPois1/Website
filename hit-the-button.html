@@ -74,6 +74,70 @@
         <div>
             Player Score: <span id="playerScore">0</span>
         </div>
-        <button onclick="window.location.href='inde
+        <button onclick="resetGame()">Reset Game</button>
+    </header>
+    
+    <button id="gameButton" onclick="hitButton()">Hit Me!</button>
 
-   
+    <div id="levelCompleteScreen">
+        <p>Level Complete!</p>
+        <p>Your Score: <span id="finalScore">0</span></p>
+        <button onclick="nextLevel()">Next Level</button>
+    </div>
+
+    <script>
+        let score = 0;
+        let level = 1;
+        let buttonClicked = false;
+
+        // Function to handle button clicks
+        function hitButton() {
+            if (buttonClicked) return;
+
+            score += 10;
+            document.getElementById('playerScore').textContent = score;
+            document.getElementById('gameButton').classList.remove('green');
+            buttonClicked = true;
+            setTimeout(showLevelComplete, 1000);  // Simulate the end of the level
+        }
+
+        // Show the level complete screen
+        function showLevelComplete() {
+            document.getElementById('levelCompleteScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+        }
+
+        // Reset the game
+        function resetGame() {
+            score = 0;
+            level = 1;
+            buttonClicked = false;
+            document.getElementById('playerScore').textContent = score;
+            document.getElementById('gameButton').classList.remove('green');
+            document.getElementById('levelCompleteScreen').style.display = 'none';
+            startNewLevel();
+        }
+
+        // Start a new level
+        function startNewLevel() {
+            buttonClicked = false;
+            document.getElementById('gameButton').textContent = "Hit Me!";
+            document.getElementById('gameButton').classList.add('green');  // Button turns green for new level
+        }
+
+        // Next level function
+        function nextLevel() {
+            level++;
+            document.getElementById('levelCompleteScreen').style.display = 'none';
+            startNewLevel();
+        }
+
+        // Start the first level when the page loads
+        window.onload = function() {
+            startNewLevel();
+        };
+    </script>
+</body>
+</html>
+
+        
