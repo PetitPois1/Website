@@ -70,7 +70,7 @@
             z-index: 1;
             pointer-events: none; /* Allows clicks to pass through */
         }
-        #levelCompleteScreen, #losingScreen {
+        #levelCompleteScreen, #losingScreen, #startScreen {
             display: none;
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
@@ -83,6 +83,14 @@
             transform: translate(-50%, -50%);
             text-align: center;
             z-index: 2;
+        }
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #startScreen p {
+            font-size: 18px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -103,11 +111,23 @@
         <p>You didn’t click it when it was green! Try again!</p>
         <button onclick="retryLevel()">Retry</button>
     </div>
+    
+    <!-- Start Screen -->
+    <div id="startScreen">
+        <h1>Start</h1>
+        <p>New levels coming soon!</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
 
     <script>
         let level = 1;
         let buttonClicked = false;
         let colorInterval, moveInterval;
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            startNewLevel();
+        }
 
         function hitButton() {
             if (buttonClicked) return;
@@ -254,7 +274,7 @@
         }
 
         window.onload = function() {
-            startNewLevel();
+            document.getElementById('startScreen').style.display = 'block';
         };
     </script>
 </body>
