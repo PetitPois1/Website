@@ -84,6 +84,13 @@
         let enemies = [];
         let turretPreview = null; // Preview turret before placement
         let canPlaceTurret = false; // Prevent automatic placement
+        let path = [
+            { x: 0, y: 300 },
+            { x: 400, y: 300 },
+            { x: 400, y: 100 },
+            { x: 800, y: 100 },
+        ]; // Editable path
+        let selectedTurret = null;
 
         // Turret details (damage per second and range)
         const turretsData = {
@@ -91,7 +98,6 @@
             "advanced": { damage: 20, range: 150, cost: 100 },
             "elite": { damage: 30, range: 200, cost: 200 },
         };
-        let selectedTurret = null;
 
         // Enemy class
         class Enemy {
@@ -104,13 +110,6 @@
             }
 
             move() {
-                const path = [
-                    { x: 0, y: 300 },
-                    { x: 400, y: 300 },
-                    { x: 400, y: 100 },
-                    { x: 800, y: 100 },
-                ];
-
                 const target = path[this.pathIndex];
 
                 if (target) {
@@ -176,6 +175,16 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw the path
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
             // Draw enemies
             for (const enemy of enemies) {
                 enemy.move();
@@ -226,6 +235,9 @@
                     turretPreview.x = x;
                     turretPreview.y = y;
                 }
+            } else {
+                // Handle editing the path
+                path.push({ x: e.offsetX, y: e.offsetY });
             }
         });
 
@@ -245,9 +257,11 @@
                 turrets.push(newTurret);
                 gold -= selectedTurret.cost;
                 goldDisplay.innerText = gold;
-                turretPreview = null; // Clear preview
-                confirmButton.style.display = "none"; // Hide confirm button
-                canPlaceTurret = false; // Disable further placements
+                confirmButton.style.display = "none"; // Hide the confirm button
+                canPlaceTurret = false;
+                turretPreview = null; // Remove preview
+            } else {
+                alert("Not enough gold to place turret!");
             }
         });
 
