@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draggable Block for iPad</title>
+    <title>Draggable Block with Grid</title>
     <style>
         body {
             margin: 0;
@@ -12,23 +12,78 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
+            flex-direction: column;
         }
 
+        /* The Grid Container */
+        #gridContainer {
+            display: grid;
+            grid-template-columns: repeat(5, 100px);
+            grid-template-rows: repeat(5, 100px);
+            gap: 10px;
+            justify-content: center;
+            position: relative;
+        }
+
+        .gridCell {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #333;
+            background-color: #fff;
+        }
+
+        /* The Draggable Block */
         #dragBlock {
             width: 100px;
             height: 100px;
             background-color: #4CAF50;
             cursor: pointer;
             position: absolute;
+            transition: none;
         }
     </style>
 </head>
 <body>
 
+    <div id="gridContainer">
+        <!-- Grid Cells -->
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+        <div class="gridCell"></div>
+    </div>
+
     <div id="dragBlock"></div>
 
     <script>
         const dragBlock = document.getElementById('dragBlock');
+        const gridContainer = document.getElementById('gridContainer');
+        const gridCells = document.querySelectorAll('.gridCell');
 
         let isDragging = false;
         let offsetX = 0;
@@ -81,6 +136,36 @@
         dragBlock.addEventListener('mouseup', () => {
             isDragging = false;
         });
+
+        // Check if block is dropped in a grid cell
+        dragBlock.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+
+            let droppedInCell = false;
+            const blockRect = dragBlock.getBoundingClientRect();
+
+            gridCells.forEach(cell => {
+                const cellRect = cell.getBoundingClientRect();
+
+                if (blockRect.left >= cellRect.left &&
+                    blockRect.top >= cellRect.top &&
+                    blockRect.right <= cellRect.right &&
+                    blockRect.bottom <= cellRect.bottom) {
+
+                    // Place block in the grid cell
+                    dragBlock.style.left = `${cellRect.left}px`;
+                    dragBlock.style.top = `${cellRect.top}px`;
+                    droppedInCell = true;
+                }
+            });
+
+            // If block is not dropped in any cell, return to initial position
+            if (!droppedInCell) {
+                dragBlock.style.left = '0px';
+                dragBlock.style.top = '0px';
+            }
+        });
+
     </script>
 
 </body>
