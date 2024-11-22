@@ -16,25 +16,29 @@
       margin: 0 auto;
       background-color: #70c5ce;
     }
-    #gameOverMessage {
+    #gameOverMessage, #titleScreen, #restartButton {
       position: absolute;
-      top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 30px;
+      transform: translateX(-50%);
       font-family: Arial, sans-serif;
+      text-align: center;
       color: white;
+    }
+    #titleScreen {
+      top: 30%;
+      font-size: 40px;
+      display: block;
+    }
+    #gameOverMessage {
+      top: 30%;
+      font-size: 30px;
       display: none;
     }
     #restartButton {
-      position: absolute;
       top: 60%;
-      left: 50%;
-      transform: translateX(-50%);
       padding: 10px 20px;
       font-size: 20px;
       background-color: #ff5733;
-      color: white;
       border: none;
       border-radius: 5px;
       display: none;
@@ -47,7 +51,11 @@
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-  <div id="gameOverMessage">Game Over! Tap to Restart</div>
+  <div id="titleScreen">
+    <div>Flappy Bird</div>
+    <div style="font-size: 20px;">Tap anywhere to start!</div>
+  </div>
+  <div id="gameOverMessage"></div>
   <button id="restartButton" onclick="resetGame()">Restart Game</button>
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -57,15 +65,18 @@
     const FLAP_STRENGTH = -12;
     const SPAWN_RATE = 90;
     const PIPE_WIDTH = 60;
-    const PIPE_SPACING = 300; // Even larger gap between pipes
+    const PIPE_SPACING = 250;
     const BIRD_WIDTH = 40;
     const BIRD_HEIGHT = 40;
-    const HOLE_HEIGHT = 300; // Larger hole height
+    const HOLE_HEIGHT = 300;
 
-    let birdY, birdVelocity, birdFlap, pipes, score, gameOver;
+    let birdY, birdVelocity, birdFlap, pipes, score, highScore, gameOver, gameStarted;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+
+    // Initialize high score
+    highScore = localStorage.getItem("highScore") || 0;
 
     // Initialize game state
     function resetGame() {
@@ -75,31 +86,43 @@
       pipes = [];
       score = 0;
       gameOver = false;
+      gameStarted = false;
+      document.getElementById("titleScreen").style.display = "block";
       document.getElementById("gameOverMessage").style.display = "none";
       document.getElementById("restartButton").style.display = "none";
     }
 
     resetGame();
 
-    // Touch event for mobile
+    // Handle screen taps
     canvas.addEventListener("touchstart", function(event) {
       if (gameOver) {
         resetGame();
+      } else if (!gameStarted) {
+        startGame();
       } else {
         birdFlap = true;
       }
       event.preventDefault();
     });
 
+    function startGame() {
+      gameStarted = true;
+      document.getElementById("titleScreen").style.display = "none";
+    }
+
     function generatePipe() {
       const holeY = Math.random() * (canvas.height - HOLE_HEIGHT - 100) + 50;
-      const topPipe = { x: canvas.width, y: holeY, passed: false };
-      const bottomPipe = { x: canvas.width, y: holeY + HOLE_HEIGHT, passed: false };
-      pipes.push(topPipe, bottomPipe);
+      pipes.push({
+        x: canvas.width,
+        topY: holeY,
+        bottomY: holeY + HOLE_HEIGHT,
+        passed: false,
+      });
     }
 
     function update() {
-      if (gameOver) return;
+      if (!gameStarted || gameOver) return;
 
       if (birdFlap) {
         birdVelocity = FLAP_STRENGTH;
@@ -110,35 +133,51 @@
       birdY += birdVelocity;
 
       if (birdY < 0) birdY = 0;
-      if (birdY + BIRD_HEIGHT > canvas.height) birdY = canvas.height - BIRD_HEIGHT;
+      if (birdY + BIRD_HEIGHT > canvas.height) {
+        gameOverHandler();
+      }
 
       if (pipes.length === 0 || pipes[pipes.length - 1].x <= canvas.width - SPAWN_RATE) {
         generatePipe();
       }
 
-      for (let i = pipes.length - 1; i >= 0; i--) {
-        const pipe = pipes[i];
+      pipes.forEach(pipe => {
         pipe.x -= 3;
 
-        if (pipe.x + PIPE_WIDTH < 0) {
-          pipes.splice(i, 1);
-        }
-
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < BIRD_WIDTH) {
+        // Check if bird has passed the pipe
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < 50) {
           score++;
           pipe.passed = true;
         }
 
-        if (birdY < pipe.y || birdY + BIRD_HEIGHT > pipe.y + HOLE_HEIGHT) {
-          if (pipe.x < BIRD_WIDTH && pipe.x + PIPE_WIDTH > 0) {
-            gameOverHandler();
-          }
+        // Check for collisions
+        if (
+          (birdY < pipe.topY || birdY + BIRD_HEIGHT > pipe.bottomY) &&
+          pipe.x < 50 + BIRD_WIDTH &&
+          pipe.x + PIPE_WIDTH > 50
+        ) {
+          gameOverHandler();
         }
-      }
+      });
+
+      pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0); // Remove pipes off-screen
     }
 
     function gameOverHandler() {
       gameOver = true;
+
+      // Update high score
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+      }
+
+      document.getElementById("gameOverMessage").innerHTML = `
+        Game Over!<br>
+        Score: ${score}<br>
+        High Score: ${highScore}<br>
+        Tap to restart
+      `;
       document.getElementById("gameOverMessage").style.display = "block";
       document.getElementById("restartButton").style.display = "block";
     }
@@ -146,11 +185,13 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      if (!gameStarted) return;
+
       // Draw pipes
       ctx.fillStyle = "#228B22";
       pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y); // Top pipe
-        ctx.fillRect(pipe.x, pipe.y + HOLE_HEIGHT, PIPE_WIDTH, canvas.height - pipe.y - HOLE_HEIGHT); // Bottom pipe
+        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topY);
+        ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
       });
 
       // Draw bird
@@ -161,6 +202,9 @@
       ctx.fillStyle = "#000";
       ctx.font = "30px Arial";
       ctx.fillText("Score: " + score, 10, 30);
+
+      // Draw high score
+      ctx.fillText("High Score: " + highScore, 10, 70);
     }
 
     function gameLoop() {
