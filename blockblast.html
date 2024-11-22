@@ -57,6 +57,12 @@
             margin-bottom: 10px;
         }
 
+        #highScore {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
         #blockContainer {
             display: flex;
             gap: 10px;
@@ -68,11 +74,6 @@
 
         .hidden {
             visibility: hidden;
-        }
-
-        /* Score position */
-        #score {
-            margin-bottom: 20px;
         }
 
         .blockContainerWrapper {
@@ -90,11 +91,34 @@
             font-weight: bold;
         }
 
+        /* Home Button */
+        #homeButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Restart Button */
+        #restartButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #03a9f4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
 
     <div id="score">Score: 0</div>
+    <div id="highScore">High Score: 0</div>
     <div id="gameOver">Game Over!</div>
     <div class="container" id="gameBoard"></div>
 
@@ -105,14 +129,24 @@
         <div class="block yellow" id="yellowBlock" data-size="3" style="width: 150px; height: 50px;" draggable="true"></div>
     </div>
 
+    <button id="homeButton" onclick="goHome()">Home</button>
+    <button id="restartButton" onclick="restartGame()">Restart</button>
+
     <script>
         const boardSize = 10; // 10x10 grid
         const gameBoard = document.getElementById('gameBoard');
         const scoreDisplay = document.getElementById('score');
         const gameOverDisplay = document.getElementById('gameOver');
+        const highScoreDisplay = document.getElementById('highScore');
+        const homeButton = document.getElementById('homeButton');
+        const restartButton = document.getElementById('restartButton');
         let score = 0;
         let currentBlock = null;
         let currentBlockSize = 1;
+
+        // Load high score from localStorage
+        let highScore = localStorage.getItem('highScore') || 0;
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
 
         // Generate the game grid
         for (let i = 0; i < boardSize * boardSize; i++) {
@@ -141,7 +175,6 @@
             cell.addEventListener('drop', (e) => {
                 e.preventDefault();
                 if (!cell.hasChildNodes()) {
-                    // If the block is of size 1x1, place it directly in the cell
                     if (currentBlockSize === 1) {
                         cell.appendChild(currentBlock);
                     } else {
@@ -196,6 +229,11 @@
             if (cleared > 0) {
                 score += cleared * 100;
                 scoreDisplay.textContent = `Score: ${score}`;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('highScore', highScore);
+                    highScoreDisplay.textContent = `High Score: ${highScore}`;
+                }
             }
         }
 
@@ -240,22 +278,37 @@
             for (let i = 0; i < boardSize; i++) {
                 for (let j = 0; j < boardSize; j++) {
                     const targetCell = gameBoard.children[i * boardSize + j];
-                    if (isCellAvailable(targetCell)) {
+                    // If there's space for the block
+                    if (!targetCell.hasChildNodes()) {
                         targetCell.appendChild(currentBlock);
                         placed = true;
                         break;
                     }
                 }
+
                 if (placed) break;
             }
         }
 
-        // Check if the cell is available for dropping the block
-        function isCellAvailable(cell) {
-            return !cell.hasChildNodes();
+        // Home button redirect
+        function goHome() {
+            window.location.href = 'index.html';
         }
 
-    </script>
+        // Restart the game
+        function restartGame() {
+            score = 0;
+            scoreDisplay.textContent = `Score: ${score}`;
+            gameOverDisplay.style.display = 'none';
+            clearBoard();
+        }
 
+        // Clear the game board
+        function clearBoard() {
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+            });
+        }
+    </script>
 </body>
 </html>
