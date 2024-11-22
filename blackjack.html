@@ -1,263 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Defense</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #1b2a1d;
-            color: white;
-        }
-        canvas {
-            display: block;
-            margin: auto;
-            background-color: #2d2d2d;
-            border: 1px solid white;
-        }
-        .sidebar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            color: white;
-        }
-        .sidebar p {
-            margin: 10px 0;
-        }
-        .button {
-            background-color: #66cc66;
-            padding: 5px 10px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #55bb55;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack with Betting</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #2a2a2a;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .game-area {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      margin-top: 20px;
+    }
+    .hand {
+      border: 2px solid #fff;
+      padding: 10px;
+      width: 200px;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #444;
+      border-radius: 8px;
+    }
+    .cards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .card {
+      background-color: #fff;
+      color: #000;
+      width: 40px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .actions {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background-color: #008cba;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005f7a;
+    }
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    .result, .betting {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+    input[type="number"] {
+      width: 100px;
+      padding: 5px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-    <div class="sidebar">
-        <p>Gold: <span id="goldCount">100</span></p>
-        <p>Turret Stats:</p>
-        <p id="turretInfo">Select a turret to place.</p>
-        <button id="confirmButton" class="button" style="display:none;">Confirm Placement</button>
+  <h1>Blackjack with Betting</h1>
+  <div class="betting">
+    <p>Money: $<span id="player-money">1000</span></p>
+    <p>
+      Place your bet: $<input type="number" id="bet-amount" value="100" min="10" max="1000" step="10">
+    </p>
+    <button id="place-bet-btn">Place Bet</button>
+  </div>
+  <div class="game-area">
+    <div class="hand" id="player-hand">
+      <h2>Player</h2>
+      <div class="cards" id="player-cards"></div>
+      <p>Score: <span id="player-score">0</span></p>
     </div>
+    <div class="hand" id="dealer-hand">
+      <h2>Dealer</h2>
+      <div class="cards" id="dealer-cards"></div>
+      <p>Score: <span id="dealer-score">0</span></p>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="hit-btn" disabled>Hit</button>
+    <button id="stand-btn" disabled>Stand</button>
+    <button id="restart-btn" disabled>Restart</button>
+  </div>
+  <div class="result" id="result"></div>
 
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const deck = [];
+    const suits = ["♠", "♥", "♣", "♦"];
+    const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const goldDisplay = document.getElementById("goldCount");
-        const turretInfo = document.getElementById("turretInfo");
-        const confirmButton = document.getElementById("confirmButton");
-        const gridSize = 40;
-        let gold = 100;
-        let turrets = [];
-        let enemies = [];
-        let path = [
-            { x: 100, y: 550 },
-            { x: 100, y: 300 },
-            { x: 400, y: 300 },
-            { x: 400, y: 100 },
-            { x: 750, y: 100 },
-        ];
-        let turretPreview = null;
-        let selectedTurret = null;
-        let canPlaceTurret = false;
+    let playerMoney = 1000;
+    let betAmount = 0;
+    let playerHand = [];
+    let dealerHand = [];
+    let gameOver = false;
 
-        // Turret and enemy data
-        const turretsData = {
-            "basic": { damage: 5, range: 100, cost: 50 },
-            "advanced": { damage: 10, range: 150, cost: 100 },
-        };
+    const playerMoneyEl = document.getElementById("player-money");
+    const betInputEl = document.getElementById("bet-amount");
+    const placeBetBtn = document.getElementById("place-bet-btn");
 
-        class Enemy {
-            constructor(x, y, health, speed) {
-                this.x = x;
-                this.y = y;
-                this.health = health;
-                this.speed = speed;
-                this.pathIndex = 0;
-            }
+    const playerCardsEl = document.getElementById("player-cards");
+    const dealerCardsEl = document.getElementById("dealer-cards");
+    const playerScoreEl = document.getElementById("player-score");
+    const dealerScoreEl = document.getElementById("dealer-score");
+    const resultEl = document.getElementById("result");
+    const hitBtn = document.getElementById("hit-btn");
+    const standBtn = document.getElementById("stand-btn");
+    const restartBtn = document.getElementById("restart-btn");
 
-            move() {
-                if (this.pathIndex < path.length - 1) {
-                    const target = path[this.pathIndex + 1];
-                    const dx = target.x - this.x;
-                    const dy = target.y - this.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const moveX = (dx / distance) * this.speed;
-                    const moveY = (dy / distance) * this.speed;
-
-                    this.x += moveX;
-                    this.y += moveY;
-
-                    if (distance < this.speed) {
-                        this.pathIndex++;
-                    }
-                }
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "blue";
-                ctx.fill();
-
-                // Draw health bar
-                ctx.fillStyle = "red";
-                ctx.fillRect(this.x - 15, this.y - 20, 30, 5);
-                ctx.fillStyle = "green";
-                ctx.fillRect(this.x - 15, this.y - 20, (30 * this.health) / 100, 5);
-            }
+    function createDeck() {
+      deck.length = 0;
+      for (const suit of suits) {
+        for (const value of values) {
+          deck.push({ value, suit });
         }
+      }
+      shuffleDeck();
+    }
 
-        class Turret {
-            constructor(x, y, damage, range) {
-                this.x = x;
-                this.y = y;
-                this.damage = damage;
-                this.range = range;
-                this.target = null;
-            }
+    function shuffleDeck() {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+    }
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "red";
-                ctx.fill();
+    function dealCard() {
+      return deck.pop();
+    }
 
-                // Draw range circle
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
-                ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
+    function calculateScore(hand) {
+      let score = 0;
+      let aces = 0;
 
-            attack(enemies) {
-                if (!this.target || this.target.health <= 0 || !this.isInRange(this.target)) {
-                    this.target = this.findTarget(enemies);
-                }
-                if (this.target) {
-                    this.target.health -= this.damage;
-                }
-            }
-
-            findTarget(enemies) {
-                for (const enemy of enemies) {
-                    if (this.isInRange(enemy)) {
-                        return enemy;
-                    }
-                }
-                return null;
-            }
-
-            isInRange(enemy) {
-                const dx = enemy.x - this.x;
-                const dy = enemy.y - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                return distance <= this.range;
-            }
+      hand.forEach(card => {
+        if (card.value === "A") {
+          aces++;
+          score += 11;
+        } else if (["K", "Q", "J"].includes(card.value)) {
+          score += 10;
+        } else {
+          score += parseInt(card.value);
         }
+      });
 
-        function spawnEnemy() {
-            enemies.push(new Enemy(path[0].x, path[0].y, 100, 1));
+      while (score > 21 && aces > 0) {
+        score -= 10;
+        aces--;
+      }
+
+      return score;
+    }
+
+    function renderHands() {
+      playerCardsEl.innerHTML = playerHand.map(card => `<div class="card">${card.value}${card.suit}</div>`).join("");
+      dealerCardsEl.innerHTML = dealerHand.map(card => `<div class="card">${card.value}${card.suit}</div>`).join("");
+      playerScoreEl.textContent = calculateScore(playerHand);
+      dealerScoreEl.textContent = calculateScore(dealerHand);
+    }
+
+    function checkGameOver() {
+      const playerScore = calculateScore(playerHand);
+      const dealerScore = calculateScore(dealerHand);
+
+      if (playerScore > 21) {
+        resultEl.textContent = "Player Busts! Dealer Wins!";
+        endGame(false);
+      } else if (dealerScore > 21) {
+        resultEl.textContent = "Dealer Busts! Player Wins!";
+        endGame(true);
+      } else if (dealerScore >= 17 && gameOver) {
+        if (playerScore > dealerScore) {
+          resultEl.textContent = "Player Wins!";
+          endGame(true);
+        } else if (playerScore < dealerScore) {
+          resultEl.textContent = "Dealer Wins!";
+          endGame(false);
+        } else {
+          resultEl.textContent = "It's a Tie!";
+          endGame(null);
         }
+      }
+    }
 
-        function setTurret(type) {
-            selectedTurret = turretsData[type];
-            turretInfo.innerText = `Damage: ${selectedTurret.damage}, Range: ${selectedTurret.range}, Cost: ${selectedTurret.cost}`;
-            confirmButton.style.display = "block";
-            canPlaceTurret = true;
-        }
+    function endGame(playerWon) {
+      if (playerWon === true) {
+        playerMoney += betAmount * 2; // Return bet and win amount
+      } else if (playerWon === false) {
+        // Player already lost the bet; do nothing
+      } else {
+        playerMoney += betAmount; // Return the bet on a tie
+      }
+      updateMoney();
+      hitBtn.disabled = true;
+      standBtn.disabled = true;
+      restartBtn.disabled = false;
 
-        canvas.addEventListener("mousemove", (e) => {
-            if (canPlaceTurret) {
-                const x = Math.floor(e.offsetX / gridSize) * gridSize + gridSize / 2;
-                const y = Math.floor(e.offsetY / gridSize) * gridSize + gridSize / 2;
-                turretPreview = { x, y, range: selectedTurret.range };
-            }
-        });
+      if (playerMoney <= 0) {
+        resultEl.textContent += " You are out of money!";
+        placeBetBtn.disabled = true;
+      }
+    }
 
-        confirmButton.addEventListener("click", () => {
-            if (canPlaceTurret && turretPreview && gold >= selectedTurret.cost) {
-                const newTurret = new Turret(turretPreview.x, turretPreview.y, selectedTurret.damage, selectedTurret.range);
-                turrets.push(newTurret);
-                gold -= selectedTurret.cost;
-                goldDisplay.innerText = gold;
-                confirmButton.style.display = "none";
-                canPlaceTurret = false;
-                turretPreview = null;
-            } else {
-                alert("Not enough gold!");
-            }
-        });
+    function updateMoney() {
+      playerMoneyEl.textContent = playerMoney;
+    }
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function startGame() {
+      playerHand = [dealCard(), dealCard()];
+      dealerHand = [dealCard(), dealCard()];
 
-            // Draw the path
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x, path[i].y);
-            }
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = "white";
-            ctx.stroke();
+      renderHands();
+      resultEl.textContent = "";
+      gameOver = false;
+      hitBtn.disabled = false;
+      standBtn.disabled = false;
+      restartBtn.disabled = true;
+    }
 
-            // Draw and move enemies
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                enemy.move();
-                enemy.draw();
+    placeBetBtn.addEventListener("click", () => {
+      betAmount = parseInt(betInputEl.value);
+      if (betAmount > playerMoney || betAmount <= 0) {
+        alert("Invalid bet amount!");
+        return;
+      }
+      playerMoney -= betAmount; // Deduct bet upfront
+      updateMoney();
+      placeBetBtn.disabled = true;
+      startGame();
+    });
 
-                if (enemy.health <= 0 || enemy.pathIndex >= path.length - 1) {
-                    enemies.splice(i, 1);
-                    if (enemy.health <= 0) gold += 10; // Add gold if killed
-                }
-            }
+    hitBtn.addEventListener("click", () => {
+      if (gameOver) return;
 
-            // Draw and activate turrets
-            for (const turret of turrets) {
-                turret.draw();
-                turret.attack(enemies);
-            }
+      playerHand.push(dealCard());
+      renderHands();
 
-            // Draw turret preview
-            if (turretPreview) {
-                ctx.beginPath();
-                ctx.arc(turretPreview.x, turretPreview.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "yellow";
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(turretPreview.x, turretPreview.y, turretPreview.range, 0, Math.PI * 2);
-                ctx.strokeStyle = "rgba(255, 255, 0, 0.5)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
+      if (calculateScore(playerHand) > 21) {
+        resultEl.textContent = "Player Busts! Dealer Wins!";
+        endGame(false);
+      }
+    });
 
-            goldDisplay.innerText = gold;
-            requestAnimationFrame(render);
-        }
+    standBtn.addEventListener("click", () => {
+      if (gameOver) return;
 
-        function init() {
-            setInterval(spawnEnemy, 2000);
-            render();
-        }
+      while (calculateScore(dealerHand) < 17) {
+        dealerHand.push(dealCard());
+      }
 
-        init();
-    </script>
+      renderHands();
+      gameOver = true;
+      checkGameOver();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      createDeck();
+      placeBetBtn.disabled = false;
+      restartBtn.disabled = true;
+    });
+
+    createDeck();
+  </script>
 </body>
 </html>
