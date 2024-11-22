@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draggable Block</title>
+    <title>Draggable Block for iPad</title>
     <style>
         body {
             margin: 0;
@@ -25,27 +25,61 @@
 </head>
 <body>
 
-    <div id="dragBlock" draggable="true"></div>
+    <div id="dragBlock"></div>
 
     <script>
         const dragBlock = document.getElementById('dragBlock');
 
-        dragBlock.addEventListener('dragstart', (event) => {
-            // Store the initial position of the block when dragging starts
-            event.dataTransfer.setData('text/plain', '');
-            dragBlock.style.opacity = '0.5'; // Visual feedback
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Start the drag
+        dragBlock.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            const touch = e.touches[0];  // Get the first touch point
+            offsetX = touch.clientX - dragBlock.getBoundingClientRect().left;
+            offsetY = touch.clientY - dragBlock.getBoundingClientRect().top;
+
+            dragBlock.style.transition = 'none'; // Disable any transition for smooth dragging
         });
 
-        dragBlock.addEventListener('dragend', () => {
-            dragBlock.style.opacity = '1'; // Reset visual feedback
-        });
+        // Dragging the block
+        dragBlock.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const touch = e.touches[0];
+                const x = touch.clientX - offsetX;
+                const y = touch.clientY - offsetY;
 
-        // Handle the movement of the block during the drag
-        dragBlock.addEventListener('drag', (event) => {
-            if (event.clientX && event.clientY) {
-                dragBlock.style.left = `${event.clientX - 50}px`;  // 50px offset to center the block
-                dragBlock.style.top = `${event.clientY - 50}px`;   // 50px offset to center the block
+                dragBlock.style.left = `${x}px`;
+                dragBlock.style.top = `${y}px`;
             }
+        });
+
+        // End the drag
+        dragBlock.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // For older browsers that might need mouse event fallback
+        dragBlock.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - dragBlock.getBoundingClientRect().left;
+            offsetY = e.clientY - dragBlock.getBoundingClientRect().top;
+            dragBlock.style.transition = 'none';
+        });
+
+        dragBlock.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const x = e.clientX - offsetX;
+                const y = e.clientY - offsetY;
+                dragBlock.style.left = `${x}px`;
+                dragBlock.style.top = `${y}px`;
+            }
+        });
+
+        dragBlock.addEventListener('mouseup', () => {
+            isDragging = false;
         });
     </script>
 
