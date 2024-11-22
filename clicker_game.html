@@ -194,17 +194,19 @@
         function updateUI() {
             document.getElementById('clickCount').textContent = Math.round(clicks);
             for (const id in items) {
-                const item = items[id];
-                const button = document.getElementById(id);
-                const count = document.getElementById(`${id}Count`);
-                count.textContent = `Purchased: ${item.count}`;
-                if (clicks >= item.cost) {
-                    button.classList.remove('disabled');
-                } else {
-                    button.classList.add('disabled');
-                }
+            const item = items[id];
+            const button = document.getElementById(id);
+            const count = document.getElementById(`${id}Count`);
+            count.textContent = `Purchased: ${item.count}`;
+            button.textContent = `${button.textContent.split(' - ')[0]} - ${item.cost} clicks`; // Update cost display
+            if (clicks >= item.cost) {
+                button.classList.remove('disabled');
+            } else {
+                button.classList.add('disabled');
             }
         }
+    }
+
 
         for (const id in items) {
             document.getElementById(id).addEventListener('click', () => {
