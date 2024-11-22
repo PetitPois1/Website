@@ -79,6 +79,20 @@
             color: #66cc66;
             margin-top: 5px;
         }
+        .reset-button {
+            margin-top: 20px;
+            background-color: #d9534f;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .reset-button:hover {
+            background-color: #c9302c;
+        }
     </style>
 </head>
 <body>
@@ -150,6 +164,8 @@
         </div>
     </div>
 
+
+    <button class="reset-button" id="resetButton">Reset Game</button>
     <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
@@ -194,19 +210,18 @@
         function updateUI() {
             document.getElementById('clickCount').textContent = Math.round(clicks);
             for (const id in items) {
-            const item = items[id];
-            const button = document.getElementById(id);
-            const count = document.getElementById(`${id}Count`);
-            count.textContent = `Purchased: ${item.count}`;
-            button.textContent = `${button.textContent.split(' - ')[0]} - ${item.cost} clicks`; // Update cost display
-            if (clicks >= item.cost) {
-                button.classList.remove('disabled');
-            } else {
-                button.classList.add('disabled');
+                const item = items[id];
+                const button = document.getElementById(id);
+                const count = document.getElementById(`${id}Count`);
+                count.textContent = `Purchased: ${item.count}`;
+                button.textContent = `${button.textContent.split(' - ')[0]} - ${item.cost} clicks`; // Update cost display
+                if (clicks >= item.cost) {
+                    button.classList.remove('disabled');
+                } else {
+                    button.classList.add('disabled');
+                }
             }
         }
-    }
-
 
         for (const id in items) {
             document.getElementById(id).addEventListener('click', () => {
@@ -253,6 +268,22 @@
                 }
             }
         }
+
+        function resetGame() {
+            if (confirm("Are you sure you want to reset your game? This action cannot be undone.")) {
+                localStorage.removeItem('clickerGameSave');
+                clicks = 0;
+                clickValue = 1;
+                autoClickValue = 0;
+                for (const id in items) {
+                    items[id].cost = items[id].cost / Math.pow(1.15, items[id].count);
+                    items[id].count = 0;
+                }
+                updateUI();
+            }
+        }
+
+        document.getElementById('resetButton').addEventListener('click', resetGame);
 
         window.addEventListener('beforeunload', saveProgress);
         window.addEventListener('load', () => {
