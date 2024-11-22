@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1e1e2f;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #333;
+        }
+        .score-board {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 20px;
+            z-index: 10;
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 30px;
+            display: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div class="score-board">
+        Score: <span id="score">0</span>
+    </div>
+    <div class="game-over" id="gameOverText">
+        Game Over! Your Score: <span id="finalScore"></span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Set canvas size to the full window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game variables
+        let score = 0;
+        let gameOver = false;
+        let blocks = [];
+        const blockWidth = 100;
+        const blockHeight = 30;
+        const blockSpeed = 2;
+
+        // Block class
+        class Block {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.width = blockWidth;
+                this.height = blockHeight;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            checkClick(mouseX, mouseY) {
+                if (
+                    mouseX > this.x && mouseX < this.x + this.width &&
+                    mouseY > this.y && mouseY < this.y + this.height
+                ) {
+                    return true;
+                }
+                return false;
+            }
+
+            update() {
+                this.y += blockSpeed;
+            }
+        }
+
+        // Create a new block
+        function createBlock() {
+            const x = Math.random() * (canvas.width - blockWidth);
+            const color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            blocks.push(new Block(x, -blockHeight, color));  // Start just above the canvas
+        }
+
+        // Draw all blocks
+        function drawBlocks() {
+            blocks.forEach(block => block.draw());
+        }
+
+        // Update the blocks (move them down)
+        function updateBlocks() {
+            blocks.forEach(block => block.update());
+        }
+
+        // Remove blocks that go off the screen
+        function removeOffscreenBlocks() {
+            blocks = blocks.filter(block => block.y < canvas.height);
+        }
+
+        // Check for clicks on blocks
+        canvas.addEventListener("click", (e) => {
+            if (gameOver) return;
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            blocks.forEach((block, index) => {
+                if (block.checkClick(mouseX, mouseY)) {
+                    score += 10;
+                    document.getElementById("score").textContent = score;
+                    blocks.splice(index, 1);  // Remove the clicked block
+                }
+            });
+        });
+
+        // Game Over function
+        function gameOverScreen() {
+            gameOver = true;
+            document.getElementById("finalScore").textContent = score;
+            document.getElementById("gameOverText").style.display = "block";
+        }
+
+        // Start the game
+        function startGame() {
+            gameOver = false;
+            score = 0;
+            document.getElementById("score").textContent = score;
+            blocks = [];
+            document.getElementById("gameOverText").style.display = "none";
+            gameLoop();
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
+
+            // Create a new block every 2 seconds
+            if (Math.random() < 0.02) {
+                createBlock();
+            }
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw blocks
+            updateBlocks();
+            drawBlocks();
+
+            // Remove offscreen blocks
+            removeOffscreenBlocks();
+
+            // If blocks reach the bottom of the screen, game over
+            if (blocks.some(block => block.y + blockHeight > canvas.height)) {
+                gameOverScreen();
+            }
+
+            // Keep looping the game
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        startGame();
+    </script>
+</body>
+</html>
