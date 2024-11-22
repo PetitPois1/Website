@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blackjack Game</title>
+  <title>Blackjack with Betting</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
       padding: 20px;
     }
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
     .game-area {
       display: flex;
@@ -69,14 +69,28 @@
       background-color: #555;
       cursor: not-allowed;
     }
-    .result {
+    .result, .betting {
       margin-top: 20px;
       font-size: 20px;
+    }
+    input[type="number"] {
+      width: 100px;
+      padding: 5px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
-  <h1>Blackjack</h1>
+  <h1>Blackjack with Betting</h1>
+  <div class="betting">
+    <p>Money: $<span id="player-money">1000</span></p>
+    <p>
+      Place your bet: $<input type="number" id="bet-amount" value="100" min="10" max="1000" step="10">
+    </p>
+    <button id="place-bet-btn">Place Bet</button>
+  </div>
   <div class="game-area">
     <div class="hand" id="player-hand">
       <h2>Player</h2>
@@ -90,8 +104,8 @@
     </div>
   </div>
   <div class="actions">
-    <button id="hit-btn">Hit</button>
-    <button id="stand-btn">Stand</button>
+    <button id="hit-btn" disabled>Hit</button>
+    <button id="stand-btn" disabled>Stand</button>
     <button id="restart-btn" disabled>Restart</button>
   </div>
   <div class="result" id="result"></div>
@@ -101,9 +115,15 @@
     const suits = ["♠", "♥", "♣", "♦"];
     const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
+    let playerMoney = 1000;
+    let betAmount = 0;
     let playerHand = [];
     let dealerHand = [];
     let gameOver = false;
+
+    const playerMoneyEl = document.getElementById("player-money");
+    const betInputEl = document.getElementById("bet-amount");
+    const placeBetBtn = document.getElementById("place-bet-btn");
 
     const playerCardsEl = document.getElementById("player-cards");
     const dealerCardsEl = document.getElementById("dealer-cards");
@@ -114,7 +134,6 @@
     const standBtn = document.getElementById("stand-btn");
     const restartBtn = document.getElementById("restart-btn");
 
-    // Initialize the deck
     function createDeck() {
       deck.length = 0;
       for (const suit of suits) {
@@ -125,7 +144,6 @@
       shuffleDeck();
     }
 
-    // Shuffle the deck
     function shuffleDeck() {
       for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -133,12 +151,10 @@
       }
     }
 
-    // Deal a card
     function dealCard() {
       return deck.pop();
     }
 
-    // Calculate hand score
     function calculateScore(hand) {
       let score = 0;
       let aces = 0;
@@ -154,7 +170,6 @@
         }
       });
 
-      // Adjust for Aces
       while (score > 21 && aces > 0) {
         score -= 10;
         aces--;
@@ -163,7 +178,6 @@
       return score;
     }
 
-    // Render hands
     function renderHands() {
       playerCardsEl.innerHTML = playerHand.map(card => `<div class="card">${card.value}${card.suit}</div>`).join("");
       dealerCardsEl.innerHTML = dealerHand.map(card => `<div class="card">${card.value}${card.suit}</div>`).join("");
@@ -171,38 +185,40 @@
       dealerScoreEl.textContent = calculateScore(dealerHand);
     }
 
-    // Check for game over
     function checkGameOver() {
       const playerScore = calculateScore(playerHand);
       const dealerScore = calculateScore(dealerHand);
 
       if (playerScore > 21) {
         resultEl.textContent = "Player Busts! Dealer Wins!";
+        playerMoney -= betAmount;
         endGame();
       } else if (dealerScore > 21) {
         resultEl.textContent = "Dealer Busts! Player Wins!";
+        playerMoney += betAmount;
         endGame();
-      } else if (dealerScore >= 17 && !playerHand.some(card => card.value === "hidden")) {
+      } else if (dealerScore >= 17 && gameOver) {
         if (playerScore > dealerScore) {
           resultEl.textContent = "Player Wins!";
+          playerMoney += betAmount;
         } else if (playerScore < dealerScore) {
           resultEl.textContent = "Dealer Wins!";
+          playerMoney -= betAmount;
         } else {
           resultEl.textContent = "It's a Tie!";
         }
         endGame();
       }
+
+      playerMoneyEl.textContent = playerMoney;
     }
 
-    // End the game
     function endGame() {
-      gameOver = true;
       hitBtn.disabled = true;
       standBtn.disabled = true;
       restartBtn.disabled = false;
     }
 
-    // Start a new game
     function startGame() {
       playerHand = [dealCard(), dealCard()];
       dealerHand = [dealCard(), dealCard()];
@@ -215,36 +231,48 @@
       restartBtn.disabled = true;
     }
 
-    // Player hits
+    placeBetBtn.addEventListener("click", () => {
+      betAmount = parseInt(betInputEl.value);
+      if (betAmount > playerMoney || betAmount <= 0) {
+        alert("Invalid bet amount!");
+        return;
+      }
+      placeBetBtn.disabled = true;
+      startGame();
+    });
+
     hitBtn.addEventListener("click", () => {
       if (gameOver) return;
 
       playerHand.push(dealCard());
       renderHands();
-      checkGameOver();
+
+      if (calculateScore(playerHand) > 21) {
+        resultEl.textContent = "Player Busts! Dealer Wins!";
+        playerMoney -= betAmount;
+        endGame();
+      }
     });
 
-    // Player stands
     standBtn.addEventListener("click", () => {
       if (gameOver) return;
 
       while (calculateScore(dealerHand) < 17) {
         dealerHand.push(dealCard());
       }
+
       renderHands();
+      gameOver = true;
       checkGameOver();
     });
 
-    // Restart the game
     restartBtn.addEventListener("click", () => {
       createDeck();
-      startGame();
+      placeBetBtn.disabled = false;
+      restartBtn.disabled = true;
     });
 
-    // Initialize the game
     createDeck();
-    startGame();
   </script>
 </body>
 </html>
-
