@@ -3,194 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draggable Block with Grid</title>
+    <title>Drag and Drop Blocks with Grid</title>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            flex-direction: column;
-            overflow: hidden; /* Prevent scrolling on the body */
-        }
-
-        /* The Grid Container */
-        #gridContainer {
-            display: grid;
-            grid-template-columns: repeat(5, 100px);
-            grid-template-rows: repeat(5, 100px);
-            gap: 10px;
-            justify-content: center;
-            position: relative;
-        }
-
-        .gridCell {
-            width: 100px;
-            height: 100px;
-            border: 1px solid #333;
-            background-color: #fff;
-        }
-
-        /* The Draggable Block */
-        #dragBlock {
-            width: 100px;
-            height: 100px;
-            background-color: #4CAF50;
-            cursor: pointer;
-            position: absolute;
-            transition: none;
-        }
+        /* ... Your existing CSS ... */
     </style>
 </head>
 <body>
 
     <div id="gridContainer">
         <!-- Grid Cells -->
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
-        <div class="gridCell"></div>
+        <!-- 100 grid cells (10x10 grid) -->
+        <!-- ... Your existing grid cells ... -->
     </div>
 
-    <div id="dragBlock"></div>
+    <div id="blockContainer">
+        <div id="greenBlock" class="dragBlock"></div>
+        <div id="redBlock" class="dragBlock"></div>
+        <div id="blueBlock" class="dragBlock"></div>
+    </div>
 
     <script>
-        const dragBlock = document.getElementById('dragBlock');
-        const gridContainer = document.getElementById('gridContainer');
-        const gridCells = document.querySelectorAll('.gridCell');
+        let blocksOnGrid = 0; // Counter for blocks placed on the grid
+        const gridSize = 40; // Grid cell size
+        const blockContainer = document.getElementById('blockContainer');
 
-        let isDragging = false;
-        let offsetX = 0;
-        let offsetY = 0;
+        // Function to initialize blocks in the bottom row
+        function initializeBlocks() {
+            const blockWidth = 40;
+            const spacing = 5;
+            const startX = (window.innerWidth - (blockWidth * 3 + spacing * 2)) / 2;
 
-        // Prevent page scroll when dragging
-        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+            const blocks = document.querySelectorAll('.dragBlock');
+            blocks.forEach((block, index) => {
+                block.style.left = `${startX + index * (blockWidth + spacing)}px`;
+                block.style.top = `${window.innerHeight - blockWidth}px`;
+                block.style.transition = 'top 0.2s, left 0.2s';
+            });
+        }
 
-        // Start the drag
-        dragBlock.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            const touch = e.touches[0];  // Get the first touch point
-            offsetX = touch.clientX - dragBlock.getBoundingClientRect().left;
-            offsetY = touch.clientY - dragBlock.getBoundingClientRect().top;
+        // Function to handle drag behavior
+        function handleDrag(block, blockIndex) {
+            let isDragging = false;
+            let offsetX = 0;
+            let offsetY = 0;
 
-            dragBlock.style.transition = 'none'; // Disable any transition for smooth dragging
-        });
-
-        // Dragging the block
-        dragBlock.addEventListener('touchmove', (e) => {
-            if (isDragging) {
+            block.addEventListener('touchstart', (e) => {
+                isDragging = true;
                 const touch = e.touches[0];
-                const x = touch.clientX - offsetX;
-                const y = touch.clientY - offsetY;
+                offsetX = touch.clientX - block.getBoundingClientRect().left;
+                offsetY = touch.clientY - block.getBoundingClientRect().top;
+                block.style.transition = 'none';
+                e.preventDefault();
+            });
 
-                dragBlock.style.left = `${x}px`;
-                dragBlock.style.top = `${y}px`;
-            }
-        });
-
-        // End the drag
-        dragBlock.addEventListener('touchend', () => {
-            isDragging = false;
-
-            let droppedInCell = false;
-            const blockRect = dragBlock.getBoundingClientRect();
-
-            // Check if the block is dropped in a grid cell
-            gridCells.forEach(cell => {
-                const cellRect = cell.getBoundingClientRect();
-
-                if (blockRect.left >= cellRect.left &&
-                    blockRect.top >= cellRect.top &&
-                    blockRect.right <= cellRect.right &&
-                    blockRect.bottom <= cellRect.bottom) {
-
-                    // Place block in the grid cell
-                    dragBlock.style.left = `${cellRect.left}px`;
-                    dragBlock.style.top = `${cellRect.top}px`;
-                    droppedInCell = true;
+            block.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const touch = e.touches[0];
+                    block.style.left = `${touch.clientX - offsetX}px`;
+                    block.style.top = `${touch.clientY - offsetY}px`;
+                    e.preventDefault();
                 }
             });
 
-            // If block is not dropped in any cell, return to original position
-            if (!droppedInCell) {
-                dragBlock.style.left = '0px';
-                dragBlock.style.top = '0px';
-            }
-        });
+            block.addEventListener('touchend', () => {
+                isDragging = false;
+                const blockRect = block.getBoundingClientRect();
+                let droppedInCell = false;
 
-        // For older browsers that might need mouse event fallback
-        dragBlock.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            offsetX = e.clientX - dragBlock.getBoundingClientRect().left;
-            offsetY = e.clientY - dragBlock.getBoundingClientRect().top;
-            dragBlock.style.transition = 'none';
-        });
+                document.querySelectorAll('.gridCell').forEach(cell => {
+                    const cellRect = cell.getBoundingClientRect();
+                    if (
+                        Math.abs(blockRect.left + blockRect.width / 2 - (cellRect.left + cellRect.width / 2)) < gridSize / 2 &&
+                        Math.abs(blockRect.top + blockRect.height / 2 - (cellRect.top + cellRect.height / 2)) < gridSize / 2
+                    ) {
+                        block.style.left = `${cellRect.left}px`;
+                        block.style.top = `${cellRect.top}px`;
+                        droppedInCell = true;
+                        blocksOnGrid++;
+                    }
+                });
 
-        dragBlock.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const x = e.clientX - offsetX;
-                const y = e.clientY - offsetY;
-                dragBlock.style.left = `${x}px`;
-                dragBlock.style.top = `${y}px`;
-            }
-        });
+                if (!droppedInCell) {
+                    const startX = (window.innerWidth - (40 * 3 + 10 * 2)) / 2 + (blockIndex * (40 + 10));
+                    block.style.left = `${startX}px`;
+                    block.style.top = `${window.innerHeight - 40}px`;
+                }
 
-        dragBlock.addEventListener('mouseup', () => {
-            isDragging = false;
+                block.style.transition = 'top 0.2s, left 0.2s';
 
-            let droppedInCell = false;
-            const blockRect = dragBlock.getBoundingClientRect();
-
-            // Check if the block is dropped in a grid cell
-            gridCells.forEach(cell => {
-                const cellRect = cell.getBoundingClientRect();
-
-                if (blockRect.left >= cellRect.left &&
-                    blockRect.top >= cellRect.top &&
-                    blockRect.right <= cellRect.right &&
-                    blockRect.bottom <= cellRect.bottom) {
-
-                    // Place block in the grid cell
-                    dragBlock.style.left = `${cellRect.left}px`;
-                    dragBlock.style.top = `${cellRect.top}px`;
-                    droppedInCell = true;
+                if (blocksOnGrid === 3) {
+                    spawnNewBlocks();
                 }
             });
+        }
 
-            // If block is not dropped in any cell, return to original position
-            if (!droppedInCell) {
-                dragBlock.style.left = '0px';
-                dragBlock.style.top = '0px';
-            }
-        });
+        // Function to spawn new blocks
+        function spawnNewBlocks() {
+            blockContainer.innerHTML = ''; // Clear existing blocks from the container
+            const colors = ['#4CAF50', '#FF0000', '#0000FF'];
+
+            colors.forEach((color, index) => {
+                const newBlock = document.createElement('div');
+                newBlock.classList.add('dragBlock');
+                newBlock.style.backgroundColor = color;
+                blockContainer.appendChild(newBlock);
+                handleDrag(newBlock, index);
+            });
+
+            blocksOnGrid = 0; // Reset counter
+            initializeBlocks(); // Reinitialize positions
+        }
+
+        // Initialize blocks and drag behavior
+        document.querySelectorAll('.dragBlock').forEach((block, index) => handleDrag(block, index));
+        initializeBlocks();
     </script>
-
 </body>
 </html>
