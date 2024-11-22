@@ -117,9 +117,11 @@
                 // Store the block being dragged
                 currentBlock = e.target;
                 currentBlockSize = parseInt(currentBlock.dataset.size);
+            });
 
-                // Make the block visible while dragging
-                currentBlock.classList.add('hidden');
+            block.addEventListener('dragend', () => {
+                // When the drag ends, reset the visibility of the block
+                currentBlock.classList.remove('hidden');
             });
         });
 
@@ -131,9 +133,8 @@
             });
 
             cell.addEventListener('drop', (e) => {
-                // Drop the block into the cell
+                // Drop the block into the cell if it's empty
                 if (currentBlock && !cell.hasChildNodes()) {
-                    // Place the block into the cell if it's empty
                     const newBlock = document.createElement('div');
                     newBlock.classList.add('block');
                     newBlock.style.width = `${currentBlockSize * 50}px`;
@@ -147,18 +148,10 @@
                     document.getElementById('score').textContent = `Score: ${score}`;
                     
                     // Remove the dragged block from the bottom area
-                    currentBlock.classList.remove('hidden');
+                    currentBlock.classList.add('hidden');
                     currentBlock = null;
                 }
             });
-        });
-
-        // Prevent the block from being dragged out of the game area
-        document.addEventListener('dragend', (e) => {
-            if (currentBlock) {
-                currentBlock.classList.remove('hidden');
-                currentBlock = null;
-            }
         });
 
         // Home button - Redirect to home (index.html)
@@ -186,4 +179,3 @@
 
 </body>
 </html>
-
