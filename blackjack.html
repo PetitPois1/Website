@@ -250,13 +250,29 @@
       location.reload(); // Reload the page to go back to the home state
     }
 
+    function resetGame() {
+      playerHand = [];
+      dealerHand = [];
+      betAmount = 0;
+      gameOver = false;
+      resultEl.textContent = "";
+      renderHands();
+      updateMoney();
+      placeBetBtn.disabled = false;
+      restartBtn.disabled = true;
+      hitBtn.disabled = true;
+      standBtn.disabled = true;
+      betInputEl.value = 100;
+    }
+
     placeBetBtn.addEventListener("click", () => {
       betAmount = parseInt(betInputEl.value);
       if (betAmount > playerMoney || betAmount <= 0) {
-        alert("Invalid bet amount!");
+        alert("Invalid bet amount");
         return;
       }
-      playerMoney -= betAmount; // Deduct bet upfront
+
+      playerMoney -= betAmount;
       updateMoney();
       placeBetBtn.disabled = true;
       startGame();
@@ -281,12 +297,7 @@
       checkGameOver();
     });
 
-    restartBtn.addEventListener("click", () => {
-      if (gameOver) return;
-
-      startGame();
-      placeBetBtn.disabled = false;
-    });
+    restartBtn.addEventListener("click", resetGame);
 
     homeBtn.addEventListener("click", goHome);
 
