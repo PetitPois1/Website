@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2a2a2a;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .cards {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 60px;
+            height: 90px;
+            margin: 0 5px;
+            background: white;
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #betting {
+            margin-top: 20px;
+        }
+        .chip {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: gold;
+            border-radius: 50%;
+            margin: 0 10px;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: black;
+        }
+        #playerBet {
+            margin-top: 20px;
+        }
+        #chips {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Poker Game</h1>
+    <p>Click "Deal" to get a poker hand!</p>
+    <button id="dealButton">Deal</button>
+
+    <div class="cards" id="playerHand"></div>
+    <div class="cards" id="computerHand"></div>
+
+    <div id="result"></div>
+    <div id="betting">
+        <button id="betButton">Bet 10</button>
+        <button id="raiseButton">Raise</button>
+        <button id="foldButton">Fold</button>
+    </div>
+    <div id="playerBet"></div>
+    <div id="chips"></div>
+
+    <script>
+        const suits = ['♥', '♦', '♣', '♠'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const handRanks = {
+            'Royal Flush': 10,
+            'Straight Flush': 9,
+            'Four of a Kind': 8,
+            'Full House': 7,
+            'Flush': 6,
+            'Straight': 5,
+            'Three of a Kind': 4,
+            'Two Pair': 3,
+            'One Pair': 2,
+            'High Card': 1,
+        };
+
+        let deck = [];
+        let playerHand = [];
+        let computerHand = [];
+        let playerChips = 100;
+        let currentBet = 0;
+        let playerCurrentBet = 0;
+
+        // Create deck of cards
+        function createDeck() {
+            const deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ value, suit });
+                }
+            }
+            return deck;
+        }
+
+        // Shuffle the deck of cards
+        function shuffleDeck(deck) {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        // Draw specified number of cards from the deck
+        function drawCards(count) {
+            return deck.splice(0, count);
+        }
+
+        // Display cards on the UI
+        function displayCards(container, cards) {
+            container.innerHTML = '';
+            for (let card of cards) {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `${card.value}<br>${card.suit}`;
+                container.appendChild(cardElement);
+            }
+        }
+
+        // Convert card value to numeric value
+        function getCardValue(card) {
+            const cardValueMap = {
+                '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+                '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+            };
+            return cardValueMap[card.value];
+        }
+
+        // Evaluate the hand and return rank
+        function evaluateHand(hand) {
+            const valuesCount = {};
+            const suitsCount = {};
+
+            hand.forEach(card => {
+                valuesCount[card.value] = (valuesCount[card.value] || 0) + 1;
+                suitsCount[card.suit] = (suitsCount[card.suit] || 0) + 1;
+            });
+
+            const valueCounts = Object.values(valuesCount).sort((a, b) => b - a);
+            const isFlush = Object.values(suitsCount).includes(5);
+            const sortedValues = hand.map(card => getCardValue(card)).sort((a, b) => a - b);
+            const isStraight = sortedValues[4] - sortedValues[0] === 4 && new Set(sortedValues).size === 5;
+
+            if (isStraight && isFlush) {
+                if (sortedValues[4] === 14) {
+                    return { rank: 'Royal Flush', value: 14 }; // Royal Flush
+                }
+                return { rank: 'Straight Flush', value: sortedValues[4] }; // Straight Flush
+            }
+            if (valueCounts[0] === 4) {
+                return { rank: 'Four of a Kind', value: sortedValues[2] };
+            }
+            if (valueCounts[0] === 3 && valueCounts[1] === 2) {
+                return { rank: 'Full House', value: sortedValues[2] };
+            }
+            if (isFlush) {
+                return { rank: 'Flush', value: sortedValues[4] };
+            }
+            if (isStraight) {
+                return { rank: 'Straight', value: sortedValues[4] };
+            }
+            if (valueCounts[0] === 3) {
+                return { rank: 'Three of a Kind', value: sortedValues[2] };
+            }
+            if (valueCounts[0] === 2 && valueCounts[1] === 2) {
+                return { rank: 'Two Pair', value: sortedValues[3] };
+            }
+            if (valueCounts[0] === 2) {
+                return { rank: 'One Pair', value: sortedValues[1] };
+            }
+            return { rank: 'High Card', value: sortedValues[4] };
+        }
+
+        // Determine the winner of the round
+        function determineWinner() {
+            const playerScore = evaluateHand(playerHand);
+            const computerScore = evaluateHand(computerHand);
+
+            if (handRanks[playerScore.rank] > handRanks[computerScore.rank]) {
+                return 'Player Wins!';
+            }
+            if (handRanks[playerScore.rank] < handRanks[computerScore.rank]) {
+                return 'Computer Wins!';
+            }
+            if (playerScore.value > computerScore.value) {
+                return 'Player Wins!';
+            }
+            if (playerScore.value < computerScore.value) {
+                return 'Computer Wins!';
+            }
+            return 'It\'s a Tie!';
+        }
+
+        // Update the player's chip count
+        function updateChips() {
+            document.getElementById('chips').innerHTML = `Chips: <span class="chip">${playerChips}</span>`;
+        }
+
+        // Update the player's current bet
+        function updatePlayerBet() {
+            document.getElementById('playerBet').innerHTML = `Your Bet: ${playerCurrentBet}`;
+        }
+
+        const dealButton = document.getElementById('dealButton');
+        const betButton = document.getElementById('betButton');
+        const raiseButton = document.getElementById('raiseButton');
+        const foldButton = document.getElementById('foldButton');
+        const playerHandContainer = document.getElementById('playerHand');
+        const computerHandContainer = document.getElementById('computerHand');
+        const resultContainer = document.getElementById('result');
+
+        // Handle the 'Deal' button click
+        dealButton.addEventListener('click', () => {
+            deck = createDeck();
+            shuffleDeck(deck);
+            playerHand = drawCards(5);
+            computerHand = drawCards(5);
+
+            displayCards(playerHandContainer, playerHand);
+            displayCards(computerHandContainer, computerHand);
+
+            resultContainer.textContent = 'Round started. Make your move!';
+            playerCurrentBet = 0;
+            currentBet = 0;
+            updatePlayerBet();
+            updateChips();
+        });
+
+        // Handle the 'Bet' button click
+        betButton.addEventListener('click', () => {
+            if (playerChips >= 10) {
+                playerChips -= 10;
+                currentBet += 10;
+                playerCurrentBet = 10;
+                resultContainer.textContent = 'You bet 10 chips.';
+                updatePlayerBet();
+                updateChips();
+            } else {
+                resultContainer.textContent = 'Not enough chips!';
+            }
+        });
+
+        // Handle the 'Raise' button click
+        raiseButton.addEventListener('click', () => {
+            if (playerChips >= 20) {
+                playerChips -= 20;
+                currentBet += 20;
+                playerCurrentBet += 20;
+                resultContainer.textContent = `You raised 20 chips. Your bet is now ${playerCurrentBet} chips.`;
+                updatePlayerBet();
+                updateChips();
+            } else {
+                resultContainer.textContent = 'Not enough chips to raise!';
+            }
+        });
+
+        // Handle the 'Fold' button click
+        foldButton.addEventListener('click', () => {
+            resultContainer.textContent = 'You folded. Computer wins this round.';
+            playerChips += currentBet; // Refund the bet
+            currentBet = 0;
+            playerCurrentBet = 0;
+            updateChips();
+        });
+    </script>
+</body>
+</html>
+
