@@ -7,175 +7,177 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #1e1e2f;
-            color: white;
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
+            background-color: #f0f0f0;
         }
-        canvas {
-            display: block;
-            margin: 0 auto;
-            background-color: #333;
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(10, 50px);
+            grid-template-rows: repeat(10, 50px);
+            gap: 2px;
+            margin-bottom: 20px;
         }
-        .score-board {
-            position: absolute;
-            top: 10px;
-            left: 20px;
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+        }
+
+        .block {
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .block.red {
+            background-color: #f44336;
+        }
+
+        .block.blue {
+            background-color: #2196F3;
+        }
+
+        .block.yellow {
+            background-color: #FFEB3B;
+        }
+
+        .block.purple {
+            background-color: #9C27B0;
+        }
+
+        #score {
             font-size: 20px;
-            z-index: 10;
+            text-align: center;
         }
-        .game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 30px;
-            display: none;
-            z-index: 20;
+
+        .hidden {
+            visibility: hidden;
         }
     </style>
 </head>
 <body>
-    <div class="score-board">
-        Score: <span id="score">0</span>
+
+    <div id="score">Score: 0</div>
+    <div class="container" id="gameBoard"></div>
+    <div id="blockContainer">
+        <div class="block red" draggable="true" id="redBlock"></div>
+        <div class="block blue" draggable="true" id="blueBlock"></div>
+        <div class="block yellow" draggable="true" id="yellowBlock"></div>
+        <div class="block purple" draggable="true" id="purpleBlock"></div>
     </div>
-    <div class="game-over" id="gameOverText">
-        Game Over! Your Score: <span id="finalScore"></span>
-    </div>
-    <canvas id="gameCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        // Set canvas size to the full window
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        // Game variables
+        const boardSize = 10; // 10x10 grid
+        const gameBoard = document.getElementById('gameBoard');
+        const scoreDisplay = document.getElementById('score');
         let score = 0;
-        let gameOver = false;
-        let blocks = [];
-        const blockWidth = 100;
-        const blockHeight = 30;
-        const blockSpeed = 2;
 
-        // Block class
-        class Block {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.width = blockWidth;
-                this.height = blockHeight;
-                this.color = color;
-            }
+        let currentBlock = null;
 
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-            }
-
-            checkClick(mouseX, mouseY) {
-                if (
-                    mouseX > this.x && mouseX < this.x + this.width &&
-                    mouseY > this.y && mouseY < this.y + this.height
-                ) {
-                    return true;
-                }
-                return false;
-            }
-
-            update() {
-                this.y += blockSpeed;
-            }
+        // Generate the game grid
+        for (let i = 0; i < boardSize * boardSize; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.setAttribute('data-id', i);
+            gameBoard.appendChild(cell);
         }
 
-        // Create a new block
-        function createBlock() {
-            const x = Math.random() * (canvas.width - blockWidth);
-            const color = `hsl(${Math.random() * 360}, 70%, 60%)`;
-            blocks.push(new Block(x, -blockHeight, color));  // Start just above the canvas
-        }
+        // Allow blocks to be dragged
+        const blocks = document.querySelectorAll('.block');
+        blocks.forEach(block => {
+            block.addEventListener('dragstart', (e) => {
+                currentBlock = e.target;
+            });
+        });
 
-        // Draw all blocks
-        function drawBlocks() {
-            blocks.forEach(block => block.draw());
-        }
+        // Drop blocks into cells
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Allow drop
+            });
 
-        // Update the blocks (move them down)
-        function updateBlocks() {
-            blocks.forEach(block => block.update());
-        }
-
-        // Remove blocks that go off the screen
-        function removeOffscreenBlocks() {
-            blocks = blocks.filter(block => block.y < canvas.height);
-        }
-
-        // Check for clicks on blocks
-        canvas.addEventListener("click", (e) => {
-            if (gameOver) return;
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            blocks.forEach((block, index) => {
-                if (block.checkClick(mouseX, mouseY)) {
-                    score += 10;
-                    document.getElementById("score").textContent = score;
-                    blocks.splice(index, 1);  // Remove the clicked block
+            cell.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!cell.hasChildNodes()) {
+                    cell.appendChild(currentBlock);
+                    currentBlock.style.position = 'relative';
+                    currentBlock.style.top = 0;
+                    currentBlock.style.left = 0;
+                    currentBlock.setAttribute('draggable', 'false');
+                    checkForCompletion();
                 }
             });
         });
 
-        // Game Over function
-        function gameOverScreen() {
-            gameOver = true;
-            document.getElementById("finalScore").textContent = score;
-            document.getElementById("gameOverText").style.display = "block";
-        }
+        // Check if a row or column is completed
+        function checkForCompletion() {
+            let cleared = 0;
 
-        // Start the game
-        function startGame() {
-            gameOver = false;
-            score = 0;
-            document.getElementById("score").textContent = score;
-            blocks = [];
-            document.getElementById("gameOverText").style.display = "none";
-            gameLoop();
-        }
-
-        // Game loop
-        function gameLoop() {
-            if (gameOver) return;
-
-            // Create a new block every 2 seconds
-            if (Math.random() < 0.02) {
-                createBlock();
+            // Check rows
+            for (let row = 0; row < boardSize; row++) {
+                let completeRow = true;
+                for (let col = 0; col < boardSize; col++) {
+                    const cell = gameBoard.children[row * boardSize + col];
+                    if (!cell.hasChildNodes()) {
+                        completeRow = false;
+                        break;
+                    }
+                }
+                if (completeRow) {
+                    cleared++;
+                    clearRow(row);
+                }
             }
 
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Update and draw blocks
-            updateBlocks();
-            drawBlocks();
-
-            // Remove offscreen blocks
-            removeOffscreenBlocks();
-
-            // If blocks reach the bottom of the screen, game over
-            if (blocks.some(block => block.y + blockHeight > canvas.height)) {
-                gameOverScreen();
+            // Check columns
+            for (let col = 0; col < boardSize; col++) {
+                let completeCol = true;
+                for (let row = 0; row < boardSize; row++) {
+                    const cell = gameBoard.children[row * boardSize + col];
+                    if (!cell.hasChildNodes()) {
+                        completeCol = false;
+                        break;
+                    }
+                }
+                if (completeCol) {
+                    cleared++;
+                    clearColumn(col);
+                }
             }
 
-            // Keep looping the game
-            requestAnimationFrame(gameLoop);
+            // Update score
+            if (cleared > 0) {
+                score += cleared * 100;
+                scoreDisplay.textContent = `Score: ${score}`;
+            }
         }
 
-        // Start the game
-        startGame();
+        // Clear a completed row
+        function clearRow(row) {
+            for (let col = 0; col < boardSize; col++) {
+                const cell = gameBoard.children[row * boardSize + col];
+                cell.innerHTML = ''; // Remove child
+            }
+        }
+
+        // Clear a completed column
+        function clearColumn(col) {
+            for (let row = 0; row < boardSize; row++) {
+                const cell = gameBoard.children[row * boardSize + col];
+                cell.innerHTML = ''; // Remove child
+            }
+        }
     </script>
+
 </body>
 </html>
