@@ -13,6 +13,7 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
+            flex-direction: column;
         }
 
         .container {
@@ -28,6 +29,7 @@
             height: 50px;
             background-color: #e0e0e0;
             border: 1px solid #ccc;
+            position: relative;
         }
 
         .block {
@@ -57,31 +59,65 @@
         #score {
             font-size: 20px;
             text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #blockContainer {
+            display: flex;
+            gap: 10px;
+        }
+
+        #blockContainer .block {
+            cursor: pointer;
         }
 
         .hidden {
             visibility: hidden;
         }
+
+        /* Score position */
+        #score {
+            margin-bottom: 20px;
+        }
+
+        .blockContainerWrapper {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        /* Game Over */
+        #gameOver {
+            display: none;
+            font-size: 30px;
+            color: red;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
 
     <div id="score">Score: 0</div>
+    <div id="gameOver">Game Over!</div>
     <div class="container" id="gameBoard"></div>
-    <div id="blockContainer">
-        <div class="block red" draggable="true" id="redBlock"></div>
-        <div class="block blue" draggable="true" id="blueBlock"></div>
-        <div class="block yellow" draggable="true" id="yellowBlock"></div>
-        <div class="block purple" draggable="true" id="purpleBlock"></div>
+
+    <!-- Blocks at the bottom -->
+    <div class="blockContainerWrapper">
+        <div class="block red" draggable="true" id="redBlock" data-size="1"></div>
+        <div class="block blue" draggable="true" id="blueBlock" data-size="2"></div>
+        <div class="block yellow" draggable="true" id="yellowBlock" data-size="3"></div>
     </div>
 
     <script>
         const boardSize = 10; // 10x10 grid
         const gameBoard = document.getElementById('gameBoard');
         const scoreDisplay = document.getElementById('score');
+        const gameOverDisplay = document.getElementById('gameOver');
         let score = 0;
-
         let currentBlock = null;
+        let currentBlockSize = 1;
 
         // Generate the game grid
         for (let i = 0; i < boardSize * boardSize; i++) {
@@ -96,6 +132,7 @@
         blocks.forEach(block => {
             block.addEventListener('dragstart', (e) => {
                 currentBlock = e.target;
+                currentBlockSize = parseInt(currentBlock.dataset.size);
             });
         });
 
@@ -108,16 +145,45 @@
 
             cell.addEventListener('drop', (e) => {
                 e.preventDefault();
-                if (!cell.hasChildNodes()) {
-                    cell.appendChild(currentBlock);
-                    currentBlock.style.position = 'relative';
-                    currentBlock.style.top = 0;
-                    currentBlock.style.left = 0;
+                if (!cell.hasChildNodes() && isCellAvailable(cell)) {
+                    // Place block based on its size
+                    if (currentBlockSize === 1) {
+                        cell.appendChild(currentBlock);
+                    } else {
+                        placeBlockInCell(cell);
+                    }
+
                     currentBlock.setAttribute('draggable', 'false');
+                    currentBlock = null;
                     checkForCompletion();
+                    checkForGameOver();
                 }
             });
         });
+
+        // Check if the cell is available for dropping the block
+        function isCellAvailable(cell) {
+            return !cell.hasChildNodes();
+        }
+
+        // Place the block in a cell depending on the size
+        function placeBlockInCell(cell) {
+            let blockWidth = currentBlockSize;
+            let placed = false;
+
+            // Find the block's placement based on the size
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const targetCell = gameBoard.children[i * boardSize + j];
+                    if (isCellAvailable(targetCell)) {
+                        targetCell.appendChild(currentBlock);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (placed) break;
+            }
+        }
 
         // Check if a row or column is completed
         function checkForCompletion() {
@@ -175,6 +241,22 @@
             for (let row = 0; row < boardSize; row++) {
                 const cell = gameBoard.children[row * boardSize + col];
                 cell.innerHTML = ''; // Remove child
+            }
+        }
+
+        // Check for game over (when no more moves are possible)
+        function checkForGameOver() {
+            let gameOver = true;
+            for (let i = 0; i < boardSize * boardSize; i++) {
+                const cell = gameBoard.children[i];
+                if (!cell.hasChildNodes()) {
+                    gameOver = false;
+                    break;
+                }
+            }
+
+            if (gameOver) {
+                gameOverDisplay.style.display = 'block';
             }
         }
     </script>
