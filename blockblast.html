@@ -117,6 +117,7 @@
                 // Store the block being dragged
                 currentBlock = e.target;
                 currentBlockSize = parseInt(currentBlock.dataset.size);
+                currentBlock.classList.add('hidden');
             });
 
             block.addEventListener('dragend', () => {
