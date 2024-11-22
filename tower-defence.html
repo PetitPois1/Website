@@ -179,6 +179,7 @@
                 this.y = y;
                 this.damage = damage;
                 this.range = range;
+                this.target = null; // The enemy the turret is currently targeting
             }
 
             draw() {
@@ -195,13 +196,35 @@
                 ctx.stroke();
             }
 
-            attack(enemy) {
-                const dx = enemy.x - this.x;
-                const dy = enemy.y - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance <= this.range) {
-                    enemy.health -= this.damage;
+            attack() {
+                if (this.target) {
+                    const dx = this.target.x - this.x;
+                    const dy = this.target.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance <= this.range) {
+                        this.target.health -= this.damage;
+                        if (this.target.health <= 0) {
+                            this.target = null; // Reset target when it's destroyed
+                        }
+                    }
                 }
+            }
+
+            findTarget(enemies) {
+                let closestEnemy = null;
+                let closestDistance = this.range;
+
+                for (const enemy of enemies) {
+                    const dx = enemy.x - this.x;
+                    const dy = enemy.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance <= this.range && (!closestEnemy || distance < closestDistance)) {
+                        closestEnemy = enemy;
+                        closestDistance = distance;
+                    }
+                }
+
+                this.target = closestEnemy;
             }
         }
 
@@ -218,6 +241,16 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw path
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
             // Draw enemies
             for (const enemy of enemies) {
                 enemy.move();
@@ -230,42 +263,42 @@
             // Draw turrets
             for (const turret of turrets) {
                 turret.draw();
+                turret.attack();
             }
 
-            // Check for turret attacks
-            for (const turret of turrets) {
-                for (const enemy of enemies) {
-                    turret.attack(enemy);
-                    if (enemy.health <= 0) {
-                        gold += 10; // Increase gold on enemy death
-                        goldDisplay.innerText = gold;
-                    }
-                }
-            }
-
+            // Request next frame
             requestAnimationFrame(render);
         }
 
-        // Handle click for placing turret
+        // Handle turret selection and placement
+        function setTurret(index) {
+            selectedTurret = turretsData[index];
+            turretStats.innerHTML = `
+                <span id="turretName">${selectedTurret.name}</span>
+                <span>Cost: <span id="turretCost">${selectedTurret.cost}</span></span>
+                <span>Damage: <span id="turretDamage">${selectedTurret.damage}</span> /sec</span>
+                <span>Range: <span id="turretRange">${selectedTurret.range}</span></span>
+            `;
+        }
+
+        function updateTurretPreview(x, y) {
+            if (turretPreview) {
+                turretPreview.x = x;
+                turretPreview.y = y;
+            } else {
+                turretPreview = new Turret(x, y, selectedTurret.damage, selectedTurret.range);
+            }
+        }
+
         canvas.addEventListener("click", (e) => {
-            if (selectedTurret && gold >= selectedTurret.cost) {
-                const x = Math.floor(e.offsetX / gridSize) * gridSize;
-                const y = Math.floor(e.offsetY / gridSize) * gridSize;
-                if (!turretPreview) {
-                    turretPreview = { x, y, range: selectedTurret.range }; // Initialize preview
-                }
+            const x = e.offsetX;
+            const y = e.offsetY;
+
+            // If previewing, update position
+            if (turretPreview) {
+                updateTurretPreview(x, y);
             }
         });
-
-        // Handle turret selection and preview
-        function setTurret(index) {
-            selectedTurretIndex = index;
-            selectedTurret = turretsData[selectedTurretIndex];
-            document.getElementById("turretName").innerText = selectedTurret.name;
-            document.getElementById("turretCost").innerText = selectedTurret.cost;
-            document.getElementById("turretDamage").innerText = selectedTurret.damage;
-            document.getElementById("turretRange").innerText = selectedTurret.range;
-        }
 
         // Confirm placement
         confirmButton.addEventListener("click", () => {
