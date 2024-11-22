@@ -84,7 +84,7 @@
 </head>
 <body>
   <h1>Blackjack with Betting</h1>
-  <button id="home-btn" onclick="window.location.href='index.html'>Home</button>
+  <button id="home-btn" >Home</button>
   <div class="betting">
     <p>Money: $<span id="player-money">1000</span></p>
     <p>
@@ -250,29 +250,13 @@
       location.reload(); // Reload the page to go back to the home state
     }
 
-    function resetGame() {
-      playerHand = [];
-      dealerHand = [];
-      betAmount = 0;
-      gameOver = false;
-      resultEl.textContent = "";
-      renderHands();
-      updateMoney();
-      placeBetBtn.disabled = false;
-      restartBtn.disabled = true;
-      hitBtn.disabled = true;
-      standBtn.disabled = true;
-      betInputEl.value = 100;
-    }
-
     placeBetBtn.addEventListener("click", () => {
       betAmount = parseInt(betInputEl.value);
       if (betAmount > playerMoney || betAmount <= 0) {
-        alert("Invalid bet amount");
+        alert("Invalid bet amount!");
         return;
       }
-
-      playerMoney -= betAmount;
+      playerMoney -= betAmount; // Deduct bet upfront
       updateMoney();
       placeBetBtn.disabled = true;
       startGame();
@@ -297,7 +281,12 @@
       checkGameOver();
     });
 
-    restartBtn.addEventListener("click", resetGame);
+    restartBtn.addEventListener("click", () => {
+      if (gameOver) return;
+
+      startGame();
+      placeBetBtn.disabled = false;
+    });
 
     homeBtn.addEventListener("click", goHome);
 
