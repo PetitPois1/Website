@@ -66,6 +66,7 @@
         #blockContainer {
             display: flex;
             gap: 10px;
+            justify-content: center;
         }
 
         #blockContainer .block {
@@ -278,24 +279,32 @@
             for (let i = 0; i < boardSize; i++) {
                 for (let j = 0; j < boardSize; j++) {
                     const targetCell = gameBoard.children[i * boardSize + j];
-                    // If there's space for the block
                     if (!targetCell.hasChildNodes()) {
-                        targetCell.appendChild(currentBlock);
-                        placed = true;
-                        break;
+                        if (i + blockWidth <= boardSize) {
+                            for (let k = 0; k < blockWidth; k++) {
+                                const tempCell = gameBoard.children[(i + k) * boardSize + j];
+                                if (tempCell.hasChildNodes()) {
+                                    placed = false;
+                                    break;
+                                }
+                            }
+                            if (placed) {
+                                currentBlock.style.gridRow = i + 1;
+                                currentBlock.style.gridColumn = j + 1;
+                                placed = true;
+                            }
+                        }
                     }
                 }
-
-                if (placed) break;
             }
         }
 
-        // Home button redirect
+        // Home button function to redirect to the main page
         function goHome() {
             window.location.href = 'index.html';
         }
 
-        // Restart the game
+        // Restart the game function
         function restartGame() {
             score = 0;
             scoreDisplay.textContent = `Score: ${score}`;
@@ -309,6 +318,7 @@
                 cell.innerHTML = '';
             });
         }
+
     </script>
 </body>
 </html>
