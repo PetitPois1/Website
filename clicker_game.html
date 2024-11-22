@@ -151,13 +151,13 @@
         </div>
     </div>
 
+
     <button class="reset-button" id="resetButton">Reset Game</button>
     <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
         let clicks = 0;
         let clickValue = 1;
-        let autoClickValue = 0;
 
         const items = {
             upgradeClick: { cost: 10, effect: () => clickValue += 1, count: 0 },
@@ -176,6 +176,52 @@
             infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000), count: 0 },
             omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 },
         };
+
+        let autoClickValue = 0;
+
+        function autoClick(value) {
+            autoClickValue += value;
+        }
+
+        setInterval(() => {
+            clicks += autoClickValue;
+            updateUI();
+        }, 1000);
+
+        const circle = document.getElementById('circle');
+        circle.addEventListener('click', () => {
+            clicks += clickValue;
+            updateUI();
+        });
+
+        function updateUI() {
+            document.getElementById('clickCount').textContent = Math.round(clicks);
+            for (const id in items) {
+                const item = items[id];
+                const button = document.getElementById(id);
+                const count = document.getElementById(`${id}Count`);
+                count.textContent = `Purchased: ${item.count}`;
+                button.textContent = `${button.textContent.split(' - ')[0]} - ${item.cost} clicks`; // Update cost display
+                if (clicks >= item.cost) {
+                    button.classList.remove('disabled');
+                } else {
+                    button.classList.add('disabled');
+                }
+            }
+        }
+
+        for (const id in items) {
+            document.getElementById(id).addEventListener('click', () => {
+                const item = items[id];
+                if (clicks >= item.cost) {
+                    clicks -= item.cost;
+                    item.cost = Math.round(item.cost * 1.15);
+                    item.effect();
+                    item.count += 1;
+                    updateUI();
+                }
+            });
+        }
 
         // Save progress to localStorage
         function saveProgress() {
@@ -206,58 +252,24 @@
             }
         }
 
-        // Auto-clicker function
-        function autoClick(amount) {
-            autoClickValue += amount;
-        }
-
-        // Update UI
-        function updateUI() {
-            document.getElementById("clickCount").textContent = clicks;
-
-            // Update upgrade button states and purchase count
-            Object.keys(items).forEach(itemKey => {
-                const item = items[itemKey];
-                const button = document.getElementById(itemKey);
-                const countText = document.getElementById(itemKey + "Count");
-                
-                button.textContent = `${itemKey.replace(/([A-Z])/g, ' $1').trim()} (${item.effect ? item.effect() : item.effect}) - ${item.cost} clicks`;
-                button.classList.toggle("disabled", clicks < item.cost);
-                countText.textContent = `Purchased: ${item.count}`;
-            });
-        }
-
-        // Reset the game
         function resetGame() {
-            localStorage.removeItem("industrialClickerSave");
-            location.reload();
+            if (confirm("Are you sure you want to reset your game? This action cannot be undone.")) {
+                localStorage.removeItem('clickerGameSave');
+                clicks = 0;
+                clickValue = 1;
+                autoClickValue = 0;
+                for (const id in items) {
+                    items[id].cost = items[id].cost / Math.pow(1.15, items[id].count);
+                    items[id].count = 0;
+                }
+                updateUI();
+            }
         }
 
-        // Handle clicking the circle
-        document.getElementById("circle").addEventListener("click", function () {
-            clicks += clickValue;
-            updateUI();
-        });
+        document.getElementById('resetButton').addEventListener('click', resetGame);
 
-        // Handle upgrading items
-        Object.keys(items).forEach(itemKey => {
-            document.getElementById(itemKey).addEventListener("click", function () {
-                const item = items[itemKey];
-                if (clicks >= item.cost) {
-                    clicks -= item.cost;
-                    item.effect();
-                    item.count++;
-                    updateUI();
-                    saveProgress();
-                }
-            });
-        });
-
-        // Handle reset button
-        document.getElementById("resetButton").addEventListener("click", resetGame);
-
-        // Load saved data on page load
-        window.addEventListener("load", function () {
+        window.addEventListener('beforeunload', saveProgress);
+        window.addEventListener('load', () => {
             loadProgress();
             updateUI();
         });
