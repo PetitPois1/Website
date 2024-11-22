@@ -22,12 +22,11 @@
         .sidebar {
             position: absolute;
             top: 20px;
-            right: 20px;
+            left: 20px;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 10px;
             border-radius: 8px;
             color: white;
-            width: 200px;
         }
         .sidebar p {
             margin: 10px 0;
@@ -43,31 +42,14 @@
         .button:hover {
             background-color: #55bb55;
         }
-        .turret-button {
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #444;
-            color: white;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-        }
-        .turret-button:hover {
-            background-color: #666;
-        }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <p>Gold: <span id="goldCount">100</span></p>
+        <p>Gold: <span id="goldCount">0</span></p>
         <p>Turret Stats:</p>
         <p id="turretInfo">Select a turret to place.</p>
         <button id="confirmButton" class="button" style="display:none;">Confirm Placement</button>
-        <div>
-            <button class="turret-button" onclick="setTurret('basic')">Basic Turret</button>
-            <button class="turret-button" onclick="setTurret('advanced')">Advanced Turret</button>
-            <button class="turret-button" onclick="setTurret('elite')">Elite Turret</button>
-        </div>
     </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -83,14 +65,6 @@
         let turrets = [];
         let enemies = [];
         let turretPreview = null; // Preview turret before placement
-        let canPlaceTurret = false; // Prevent automatic placement
-        let path = [
-            { x: 0, y: 300 },
-            { x: 400, y: 300 },
-            { x: 400, y: 100 },
-            { x: 800, y: 100 },
-        ]; // Fixed path
-        let selectedTurret = null;
 
         // Turret details (damage per second and range)
         const turretsData = {
@@ -98,6 +72,7 @@
             "advanced": { damage: 20, range: 150, cost: 100 },
             "elite": { damage: 30, range: 200, cost: 200 },
         };
+        let selectedTurret = null;
 
         // Enemy class
         class Enemy {
@@ -110,6 +85,13 @@
             }
 
             move() {
+                const path = [
+                    { x: 0, y: 300 },
+                    { x: 400, y: 300 },
+                    { x: 400, y: 100 },
+                    { x: 800, y: 100 },
+                ];
+
                 const target = path[this.pathIndex];
 
                 if (target) {
@@ -169,24 +151,11 @@
         }
 
         function generateEnemies() {
-            // Add multiple enemies to follow the path
-            for (let i = 0; i < 5; i++) {
-                enemies.push(new Enemy(0, 300, 100, 1)); // Add 5 enemies
-            }
+            enemies.push(new Enemy(0, 300, 100, 1));
         }
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw the fixed path
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x, path[i].y);
-            }
-            ctx.lineWidth = 6; // Make the path thicker
-            ctx.strokeStyle = "white";
-            ctx.stroke();
 
             // Draw enemies
             for (const enemy of enemies) {
@@ -229,14 +198,16 @@
             requestAnimationFrame(render);
         }
 
-        // Handle click for previewing turret placement
+        // Handle click for placing turret
         canvas.addEventListener("click", (e) => {
-            if (selectedTurret && canPlaceTurret) {
+            if (selectedTurret && gold >= selectedTurret.cost) {
                 const x = Math.floor(e.offsetX / gridSize) * gridSize;
                 const y = Math.floor(e.offsetY / gridSize) * gridSize;
                 if (turretPreview) {
-                    turretPreview.x = x;
-                    turretPreview.y = y;
+                    turrets.push(new Turret(x, y, selectedTurret.damage, selectedTurret.range));
+                    gold -= selectedTurret.cost;
+                    goldDisplay.innerText = gold;
+                    turretPreview = null; // Clear preview
                 }
             }
         });
@@ -245,24 +216,16 @@
         function setTurret(type) {
             selectedTurret = turretsData[type];
             turretInfo.innerText = `Damage: ${selectedTurret.damage} /sec, Range: ${selectedTurret.range}, Cost: ${selectedTurret.cost}`;
-            confirmButton.style.display = "block"; // Show confirm button
-            canPlaceTurret = true; // Enable placement
-            turretPreview = { x: 0, y: 0, range: selectedTurret.range }; // Initialize preview
+            confirmButton.style.display = "block";
+            // Show preview when mouse clicks
+            confirmButton.onclick = () => {
+                turretPreview = { x: 0, y: 0, range: selectedTurret.range }; // Initialize preview
+            };
         }
 
-        // Confirm placement button action
-        confirmButton.addEventListener("click", () => {
-            if (selectedTurret && gold >= selectedTurret.cost) {
-                const newTurret = new Turret(turretPreview.x, turretPreview.y, selectedTurret.damage, selectedTurret.range);
-                turrets.push(newTurret);
-                gold -= selectedTurret.cost;
-                goldDisplay.innerText = gold;
-                confirmButton.style.display = "none";
-                canPlaceTurret = false;
-                turretPreview = null;
-            } else {
-                alert("Not enough gold!");
-            }
+        // Set a turret from the selection
+        document.getElementById("confirmButton").addEventListener("click", () => {
+            // Implement placement logic after preview
         });
 
         init();
