@@ -33,43 +33,26 @@
         }
 
         .block {
+            width: 50px;
+            height: 50px;
             background-color: #4CAF50;
             border-radius: 4px;
             cursor: pointer;
             position: absolute;
             z-index: 10;
+            transition: transform 0.2s ease;
         }
-
-        .blockContainerWrapper {
-            display: flex;
-            justify-content: space-evenly;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .block {
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
     </style>
 </head>
 <body>
 
     <div class="container" id="gameBoard"></div>
 
-    <!-- Blocks at the bottom -->
-    <div class="blockContainerWrapper">
-        <div class="block red" id="redBlock" data-size="1" style="width: 50px; height: 50px;" draggable="true"></div>
-        <div class="block blue" id="blueBlock" data-size="2" style="width: 100px; height: 50px;" draggable="true"></div>
-        <div class="block yellow" id="yellowBlock" data-size="3" style="width: 150px; height: 50px;" draggable="true"></div>
-    </div>
+    <div class="block" id="block" draggable="true"></div>
 
     <script>
         const boardSize = 10; // 10x10 grid
         const gameBoard = document.getElementById('gameBoard');
-        let currentBlock = null;
-        let currentBlockSize = 1;
 
         // Generate the game grid
         for (let i = 0; i < boardSize * boardSize; i++) {
@@ -79,45 +62,30 @@
             gameBoard.appendChild(cell);
         }
 
-        // Drag and drop setup
-        const blocks = document.querySelectorAll('.block');
-        blocks.forEach(block => {
-            block.addEventListener('dragstart', (e) => {
-                // Store the block being dragged
-                currentBlock = e.target;
-                currentBlockSize = parseInt(currentBlock.dataset.size);
-                currentBlock.classList.add('hidden');
-            });
+        const block = document.getElementById('block');
 
-            block.addEventListener('dragend', () => {
-                // When the drag ends, reset the visibility of the block
-                currentBlock.classList.remove('hidden');
-            });
+        block.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', null); // This is required for drag-and-drop
+            block.classList.add('dragging');
         });
 
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach(cell => {
-            cell.addEventListener('dragover', (e) => {
-                // Allow the drop
-                e.preventDefault();
-            });
+        block.addEventListener('dragend', () => {
+            block.classList.remove('dragging');
+        });
 
-            cell.addEventListener('drop', (e) => {
-                // Drop the block into the cell if it's empty
-                if (currentBlock && !cell.hasChildNodes()) {
-                    const newBlock = document.createElement('div');
-                    newBlock.classList.add('block');
-                    newBlock.style.width = `${currentBlockSize * 50}px`;
-                    newBlock.style.height = '50px';
-                    newBlock.style.backgroundColor = currentBlock.style.backgroundColor;
-                    newBlock.draggable = true;
-                    cell.appendChild(newBlock);
+        gameBoard.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Required to allow drop
+        });
 
-                    // Reset the dragged block
-                    currentBlock.classList.remove('hidden');
-                    currentBlock = null;
-                }
-            });
+        gameBoard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const draggingBlock = document.querySelector('.dragging');
+            if (!draggingBlock) return; // No block is being dragged
+            
+            const cell = e.target.closest('.cell');
+            if (!cell || cell.hasChildNodes()) return; // Cell is not empty
+            
+            cell.appendChild(draggingBlock);
         });
     </script>
 
