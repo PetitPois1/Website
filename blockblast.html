@@ -33,11 +33,10 @@
         }
 
         .block {
-            width: 50px;
-            height: 50px;
             background-color: #4CAF50;
             border-radius: 4px;
             cursor: pointer;
+            position: absolute;
         }
 
         .block.red {
@@ -50,10 +49,6 @@
 
         .block.yellow {
             background-color: #FFEB3B;
-        }
-
-        .block.purple {
-            background-color: #9C27B0;
         }
 
         #score {
@@ -105,9 +100,9 @@
 
     <!-- Blocks at the bottom -->
     <div class="blockContainerWrapper">
-        <div class="block red" draggable="true" id="redBlock" data-size="1"></div>
-        <div class="block blue" draggable="true" id="blueBlock" data-size="2"></div>
-        <div class="block yellow" draggable="true" id="yellowBlock" data-size="3"></div>
+        <div class="block red" id="redBlock" data-size="1" style="width: 50px; height: 50px;" draggable="true"></div>
+        <div class="block blue" id="blueBlock" data-size="2" style="width: 100px; height: 50px;" draggable="true"></div>
+        <div class="block yellow" id="yellowBlock" data-size="3" style="width: 150px; height: 50px;" draggable="true"></div>
     </div>
 
     <script>
@@ -145,8 +140,8 @@
 
             cell.addEventListener('drop', (e) => {
                 e.preventDefault();
-                if (!cell.hasChildNodes() && isCellAvailable(cell)) {
-                    // Place block based on its size
+                if (!cell.hasChildNodes()) {
+                    // If the block is of size 1x1, place it directly in the cell
                     if (currentBlockSize === 1) {
                         cell.appendChild(currentBlock);
                     } else {
@@ -160,30 +155,6 @@
                 }
             });
         });
-
-        // Check if the cell is available for dropping the block
-        function isCellAvailable(cell) {
-            return !cell.hasChildNodes();
-        }
-
-        // Place the block in a cell depending on the size
-        function placeBlockInCell(cell) {
-            let blockWidth = currentBlockSize;
-            let placed = false;
-
-            // Find the block's placement based on the size
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                    const targetCell = gameBoard.children[i * boardSize + j];
-                    if (isCellAvailable(targetCell)) {
-                        targetCell.appendChild(currentBlock);
-                        placed = true;
-                        break;
-                    }
-                }
-                if (placed) break;
-            }
-        }
 
         // Check if a row or column is completed
         function checkForCompletion() {
@@ -259,6 +230,31 @@
                 gameOverDisplay.style.display = 'block';
             }
         }
+
+        // Place the block in a cell depending on the size
+        function placeBlockInCell(cell) {
+            let blockWidth = currentBlockSize;
+            let placed = false;
+
+            // Find the block's placement based on the size
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const targetCell = gameBoard.children[i * boardSize + j];
+                    if (isCellAvailable(targetCell)) {
+                        targetCell.appendChild(currentBlock);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (placed) break;
+            }
+        }
+
+        // Check if the cell is available for dropping the block
+        function isCellAvailable(cell) {
+            return !cell.hasChildNodes();
+        }
+
     </script>
 
 </body>
