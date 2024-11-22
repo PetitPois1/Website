@@ -100,7 +100,7 @@
 <body>
     <header>
         <button onclick="resetGame()">Reset Game</button>
-        <button onclick="goHome()">Home</button>
+        <button onclick="goHome(event)">Home</button>
     </header>
     
     <button id="gameButton" onclick="hitButton()">Hit Me!</button>
@@ -126,23 +126,16 @@
         let buttonClicked = false;
         let colorInterval, moveInterval;
 
+        // Redirect user to index.html when Home button is clicked
+        function goHome(event) {
+            event.preventDefault();
+            window.location.href = 'index.html'; // Redirect to index.html
+        }
+
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameButton').style.display = 'block';
             startNewLevel();
-        }
-
-        function goHome() {
-            // Reset all game state and show the start screen
-            level = 1;
-            buttonClicked = false;
-            clearLevelEffects();
-
-            document.getElementById('startScreen').style.display = 'flex';
-            document.getElementById('gameButton').style.display = 'none';
-            document.getElementById('levelCompleteScreen').style.display = 'none';
-            document.getElementById('losingScreen').style.display = 'none';
-            document.getElementById('darkOverlay').style.display = 'none';
         }
 
         function resetGame() {
@@ -161,10 +154,19 @@
             if (level === 1) {
                 button.className = 'green';
             } else if (level === 2) {
-                toggleButtonColors(1000);
+                levelTwoColorChange();
             } else if (level === 3) {
                 toggleButtonColors(350);
             }
+        }
+
+        function levelTwoColorChange() {
+            const button = document.getElementById('gameButton');
+            button.className = 'red'; // Start with red
+
+            setTimeout(() => {
+                button.className = 'green'; // Change to green after 3 seconds
+            }, 3000); // 3 seconds delay for color change
         }
 
         function toggleButtonColors(interval) {
