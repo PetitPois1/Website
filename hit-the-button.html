@@ -48,7 +48,16 @@
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.3s ease;
             position: absolute;
-            display: none;
+        }
+        #gameButton.green {
+            background-color: green;
+        }
+        #gameButton.red {
+            background-color: red;
+        }
+        #gameButton.disabled {
+            background-color: gray;
+            cursor: not-allowed;
         }
         #darkOverlay {
             position: absolute;
@@ -59,6 +68,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             display: none;
             z-index: 1;
+            pointer-events: none; /* Allows clicks to pass through */
         }
         #levelCompleteScreen, #losingScreen {
             display: none;
@@ -74,33 +84,12 @@
             text-align: center;
             z-index: 2;
         }
-        #startScreen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 3;
-        }
-        #startScreen h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        #startScreen p {
-            font-size: 18px;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
     <header>
         <button onclick="resetGame()">Reset Game</button>
-        <button onclick="goHome(event)">Home</button>
+        <button onclick="goHome()">Home</button>
     </header>
     
     <button id="gameButton" onclick="hitButton()">Hit Me!</button>
@@ -114,74 +103,131 @@
         <p>You didn’t click it when it was green! Try again!</p>
         <button onclick="retryLevel()">Retry</button>
     </div>
-    
-    <div id="startScreen">
-        <h1>Welcome!</h1>
-        <p>New levels coming soon!</p>
-        <button onclick="startGame()">Start Game</button>
-    </div>
 
     <script>
         let level = 1;
         let buttonClicked = false;
         let colorInterval, moveInterval;
 
-        // Redirect user to index.html when Home button is clicked
-        function goHome(event) {
-            event.preventDefault();
-            window.location.href = 'index.html'; // Redirect to index.html
+        function hitButton() {
+            if (buttonClicked) return;
+
+            const button = document.getElementById('gameButton');
+
+            // If the button is not green when clicked, show the losing screen
+            if (!button.classList.contains('green')) {
+                showLosingScreen();
+                return;
+            }
+
+            buttonClicked = true;
+            showLevelComplete();
         }
 
-        function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameButton').style.display = 'block';
-            startNewLevel();
+        function showLevelComplete() {
+            document.getElementById('levelCompleteScreen').style.display = 'block';
+            document.getElementById('levelMessage').textContent = `Level ${level} complete!`;
+            clearLevelEffects();
         }
 
-        function resetGame() {
-            level = 1;
-            startNewLevel();
+        function showLosingScreen() {
+            document.getElementById('losingScreen').style.display = 'block';
+            clearLevelEffects();
         }
 
         function startNewLevel() {
             buttonClicked = false;
             const button = document.getElementById('gameButton');
-            button.style.transform = "translate(-50%, -50%)";
+            button.style.transform = "translate(0, 0)";
             button.style.top = "50%";
             button.style.left = "50%";
+            button.style.transform = "translate(-50%, -50%)";
+            button.classList.remove('green', 'red', 'disabled');
+            document.getElementById('darkOverlay').style.display = 'none';
             clearLevelEffects();
 
-            if (level === 1) {
-                button.className = 'green';
-            } else if (level === 2) {
-                levelTwoColorChange();
-            } else if (level === 3) {
-                toggleButtonColors(350);
+            switch (level) {
+                case 1:
+                    button.classList.add('green'); // Level 1 should always start with green
+                    break;
+                case 2:
+                    button.classList.add('red'); // Start red for Level 2
+                    changeButtonColorOnLevel2();
+                    break;
+                case 3:
+                    changeButtonColorRapidlyForLevel3();
+                    break;
+                case 4:
+                    moveButtonInCircle();
+                    break;
+                case 5:
+                    document.getElementById('darkOverlay').style.display = 'block';
+                    randomizeButtonPosition();
+                    button.classList.add('green'); // Level 5 should always start with green
+                    break;
+                default:
+                    document.getElementById('levelMessage').textContent = "You've completed all levels!";
             }
         }
 
-        function levelTwoColorChange() {
+        function changeButtonColorOnLevel2() {
             const button = document.getElementById('gameButton');
-            button.className = 'red'; // Start with red
-
-            setTimeout(() => {
-                button.className = 'green'; // Change to green after 3 seconds
-            }, 3000); // 3 seconds delay for color change
-        }
-
-        function toggleButtonColors(interval) {
-            const button = document.getElementById('gameButton');
-            let isGreen = false;
+            let isGreen = false; // Start with red on level 2
 
             colorInterval = setInterval(() => {
+                if (isGreen) {
+                    button.classList.remove('red');
+                    button.classList.add('green');
+                } else {
+                    button.classList.remove('green');
+                    button.classList.add('red');
+                }
                 isGreen = !isGreen;
-                button.className = isGreen ? 'green' : 'red';
-            }, interval);
+            }, 1000); // Toggle color every 1 second (red -> green -> red)
+        }
+
+        function changeButtonColorRapidlyForLevel3() {
+            const button = document.getElementById('gameButton');
+            let isGreen = false; // Start with red on level 3
+
+            colorInterval = setInterval(() => {
+                if (isGreen) {
+                    button.classList.remove('red');
+                    button.classList.add('green');
+                } else {
+                    button.classList.remove('green');
+                    button.classList.add('red');
+                }
+                isGreen = !isGreen;
+            }, 350); // Rapid toggle between red and green every 350 milliseconds
+        }
+
+        function moveButtonInCircle() {
+            const button = document.getElementById('gameButton');
+            let angle = 0;
+            const radius = 150;
+
+            moveInterval = setInterval(() => {
+                angle += 2; // Smaller increments for smoother motion
+                const x = Math.cos(angle * (Math.PI / 180)) * radius;
+                const y = Math.sin(angle * (Math.PI / 180)) * radius;
+                button.style.left = `calc(50% + ${x}px)`;
+                button.style.top = `calc(50% + ${y}px)`;
+                button.classList.add('green'); // Ensures button color is green on move
+            }, 16); // Approximately 60 frames per second
+        }
+
+        function randomizeButtonPosition() {
+            const button = document.getElementById('gameButton');
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight - 100);
+            button.style.left = `${Math.max(50, x)}px`;
+            button.style.top = `${Math.max(50, y)}px`;
         }
 
         function clearLevelEffects() {
-            clearInterval(colorInterval);
-            clearInterval(moveInterval);
+            if (colorInterval) clearInterval(colorInterval);
+            if (moveInterval) clearInterval(moveInterval);
         }
 
         function retryLevel() {
@@ -189,21 +235,27 @@
             startNewLevel();
         }
 
-        function nextLevel() {
+        function resetGame() {
+            level = 1;
+            buttonClicked = false;
             document.getElementById('levelCompleteScreen').style.display = 'none';
-            level++;
+            document.getElementById('losingScreen').style.display = 'none';
             startNewLevel();
         }
 
-        function hitButton() {
-            const button = document.getElementById('gameButton');
-            if (!button.classList.contains('green')) {
-                document.getElementById('losingScreen').style.display = 'block';
-                clearLevelEffects();
-                return;
-            }
-            document.getElementById('levelCompleteScreen').style.display = 'block';
+        function nextLevel() {
+            level++;
+            document.getElementById('levelCompleteScreen').style.display = 'none';
+            startNewLevel();
         }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        window.onload = function() {
+            startNewLevel();
+        };
     </script>
 </body>
 </html>
