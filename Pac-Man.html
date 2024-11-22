@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid white;
+            display: block;
+        }
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .restart-btn {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 20px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .restart-btn:hover {
+            background-color: #d32f2f;
+        }
+        .dpad {
+            position: absolute;
+            bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        .dpad button {
+            width: 60px;
+            height: 60px;
+            background-color: #444;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .dpad button:active {
+            background-color: #666;
+        }
+        .dpad .vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="score" id="score">Score: 0</div>
+    <canvas id="pacmanGame" width="800" height="400"></canvas>
+    <button id="restartButton" class="restart-btn">Restart</button>
+    <div class="dpad">
+        <div class="vertical">
+            <button id="up">▲</button>
+        </div>
+        <div class="horizontal">
+            <button id="left">◄</button>
+            <button id="right">►</button>
+        </div>
+        <div class="vertical">
+            <button id="down">▼</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("pacmanGame");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        const restartButton = document.getElementById("restartButton");
+
+        const pacMan = {
+            x: 400,
+            y: 200,
+            radius: 15,
+            angleStart: 0.2 * Math.PI,
+            angleEnd: 1.8 * Math.PI,
+            speed: 5,
+            direction: "right"
+        };
+
+        const ghosts = [
+            { x: 100, y: 100, radius: 15, color: "red", direction: "right" },
+            { x: 700, y: 100, radius: 15, color: "blue", direction: "down" }
+        ];
+
+        const walls = [
+            { x: 50, y: 50, width: 700, height: 20 },
+            { x: 50, y: 330, width: 700, height: 20 },
+            { x: 50, y: 50, width: 20, height: 300 },
+            { x: 730, y: 50, width: 20, height: 300 },
+            { x: 200, y: 150, width: 400, height: 20 },
+            { x: 200, y: 230, width: 20, height: 80 },
+            { x: 580, y: 200, width: 100, height: 20 }
+        ];
+
+        const pellets = [
+            { x: 100, y: 100, radius: 5 },
+            { x: 700, y: 100, radius: 5 },
+            { x: 400, y: 150, radius: 5 },
+            { x: 250, y: 250, radius: 5 },
+            { x: 550, y: 300, radius: 5 },
+            { x: 150, y: 300, radius: 5 }
+        ];
+
+        let score = 0;
+        let isGameOver = false;
+
+        const directions = {
+            ArrowUp: { dx: 0, dy: -1 },
+            ArrowDown: { dx: 0, dy: 1 },
+            ArrowLeft: { dx: -1, dy: 0 },
+            ArrowRight: { dx: 1, dy: 0 }
+        };
+
+        const dpadButtons = {
+            up: "ArrowUp",
+            down: "ArrowDown",
+            left: "ArrowLeft",
+            right: "ArrowRight"
+        };
+
+        let currentDirection = "ArrowRight";
+
+        // D-pad button event listeners
+        Object.keys(dpadButtons).forEach(btnId => {
+            document.getElementById(btnId).addEventListener("click", () => {
+                currentDirection = dpadButtons[btnId];
+            });
+        });
+
+        function drawPacMan() {
+            ctx.beginPath();
+            ctx.arc(pacMan.x, pacMan.y, pacMan.radius, pacMan.angleStart, pacMan.angleEnd);
+            ctx.lineTo(pacMan.x, pacMan.y);
+            ctx.fillStyle = "yellow";
+            ctx.fill();
+        }
+
+        function drawGhosts() {
+            ghosts.forEach(ghost => {
+                ctx.beginPath();
+                ctx.arc(ghost.x, ghost.y, ghost.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = ghost.color;
+                ctx.fill();
+            });
+        }
+
+        function drawWalls() {
+            walls.forEach(wall => {
+                ctx.fillStyle = "blue";
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            });
+        }
+
+        function drawPellets() {
+            pellets.forEach(pellet => {
+                ctx.beginPath();
+                ctx.arc(pellet.x, pellet.y, pellet.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = "white";
+                ctx.fill();
+            });
+        }
+
+        function movePacMan() {
+            const { dx, dy } = directions[currentDirection];
+            pacMan.x += dx * pacMan.speed;
+            pacMan.y += dy * pacMan.speed;
+
+            walls.forEach(wall => {
+                if (pacMan.x + pacMan.radius > wall.x && pacMan.x - pacMan.radius < wall.x + wall.width &&
+                    pacMan.y + pacMan.radius > wall.y && pacMan.y - pacMan.radius < wall.y + wall.height) {
+                    pacMan.x -= dx * pacMan.speed;
+                    pacMan.y -= dy * pacMan.speed;
+                }
+            });
+        }
+
+        function moveGhosts() {
+            ghosts.forEach(ghost => {
+                const dx = pacMan.x - ghost.x;
+                const dy = pacMan.y - ghost.y;
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    ghost.direction = dx > 0 ? "right" : "left";
+                } else {
+                    ghost.direction = dy > 0 ? "down" : "up";
+                }
+
+                const { dx: ghostDx, dy: ghostDy } = directions[`Arrow${ghost.direction.charAt(0).toUpperCase() + ghost.direction.slice(1)}`] || { dx: 0, dy: 0 };
+                ghost.x += ghostDx * 2;
+                ghost.y += ghostDy * 2;
+
+                walls.forEach(wall => {
+                    if (ghost.x + ghost.radius > wall.x && ghost.x - ghost.radius < wall.x + wall.width &&
+                        ghost.y + ghost.radius > wall.y && ghost.y - ghost.radius < wall.y + wall.height) {
+                        ghost.x -= ghostDx * 2;
+                        ghost.y -= ghostDy * 2;
+                    }
+                });
+            });
+        }
+
+        function checkCollisions() {
+            pellets.forEach((pellet, index) => {
+                if (Math.hypot(pacMan.x - pellet.x, pacMan.y - pellet.y) < pacMan.radius + pellet.radius) {
+                    pellets.splice(index, 1);
+                    score += 10;
+                    scoreElement.textContent = `Score: ${score}`;
+                }
+            });
+
+            ghosts.forEach(ghost => {
+                if (Math.hypot(pacMan.x - ghost.x, pacMan.y - ghost.y) < pacMan.radius + ghost.radius) {
+                    isGameOver = true;
+                    restartButton.style.display = "block";
+                    alert("Game Over! Final Score: " + score);
+                }
+            });
+        }
+
+        function gameLoop() {
+            if (isGameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawWalls();
+            drawPellets();
+            drawGhosts();
+            drawPacMan();
+
+            movePacMan();
+            moveGhosts();
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        restartButton.addEventListener("click", () => {
+            pacMan.x = 400;
+            pacMan.y = 200;
+            score = 0;
+            scoreElement.textContent = "Score: 0";
+            pellets.push(
+                { x: 100, y: 100, radius: 5 },
+                { x: 700, y: 100, radius: 5 },
+                { x: 400, y: 150, radius: 5 },
+                { x: 250, y: 250, radius: 5 },
+                { x: 550, y: 300, radius: 5 },
+                { x: 150, y: 300, radius: 5 }
+            );
+            ghosts.forEach(ghost => {
+                ghost.x = Math.random() * 700 + 50;
+                ghost.y = Math.random() * 300 + 50;
+            });
+            isGameOver = false;
+            restartButton.style.display = "none";
+            gameLoop();
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
 
