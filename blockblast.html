@@ -13,6 +13,7 @@
             height: 100vh;
             background-color: #f0f0f0;
             flex-direction: column;
+            overflow: hidden; /* Prevent scrolling on the body */
         }
 
         /* The Grid Container */
@@ -89,6 +90,9 @@
         let offsetX = 0;
         let offsetY = 0;
 
+        // Prevent page scroll when dragging
+        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
         // Start the drag
         dragBlock.addEventListener('touchstart', (e) => {
             isDragging = true;
@@ -114,6 +118,31 @@
         // End the drag
         dragBlock.addEventListener('touchend', () => {
             isDragging = false;
+
+            let droppedInCell = false;
+            const blockRect = dragBlock.getBoundingClientRect();
+
+            // Check if the block is dropped in a grid cell
+            gridCells.forEach(cell => {
+                const cellRect = cell.getBoundingClientRect();
+
+                if (blockRect.left >= cellRect.left &&
+                    blockRect.top >= cellRect.top &&
+                    blockRect.right <= cellRect.right &&
+                    blockRect.bottom <= cellRect.bottom) {
+
+                    // Place block in the grid cell
+                    dragBlock.style.left = `${cellRect.left}px`;
+                    dragBlock.style.top = `${cellRect.top}px`;
+                    droppedInCell = true;
+                }
+            });
+
+            // If block is not dropped in any cell, return to original position
+            if (!droppedInCell) {
+                dragBlock.style.left = '0px';
+                dragBlock.style.top = '0px';
+            }
         });
 
         // For older browsers that might need mouse event fallback
@@ -135,15 +164,11 @@
 
         dragBlock.addEventListener('mouseup', () => {
             isDragging = false;
-        });
-
-        // Check if block is dropped in a grid cell
-        dragBlock.addEventListener('touchend', (e) => {
-            if (!isDragging) return;
 
             let droppedInCell = false;
             const blockRect = dragBlock.getBoundingClientRect();
 
+            // Check if the block is dropped in a grid cell
             gridCells.forEach(cell => {
                 const cellRect = cell.getBoundingClientRect();
 
@@ -159,13 +184,12 @@
                 }
             });
 
-            // If block is not dropped in any cell, return to initial position
+            // If block is not dropped in any cell, return to original position
             if (!droppedInCell) {
                 dragBlock.style.left = '0px';
                 dragBlock.style.top = '0px';
             }
         });
-
     </script>
 
 </body>
