@@ -3,89 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag and Drop Blocks</title>
+    <title>Draggable Block</title>
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
-            flex-direction: column;
         }
 
-        .container {
-            display: grid;
-            grid-template-columns: repeat(10, 50px);
-            grid-template-rows: repeat(10, 50px);
-            gap: 2px;
-            margin-bottom: 20px;
-        }
-
-        .cell {
-            width: 50px;
-            height: 50px;
-            background-color: #e0e0e0;
-            border: 1px solid #ccc;
-            position: relative;
-        }
-
-        .block {
-            width: 50px;
-            height: 50px;
+        #dragBlock {
+            width: 100px;
+            height: 100px;
             background-color: #4CAF50;
-            border-radius: 4px;
             cursor: pointer;
             position: absolute;
-            z-index: 10;
-            transition: transform 0.2s ease;
         }
     </style>
 </head>
 <body>
 
-    <div class="container" id="gameBoard"></div>
-
-    <div class="block" id="block" draggable="true"></div>
+    <div id="dragBlock" draggable="true"></div>
 
     <script>
-        const boardSize = 10; // 10x10 grid
-        const gameBoard = document.getElementById('gameBoard');
+        const dragBlock = document.getElementById('dragBlock');
 
-        // Generate the game grid
-        for (let i = 0; i < boardSize * boardSize; i++) {
-            const cell = document.createElement('div');
-            cell.classList.add('cell');
-            cell.setAttribute('data-id', i);
-            gameBoard.appendChild(cell);
-        }
-
-        const block = document.getElementById('block');
-
-        block.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', null); // This is required for drag-and-drop
-            block.classList.add('dragging');
+        dragBlock.addEventListener('dragstart', (event) => {
+            // Store the initial position of the block when dragging starts
+            event.dataTransfer.setData('text/plain', '');
+            dragBlock.style.opacity = '0.5'; // Visual feedback
         });
 
-        block.addEventListener('dragend', () => {
-            block.classList.remove('dragging');
+        dragBlock.addEventListener('dragend', () => {
+            dragBlock.style.opacity = '1'; // Reset visual feedback
         });
 
-        gameBoard.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Required to allow drop
-        });
-
-        gameBoard.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const draggingBlock = document.querySelector('.dragging');
-            if (!draggingBlock) return; // No block is being dragged
-            
-            const cell = e.target.closest('.cell');
-            if (!cell || cell.hasChildNodes()) return; // Cell is not empty
-            
-            cell.appendChild(draggingBlock);
+        // Handle the movement of the block during the drag
+        dragBlock.addEventListener('drag', (event) => {
+            if (event.clientX && event.clientY) {
+                dragBlock.style.left = `${event.clientX - 50}px`;  // 50px offset to center the block
+                dragBlock.style.top = `${event.clientY - 50}px`;   // 50px offset to center the block
+            }
         });
     </script>
 
