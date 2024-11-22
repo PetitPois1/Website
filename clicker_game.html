@@ -88,9 +88,9 @@
 
     <div class="shop">
         <h2>Shop</h2>
-        <div id="upgradeClickDiv">
-            <button class="shop-item disabled" id="upgradeClick">Broken Tool (+1 per click) - 10 clicks</button>
-            <p class="upgrade-count" id="upgradeClickCount">Purchased: 0</p>
+        <div id="brokenToolDiv">
+            <button class="shop-item disabled" id="brokenTool">Broken Tool (+1 per click) - 10 clicks</button>
+            <p class="upgrade-count" id="upgradebrokenTool">Purchased: 0</p>
         </div>
         <div id="autoClickerDiv">
             <button class="shop-item disabled" id="autoClicker">Worker (+1 click/sec) - 50 clicks</button>
@@ -157,7 +157,7 @@
         let clickValue = 1;
 
         const items = {
-            upgradeClick: { cost: 10, effect: () => clickValue += 1, count: 0 },
+            brokenTool: { cost: 10, effect: () => clickValue += 1, count: 0 },
             autoClicker: { cost: 50, effect: () => autoClick(1), count: 0 },
             goldenClick: { cost: 100, effect: () => clickValue += 5, count: 0 },
             superAutoClicker: { cost: 200, effect: () => autoClick(5), count: 0 },
