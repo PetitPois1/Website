@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Block Blast Game</title>
+    <title>Drag and Drop Blocks</title>
     <style>
         body {
             margin: 0;
@@ -40,17 +40,6 @@
             z-index: 10;
         }
 
-        #score {
-            font-size: 20px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .hidden {
-            visibility: hidden;
-        }
-
-        /* Block sizes */
         .blockContainerWrapper {
             display: flex;
             justify-content: space-evenly;
@@ -60,28 +49,13 @@
 
         .block {
             cursor: pointer;
-        }
-
-        /* Home and Restart buttons */
-        #homeBtn, #restartBtn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #homeBtn:hover, #restartBtn:hover {
-            background-color: #0056b3;
+            margin-top: 10px;
         }
 
     </style>
 </head>
 <body>
 
-    <div id="score">Score: 0</div>
     <div class="container" id="gameBoard"></div>
 
     <!-- Blocks at the bottom -->
@@ -91,14 +65,9 @@
         <div class="block yellow" id="yellowBlock" data-size="3" style="width: 150px; height: 50px;" draggable="true"></div>
     </div>
 
-    <!-- Home and Restart buttons -->
-    <button id="homeBtn" onclick="goHome()">Home</button>
-    <button id="restartBtn" onclick="restartGame()">Restart</button>
-
     <script>
         const boardSize = 10; // 10x10 grid
         const gameBoard = document.getElementById('gameBoard');
-        let score = 0;
         let currentBlock = null;
         let currentBlockSize = 1;
 
@@ -144,38 +113,12 @@
                     newBlock.draggable = true;
                     cell.appendChild(newBlock);
 
-                    // Update the score
-                    score += 100;
-                    document.getElementById('score').textContent = `Score: ${score}`;
-                    
-                    // Remove the dragged block from the bottom area
-                    currentBlock.classList.add('hidden');
+                    // Reset the dragged block
+                    currentBlock.classList.remove('hidden');
                     currentBlock = null;
                 }
             });
         });
-
-        // Home button - Redirect to home (index.html)
-        function goHome() {
-            window.location.href = 'index.html';
-        }
-
-        // Restart the game - refresh the game state
-        function restartGame() {
-            score = 0;
-            document.getElementById('score').textContent = `Score: ${score}`;
-            resetBoard();
-        }
-
-        // Function to reset the board (clear the cells)
-        function resetBoard() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                while (cell.firstChild) {
-                    cell.removeChild(cell.firstChild);
-                }
-            });
-        }
     </script>
 
 </body>
