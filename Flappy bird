@@ -13,8 +13,8 @@
     }
     canvas {
       display: block;
-      background-color: #70c5ce;
       margin: 0 auto;
+      background-color: #70c5ce;
     }
     #gameOverMessage {
       position: absolute;
@@ -26,11 +26,29 @@
       color: white;
       display: none;
     }
+    #restartButton {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      font-size: 20px;
+      background-color: #ff5733;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      display: none;
+      cursor: pointer;
+    }
+    #restartButton:hover {
+      background-color: #c13b1f;
+    }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
   <div id="gameOverMessage">Game Over! Tap to Restart</div>
+  <button id="restartButton" onclick="resetGame()">Restart Game</button>
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -39,9 +57,10 @@
     const FLAP_STRENGTH = -12;
     const SPAWN_RATE = 90;
     const PIPE_WIDTH = 60;
-    const PIPE_SPACING = 200;
+    const PIPE_SPACING = 300; // Even larger gap between pipes
     const BIRD_WIDTH = 40;
     const BIRD_HEIGHT = 40;
+    const HOLE_HEIGHT = 300; // Larger hole height
 
     let birdY, birdVelocity, birdFlap, pipes, score, gameOver;
 
@@ -57,6 +76,7 @@
       score = 0;
       gameOver = false;
       document.getElementById("gameOverMessage").style.display = "none";
+      document.getElementById("restartButton").style.display = "none";
     }
 
     resetGame();
@@ -72,9 +92,9 @@
     });
 
     function generatePipe() {
-      const height = Math.random() * (canvas.height - PIPE_SPACING - 100) + 50;
-      const topPipe = { x: canvas.width, y: height, passed: false };
-      const bottomPipe = { x: canvas.width, y: height + PIPE_SPACING, passed: false };
+      const holeY = Math.random() * (canvas.height - HOLE_HEIGHT - 100) + 50;
+      const topPipe = { x: canvas.width, y: holeY, passed: false };
+      const bottomPipe = { x: canvas.width, y: holeY + HOLE_HEIGHT, passed: false };
       pipes.push(topPipe, bottomPipe);
     }
 
@@ -109,7 +129,7 @@
           pipe.passed = true;
         }
 
-        if (birdY < pipe.y || birdY + BIRD_HEIGHT > pipe.y + PIPE_SPACING) {
+        if (birdY < pipe.y || birdY + BIRD_HEIGHT > pipe.y + HOLE_HEIGHT) {
           if (pipe.x < BIRD_WIDTH && pipe.x + PIPE_WIDTH > 0) {
             gameOverHandler();
           }
@@ -120,6 +140,7 @@
     function gameOverHandler() {
       gameOver = true;
       document.getElementById("gameOverMessage").style.display = "block";
+      document.getElementById("restartButton").style.display = "block";
     }
 
     function draw() {
@@ -128,8 +149,8 @@
       // Draw pipes
       ctx.fillStyle = "#228B22";
       pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y);
-        ctx.fillRect(pipe.x, pipe.y + PIPE_SPACING, PIPE_WIDTH, canvas.height - pipe.y - PIPE_SPACING);
+        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y); // Top pipe
+        ctx.fillRect(pipe.x, pipe.y + HOLE_HEIGHT, PIPE_WIDTH, canvas.height - pipe.y - HOLE_HEIGHT); // Bottom pipe
       });
 
       // Draw bird
@@ -154,4 +175,3 @@
   </script>
 </body>
 </html>
-
