@@ -85,10 +85,10 @@
         let turretPreview = null; // Preview turret before placement
         let canPlaceTurret = false; // Prevent automatic placement
         let path = [
-            { x: 0, y: 300 },
+            { x: 50, y: 300 },
             { x: 400, y: 300 },
             { x: 400, y: 100 },
-            { x: 800, y: 100 },
+            { x: 750, y: 100 },
         ]; // Fixed path
         let selectedTurret = null;
 
@@ -101,31 +101,39 @@
 
         // Enemy class
         class Enemy {
-            constructor(x, y, health, speed) {
-                this.x = x;
-                this.y = y;
-                this.health = health;
-                this.speed = speed;
+            constructor() {
+                this.x = path[0].x;
+                this.y = path[0].y;
+                this.health = 100;
+                this.speed = 1;
                 this.pathIndex = 0;
             }
 
             move() {
-                const target = path[this.pathIndex];
-
-                if (target) {
+                if (this.pathIndex < path.length - 1) {
+                    const target = path[this.pathIndex + 1];
                     const dx = target.x - this.x;
                     const dy = target.y - this.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    const moveX = (dx / distance) * this.speed;
-                    const moveY = (dy / distance) * this.speed;
-
-                    this.x += moveX;
-                    this.y += moveY;
 
                     if (distance < this.speed) {
+                        this.x = target.x;
+                        this.y = target.y;
                         this.pathIndex++;
+                    } else {
+                        const moveX = (dx / distance) * this.speed;
+                        const moveY = (dy / distance) * this.speed;
+                        this.x += moveX;
+                        this.y += moveY;
                     }
                 }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = "blue";
+                ctx.fill();
             }
         }
 
@@ -170,9 +178,9 @@
 
         function generateEnemies() {
             // Add multiple enemies to follow the path
-            for (let i = 0; i < 5; i++) {
-                enemies.push(new Enemy(0, 300, 100, 1)); // Add 5 enemies
-            }
+            setInterval(() => {
+                enemies.push(new Enemy());
+            }, 2000); // Spawn a new enemy every 2 seconds
         }
 
         function render() {
@@ -188,18 +196,25 @@
             ctx.strokeStyle = "white";
             ctx.stroke();
 
-            // Draw enemies
-            for (const enemy of enemies) {
+            // Draw and move enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
                 enemy.move();
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "blue";
-                ctx.fill();
+                enemy.draw();
+
+                // Remove enemies if their health is depleted or they finish the path
+                if (enemy.health <= 0 || enemy.pathIndex >= path.length - 1) {
+                    enemies.splice(i, 1);
+                    if (enemy.health <= 0) gold += 10; // Add gold if killed
+                }
             }
 
             // Draw turrets
             for (const turret of turrets) {
                 turret.draw();
+                for (const enemy of enemies) {
+                    turret.attack(enemy);
+                }
             }
 
             // Draw turret preview
@@ -215,17 +230,7 @@
                 ctx.stroke();
             }
 
-            // Check for turret attacks
-            for (const turret of turrets) {
-                for (const enemy of enemies) {
-                    turret.attack(enemy);
-                    if (enemy.health <= 0) {
-                        gold += 10; // Increase gold on enemy death
-                        goldDisplay.innerText = gold;
-                    }
-                }
-            }
-
+            goldDisplay.innerText = gold;
             requestAnimationFrame(render);
         }
 
@@ -252,7 +257,7 @@
 
         // Confirm placement button action
         confirmButton.addEventListener("click", () => {
-            if (selectedTurret && gold >= selectedTurret.cost) {
+            if (selectedTurret && turretPreview && gold >= selectedTurret.cost) {
                 const newTurret = new Turret(turretPreview.x, turretPreview.y, selectedTurret.damage, selectedTurret.range);
                 turrets.push(newTurret);
                 gold -= selectedTurret.cost;
