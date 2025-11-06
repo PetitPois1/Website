@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Tower Defense</title>
+    <title>Tower Defense (Upgrades)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Using Inter font, as it's a nice default included with Tailwind */
@@ -37,6 +37,7 @@
             aspect-ratio: 4 / 3;
             margin-left: auto;
             margin-right: auto;
+            position: relative; /* For turret menu positioning */
         }
         canvas {
             display: block;
@@ -55,16 +56,19 @@
         let loadingOverlay, mainMenu, gameContainer, levelSelectContainer, armoryContainer, gemDisplay;
         let canvas, ctx, moneyDisplay, livesDisplay, levelDisplay, waveDisplay, startWaveBtn, towerSelectionUI, backToMenuBtn;
         let messageBox, messageTitle, messageText, messageButton1, messageButton2;
+        // --- NEW UPGRADE UI ELEMENTS ---
+        let turretMenu, turretMenuTitle, turretMenuStats, turretMenuUpgrade, turretMenuSell, turretMenuClose;
 
         let canvasWidth, canvasHeight;
 
         // Game State (In-Level)
         let money = 0;
-        let lives = 0; // This is now 'Base HP'
+        let lives = 0; // This is 'Base HP'
         let currentLevel = 0;
         let currentWave = 0;
         let gameState = 'waiting'; // 'waiting', 'playing', 'gameover', 'win'
-        let selectedTowerType = null;
+        let selectedTowerType = null; // e.g., 'basic' (for building)
+        let selectedTurret = null; // The actual turret object on the map (for upgrading)
         let mouse = { x: 0, y: 0 };
         let lastTime = 0;
 
@@ -78,10 +82,18 @@
         const pathWidth = 30;
         
         // --- Player's Data (Resets on Refresh) ---
-        // Default data for a new player
+        // NEW DATA STRUCTURE:
+        // 0 = Locked
+        // 1 = Unlocked (Base Level 1)
+        // 2 = Max Level 2
+        // 3 = Max Level 3
         let playerData = {
             gems: 10,
-            unlockedTurrets: ['basic'] // 'basic' is unlocked by default
+            turretMaxLevels: {
+                'basic': 1,
+                'sniper': 0,
+                'flamethrower': 0
+            }
         };
 
 
@@ -91,42 +103,60 @@
         const turretTypes = {
             'basic': {
                 name: 'Basic',
-                cost: 100,
-                range: 120,
+                cost: 100, // Cost to build Level 1
                 damage: 15,
+                range: 120,
                 fireRate: 30, // Frames per shot
-                color: '#3b82f6', // blue-500
-                projectileColor: '#93c5fd', // blue-300
+                projectileColor: '#93c5fd',
                 projectileSpeed: 8,
+                color: '#3b82f6', // blue-500
                 description: 'Fast, low damage.',
-                unlocked: true, // Unlocked by default
-                gemCost: 0
+                gemUnlockCost: 0, // Free
+                gemUpgradeCost: [50, 150, 300], // Gem cost to unlock Max Lvl 2, 3, 4
+                inGameUpgradeCost: [100, 250, 500], // Money cost to upgrade TO Lvl 2, 3, 4
+                statUpgrades: { // What to add *per level* (starting from Lvl 2)
+                    damage: 5,
+                    range: 10,
+                    fireRate: -2 // Faster
+                }
             },
             'sniper': {
                 name: 'Sniper',
                 cost: 250,
-                range: 250,
                 damage: 30,
+                range: 250,
                 fireRate: 90, // Very slow
-                color: '#f59e0b', // amber-500
-                projectileColor: '#fcd34d', // amber-300
+                projectileColor: '#fcd34d',
                 projectileSpeed: 15,
+                color: '#f59e0b', // amber-500
                 description: 'Slow, high damage, long range.',
-                unlocked: false, // Must be unlocked
-                gemCost: 75
+                gemUnlockCost: 75,
+                gemUpgradeCost: [100, 200, 400], 
+                inGameUpgradeCost: [200, 400, 800],
+                statUpgrades: {
+                    damage: 20,
+                    range: 25,
+                    fireRate: -5
+                }
             },
             'flamethrower': {
                 name: 'Flamethrower',
                 cost: 400,
-                range: 80, // Short range
                 damage: 5, // Low damage, but...
+                range: 80, // Short range
                 fireRate: 5, // ...very fast fire rate
-                color: '#dc2626', // red-600
-                projectileColor: '#f97316', // orange-500
+                projectileColor: '#f97316',
                 projectileSpeed: 6,
+                color: '#dc2626', // red-600
                 description: 'Short range, rapid fire.',
-                unlocked: false, // Must be unlocked
-                gemCost: 200
+                gemUnlockCost: 200,
+                gemUpgradeCost: [250, 500, 1000],
+                inGameUpgradeCost: [300, 600, 1200],
+                statUpgrades: {
+                    damage: 2,
+                    range: 5,
+                    fireRate: 0 // Fire rate doesn't get faster
+                }
             }
         };
 
@@ -139,7 +169,7 @@
 
         // Level and Wave Definitions
         const levels = [
-            { // Level 1
+             { // Level 1
                 path: [
                     { x: -50, y: 100 }, { x: 150, y: 100 }, { x: 150, y: 300 }, { x: 400, y: 300 },
                     { x: 400, y: 150 }, { x: 600, y: 150 }, { x: 600, y: 400 }, { x: 100, y: 400 },
@@ -194,6 +224,53 @@
             }
         ];
         
+        // === NEW HELPER FUNCTIONS ===
+
+        /**
+         * Calculates the stats of a turret at a specific level.
+         * This is the single source of truth for all turret stats.
+         */
+        function getTurretStats(type, level) {
+            const baseStats = turretTypes[type];
+            if (!baseStats) return null;
+
+            const calculatedStats = {
+                name: baseStats.name,
+                color: baseStats.color,
+                projectileColor: baseStats.projectileColor,
+                projectileSpeed: baseStats.projectileSpeed,
+                cost: baseStats.cost, // Base cost is always for Lvl 1
+                
+                // Calculate stats based on level
+                damage: baseStats.damage + (baseStats.statUpgrades.damage * (level - 1)),
+                range: baseStats.range + (baseStats.statUpgrades.range * (level - 1)),
+                fireRate: Math.max(1, baseStats.fireRate + (baseStats.statUpgrades.fireRate * (level - 1))), // Don't let fireRate be 0 or less
+                
+                // Calculate total cost (for sell value)
+                totalCost: baseStats.cost,
+                nextUpgradeCost: null
+            };
+
+            // Calculate total spent and cost for next upgrade
+            for (let i = 0; i < level - 1; i++) {
+                calculatedStats.totalCost += baseStats.inGameUpgradeCost[i] || 0;
+            }
+            
+            // Get cost for the *next* level
+            if (level < 10) { // Assume a max level cap for safety
+                 calculatedStats.nextUpgradeCost = baseStats.inGameUpgradeCost[level - 1]; // e.g., for Lvl 1, this gets cost to Lvl 2 (index 0)
+            }
+           
+            calculatedStats.sellValue = Math.floor(calculatedStats.totalCost * 0.7);
+
+            return calculatedStats;
+        }
+
+        /** Gets a list of turret IDs that are unlocked (max level > 0) */
+        function getUnlockedTurrets() {
+            return Object.keys(playerData.turretMaxLevels).filter(id => playerData.turretMaxLevels[id] > 0);
+        }
+
         
         // === MAIN MENU & UI LOGIC ===
         
@@ -202,6 +279,7 @@
             gameContainer.style.display = 'none';
             mainMenu.style.display = 'flex';
             messageBox.style.display = 'none';
+            closeTurretMenu();
             
             // Stop game loop if it's running
             if (gameLoopId) {
@@ -214,7 +292,7 @@
         }
         
         function updateMenuUI() {
-            if (!playerData) return; // Wait for data to load
+            if (!playerData) return;
             
             gemDisplay.textContent = playerData.gems || 0;
             
@@ -250,38 +328,60 @@
             // --- Populate Armory ---
             armoryContainer.innerHTML = ''; // Clear old list
             Object.entries(turretTypes).forEach(([id, stats]) => {
-                const isUnlocked = playerData.unlockedTurrets.includes(id);
+                const currentMaxLevel = playerData.turretMaxLevels[id] || 0;
                 
                 const turretCard = document.createElement('div');
                 turretCard.className = 'bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center';
+                
+                // Get stats for Lvl 1 to display
+                const baseStats = getTurretStats(id, 1);
                 
                 turretCard.innerHTML = `
                     <div>
                         <h3 class="text-xl font-bold" style="color:${stats.color}">${stats.name}</h3>
                         <p class="text-sm text-gray-400">${stats.description}</p>
                         <p class="text-sm text-gray-400">
-                            Cost: <span class="font-semibold text-green-300">$${stats.cost}</span> | 
-                            Range: <span class="font-semibold text-blue-300">${stats.range}</span> |
-                            DMG: <span class="font-semibold text-red-300">${stats.damage}</span> |
-                            Rate: <span class="font-semibold text-yellow-300">${stats.fireRate}</span>
+                            Lvl 1 Cost: <span class="font-semibold text-green-300">$${baseStats.cost}</span> | 
+                            Lvl 1 Range: <span class="font-semibold text-blue-300">${baseStats.range}</span> |
+                            Lvl 1 DMG: <span class="font-semibold text-red-300">${baseStats.damage}</span>
+                        </p>
+                        <p class="text-sm text-gray-400 mt-1">
+                            Current Max Level: <span class="font-bold text-yellow-400">${currentMaxLevel}</span>
                         </p>
                     </div>
                 `;
                 
                 const unlockButton = document.createElement('button');
-                unlockButton.className = 'game-button text-white font-bold py-2 px-4 rounded-lg';
+                unlockButton.className = 'game-button text-white font-bold py-2 px-4 rounded-lg w-48 text-center';
                 
-                if (isUnlocked) {
-                    unlockButton.textContent = 'Unlocked';
-                    unlockButton.className += ' bg-gray-600 cursor-not-allowed';
-                    unlockButton.disabled = true;
-                } else {
-                    unlockButton.textContent = `Unlock (${stats.gemCost} Gems)`;
-                    if (playerData.gems >= stats.gemCost) {
+                if (currentMaxLevel === 0) {
+                    // --- Turret is LOCKED ---
+                    unlockButton.textContent = `Unlock (${stats.gemUnlockCost} Gems)`;
+                    if (playerData.gems >= stats.gemUnlockCost) {
                         unlockButton.className += ' bg-purple-600 hover:bg-purple-700';
-                        unlockButton.onclick = () => unlockTurret(id, stats.gemCost);
+                        unlockButton.onclick = () => unlockTurret(id, stats.gemUnlockCost);
                     } else {
                         unlockButton.className += ' bg-red-700 cursor-not-allowed';
+                        unlockButton.disabled = true;
+                    }
+                } else {
+                    // --- Turret is UNLOCKED, show MAX LEVEL UPGRADE ---
+                    const nextUpgradeCost = stats.gemUpgradeCost[currentMaxLevel - 1]; // e.g., at Lvl 1, check index 0 for Lvl 2 cost
+                    
+                    if (nextUpgradeCost !== undefined) {
+                        // --- Can be upgraded further ---
+                        unlockButton.textContent = `Upgrade Max (${nextUpgradeCost} Gems)`;
+                        if (playerData.gems >= nextUpgradeCost) {
+                            unlockButton.className += ' bg-purple-600 hover:bg-purple-700';
+                            unlockButton.onclick = () => upgradeMaxTurretLevel(id, nextUpgradeCost);
+                        } else {
+                            unlockButton.className += ' bg-red-700 cursor-not-allowed';
+                            unlockButton.disabled = true;
+                        }
+                    } else {
+                        // --- Fully maxed out ---
+                        unlockButton.textContent = 'Maxed Out';
+                        unlockButton.className += ' bg-gray-600 cursor-not-allowed';
                         unlockButton.disabled = true;
                     }
                 }
@@ -292,14 +392,21 @@
         }
         
         function unlockTurret(turretId, cost) {
-            if (playerData.gems >= cost && !playerData.unlockedTurrets.includes(turretId)) {
+            if (playerData.gems >= cost && (playerData.turretMaxLevels[turretId] || 0) === 0) {
                 playerData.gems -= cost;
-                playerData.unlockedTurrets.push(turretId);
-                updateMenuUI(); // Refresh the UI to show new gem count and unlocked status
+                playerData.turretMaxLevels[turretId] = 1; // Set max level to 1
+                updateMenuUI();
             }
         }
         
-
+        function upgradeMaxTurretLevel(turretId, cost) {
+            if (playerData.gems >= cost && (playerData.turretMaxLevels[turretId] || 0) > 0) {
+                playerData.gems -= cost;
+                playerData.turretMaxLevels[turretId]++;
+                updateMenuUI();
+            }
+        }
+        
         // === CORE GAME LOGIC ===
 
         function startGame(levelIndex) {
@@ -307,11 +414,8 @@
             mainMenu.style.display = 'none';
             gameContainer.style.display = 'block';
             
-            // --- THIS IS THE FIX ---
-            // Now that the container is visible, we can
-            // get its correct size.
+            // Resize canvas *after* it's visible
             resizeCanvas();
-            // --- END OF FIX ---
             
             loadLevel(levelIndex);
             
@@ -321,22 +425,15 @@
 
         // Function to resize canvas to fit its container
         function resizeCanvas() {
-            // Get the container that *has* the aspect ratio
             const container = canvas.parentElement; 
-            
-            // Get its actual (pixel) size
             const rect = container.getBoundingClientRect();
 
-            // Set the canvas *internal* resolution (fixed)
             canvas.width = 800;
             canvas.height = 600;
 
-            // Set the canvas *CSS size* to match the container
-            // This scales the 800x600 canvas to fit
             canvas.style.width = `${rect.width}px`;
             canvas.style.height = `${rect.height}px`;
             
-            // Store the fixed internal resolution
             canvasWidth = canvas.width;
             canvasHeight = canvas.height;
         }
@@ -366,19 +463,31 @@
             messageText = document.getElementById('message-text');
             messageButton1 = document.getElementById('message-button-1');
             messageButton2 = document.getElementById('message-button-2');
+            
+            // --- Assign new turret menu elements ---
+            turretMenu = document.getElementById('turret-menu');
+            turretMenuTitle = document.getElementById('turret-menu-title');
+            turretMenuStats = document.getElementById('turret-menu-stats');
+            turretMenuUpgrade = document.getElementById('turret-menu-upgrade');
+            turretMenuSell = document.getElementById('turret-menu-sell');
+            turretMenuClose = document.getElementById('turret-menu-close');
             // --- End of element assignment ---
 
-            // NOTE: resizeCanvas() is REMOVED from here
             window.addEventListener('resize', resizeCanvas);
             canvas.addEventListener('mousemove', onMouseMove);
             canvas.addEventListener('click', onMouseClick);
             startWaveBtn.addEventListener('click', startWave);
             backToMenuBtn.addEventListener('click', showMainMenu);
+
+            // --- Turret Menu Listeners ---
+            turretMenuClose.addEventListener('click', closeTurretMenu);
+            turretMenuUpgrade.addEventListener('click', upgradeSelectedTurret);
+            turretMenuSell.addEventListener('click', sellSelectedTurret);
             
-            // No Firebase, just set default data and start
+            // Set default data and start
             playerData = {
                 gems: 10,
-                unlockedTurrets: ['basic']
+                turretMaxLevels: { 'basic': 1, 'sniper': 0, 'flamethrower': 0 }
             };
             
             updateMenuUI();
@@ -400,10 +509,13 @@
             enemies = [];
             projectiles = [];
             spawnQueue = [];
+            selectedTurret = null;
+            selectedTowerType = null;
             
             gameState = 'waiting';
             updateInGameUI();
             setupTurretButtons(); // Populate turret bar
+            closeTurretMenu();
             
             startWaveBtn.disabled = false;
             startWaveBtn.textContent = 'Start Wave';
@@ -413,8 +525,8 @@
         function setupTurretButtons() {
             towerSelectionUI.innerHTML = ''; // Clear old buttons
             
-            playerData.unlockedTurrets.forEach(turretId => {
-                const stats = turretTypes[turretId];
+            getUnlockedTurrets().forEach(turretId => {
+                const stats = getTurretStats(turretId, 1); // Get Lvl 1 stats
                 if (!stats) return;
                 
                 const button = document.createElement('button');
@@ -423,7 +535,7 @@
                 button.innerHTML = `
                     <div class="font-bold text-lg">${stats.name}</div>
                     <div class="text-sm text-gray-400">Cost: <span class="text-green-400">$${stats.cost}</span></div>
-                    <div class="text-sm text-gray-400">${stats.description}</div>
+                    <div class="text-sm text-gray-400">${turretTypes[turretId].description}</div>
                 `;
                 button.onclick = () => selectTower(turretId);
                 
@@ -434,6 +546,8 @@
         // Start the next wave
         function startWave() {
             if (gameState !== 'waiting' || !levels[currentLevel] || !levels[currentLevel].waves[currentWave]) return;
+            
+            closeTurretMenu(); // Close menu when wave starts
             
             gameState = 'playing';
             spawnQueue = [];
@@ -555,16 +669,17 @@
         
         function updateTurrets(deltaTime) {
             turrets.forEach(turret => {
-                const stats = turretTypes[turret.type];
+                // Get the turret's stats for its CURRENT level
+                const stats = getTurretStats(turret.type, turret.level);
                 if (!stats) return; 
                 
-                const target = findTarget(turret);
+                const target = findTarget(turret, stats.range);
                 
                 if (target) {
                     turret.angle = Math.atan2(target.y - turret.y, target.x - turret.x);
                     
                     if (turret.cooldown <= 0) {
-                        fireProjectile(turret, target);
+                        fireProjectile(turret, target, stats); // Pass stats in
                         turret.cooldown = stats.fireRate;
                     }
                 }
@@ -573,13 +688,9 @@
             });
         }
         
-        function findTarget(turret) {
+        function findTarget(turret, range) {
             let bestTarget = null;
             let maxDist = 0;
-            
-            const stats = turretTypes[turret.type];
-            if (!stats) return null;
-            const range = stats.range;
 
             for (const enemy of enemies) {
                 const dist = Math.hypot(enemy.x - turret.x, enemy.y - turret.y);
@@ -604,14 +715,15 @@
             return dist;
         }
         
-        function fireProjectile(turret, target) {
-            const stats = turretTypes[turret.type];
+        function fireProjectile(turret, target, stats) {
             const gunTipX = turret.x + 18 * Math.cos(turret.angle);
             const gunTipY = turret.y + 18 * Math.sin(turret.angle);
 
             projectiles.push({
                 x: gunTipX, y: gunTipY,
-                damage: stats.damage, speed: stats.projectileSpeed, color: stats.projectileColor,
+                damage: stats.damage, // Use calculated damage
+                speed: stats.projectileSpeed, 
+                color: stats.projectileColor,
                 target: target, targetLost: false,
                 lastTargetX: target.x, lastTargetY: target.y
             });
@@ -625,11 +737,8 @@
                     p.targetLost = true;
                 }
                 
-                // --- THIS IS THE BUG FIX ---
-                // It was p.target.y, now it's p.target.x
                 let targetX = p.targetLost ? p.lastTargetX : p.target.x; 
                 let targetY = p.targetLost ? p.lastTargetY : p.target.y;
-                // --- END OF BUG FIX ---
                 
                 if (!p.targetLost) {
                     p.lastTargetX = targetX;
@@ -642,7 +751,7 @@
                 const moveDist = p.speed * deltaTime;
 
                 if (dist < moveDist) {
-                    if (!p.targetLost && p.target) { // Check p.target still exists
+                    if (!p.targetLost && p.target) {
                          p.target.currentHp -= p.damage;
                     }
                     projectiles.splice(i, 1);
@@ -657,17 +766,15 @@
         
         function drawPath() {
             if (!currentPath || currentPath.length === 0) return;
-            // Draw the "outer" border of the path
-            ctx.strokeStyle = '#1f2937'; // A dark border (gray-900)
-            ctx.lineWidth = pathWidth + 4; // Slightly wider than the path
+            ctx.strokeStyle = '#1f2937'; // gray-900
+            ctx.lineWidth = pathWidth + 4; 
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             ctx.beginPath();
             ctx.moveTo(currentPath[0].x, currentPath[0].y);
             for (let i = 1; i < currentPath.length; i++) ctx.lineTo(currentPath[i].x, currentPath[i].y);
             ctx.stroke();
             
-            // Draw the main path on top
-            ctx.strokeStyle = '#9ca3af'; // A lighter gray (gray-400)
+            ctx.strokeStyle = '#9ca3af'; // gray-400
             ctx.lineWidth = pathWidth;
             ctx.beginPath();
             ctx.moveTo(currentPath[0].x, currentPath[0].y);
@@ -690,20 +797,48 @@
 
         function drawTurrets() {
             turrets.forEach(turret => {
-                const stats = turretTypes[turret.type];
+                const stats = getTurretStats(turret.type, turret.level);
                 const x = turret.x; const y = turret.y;
                 
-                ctx.fillStyle = 'rgba(100, 100, 100, 0.1)'; ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
-                ctx.lineWidth = 1; ctx.beginPath();
+                // Draw range circle
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.1)';
+                ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+                ctx.lineWidth = 1; 
+                ctx.beginPath();
                 ctx.arc(x, y, stats.range, 0, Math.PI * 2);
                 ctx.fill(); ctx.stroke();
 
+                // Draw selection circle if this turret is selected
+                if (turret === selectedTurret) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 16, 0, Math.PI * 2); // Slightly larger than base
+                    ctx.stroke();
+                }
+
+                // Draw turret base
                 ctx.fillStyle = stats.color;
                 ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
                 
+                // Draw turret gun
                 ctx.save(); ctx.translate(x, y); ctx.rotate(turret.angle); 
                 ctx.fillStyle = '#a0aec0'; ctx.fillRect(0, -3, 18, 6); 
                 ctx.restore(); 
+
+                // Draw level pips
+                ctx.fillStyle = '#f59e0b'; // amber-500
+                const pipCount = turret.level;
+                const pipRadius = 2;
+                const pipSpacing = 5;
+                const totalPipWidth = (pipCount - 1) * pipSpacing;
+                const startX = x - totalPipWidth / 2;
+                const yOffset = 15; // Below the turret
+                for (let i = 0; i < pipCount; i++) {
+                    ctx.beginPath();
+                    ctx.arc(startX + i * pipSpacing, y + yOffset, pipRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
         }
         
@@ -716,7 +851,7 @@
 
         function drawGhostTower() {
             if (!selectedTowerType) return;
-            const stats = turretTypes[selectedTowerType];
+            const stats = getTurretStats(selectedTowerType, 1); // Ghost is always Lvl 1
             const validPlacement = isPlacementValid(mouse.x, mouse.y, stats.cost);
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = validPlacement ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.2)';
@@ -736,20 +871,45 @@
         }
 
         function onMouseClick(e) {
-            if (!selectedTowerType) return;
-            const stats = turretTypes[selectedTowerType];
-            if (isPlacementValid(mouse.x, mouse.y, stats.cost)) {
-                money -= stats.cost;
-                turrets.push({ x: mouse.x, y: mouse.y, type: selectedTowerType, cooldown: 0, angle: 0 });
-                updateInGameUI();
-                selectTower(null);
-            } else {
-                console.log('Invalid placement');
-                selectTower(null);
+            // Priority 1: Placing a new tower
+            if (selectedTowerType) {
+                const stats = getTurretStats(selectedTowerType, 1);
+                if (isPlacementValid(mouse.x, mouse.y, stats.cost)) {
+                    money -= stats.cost;
+                    turrets.push({ x: mouse.x, y: mouse.y, type: selectedTowerType, level: 1, cooldown: 0, angle: 0 });
+                    updateInGameUI();
+                    selectTower(null); // Deselect build mode
+                } else {
+                    console.log('Invalid placement');
+                    selectTower(null); // Deselect build mode
+                }
+                return; // Action taken
             }
+            
+            // Priority 2: Check if we clicked on an existing turret
+            const clickedTurret = turrets.find(t => Math.hypot(mouse.x - t.x, mouse.y - t.y) < 12);
+            if (clickedTurret) {
+                if (selectedTurret === clickedTurret) {
+                    // Clicked same turret, close menu
+                    closeTurretMenu();
+                } else {
+                    // Clicked a different turret
+                    selectedTurret = clickedTurret;
+                    openTurretMenu(clickedTurret);
+                }
+                return; // Action taken
+            }
+
+            // Priority 3: Clicked on empty space
+            // If we're not building and didn't click a turret, close any open menus
+            selectTower(null); // Close build mode
+            closeTurretMenu(); // Close upgrade menu
         }
         
         function selectTower(type) {
+            if (type) {
+                closeTurretMenu(); // Can't have both open
+            }
             selectedTowerType = type;
             // Update button styles
             document.querySelectorAll('.tower-button').forEach(btn => {
@@ -761,12 +921,114 @@
             });
         }
 
+        // === NEW TURRET MENU FUNCTIONS ===
+        
+        function openTurretMenu(turret) {
+            selectedTurret = turret;
+            const stats = getTurretStats(turret.type, turret.level);
+            
+            // 1. Set Title and Stats
+            turretMenuTitle.textContent = `${stats.name} (Level ${turret.level})`;
+            turretMenuStats.innerHTML = `
+                <p>Damage: <span class="font-bold text-white">${stats.damage}</span></p>
+                <p>Range: <span class="font-bold text-white">${stats.range}</span></p>
+                <p>Rate: <span class="font-bold text-white">${stats.fireRate}</span></p>
+            `;
+            
+            // 2. Configure Upgrade Button
+            const maxLevel = playerData.turretMaxLevels[turret.type];
+            if (turret.level >= maxLevel) {
+                turretMenuUpgrade.textContent = 'Max Level';
+                turretMenuUpgrade.disabled = true;
+                turretMenuUpgrade.className = 'flex-1 game-button bg-gray-600 cursor-not-allowed';
+            } else {
+                const upgradeCost = stats.nextUpgradeCost;
+                turretMenuUpgrade.textContent = `Upgrade ($${upgradeCost})`;
+                if (money >= upgradeCost) {
+                    turretMenuUpgrade.disabled = false;
+                    turretMenuUpgrade.className = 'flex-1 game-button bg-green-600 hover:bg-green-700';
+                } else {
+                    turretMenuUpgrade.disabled = true;
+                    turretMenuUpgrade.className = 'flex-1 game-button bg-red-700 cursor-not-allowed';
+                }
+            }
+
+            // 3. Configure Sell Button
+            turretMenuSell.textContent = `Sell ($${stats.sellValue})`;
+            
+            // 4. Position and Show Menu
+            // Convert canvas coords to screen coords
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = rect.width / canvas.width;
+            const scaleY = rect.height / canvas.height;
+
+            // Position relative to the canvas's container
+            let menuLeft = (turret.x * scaleX);
+            let menuTop = (turret.y * scaleY);
+
+            // Offset menu to not cover turret
+            // And prevent going off-screen
+            const menuWidth = 256; // w-64
+            const menuHeight = 160; // Approx
+            
+            if (menuLeft + menuWidth + 20 > rect.width) {
+                menuLeft -= (menuWidth + 30); // Show on left
+            } else {
+                menuLeft += 30; // Show on right
+            }
+            
+            if (menuTop + menuHeight > rect.height) {
+                menuTop = rect.height - menuHeight - 10;
+            }
+
+            turretMenu.style.left = `${Math.max(0, menuLeft)}px`;
+            turretMenu.style.top = `${Math.max(0, menuTop)}px`;
+            turretMenu.style.display = 'block';
+        }
+
+        function closeTurretMenu() {
+            if (selectedTurret) {
+                selectedTurret = null;
+            }
+            if (turretMenu) { // Check if it exists yet
+                turretMenu.style.display = 'none';
+            }
+        }
+
+        function upgradeSelectedTurret() {
+            if (!selectedTurret) return;
+            
+            const stats = getTurretStats(selectedTurret.type, selectedTurret.level);
+            const upgradeCost = stats.nextUpgradeCost;
+            const maxLevel = playerData.turretMaxLevels[selectedTurret.type];
+
+            if (money >= upgradeCost && selectedTurret.level < maxLevel) {
+                money -= upgradeCost;
+                selectedTurret.level++;
+                updateInGameUI();
+                openTurretMenu(selectedTurret); // Refresh menu
+            }
+        }
+
+        function sellSelectedTurret() {
+            if (!selectedTurret) return;
+            
+            const stats = getTurretStats(selectedTurret.type, selectedTurret.level);
+            money += stats.sellValue;
+            
+            // Remove turret from array
+            turrets = turrets.filter(t => t !== selectedTurret);
+            
+            updateInGameUI();
+            closeTurretMenu();
+        }
+
         // === UTILITY & GAME STATE ===
 
         function isPlacementValid(x, y, cost) {
             if (money < cost) return false;
             for (const t of turrets) {
-                if (Math.hypot(x - t.x, y - t.y) < 24) return false; // Use Math.hypot
+                if (Math.hypot(x - t.x, y - t.y) < 24) return false;
             }
             if (!currentPath) return false;
             for (let i = 0; i < currentPath.length - 1; i++) {
@@ -777,8 +1039,6 @@
             return true;
         }
 
-        // --- ADDED MISSING FUNCTION ---
-        // Helper function for placement validation
         function isPointNearLineSegment(px, py, x1, y1, x2, y2, maxDist) {
             const L2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
             if (L2 === 0) return Math.hypot(px - x1, py - y1) < maxDist;
@@ -797,7 +1057,7 @@
         }
         
         function endWave() {
-            if (gameState !== 'playing') return; // Prevent double calls
+            if (gameState !== 'playing') return;
             
             gameState = 'waiting';
             currentWave++;
@@ -816,6 +1076,7 @@
                 lives = 0;
                 updateInGameUI();
                 gameState = 'gameover';
+                closeTurretMenu();
                 messageTitle.textContent = 'Game Over!';
                 messageText.textContent = `You ran out of base HP on level ${currentLevel + 1}, wave ${currentWave + 1}.`;
                 
@@ -834,9 +1095,9 @@
             }
         }
         
-        // --- ADDED MISSING FUNCTION ---
         function showLevelComplete() {
             gameState = 'win';
+            closeTurretMenu();
             const reward = levels[currentLevel].gemReward || 0;
             playerData.gems += reward;
             
@@ -867,8 +1128,7 @@
             messageBox.style.display = 'block';
         }
 
-        // --- ADDED MISSING EVENT LISTENER ---
-        // This line starts the entire application
+        // --- This line starts the entire application ---
         window.addEventListener('DOMContentLoaded', init);
 
     </script>
@@ -926,9 +1186,22 @@
             </div>
         </div>
 
-        <!-- Canvas Container (Handles Aspect Ratio) -->
+        <!-- Canvas Container (Handles Aspect Ratio AND Turret Menu) -->
         <div id="game-canvas-container" class="bg-gray-700">
             <canvas id="game-canvas" class="rounded-b-lg"></canvas>
+
+            <!-- NEW: Turret Upgrade Menu -->
+            <div id="turret-menu" class="hidden absolute bg-gray-800 rounded-lg shadow-xl p-4 w-64 text-gray-300 border-2 border-gray-600 z-20">
+                <h3 id="turret-menu-title" class="text-xl font-bold mb-2 text-white">Turret</h3>
+                <div id="turret-menu-stats" class="text-sm space-y-1 mb-3">
+                    <!-- Stats injected here -->
+                </div>
+                <div class="flex space-x-2">
+                    <button id="turret-menu-upgrade" class="flex-1 game-button bg-green-600 hover:bg-green-700">Upgrade</button>
+                    <button id="turret-menu-sell" class="flex-1 game-button bg-red-600 hover:bg-red-700">Sell</button>
+                </div>
+                <button id="turret-menu-close" class="absolute -top-3 -right-3 text-gray-200 bg-red-600 hover:bg-red-700 w-7 h-7 rounded-full font-bold text-lg flex items-center justify-center border-2 border-white">&times;</button>
+            </div>
         </div>
 
         <!-- Bottom Tower Selection Bar -->
