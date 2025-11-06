@@ -3,323 +3,951 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Defense</title>
+    <title>Simple Tower Defense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #1b2a1d;
-            color: white;
+        /* Using Inter font, as it's a nice default included with Tailwind */
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Add a visual cue for the selected tower */
+        .tower-button.selected {
+            border-color: #3b82f6 !important; /* blue-500 */
+            box-shadow: 0 0 10px #3b82f6;
+        }
+        
+        /* Base button style for consistent hover/active states */
+        .game-button {
+            transition: all 0.1s ease-in-out;
+        }
+        .game-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .game-button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        
+        /* This container is crucial. It holds the canvas and gives it a 
+          responsive 4:3 aspect ratio, which our resizeCanvas() function uses.
+        */
+        #game-canvas-container {
+            width: 100%;
+            max-width: 800px; /* Corresponds to canvas.width */
+            aspect-ratio: 4 / 3;
+            margin-left: auto;
+            margin-right: auto;
         }
         canvas {
             display: block;
-            margin: auto;
-            background-color: #2d2d2d;
-            border: 1px solid white;
-        }
-        .sidebar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            color: white;
-        }
-        .sidebar p {
-            margin: 10px 0;
-        }
-        .button {
-            background-color: #66cc66;
-            padding: 5px 10px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #55bb55;
-        }
-        .radial-menu {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            color: white;
-        }
-        .turret-button {
-            margin: 5px;
-            background-color: #66cc66;
-            padding: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        .turret-button:hover {
-            background-color: #55bb55;
-        }
-        .turret-info {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin: 10px 0;
-        }
-        .turret-info span {
-            margin: 3px 0;
-        }
-        .arrow {
-            font-size: 20px;
-            cursor: pointer;
-            margin: 5px 0;
-        }
-        .arrow:hover {
-            color: #66cc66;
+            background-color: #374151; /* gray-700, to see the game area */
         }
     </style>
-</head>
-<body>
-    <div class="sidebar">
-        <p>Gold: <span id="goldCount">100</span></p>
-        <p>Turret Stats:</p>
-        <div id="turretInfo">Select a turret to place.</div>
-        <button id="confirmButton" class="button" style="display:none;">Confirm Placement</button>
-    </div>
+    
+    <script type="module">
+        // === GAME SETUP ===
+        
+        // Local game state
+        let gameLoopId = null; // To stop the game loop
+        
+        // --- UI Elements ---
+        // These will be assigned in init() after the page loads
+        let loadingOverlay, mainMenu, gameContainer, levelSelectContainer, armoryContainer, gemDisplay;
+        let canvas, ctx, moneyDisplay, livesDisplay, levelDisplay, waveDisplay, startWaveBtn, towerSelectionUI, backToMenuBtn;
+        let messageBox, messageTitle, messageText, messageButton1, messageButton2;
 
-    <div class="radial-menu">
-        <button id="leftArrow" class="arrow">←</button>
-        <div id="turretStats" class="turret-info">
-            <span id="turretName">Basic Turret</span>
-            <span>Cost: <span id="turretCost">50</span></span>
-            <span>Damage: <span id="turretDamage">10</span> /sec</span>
-            <span>Range: <span id="turretRange">100</span></span>
-        </div>
-        <button id="rightArrow" class="arrow">→</button>
-    </div>
+        let canvasWidth, canvasHeight;
 
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+        // Game State (In-Level)
+        let money = 0;
+        let lives = 0; // This is now 'Base HP'
+        let currentLevel = 0;
+        let currentWave = 0;
+        let gameState = 'waiting'; // 'waiting', 'playing', 'gameover', 'win'
+        let selectedTowerType = null;
+        let mouse = { x: 0, y: 0 };
+        let lastTime = 0;
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const goldDisplay = document.getElementById("goldCount");
-        const turretInfo = document.getElementById("turretInfo");
-        const confirmButton = document.getElementById("confirmButton");
-        const turretStats = document.getElementById("turretStats");
-        const leftArrow = document.getElementById("leftArrow");
-        const rightArrow = document.getElementById("rightArrow");
-
-        const gridSize = 40; // Size of each cell in the grid
-        let gold = 100;
+        // Game Objects (In-Level)
         let turrets = [];
         let enemies = [];
-        let turretPreview = null; // Preview turret before placement
+        let projectiles = [];
+        let spawnQueue = [];
+        let spawnCounter = 0;
+        let currentPath = []; // Will be set when level loads
+        const pathWidth = 30;
+        
+        // --- Player's Data (Resets on Refresh) ---
+        // Default data for a new player
+        let playerData = {
+            gems: 10,
+            unlockedTurrets: ['basic'] // 'basic' is unlocked by default
+        };
 
-        // Turret details (damage per second and range)
-        const turretsData = [
-            { name: "Basic Turret", damage: 10, range: 100, cost: 50 },
-            { name: "Advanced Turret", damage: 20, range: 150, cost: 100 },
-            { name: "Elite Turret", damage: 30, range: 200, cost: 200 }
-        ];
-        let selectedTurretIndex = 0;
-        let selectedTurret = turretsData[selectedTurretIndex];
 
-        // Path for enemies
-        const path = [
-            { x: 0, y: 300 },
-            { x: 400, y: 300 },
-            { x: 400, y: 100 },
-            { x: 800, y: 100 },
-        ];
+        // === GAME DATA ===
 
-        // Enemy class
-        class Enemy {
-            constructor(x, y, health, speed) {
-                this.x = x;
-                this.y = y;
-                this.health = health;
-                this.speed = speed;
-                this.pathIndex = 0;
+        // Turret Definitions
+        const turretTypes = {
+            'basic': {
+                name: 'Basic',
+                cost: 100,
+                range: 120,
+                damage: 15,
+                fireRate: 30, // Frames per shot
+                color: '#3b82f6', // blue-500
+                projectileColor: '#93c5fd', // blue-300
+                projectileSpeed: 8,
+                description: 'Fast, low damage.',
+                unlocked: true, // Unlocked by default
+                gemCost: 0
+            },
+            'sniper': {
+                name: 'Sniper',
+                cost: 250,
+                range: 250,
+                damage: 30,
+                fireRate: 90, // Very slow
+                color: '#f59e0b', // amber-500
+                projectileColor: '#fcd34d', // amber-300
+                projectileSpeed: 15,
+                description: 'Slow, high damage, long range.',
+                unlocked: false, // Must be unlocked
+                gemCost: 75
+            },
+            'flamethrower': {
+                name: 'Flamethrower',
+                cost: 400,
+                range: 80, // Short range
+                damage: 5, // Low damage, but...
+                fireRate: 5, // ...very fast fire rate
+                color: '#dc2626', // red-600
+                projectileColor: '#f97316', // orange-500
+                projectileSpeed: 6,
+                description: 'Short range, rapid fire.',
+                unlocked: false, // Must be unlocked
+                gemCost: 200
             }
+        };
 
-            move() {
-                const target = path[this.pathIndex];
+        // Enemy Definitions
+        const enemyTypes = {
+            'normal': { hp: 15, speed: 1.5, reward: 5, damage: 1, color: '#ef4444', radius: 10 },
+            'fast': { hp: 30, speed: 3, reward: 3, damage: 1, color: '#f97316', radius: 8 },
+            'tank': { hp: 60, speed: 0.8, reward: 15, damage: 5, color: '#a855f7', radius: 15 }
+        };
 
-                if (target) {
-                    const dx = target.x - this.x;
-                    const dy = target.y - this.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const moveX = (dx / distance) * this.speed;
-                    const moveY = (dy / distance) * this.speed;
-
-                    this.x += moveX;
-                    this.y += moveY;
-
-                    if (distance < this.speed) {
-                        this.pathIndex++;
+        // Level and Wave Definitions
+        const levels = [
+            { // Level 1
+                path: [
+                    { x: -50, y: 100 }, { x: 150, y: 100 }, { x: 150, y: 300 }, { x: 400, y: 300 },
+                    { x: 400, y: 150 }, { x: 600, y: 150 }, { x: 600, y: 400 }, { x: 100, y: 400 },
+                    { x: 100, y: 550 }, { x: 850, y: 550 } // Off-screen end
+                ],
+                startingMoney: 250,
+                startingLives: 20, // This is Base HP
+                difficulty: "Easy",
+                gemReward: 50,
+                waves: [
+                    { enemies: [{ type: 'normal', count: 10, spawnRate: 60 }] },
+                    { enemies: [{ type: 'normal', count: 15, spawnRate: 50 }] },
+                    { enemies: [
+                        { type: 'normal', count: 10, spawnRate: 60 },
+                        { type: 'fast', count: 5, spawnRate: 120, delay: 300 }
+                    ]},
+                ]
+            },
+            { // Level 2 - Different Path
+                path: [
+                    { x: 400, y: -50 }, { x: 400, y: 200 }, { x: 100, y: 200 }, { x: 100, y: 400 },
+                    { x: 700, y: 400 }, { x: 700, y: 100 }, { x: 600, y: 100 }, { x: 600, y: 650 }
+                ],
+                startingMoney: 300,
+                startingLives: 15,
+                difficulty: "Medium",
+                gemReward: 75,
+                waves: [
+                    { enemies: [{ type: 'normal', count: 20, spawnRate: 45 }, { type: 'fast', count: 10, spawnRate: 90 }] },
+                    { enemies: [{ type: 'tank', count: 3, spawnRate: 180 }, { type: 'normal', count: 15, spawnRate: 40, delay: 60 }] },
+                    { enemies: [{ type: 'tank', count: 5, spawnRate: 200 }, { type: 'fast', count: 20, spawnRate: 60, delay: 300 }] }
+                ]
+            },
+            { // Level 3 - Another Path
+                path: [
+                    { x: -50, y: 300 }, { x: 700, y: 300 }, { x: 700, y: 100 }, { x: 100, y: 100 },
+                    { x: 100, y: 500 }, { x: 700, y: 500 }, { x: 700, y: 300 }, { x: 850, y: 300 }
+                ],
+                startingMoney: 400,
+                startingLives: 10,
+                difficulty: "Hard",
+                gemReward: 120,
+                waves: [
+                    { enemies: [{ type: 'fast', count: 30, spawnRate: 30 }] },
+                    { enemies: [{ type: 'tank', count: 10, spawnRate: 100 }] },
+                    { enemies: [
+                        { type: 'tank', count: 8, spawnRate: 120 },
+                        { type: 'fast', count: 20, spawnRate: 60, delay: 200 },
+                        { type: 'normal', count: 50, spawnRate: 20, delay: 400 }
+                    ]}
+                ]
+            }
+        ];
+        
+        
+        // === MAIN MENU & UI LOGIC ===
+        
+        function showMainMenu() {
+            // Hide game, show menu
+            gameContainer.style.display = 'none';
+            mainMenu.style.display = 'flex';
+            messageBox.style.display = 'none';
+            
+            // Stop game loop if it's running
+            if (gameLoopId) {
+                cancelAnimationFrame(gameLoopId);
+                gameLoopId = null;
+            }
+            
+            // Refresh menu data
+            updateMenuUI();
+        }
+        
+        function updateMenuUI() {
+            if (!playerData) return; // Wait for data to load
+            
+            gemDisplay.textContent = playerData.gems || 0;
+            
+            // --- Populate Level Select ---
+            levelSelectContainer.innerHTML = ''; // Clear old list
+            levels.forEach((level, index) => {
+                const levelCard = document.createElement('div');
+                levelCard.className = 'bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center';
+                
+                levelCard.innerHTML = `
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Level ${index + 1}</h3>
+                        <p class="text-sm text-gray-400">
+                            Difficulty: <span class="font-semibold ${level.difficulty === 'Easy' ? 'text-green-400' : (level.difficulty === 'Medium' ? 'text-yellow-400' : 'text-red-400')}">${level.difficulty}</span> | 
+                            Waves: <span class="font-semibold text-blue-300">${level.waves.length}</span>
+                        </p>
+                        <p class="text-sm text-gray-400">
+                            Starting: <span class="font-semibold text-green-300">$${level.startingMoney}</span> | 
+                            Reward: <span class="font-semibold text-purple-300">${level.gemReward} Gems</span>
+                        </p>
+                    </div>
+                `;
+                
+                const playButton = document.createElement('button');
+                playButton.textContent = 'Play';
+                playButton.className = 'game-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg';
+                playButton.onclick = () => startGame(index);
+                
+                levelCard.appendChild(playButton);
+                levelSelectContainer.appendChild(levelCard);
+            });
+            
+            // --- Populate Armory ---
+            armoryContainer.innerHTML = ''; // Clear old list
+            Object.entries(turretTypes).forEach(([id, stats]) => {
+                const isUnlocked = playerData.unlockedTurrets.includes(id);
+                
+                const turretCard = document.createElement('div');
+                turretCard.className = 'bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center';
+                
+                turretCard.innerHTML = `
+                    <div>
+                        <h3 class="text-xl font-bold" style="color:${stats.color}">${stats.name}</h3>
+                        <p class="text-sm text-gray-400">${stats.description}</p>
+                        <p class="text-sm text-gray-400">
+                            Cost: <span class="font-semibold text-green-300">$${stats.cost}</span> | 
+                            Range: <span class="font-semibold text-blue-300">${stats.range}</span> |
+                            DMG: <span class="font-semibold text-red-300">${stats.damage}</span> |
+                            Rate: <span class="font-semibold text-yellow-300">${stats.fireRate}</span>
+                        </p>
+                    </div>
+                `;
+                
+                const unlockButton = document.createElement('button');
+                unlockButton.className = 'game-button text-white font-bold py-2 px-4 rounded-lg';
+                
+                if (isUnlocked) {
+                    unlockButton.textContent = 'Unlocked';
+                    unlockButton.className += ' bg-gray-600 cursor-not-allowed';
+                    unlockButton.disabled = true;
+                } else {
+                    unlockButton.textContent = `Unlock (${stats.gemCost} Gems)`;
+                    if (playerData.gems >= stats.gemCost) {
+                        unlockButton.className += ' bg-purple-600 hover:bg-purple-700';
+                        unlockButton.onclick = () => unlockTurret(id, stats.gemCost);
+                    } else {
+                        unlockButton.className += ' bg-red-700 cursor-not-allowed';
+                        unlockButton.disabled = true;
                     }
                 }
+                
+                turretCard.appendChild(unlockButton);
+                armoryContainer.appendChild(turretCard);
+            });
+        }
+        
+        function unlockTurret(turretId, cost) {
+            if (playerData.gems >= cost && !playerData.unlockedTurrets.includes(turretId)) {
+                playerData.gems -= cost;
+                playerData.unlockedTurrets.push(turretId);
+                updateMenuUI(); // Refresh the UI to show new gem count and unlocked status
             }
         }
+        
 
-        // Turret class
-        class Turret {
-            constructor(x, y, damage, range) {
-                this.x = x;
-                this.y = y;
-                this.damage = damage;
-                this.range = range;
-                this.target = null; // The enemy the turret is currently targeting
-            }
+        // === CORE GAME LOGIC ===
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "red";
-                ctx.fill();
-
-                // Draw range circle
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
-                ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-
-            attack() {
-                if (this.target) {
-                    const dx = this.target.x - this.x;
-                    const dy = this.target.y - this.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance <= this.range) {
-                        this.target.health -= this.damage;
-                        if (this.target.health <= 0) {
-                            this.target = null; // Reset target when it's destroyed
-                        }
-                    }
-                }
-            }
-
-            findTarget(enemies) {
-                let closestEnemy = null;
-                let closestDistance = this.range;
-
-                for (const enemy of enemies) {
-                    const dx = enemy.x - this.x;
-                    const dy = enemy.y - this.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance <= this.range && (!closestEnemy || distance < closestDistance)) {
-                        closestEnemy = enemy;
-                        closestDistance = distance;
-                    }
-                }
-
-                this.target = closestEnemy;
-            }
+        function startGame(levelIndex) {
+            // Hide menu, show game
+            mainMenu.style.display = 'none';
+            gameContainer.style.display = 'block';
+            
+            // --- THIS IS THE FIX ---
+            // Now that the container is visible, we can
+            // get its correct size.
+            resizeCanvas();
+            // --- END OF FIX ---
+            
+            loadLevel(levelIndex);
+            
+            // Start game loop
+            gameLoopId = requestAnimationFrame(gameLoop);
         }
 
-        // Set up the game
+        // Function to resize canvas to fit its container
+        function resizeCanvas() {
+            // Get the container that *has* the aspect ratio
+            const container = canvas.parentElement; 
+            
+            // Get its actual (pixel) size
+            const rect = container.getBoundingClientRect();
+
+            // Set the canvas *internal* resolution (fixed)
+            canvas.width = 800;
+            canvas.height = 600;
+
+            // Set the canvas *CSS size* to match the container
+            // This scales the 800x600 canvas to fit
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+            
+            // Store the fixed internal resolution
+            canvasWidth = canvas.width;
+            canvasHeight = canvas.height;
+        }
+
+        // Initialize the game
         function init() {
-            generateEnemies();
-            render();
+            // --- Assign all UI elements ---
+            loadingOverlay = document.getElementById('loading-overlay');
+            mainMenu = document.getElementById('main-menu');
+            gameContainer = document.getElementById('game-container');
+            levelSelectContainer = document.getElementById('level-select-container');
+            armoryContainer = document.getElementById('armory-container');
+            gemDisplay = document.getElementById('gem-display');
+
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            moneyDisplay = document.getElementById('money-display');
+            livesDisplay = document.getElementById('lives-display');
+            levelDisplay = document.getElementById('level-display');
+            waveDisplay = document.getElementById('wave-display');
+            startWaveBtn = document.getElementById('start-wave-btn');
+            towerSelectionUI = document.getElementById('tower-selection-ui');
+            backToMenuBtn = document.getElementById('back-to-menu-btn');
+
+            messageBox = document.getElementById('message-box');
+            messageTitle = document.getElementById('message-title');
+            messageText = document.getElementById('message-text');
+            messageButton1 = document.getElementById('message-button-1');
+            messageButton2 = document.getElementById('message-button-2');
+            // --- End of element assignment ---
+
+            // NOTE: resizeCanvas() is REMOVED from here
+            window.addEventListener('resize', resizeCanvas);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('click', onMouseClick);
+            startWaveBtn.addEventListener('click', startWave);
+            backToMenuBtn.addEventListener('click', showMainMenu);
+            
+            // No Firebase, just set default data and start
+            playerData = {
+                gems: 10,
+                unlockedTurrets: ['basic']
+            };
+            
+            updateMenuUI();
+            loadingOverlay.style.display = 'none';
+            mainMenu.style.display = 'flex';
         }
 
-        function generateEnemies() {
-            enemies.push(new Enemy(0, 300, 100, 1));
+        // Load a level's data
+        function loadLevel(levelIndex) {
+            currentLevel = levelIndex;
+            currentWave = 0;
+            const levelData = levels[currentLevel];
+            
+            money = levelData.startingMoney;
+            lives = levelData.startingLives;
+            currentPath = levelData.path;
+            
+            turrets = [];
+            enemies = [];
+            projectiles = [];
+            spawnQueue = [];
+            
+            gameState = 'waiting';
+            updateInGameUI();
+            setupTurretButtons(); // Populate turret bar
+            
+            startWaveBtn.disabled = false;
+            startWaveBtn.textContent = 'Start Wave';
+        }
+        
+        // Dynamically create tower buttons based on unlocks
+        function setupTurretButtons() {
+            towerSelectionUI.innerHTML = ''; // Clear old buttons
+            
+            playerData.unlockedTurrets.forEach(turretId => {
+                const stats = turretTypes[turretId];
+                if (!stats) return;
+                
+                const button = document.createElement('button');
+                button.id = `buy-${turretId}`;
+                button.className = 'tower-button game-button bg-gray-800 p-3 rounded-lg border-2 border-gray-600 hover:border-blue-500';
+                button.innerHTML = `
+                    <div class="font-bold text-lg">${stats.name}</div>
+                    <div class="text-sm text-gray-400">Cost: <span class="text-green-400">$${stats.cost}</span></div>
+                    <div class="text-sm text-gray-400">${stats.description}</div>
+                `;
+                button.onclick = () => selectTower(turretId);
+                
+                towerSelectionUI.appendChild(button);
+            });
+        }
+        
+        // Start the next wave
+        function startWave() {
+            if (gameState !== 'waiting' || !levels[currentLevel] || !levels[currentLevel].waves[currentWave]) return;
+            
+            gameState = 'playing';
+            spawnQueue = [];
+            spawnCounter = 0;
+            
+            const waveData = levels[currentLevel].waves[currentWave].enemies;
+            
+            waveData.forEach(group => {
+                let spawnTime = group.delay || 0;
+                for (let i = 0; i < group.count; i++) {
+                    spawnQueue.push({ type: group.type, time: spawnTime });
+                    spawnTime += group.spawnRate;
+                }
+            });
+            
+            spawnQueue.sort((a, b) => a.time - b.time);
+            
+            startWaveBtn.disabled = true;
+            startWaveBtn.textContent = 'Wave in Progress...';
+            updateInGameUI();
         }
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Main Game Loop
+        function gameLoop(timestamp) {
+            const deltaTime = (timestamp - lastTime) / 16.67; // Normalize to ~60 FPS
+            lastTime = timestamp;
 
-            // Draw path
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x, path[i].y);
+            if (isNaN(deltaTime) || deltaTime <= 0) { // Skip first frame or bad timestamp
+                gameLoopId = requestAnimationFrame(gameLoop);
+                return;
             }
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.stroke();
 
-            // Draw enemies
-            for (const enemy of enemies) {
-                enemy.move();
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
-                ctx.fillStyle = "blue";
-                ctx.fill();
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            drawPath();
+            
+            if (gameState === 'playing') {
+                handleSpawning(deltaTime);
+                updateEnemies(deltaTime);
             }
+            
+            updateTurrets(deltaTime);
+            updateProjectiles(deltaTime);
 
-            // Draw turrets
-            for (const turret of turrets) {
-                turret.draw();
-                turret.attack();
-            }
-
-            // Request next frame
-            requestAnimationFrame(render);
-        }
-
-        // Handle turret selection and placement
-        function setTurret(index) {
-            selectedTurret = turretsData[index];
-            turretStats.innerHTML = `
-                <span id="turretName">${selectedTurret.name}</span>
-                <span>Cost: <span id="turretCost">${selectedTurret.cost}</span></span>
-                <span>Damage: <span id="turretDamage">${selectedTurret.damage}</span> /sec</span>
-                <span>Range: <span id="turretRange">${selectedTurret.range}</span></span>
-            `;
-        }
-
-        function updateTurretPreview(x, y) {
-            if (turretPreview) {
-                turretPreview.x = x;
-                turretPreview.y = y;
+            drawTurrets();
+            drawEnemies();
+            drawProjectiles();
+            drawGhostTower();
+            
+            if (gameState !== 'gameover' && gameState !== 'win') {
+                gameLoopId = requestAnimationFrame(gameLoop);
             } else {
-                turretPreview = new Turret(x, y, selectedTurret.damage, selectedTurret.range);
+                gameLoopId = null; // Stop loop
             }
         }
 
-        canvas.addEventListener("click", (e) => {
-            const x = e.offsetX;
-            const y = e.offsetY;
+        // === UPDATE FUNCTIONS ===
 
-            // If previewing, update position
-            if (turretPreview) {
-                updateTurretPreview(x, y);
+        function handleSpawning(deltaTime) {
+            if (spawnQueue.length > 0) {
+                spawnCounter++; // This is a frame-based counter
+                while(spawnQueue.length > 0 && spawnCounter >= spawnQueue[0].time) {
+                    const enemyData = spawnQueue.shift();
+                    spawnEnemy(enemyData.type);
+                }
+            } else if (enemies.length === 0) {
+                // Check if spawnQueue is also empty, meaning all enemies are spawned and defeated
+                endWave();
             }
-        });
+        }
+        
+        function spawnEnemy(type) {
+            const enemyData = enemyTypes[type];
+            enemies.push({
+                ...enemyData,
+                x: currentPath[0].x,
+                y: currentPath[0].y,
+                currentHp: enemyData.hp,
+                waypointIndex: 1
+            });
+        }
 
-        // Confirm placement
-        confirmButton.addEventListener("click", () => {
-            if (turretPreview) {
-                turrets.push(new Turret(turretPreview.x, turretPreview.y, selectedTurret.damage, selectedTurret.range));
-                gold -= selectedTurret.cost;
-                goldDisplay.innerText = gold;
-                turretPreview = null; // Reset preview
+        function updateEnemies(deltaTime) {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                if (enemy.currentHp <= 0) {
+                    money += enemy.reward;
+                    updateInGameUI();
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                const targetWaypoint = currentPath[enemy.waypointIndex];
+                if (!targetWaypoint) continue; 
+
+                const dx = targetWaypoint.x - enemy.x;
+                const dy = targetWaypoint.y - enemy.y;
+                const dist = Math.hypot(dx, dy);
+                const moveDist = enemy.speed * deltaTime;
+
+                if (dist < moveDist) {
+                    enemy.x = targetWaypoint.x;
+                    enemy.y = targetWaypoint.y;
+                    enemy.waypointIndex++;
+                    
+                    if (enemy.waypointIndex >= currentPath.length) {
+                        lives -= enemy.damage;
+                        enemies.splice(i, 1);
+                        updateInGameUI();
+                        checkGameOver();
+                    }
+                } else {
+                    enemy.x += (dx / dist) * moveDist;
+                    enemy.y += (dy / dist) * moveDist;
+                }
             }
-        });
+        }
+        
+        function updateTurrets(deltaTime) {
+            turrets.forEach(turret => {
+                const stats = turretTypes[turret.type];
+                if (!stats) return; 
+                
+                const target = findTarget(turret);
+                
+                if (target) {
+                    turret.angle = Math.atan2(target.y - turret.y, target.x - turret.x);
+                    
+                    if (turret.cooldown <= 0) {
+                        fireProjectile(turret, target);
+                        turret.cooldown = stats.fireRate;
+                    }
+                }
+                
+                turret.cooldown -= 1 * deltaTime;
+            });
+        }
+        
+        function findTarget(turret) {
+            let bestTarget = null;
+            let maxDist = 0;
+            
+            const stats = turretTypes[turret.type];
+            if (!stats) return null;
+            const range = stats.range;
 
-        // Update turret selection with arrows
-        leftArrow.addEventListener("click", () => {
-            setTurret((selectedTurretIndex - 1 + turretsData.length) % turretsData.length);
-        });
+            for (const enemy of enemies) {
+                const dist = Math.hypot(enemy.x - turret.x, enemy.y - turret.y);
+                
+                if (dist <= range) {
+                    const enemyPathDist = getEnemyPathDistance(enemy);
+                    if (enemyPathDist > maxDist) {
+                        maxDist = enemyPathDist;
+                        bestTarget = enemy;
+                    }
+                }
+            }
+            return bestTarget;
+        }
 
-        rightArrow.addEventListener("click", () => {
-            setTurret((selectedTurretIndex + 1) % turretsData.length);
-        });
+        function getEnemyPathDistance(enemy) {
+            let dist = 0;
+            for (let i = 1; i < enemy.waypointIndex; i++) {
+                dist += Math.hypot(currentPath[i].x - currentPath[i-1].x, currentPath[i].y - currentPath[i-1].y);
+            }
+            dist += Math.hypot(enemy.x - currentPath[enemy.waypointIndex-1].x, enemy.y - currentPath[enemy.waypointIndex-1].y);
+            return dist;
+        }
+        
+        function fireProjectile(turret, target) {
+            const stats = turretTypes[turret.type];
+            const gunTipX = turret.x + 18 * Math.cos(turret.angle);
+            const gunTipY = turret.y + 18 * Math.sin(turret.angle);
 
-        init(); // Start the game
+            projectiles.push({
+                x: gunTipX, y: gunTipY,
+                damage: stats.damage, speed: stats.projectileSpeed, color: stats.projectileColor,
+                target: target, targetLost: false,
+                lastTargetX: target.x, lastTargetY: target.y
+            });
+        }
+
+        function updateProjectiles(deltaTime) {
+             for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+                
+                if (!p.target || p.target.currentHp <= 0 || !enemies.includes(p.target)) {
+                    p.targetLost = true;
+                }
+                
+                // --- THIS IS THE BUG FIX ---
+                // It was p.target.y, now it's p.target.x
+                let targetX = p.targetLost ? p.lastTargetX : p.target.x; 
+                let targetY = p.targetLost ? p.lastTargetY : p.target.y;
+                // --- END OF BUG FIX ---
+                
+                if (!p.targetLost) {
+                    p.lastTargetX = targetX;
+                    p.lastTargetY = targetY;
+                }
+
+                const dx = targetX - p.x;
+                const dy = targetY - p.y;
+                const dist = Math.hypot(dx, dy);
+                const moveDist = p.speed * deltaTime;
+
+                if (dist < moveDist) {
+                    if (!p.targetLost && p.target) { // Check p.target still exists
+                         p.target.currentHp -= p.damage;
+                    }
+                    projectiles.splice(i, 1);
+                } else {
+                    p.x += (dx / dist) * moveDist;
+                    p.y += (dy / dist) * moveDist;
+                }
+            }
+        }
+        
+        // === DRAW FUNCTIONS ===
+        
+        function drawPath() {
+            if (!currentPath || currentPath.length === 0) return;
+            // Draw the "outer" border of the path
+            ctx.strokeStyle = '#1f2937'; // A dark border (gray-900)
+            ctx.lineWidth = pathWidth + 4; // Slightly wider than the path
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(currentPath[0].x, currentPath[0].y);
+            for (let i = 1; i < currentPath.length; i++) ctx.lineTo(currentPath[i].x, currentPath[i].y);
+            ctx.stroke();
+            
+            // Draw the main path on top
+            ctx.strokeStyle = '#9ca3af'; // A lighter gray (gray-400)
+            ctx.lineWidth = pathWidth;
+            ctx.beginPath();
+            ctx.moveTo(currentPath[0].x, currentPath[0].y);
+            for (let i = 1; i < currentPath.length; i++) ctx.lineTo(currentPath[i].x, currentPath[i].y);
+            ctx.stroke();
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.beginPath(); ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2); ctx.fill();
+                const hpBarWidth = enemy.radius * 2; const hpBarHeight = 5;
+                const hpBarX = enemy.x - enemy.radius; const hpBarY = enemy.y - enemy.radius - 8;
+                ctx.fillStyle = '#1f2937'; ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+                const hpPercent = enemy.currentHp / enemy.hp;
+                ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#f59e0b' : '#ef4444');
+                ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+            });
+        }
+
+        function drawTurrets() {
+            turrets.forEach(turret => {
+                const stats = turretTypes[turret.type];
+                const x = turret.x; const y = turret.y;
+                
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.1)'; ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+                ctx.lineWidth = 1; ctx.beginPath();
+                ctx.arc(x, y, stats.range, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+
+                ctx.fillStyle = stats.color;
+                ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
+                
+                ctx.save(); ctx.translate(x, y); ctx.rotate(turret.angle); 
+                ctx.fillStyle = '#a0aec0'; ctx.fillRect(0, -3, 18, 6); 
+                ctx.restore(); 
+            });
+        }
+        
+        function drawProjectiles() {
+            projectiles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+            });
+        }
+
+        function drawGhostTower() {
+            if (!selectedTowerType) return;
+            const stats = turretTypes[selectedTowerType];
+            const validPlacement = isPlacementValid(mouse.x, mouse.y, stats.cost);
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = validPlacement ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+            ctx.beginPath(); ctx.arc(mouse.x, mouse.y, stats.range, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = stats.color;
+            ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+
+        // === EVENT HANDLERS ===
+        
+        function onMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        }
+
+        function onMouseClick(e) {
+            if (!selectedTowerType) return;
+            const stats = turretTypes[selectedTowerType];
+            if (isPlacementValid(mouse.x, mouse.y, stats.cost)) {
+                money -= stats.cost;
+                turrets.push({ x: mouse.x, y: mouse.y, type: selectedTowerType, cooldown: 0, angle: 0 });
+                updateInGameUI();
+                selectTower(null);
+            } else {
+                console.log('Invalid placement');
+                selectTower(null);
+            }
+        }
+        
+        function selectTower(type) {
+            selectedTowerType = type;
+            // Update button styles
+            document.querySelectorAll('.tower-button').forEach(btn => {
+                if (type && btn.id === `buy-${type}`) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+
+        // === UTILITY & GAME STATE ===
+
+        function isPlacementValid(x, y, cost) {
+            if (money < cost) return false;
+            for (const t of turrets) {
+                if (Math.hypot(x - t.x, y - t.y) < 24) return false; // Use Math.hypot
+            }
+            if (!currentPath) return false;
+            for (let i = 0; i < currentPath.length - 1; i++) {
+                if (isPointNearLineSegment(x, y, currentPath[i].x, currentPath[i].y, currentPath[i+1].x, currentPath[i+1].y, pathWidth / 2 + 12)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // --- ADDED MISSING FUNCTION ---
+        // Helper function for placement validation
+        function isPointNearLineSegment(px, py, x1, y1, x2, y2, maxDist) {
+            const L2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+            if (L2 === 0) return Math.hypot(px - x1, py - y1) < maxDist;
+            const t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / L2;
+            const tClamped = Math.max(0, Math.min(1, t));
+            const nearX = x1 + tClamped * (x2 - x1);
+            const nearY = y1 + tClamped * (y2 - y1);
+            return Math.hypot(px - nearX, py - nearY) < maxDist;
+        }
+
+        function updateInGameUI() {
+            moneyDisplay.textContent = money;
+            livesDisplay.textContent = lives;
+            levelDisplay.textContent = currentLevel + 1;
+            waveDisplay.textContent = currentWave + (gameState === 'playing' ? 1 : 0);
+        }
+        
+        function endWave() {
+            if (gameState !== 'playing') return; // Prevent double calls
+            
+            gameState = 'waiting';
+            currentWave++;
+            startWaveBtn.disabled = false;
+            
+            if (currentWave >= levels[currentLevel].waves.length) {
+                showLevelComplete();
+            } else {
+                startWaveBtn.textContent = 'Start Wave';
+                updateInGameUI();
+            }
+        }
+
+        function checkGameOver() {
+            if (lives <= 0) {
+                lives = 0;
+                updateInGameUI();
+                gameState = 'gameover';
+                messageTitle.textContent = 'Game Over!';
+                messageText.textContent = `You ran out of base HP on level ${currentLevel + 1}, wave ${currentWave + 1}.`;
+                
+                messageButton1.textContent = 'Restart Level';
+                messageButton1.onclick = () => {
+                    messageBox.style.display = 'none';
+                    loadLevel(currentLevel); // Restart current level
+                    gameLoopId = requestAnimationFrame(gameLoop); // Restart loop
+                };
+                
+                messageButton2.textContent = 'Main Menu';
+                messageButton2.onclick = () => {
+                    showMainMenu();
+                };
+                messageBox.style.display = 'block';
+            }
+        }
+        
+        // --- ADDED MISSING FUNCTION ---
+        function showLevelComplete() {
+            gameState = 'win';
+            const reward = levels[currentLevel].gemReward || 0;
+            playerData.gems += reward;
+            
+            // Update menu UI in background so gem count is correct when player returns
+            updateMenuUI(); 
+
+            messageTitle.textContent = 'Level Complete!';
+            messageText.textContent = `You beat level ${currentLevel + 1}! You earned ${reward} gems.`;
+            
+            messageButton1.textContent = 'Next Level';
+            const nextLevel = currentLevel + 1;
+            
+            if (levels[nextLevel]) {
+                messageButton1.disabled = false;
+                messageButton1.onclick = () => {
+                    messageBox.style.display = 'none';
+                    startGame(nextLevel); // Start next level
+                };
+            } else {
+                messageButton1.textContent = 'All Levels Beat!';
+                messageButton1.disabled = true;
+            }
+            
+            messageButton2.textContent = 'Main Menu';
+            messageButton2.onclick = () => {
+                showMainMenu();
+            };
+            messageBox.style.display = 'block';
+        }
+
+        // --- ADDED MISSING EVENT LISTENER ---
+        // This line starts the entire application
+        window.addEventListener('DOMContentLoaded', init);
+
     </script>
+</head>
+<body class="bg-gray-900 text-gray-200 h-screen flex items-center justify-center p-4">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 text-white flex items-center justify-center z-50">
+        <div class="text-2xl font-bold">Loading Game...</div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="hidden flex-col w-full max-w-4xl h-full max-h-[90vh] bg-gray-700 rounded-lg shadow-2xl p-6">
+        <div class="flex justify-between items-center border-b border-gray-600 pb-4 mb-4">
+            <h1 class="text-3xl font-bold text-white">Simple Tower Defense</h1>
+            <div class="text-lg font-semibold bg-gray-800 px-4 py-2 rounded-lg">
+                Gems: <span id="gem-display" class="text-purple-400 font-bold">0</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto space-y-6">
+            <!-- Level Select Section -->
+            <div>
+                <h2 class="text-2xl font-semibold mb-3 text-blue-300">Select Level</h2>
+                <div id="level-select-container" class="space-y-4">
+                    <!-- Level cards will be injected here -->
+                </div>
+            </div>
+            
+            <!-- Armory Section -->
+            <div>
+                <h2 class="text-2xl font-semibold mb-3 text-purple-300">Armory</h2>
+                <div id="armory-container" class="space-y-4">
+                    <!-- Turret unlock cards will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="hidden w-full max-w-5xl">
+        <!-- Top Game UI Bar -->
+        <div class="bg-gray-800 p-4 rounded-t-lg flex justify-between items-center">
+            <div class="flex space-x-6">
+                <div class="text-xl">Money: <span id="money-display" class="font-bold text-green-400">0</span></div>
+                <div class="text-xl">Base HP: <span id="lives-display" class="font-bold text-red-400">0</span></div>
+            </div>
+            <div class="flex space-x-6 text-center">
+                <div class="text-xl">Level: <span id="level-display" class="font-bold text-blue-300">1</span></div>
+                <div class="text-xl">Wave: <span id="wave-display" class="font-bold text-yellow-300">0</span></div>
+            </div>
+            <div class="flex space-x-2">
+                <button id="start-wave-btn" class="game-button bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Start Wave</button>
+                <button id="back-to-menu-btn" class="game-button bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Menu</button>
+            </div>
+        </div>
+
+        <!-- Canvas Container (Handles Aspect Ratio) -->
+        <div id="game-canvas-container" class="bg-gray-700">
+            <canvas id="game-canvas" class="rounded-b-lg"></canvas>
+        </div>
+
+        <!-- Bottom Tower Selection Bar -->
+        <div id="tower-selection-ui" class="mt-4 bg-gray-800 p-4 rounded-lg flex space-x-4 justify-center">
+            <!-- Tower buttons will be injected here -->
+        </div>
+    </div>
+
+    <!-- Message Box (Game Over / Win) -->
+    <div id="message-box" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-40">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center w-full max-w-md">
+            <h2 id="message-title" class="text-3xl font-bold mb-4">Game Over!</h2>
+            <p id="message-text" class="text-lg mb-6">You lost.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="message-button-1" class="game-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Restart</button>
+                <button id="message-button-2" class="game-button bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
