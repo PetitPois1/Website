@@ -123,25 +123,25 @@
             'sniper': {
                 name: 'Sniper',
                 cost: 250,
-                damage: 30,
-                range: 250,
+                damage: 80,
+                range: 300,
                 fireRate: 90, // Very slow
                 projectileColor: '#fcd34d',
                 projectileSpeed: 15,
                 color: '#f59e0b', // amber-500
                 description: 'Slow, high damage, long range.',
-                gemUnlockCost: 75,
+                gemUnlockCost: 50,
                 gemUpgradeCost: [100, 200, 400], 
                 inGameUpgradeCost: [200, 400, 800],
                 statUpgrades: {
                     damage: 20,
                     range: 25,
-                    fireRate: -5
+                    fireRate: -10
                 }
             },
             'flamethrower': {
                 name: 'Flamethrower',
-                cost: 400,
+                cost: 250,
                 damage: 5, // Low damage, but...
                 range: 80, // Short range
                 fireRate: 5, // ...very fast fire rate
@@ -149,12 +149,12 @@
                 projectileSpeed: 6,
                 color: '#dc2626', // red-600
                 description: 'Short range, rapid fire.',
-                gemUnlockCost: 200,
-                gemUpgradeCost: [250, 500, 1000],
-                inGameUpgradeCost: [300, 600, 1200],
+                gemUnlockCost: 50,
+                gemUpgradeCost: [100, 150, 200],
+                inGameUpgradeCost: [200, 400, 800],
                 statUpgrades: {
-                    damage: 2,
-                    range: 5,
+                    damage: 5,
+                    range: 20,
                     fireRate: 0 // Fire rate doesn't get faster
                 }
             }
@@ -182,10 +182,37 @@
                 waves: [
                     { enemies: [{ type: 'normal', count: 10, spawnRate: 60 }] },
                     { enemies: [{ type: 'normal', count: 15, spawnRate: 50 }] },
+                    { enemies: [{ type: 'normal', count: 20, spawnRate: 40 }] },
                     { enemies: [
                         { type: 'normal', count: 10, spawnRate: 60 },
                         { type: 'fast', count: 5, spawnRate: 120, delay: 300 }
                     ]},
+                    { enemies: [
+                        { type: 'normal', count: 15, spawnRate: 50 },
+                        { type: 'fast', count: 10, spawnRate: 120, delay: 250}
+                    ]},
+                    { enemies: [
+                        { type: 'normal', count: 20, spawnRate: 40 },
+                        { type: 'fast', count: 10, spawnRate: 120, delay: 250}
+                    ]},
+                    { enemies: [
+                        { type: 'normal', count: 25, spawnRate: 40 },
+                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
+                    ]},
+                    { enemies: [
+                        { type: 'normal', count: 30, spawnRate: 20 },
+                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
+                    ]},
+                    { enemies: [
+                        { type: 'normal', count: 30, spawnRate: 20 },
+                        { type: 'fast', count: 15, spawnRate: 50, delay: 100}
+                    ]},
+                    { enemies: [
+                        { type: 'normal', count: 25, spawnRate: 40 },
+                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
+                        { type: 'tank', count: 1, spawnRate: 50, delay: 500}
+                    ]},
+                    
                 ]
             },
             { // Level 2 - Different Path
