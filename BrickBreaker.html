@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Core: Rogue Breaker</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff00;
+            --neon-yellow: #ffcc00;
+            --ui-bg: rgba(20, 20, 20, 0.9);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none; /* Prevent pull-to-refresh on mobile */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            font-size: 18px;
+            text-shadow: 0 0 5px var(--neon-blue);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #message-area {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #message-title {
+            font-size: 48px;
+            color: var(--neon-yellow);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px var(--neon-yellow);
+            margin-bottom: 10px;
+        }
+
+        #message-sub {
+            font-size: 18px;
+            color: #ddd;
+        }
+
+        /* Shop Modal */
+        #shop-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background: var(--ui-bg);
+            border: 2px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 20px;
+            pointer-events: auto;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .shop-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .shop-title {
+            font-size: 24px;
+            color: var(--neon-blue);
+            margin: 0;
+        }
+
+        .upgrade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .upgrade-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .upgrade-info h4 {
+            margin: 0;
+            color: var(--neon-green);
+        }
+
+        .upgrade-info p {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .btn:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        .shop-footer {
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-large {
+            padding: 12px 30px;
+            font-size: 16px;
+            border-color: var(--neon-pink);
+            color: var(--neon-pink);
+        }
+
+        .btn-large:hover {
+            background: var(--neon-pink);
+            color: white;
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-size: 60px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+        }
+        
+        /* Floating Text Animation */
+        .floating-text {
+            position: absolute;
+            pointer-events: none;
+            font-weight: bold;
+            font-size: 14px;
+            animation: floatUp 0.8s ease-out forwards;
+            text-shadow: 0 0 2px black;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
+        }
+
+        .tutorial {
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="stat-box">
+                <span style="color: #00ffcc">BALLS</span>
+                <span id="lives-display">5</span>
+            </div>
+            <div class="stat-box">
+                <span style="color: var(--neon-yellow)">$</span>
+                <span id="score-display">0</span>
+            </div>
+            <div class="stat-box">
+                <span style="color: var(--neon-pink)">WAVE</span>
+                <span id="level-display">1</span>
+            </div>
+        </div>
+        
+        <div id="message-area">
+            <div id="message-title">WAVE CLEARED</div>
+            <div id="message-sub">Click to continue</div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>NEON CORE</h1>
+        <button class="btn btn-large" onclick="startGame()">INITIALIZE SYSTEM</button>
+        <div class="tutorial">
+            Mouse/Touch to Move<br>
+            Click/Tap to Launch Ball<br>
+            Destroy Bricks -> Get Money -> Upgrade
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal">
+        <div class="shop-header">
+            <h2 class="shop-title">UPGRADE MODULE</h2>
+            <div style="color: var(--neon-yellow); margin-top: 5px;">Credits: <span id="shop-money">0</span></div>
+        </div>
+        
+        <div class="upgrade-list">
+            <!-- Items injected by JS -->
+        </div>
+
+        <div class="shop-footer">
+            <button class="btn btn-large" onclick="closeShop()">NEXT WAVE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * AUDIO ENGINE
+ * Synthesizes sounds using Web Audio API to avoid external assets.
+ */
+const AudioEngine = {
+    ctx: null,
+    
+    init() {
+        try {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.error("Web Audio API not supported");
+        }
+    },
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+
+    playHit() {
+        // High pitched ping
+        this.playTone(800 + Math.random() * 200, 'sine', 0.1, 0.1);
+    },
+
+    playPaddleHit() {
+        // Lower thud
+        this.playTone(300, 'square', 0.1, 0.05);
+    },
+
+    playDestroy() {
+        // Crunch noise
+        this.playTone(100 + Math.random() * 50, 'sawtooth', 0.2, 0.1);
+        this.playTone(50 + Math.random() * 50, 'square', 0.2, 0.1);
+    },
+
+    playCoin() {
+        // Coin sparkle
+        this.playTone(1200, 'sine', 0.1, 0.05);
+        setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.05), 50);
+    },
+
+    playLaunch() {
+        // Laser pew
+        if(!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
+    }
+};
+
+/**
+ * GAME STATE & CONFIG
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = {
+    running: false,
+    money: 0,
+    wave: 1,
+    lives: 5,
+    gameOver: false,
+    shopOpen: false
+};
+
+const upgrades = [
+    { id: 'damage', name: 'Ball Damage', desc: 'Destroy harder bricks', cost: 50, level: 1, multiplier: 1.5, type: 'stat' },
+    { id: 'width', name: 'Paddle Size', desc: 'Wider paddle', cost: 100, level: 1, multiplier: 1.3, type: 'stat' },
+    { id: 'greed', name: 'Greed', desc: 'More $ per brick', cost: 75, level: 1, multiplier: 1.5, type: 'passive' },
+    { id: 'speed', name: 'Ball Speed', desc: 'Faster ball', cost: 30, level: 1, multiplier: 1.5, type: 'stat' }, // Actually makes it harder but clears faster
+    { id: 'multiball', name: 'Multi-Ball', desc: 'Start wave with +1 ball', cost: 500, level: 0, multiplier: 2.0, type: 'active' }
+];
+
+/**
+ * ENTITY CLASSES
+ */
+class Paddle {
+    constructor() {
+        this.w = 100;
+        this.h = 15;
+        this.x = canvas.width / 2 - this.w / 2;
+        this.y = canvas.height - 50;
+        this.color = '#00f3ff';
+    }
+
+    update(inputX) {
+        if (inputX) {
+            this.x = inputX - this.w / 2;
+        }
+        // Bounds check
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.w, this.h, 5);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Ball {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 6;
+        this.speed = 6;
+        this.dx = 0; // Starts stuck to paddle
+        this.dy = 0;
+        this.active = false;
+        this.damage = 1;
+        this.color = '#fff';
+    }
+
+    launch() {
+        if (!this.active) {
+            this.active = true;
+            this.dy = -this.speed;
+            this.dx = (Math.random() - 0.5) * (this.speed * 0.8);
+            AudioEngine.playLaunch();
+        }
+    }
+
+    update(paddle) {
+        if (!this.active) {
+            // Stick to paddle
+            this.x = paddle.x + paddle.w / 2;
+            this.y = paddle.y - this.radius - 2;
+            return;
+        }
+
+        this.x += this.dx;
+        this.y += this.dy;
+
+        // Wall collisions
+        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+            this.dx *= -1;
+            AudioEngine.playHit();
+        }
+        if (this.y - this.radius < 0) {
+            this.dy *= -1;
+            AudioEngine.playHit();
+        }
+
+        // Paddle Collision
+        if (
+            this.y + this.radius > paddle.y &&
+            this.y - this.radius < paddle.y + paddle.h &&
+            this.x > paddle.x &&
+            this.x < paddle.x + paddle.w
+        ) {
+            // Hit paddle
+            this.dy = -Math.abs(this.dy);
+            
+            // Influence X speed based on where it hit the paddle
+            let hitPoint = this.x - (paddle.x + paddle.w / 2);
+            // Normalize hit point (-1 to 1)
+            hitPoint = hitPoint / (paddle.w / 2);
+            
+            this.dx = hitPoint * (this.speed * 0.8); // Add spin/angle
+            AudioEngine.playPaddleHit();
+            
+            createParticles(this.x, this.y, 5, '#00f3ff');
+        }
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.closePath();
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Brick {
+    constructor(x, y, w, h, hp, type) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.maxHp = hp;
+        this.hp = hp;
+        this.type = type; // 'normal', 'hard', 'gold', 'boss'
+    }
+
+    draw() {
+        if (this.hp <= 0) return;
+
+        let color = '#ff00ff'; // default
+        if (this.type === 'normal') color = `hsl(${this.hp * 30}, 70%, 50%)`;
+        if (this.type === 'hard') color = '#ff0000';
+        if (this.type === 'gold') color = '#ffcc00';
+        if (this.type === 'extraball') color = '#00ffcc';
+        if (this.type === 'duplicate') color = '#00ff00';
+        if (this.type === 'boss') color = '#ffffff';
+
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = color;
+        
+        // Flash white on hit
+        if (this.hitFrame > 0) {
+            ctx.fillStyle = '#fff';
+            this.hitFrame--;
+        }
+
+        ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, this.h - 4);
+        
+        // Draw HP text for boss or hard blocks
+        if (this.hp > 1) {
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.hp, this.x + this.w/2, this.y + this.h/2 + 4);
+        } else if (this.type === 'extraball') {
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('+1', this.x + this.w/2, this.y + this.h/2 + 4);
+        } else if (this.type === 'duplicate') {
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('x2', this.x + this.w/2, this.y + this.h/2 + 4);
+        }
+        
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 4 - 2;
+        this.speedY = Math.random() * 4 - 2;
+        this.life = 1.0;
+    }
+    
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life -= 0.02;
+    }
+    
+    draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+/**
+ * MANAGERS
+ */
+let paddle;
+let balls = [];
+let bricks = [];
+let particles = [];
+let inputX = canvas.width / 2;
+
+function spawnBalls() {
+    balls = [new Ball(0, 0)];
+    
+    // Apply ball speed and damage upgrades
+    const speedLevel = upgrades.find(u => u.id === 'speed').level;
+    balls[0].speed = 6 + (speedLevel - 1);
+    balls[0].damage = upgrades.find(u => u.id === 'damage').level;
+    
+    // Apply multi-ball upgrade
+    const multiLevel = upgrades.find(u => u.id === 'multiball').level;
+    for(let i=0; i<multiLevel; i++) {
+        let b = new Ball(0, 0);
+        b.speed = balls[0].speed;
+        b.damage = balls[0].damage;
+        balls.push(b);
+    }
+}
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (paddle) paddle.y = canvas.height - 50;
+}
+window.addEventListener('resize', resize);
+
+function initGame() {
+    AudioEngine.init();
+    resize();
+    
+    // Reset State
+    gameState.money = 0;
+    gameState.wave = 1;
+    gameState.lives = 5;
+    gameState.gameOver = false;
+    
+    // Reset Upgrades
+    upgrades.forEach(u => u.level = 1);
+    upgrades.find(u => u.id === 'multiball').level = 0;
+    
+    paddle = new Paddle();
+    spawnBalls();
+    
+    loadLevel(1);
+    
+    document.getElementById('start-screen').style.display = 'none';
+    updateHUD();
+    gameLoop();
+}
+
+function loadLevel(wave) {
+    spawnBalls();
+    
+    // Apply Paddle Width
+    const widthLevel = upgrades.find(u => u.id === 'width').level;
+    paddle.w = 100 + (widthLevel - 1) * 20;
+
+    bricks = [];
+    const rows = 4 + Math.floor(wave / 2);
+    const cols = Math.floor(canvas.width / 60);
+    const brickW = canvas.width / cols;
+    const brickH = 25;
+    
+    const isBossLevel = wave % 5 === 0;
+
+    if (isBossLevel) {
+        showMessage("BOSS BATTLE", "Destroy the Core");
+        // Create a giant block in the middle
+        let bossHp = wave * 50;
+        let b = new Brick(canvas.width/4, 50, canvas.width/2, 100, bossHp, 'boss');
+        bricks.push(b);
+        
+        // Some guard blocks
+        for (let c = 0; c < cols; c++) {
+             bricks.push(new Brick(c * brickW, 160, brickW, brickH, wave * 2, 'hard'));
+        }
+    } else {
+        // Standard Level Generation
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                // Randomly skip some bricks for variety
+                if (Math.random() > 0.1) {
+                    let type = 'normal';
+                    let hp = 1 + Math.floor(wave / 2);
+                    
+                    let rand = Math.random();
+                    if (rand > 0.96) { type = 'extraball'; hp = 1; }
+                    else if (rand > 0.92) { type = 'duplicate'; hp = 1; }
+                    else if (rand > 0.82) { type = 'gold'; hp = 1; }
+                    else if (rand > 0.70) { type = 'hard'; hp = hp * 2; }
+                    
+                    let b = new Brick(c * brickW, 50 + r * brickH, brickW, brickH, hp, type);
+                    bricks.push(b);
+                }
+            }
+        }
+        showMessage(`WAVE ${wave}`, "Ready?");
+    }
+}
+
+function createParticles(x, y, count, color) {
+    for(let i=0; i<count; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+}
+
+function showFloatingText(text, x, y, color) {
+    const el = document.createElement('div');
+    el.className = 'floating-text';
+    el.innerText = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.color = color;
+    document.getElementById('ui-layer').appendChild(el);
+    setTimeout(() => el.remove(), 800);
+}
+
+function showMessage(title, sub) {
+    const el = document.getElementById('message-area');
+    document.getElementById('message-title').innerText = title;
+    document.getElementById('message-sub').innerText = sub;
+    el.style.opacity = 1;
+    setTimeout(() => el.style.opacity = 0, 2000);
+}
+
+function updateHUD() {
+    document.getElementById('lives-display').innerText = gameState.lives;
+    document.getElementById('score-display').innerText = Math.floor(gameState.money);
+    document.getElementById('level-display').innerText = gameState.wave;
+}
+
+/**
+ * GAME LOGIC
+ */
+function update() {
+    if (gameState.shopOpen) return;
+
+    // Input to Paddle
+    paddle.update(inputX);
+
+    // Update Balls
+    let activeBalls = 0;
+    balls.forEach(ball => {
+        if (ball.y < canvas.height) {
+            ball.update(paddle);
+            if (ball.active) activeBalls++;
+            checkBrickCollisions(ball);
+        }
+    });
+
+    // Check Loss
+    if (activeBalls === 0 && balls.every(b => b.active === true || b.y > canvas.height)) {
+        // Check if we haven't launched any yet (start of level)
+        const unlaunched = balls.filter(b => !b.active);
+        if (unlaunched.length === 0) {
+            if (gameState.lives > 0) {
+                gameState.lives--;
+                updateHUD();
+                spawnBalls();
+                showMessage("BALL LOST", "Balls Remaining: " + gameState.lives);
+            } else {
+                gameState.gameOver = true;
+                showMessage("SYSTEM FAILURE", "GAME OVER");
+                setTimeout(() => {
+                    document.getElementById('start-screen').style.display = 'flex';
+                }, 3000);
+            }
+        }
+    }
+
+    // Update Particles
+    particles.forEach(p => p.update());
+    particles = particles.filter(p => p.life > 0);
+
+    // Check Win
+    if (bricks.length === 0) {
+        openShop();
+    }
+}
+
+function checkBrickCollisions(ball) {
+    if (!ball.active) return;
+
+    for (let i = bricks.length - 1; i >= 0; i--) {
+        let b = bricks[i];
+        if (
+            ball.x + ball.radius > b.x &&
+            ball.x - ball.radius < b.x + b.w &&
+            ball.y + ball.radius > b.y &&
+            ball.y - ball.radius < b.y + b.h
+        ) {
+            // Collision logic
+            ball.dy *= -1;
+            b.hp -= ball.damage;
+            b.hitFrame = 5; // Flash effect
+            AudioEngine.playHit();
+
+            if (b.hp <= 0) {
+                bricks.splice(i, 1);
+                
+                // Reward
+                let reward = 10;
+                let color = '#fff';
+                
+                if (b.type === 'gold') { reward = 50; color = '#ffcc00'; AudioEngine.playCoin(); }
+                else if (b.type === 'extraball') { 
+                    reward = 10; 
+                    color = '#00ffcc'; 
+                    gameState.lives++; 
+                    AudioEngine.playCoin(); 
+                    showFloatingText("+1 BALL", b.x, b.y, color);
+                }
+                else if (b.type === 'duplicate') {
+                    reward = 10;
+                    color = '#00ff00';
+                    AudioEngine.playLaunch();
+                    // Split ball mechanics
+                    let clone = new Ball(ball.x, ball.y);
+                    clone.active = true;
+                    clone.speed = ball.speed;
+                    clone.damage = ball.damage;
+                    clone.dx = -ball.dx || (Math.random() - 0.5) * ball.speed; // Go opposite way
+                    clone.dy = ball.dy;
+                    balls.push(clone);
+                    showFloatingText("x2 BALL", b.x, b.y, color);
+                }
+                else if (b.type === 'boss') { reward = 1000; color = '#ff00ff'; }
+                else { AudioEngine.playDestroy(); }
+
+                // Apply Greed Multiplier
+                const greedLvl = upgrades.find(u => u.id === 'greed').level;
+                reward = Math.floor(reward * (1 + (greedLvl-1)*0.2));
+
+                gameState.money += reward;
+                updateHUD();
+                
+                showFloatingText(`+$${reward}`, b.x, b.y, color);
+                createParticles(b.x + b.w/2, b.y + b.h/2, 10, color);
+            }
+            // Only hit one brick per frame to prevent tunneling glitches
+            break;
+        }
+    }
+}
+
+function draw() {
+    // Clear trail effect
+    ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    paddle.draw();
+    balls.forEach(b => b.draw());
+    bricks.forEach(b => b.draw());
+    particles.forEach(p => p.draw());
+}
+
+function gameLoop() {
+    if (!gameState.running) return;
+    if (!gameState.gameOver) {
+        update();
+    }
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+/**
+ * SHOP SYSTEM
+ */
+function openShop() {
+    gameState.shopOpen = true;
+    const modal = document.getElementById('shop-modal');
+    const list = document.querySelector('.upgrade-list');
+    document.getElementById('shop-money').innerText = gameState.money;
+    
+    list.innerHTML = '';
+    
+    upgrades.forEach(u => {
+        const currentCost = Math.floor(u.cost * Math.pow(1.3, u.level));
+        const canBuy = gameState.money >= currentCost;
+        
+        const item = document.createElement('div');
+        item.className = 'upgrade-item';
+        item.innerHTML = `
+            <div class="upgrade-info">
+                <h4>${u.name} <span style="font-size:10px; color:#666">Lvl ${u.level}</span></h4>
+                <p>${u.desc}</p>
+            </div>
+            <button class="btn" ${canBuy ? '' : 'disabled'} onclick="buyUpgrade('${u.id}')">
+                $${currentCost}
+            </button>
+        `;
+        list.appendChild(item);
+    });
+
+    modal.style.display = 'flex';
+}
+
+window.buyUpgrade = function(id) {
+    const u = upgrades.find(up => up.id === id);
+    const cost = Math.floor(u.cost * Math.pow(1.3, u.level));
+    
+    if (gameState.money >= cost) {
+        gameState.money -= cost;
+        u.level++;
+        AudioEngine.playCoin();
+        openShop(); // Refresh UI
+    }
+};
+
+window.closeShop = function() {
+    document.getElementById('shop-modal').style.display = 'none';
+    gameState.shopOpen = false;
+    gameState.wave++;
+    gameState.lives += 2; // Reward completing wave
+    updateHUD();
+    loadLevel(gameState.wave);
+};
+
+window.startGame = function() {
+    gameState.running = true;
+    initGame();
+};
+
+/**
+ * INPUT HANDLING
+ */
+canvas.addEventListener('mousemove', (e) => {
+    inputX = e.clientX;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    inputX = e.touches[0].clientX;
+}, { passive: false });
+
+window.addEventListener('mousedown', () => {
+    balls.forEach(b => b.launch());
+});
+
+window.addEventListener('touchstart', () => {
+    balls.forEach(b => b.launch());
+});
+
+// Initial Draw
+resize();
+ctx.fillStyle = '#111';
+ctx.fillRect(0,0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
