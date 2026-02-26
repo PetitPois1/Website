@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Tic-Tac-Toe</title>
+    <title>Tic-Tac-Toe Pro</title>
     <style>
         :root {
             --bg: #0f0c29;
@@ -22,17 +22,15 @@
             min-height: 100vh;
             margin: 0;
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
-            overflow: hidden;
         }
 
-        /* Improved Score Board */
         .score-board {
             display: flex;
-            gap: 20px;
+            gap: 40px;
             background: var(--glass);
-            padding: 15px 30px;
+            padding: 15px 40px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
@@ -40,30 +38,20 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        .score-item {
-            text-align: center;
-        }
+        .score-item { text-align: center; font-weight: bold; }
+        .score-val { display: block; font-size: 28px; color: var(--accent); }
 
-        .score-val {
-            display: block;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .controls {
-            margin-bottom: 20px;
-        }
-
+        .controls { margin-bottom: 20px; }
         select {
-            padding: 8px;
+            padding: 8px 15px;
             border-radius: 5px;
             background: var(--cell-bg);
             color: white;
             border: 1px solid var(--accent);
             cursor: pointer;
+            outline: none;
         }
 
-        /* The Board */
         .board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
@@ -83,56 +71,54 @@
             font-size: 48px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             border: 1px solid rgba(255,255,255,0.05);
         }
 
         .cell:hover {
             background: rgba(255, 255, 255, 0.05);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transform: scale(1.02);
         }
 
-        .cell.x { color: var(--x-color); text-shadow: 0 0 10px var(--x-color); }
-        .cell.o { color: var(--o-color); text-shadow: 0 0 10px var(--o-color); }
+        .cell.x { color: var(--x-color); text-shadow: 0 0 15px var(--x-color); }
+        .cell.o { color: var(--o-color); text-shadow: 0 0 15px var(--o-color); }
 
-        /* Game Status Overlay */
         .game-status {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             padding: 20px 40px;
             border-radius: 10px;
             font-size: 32px;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.4s;
-            white-space: nowrap;
             border: 2px solid var(--accent);
+            text-align: center;
         }
 
         .show-status { opacity: 1; }
 
         .turn-indicator {
             margin-top: 20px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-size: 14px;
-            color: #aaa;
+            font-size: 18px;
+            color: #ccc;
+            height: 24px;
         }
 
         button {
             margin-top: 30px;
-            padding: 12px 25px;
+            padding: 12px 30px;
             background: transparent;
             color: var(--accent);
             border: 2px solid var(--accent);
             border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
+            text-transform: uppercase;
             transition: 0.3s;
         }
 
@@ -146,13 +132,13 @@
 <body>
 
     <div class="score-board">
-        <div class="score-item">X (Player) <span class="score-val" id="x-score">0</span></div>
-        <div class="score-item">O (AI) <span class="score-val" id="o-score">0</span></div>
+        <div class="score-item">PLAYER (X) <span class="score-val" id="x-score">0</span></div>
+        <div class="score-item">AI (O) <span class="score-val" id="o-score">0</span></div>
     </div>
 
     <div class="controls">
         Difficulty: 
-        <select id="difficulty" onchange="resetBoard()">
+        <select id="difficulty" onchange="resetGame(true)">
             <option value="coop">2 Player</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
@@ -160,9 +146,8 @@
         </select>
     </div>
 
-    <div id="game-status" class="game-status"></div>
-
     <div class="board" id="board">
+        <div id="game-status" class="game-status"></div>
         <div class="cell" data-index="0"></div>
         <div class="cell" data-index="1"></div>
         <div class="cell" data-index="2"></div>
@@ -176,7 +161,7 @@
 
     <div class="turn-indicator" id="turn-indicator">X's Turn</div>
 
-    <button onclick="resetBoard(true)">Full Reset</button>
+    <button onclick="resetGame(true)">Reset Scores</button>
 
     <script>
         let board = ['', '', '', '', '', '', '', '', ''];
@@ -200,57 +185,111 @@
 
         function handleCellClick(e) {
             const index = e.target.getAttribute('data-index');
-
             if (board[index] !== '' || !isGameActive) return;
 
-            makeMove(index, currentPlayer);
+            // Player Moves
+            executeMove(index, 'X');
 
-            if (!checkResult()) {
-                if (difficulty.value !== 'coop') {
-                    isGameActive = false; // Pause player clicks during AI turn
-                    setTimeout(aiTurn, 500);
-                } else {
-                    swapPlayer();
+            // Check if Player Won
+            if (checkWin('X')) return;
+
+            // Hand over to AI or Switch Player
+            if (difficulty.value !== 'coop') {
+                isGameActive = false; // Block clicks during AI turn
+                turnDisplay.textContent = "AI is thinking...";
+                setTimeout(aiTurn, 600);
+            } else {
+                swapTurn();
+            }
+        }
+
+        function aiTurn() {
+            if (board.includes('')) {
+                const mode = difficulty.value;
+                let move;
+
+                if (mode === 'hard') move = getBestMove();
+                else if (mode === 'medium') move = Math.random() > 0.5 ? getBestMove() : getRandomMove();
+                else move = getRandomMove();
+
+                executeMove(move, 'O');
+
+                if (!checkWin('O')) {
+                    isGameActive = true;
+                    currentPlayer = 'X';
+                    turnDisplay.textContent = "X's Turn";
                 }
             }
         }
 
-        function makeMove(index, player) {
+        function executeMove(index, player) {
             board[index] = player;
             cells[index].textContent = player;
             cells[index].classList.add(player.toLowerCase());
         }
 
-        function swapPlayer() {
+        function swapTurn() {
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             turnDisplay.textContent = `${currentPlayer}'s Turn`;
         }
 
-        function aiTurn() {
-            if (!isGameActive && board.includes('')) {
-                const mode = difficulty.value;
-                let move;
+        function checkWin(player) {
+            let win = winConditions.some(condition => {
+                return condition.every(index => board[index] === player);
+            });
 
-                if (mode === 'hard') {
-                    move = getBestMove();
-                } else if (mode === 'medium') {
-                    move = Math.random() > 0.5 ? getBestMove() : getRandomMove();
-                } else {
-                    move = getRandomMove();
-                }
+            if (win) {
+                updateScore(player);
+                announceResult(player + " Wins!");
+                return true;
+            }
 
-                makeMove(move, 'O');
-                isGameActive = true;
-                if (!checkResult()) {
-                    currentPlayer = 'X';
-                    turnDisplay.textContent = `X's Turn`;
-                }
+            if (!board.includes('')) {
+                announceResult("Draw!");
+                return true;
+            }
+            return false;
+        }
+
+        function updateScore(winner) {
+            if (winner === 'X') {
+                xScore++;
+                document.getElementById('x-score').textContent = xScore;
+            } else {
+                oScore++;
+                document.getElementById('o-score').textContent = oScore;
             }
         }
 
+        function announceResult(message) {
+            isGameActive = false;
+            statusDisplay.textContent = message;
+            statusDisplay.classList.add('show-status');
+            setTimeout(resetGame, 2000);
+        }
+
+        function resetGame(fullReset = false) {
+            board = ['', '', '', '', '', '', '', '', ''];
+            isGameActive = true;
+            currentPlayer = 'X';
+            turnDisplay.textContent = "X's Turn";
+            statusDisplay.classList.remove('show-status');
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
+            });
+
+            if (fullReset) {
+                xScore = 0; oScore = 0;
+                document.getElementById('x-score').textContent = "0";
+                document.getElementById('o-score').textContent = "0";
+            }
+        }
+
+        // AI LOGIC
         function getRandomMove() {
-            const avail = board.map((v, i) => v === '' ? i : null).filter(v => v !== null);
-            return avail[Math.floor(Math.random() * avail.length)];
+            const available = board.map((v, i) => v === '' ? i : null).filter(v => v !== null);
+            return available[Math.floor(Math.random() * available.length)];
         }
 
         function getBestMove() {
@@ -264,7 +303,7 @@
                 let move = findMissingPiece(combo, 'X');
                 if (move !== null) return move;
             }
-            // 3. Take center
+            // 3. Take Center
             if (board[4] === '') return 4;
             // 4. Random
             return getRandomMove();
@@ -272,69 +311,10 @@
 
         function findMissingPiece(combo, player) {
             const pieces = combo.map(i => board[i]);
-            const playerCount = pieces.filter(p => p === player).length;
-            const emptyCount = pieces.filter(p => p === '').length;
-            if (playerCount === 2 && emptyCount === 1) {
+            if (pieces.filter(p => p === player).length === 2 && pieces.filter(p => p === '').length === 1) {
                 return combo[pieces.indexOf('')];
             }
             return null;
-        }
-
-        function checkResult() {
-            let roundWon = false;
-            for (let condition of winConditions) {
-                const [a, b, c] = condition;
-                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                    roundWon = true;
-                    break;
-                }
-            }
-
-            if (roundWon) {
-                endGame(currentPlayer + " Wins!");
-                updateScore(currentPlayer);
-                return true;
-            }
-
-            if (!board.includes('')) {
-                endGame("Draw!");
-                return true;
-            }
-            return false;
-        }
-
-        function endGame(msg) {
-            statusDisplay.textContent = msg;
-            statusDisplay.classList.add('show-status');
-            isGameActive = false;
-            setTimeout(resetBoard, 2000);
-        }
-
-        function updateScore(winner) {
-            if (winner === 'X') {
-                xScore++;
-                document.getElementById('x-score').textContent = xScore;
-            } else {
-                oScore++;
-                document.getElementById('o-score').textContent = oScore;
-            }
-        }
-
-        function resetBoard(full = false) {
-            board = ['', '', '', '', '', '', '', '', ''];
-            isGameActive = true;
-            currentPlayer = 'X';
-            turnDisplay.textContent = `X's Turn`;
-            statusDisplay.classList.remove('show-status');
-            cells.forEach(cell => {
-                cell.textContent = '';
-                cell.className = 'cell';
-            });
-            if (full) {
-                xScore = 0; oScore = 0;
-                document.getElementById('x-score').textContent = 0;
-                document.getElementById('o-score').textContent = 0;
-            }
         }
     </script>
 </body>
