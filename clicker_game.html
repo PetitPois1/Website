@@ -10,6 +10,7 @@
             --bg-dark: #1b2a1d;
             --panel-bg: rgba(0, 0, 0, 0.4);
             --border: #2d4a30;
+            --save-color: #44aaff;
         }
 
         body {
@@ -60,7 +61,6 @@
 
         .mode-btn.active { background: var(--primary); color: black; }
 
-        /* Evolution Button Styling */
         .click-area {
             height: 220px;
             display: flex;
@@ -87,12 +87,12 @@
         #circle:active { transform: scale(0.92); }
 
         /* Tier Shapes */
-        .tier-0 { border-radius: 50%; background: #553311; border: 4px solid #885522; } /* Raw Wood/Stone */
-        .tier-1 { border-radius: 50%; background: #b87333; border: 4px solid #e39a5d; } /* Copper */
-        .tier-2 { border-radius: 15%; background: #a19d94; border: 4px solid #ced4da; } /* Iron */
-        .tier-3 { border-radius: 5px;  background: #4682b4; border: 4px solid #87ceeb; } /* Steel */
-        .tier-4 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #ffd700; border: none; } /* Gold/Electronics */
-        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #00f2ff; border: none; box-shadow: 0 0 30px #00f2ff; } /* Computers/Data */
+        .tier-0 { border-radius: 50%; background: #553311; border: 4px solid #885522; }
+        .tier-1 { border-radius: 50%; background: #b87333; border: 4px solid #e39a5d; }
+        .tier-2 { border-radius: 15%; background: #a19d94; border: 4px solid #ced4da; }
+        .tier-3 { border-radius: 5px;  background: #4682b4; border: 4px solid #87ceeb; }
+        .tier-4 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #ffd700; border: none; }
+        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #00f2ff; border: none; box-shadow: 0 0 30px #00f2ff; }
 
         .shop { width: 100%; max-width: 750px; }
         .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; }
@@ -111,6 +111,8 @@
 
         .upgrade-info h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
         .upgrade-info p { margin: 5px 0; font-size: 0.8rem; color: #aaa; }
+        .upgrade-stats { font-size: 0.85rem; color: var(--primary); font-weight: bold; display: flex; flex-direction: column; gap: 2px; }
+        .total-yield { color: #aaa; font-weight: normal; font-size: 0.75rem; }
 
         .buy-btn {
             background: #004d00;
@@ -121,9 +123,38 @@
             cursor: pointer;
             min-width: 150px;
             font-weight: bold;
+            text-align: center;
         }
 
         .buy-btn.disabled { opacity: 0.3; cursor: not-allowed; background: #222; }
+
+        /* Pop-up Notification Styling */
+        #save-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--save-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+        }
+        #save-toast.show { transform: translateY(0); opacity: 1; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 40px 0;
+        }
+
+        .save-btn { color: var(--save-color); background: none; border: 1px solid var(--save-color); cursor: pointer; padding: 8px 15px; border-radius: 4px; font-weight: bold; }
+        .save-btn:hover { background: var(--save-color); color: white; }
+        .reset-btn { color: #ff5555; background: none; border: 1px solid #ff5555; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
 
         .floating-text {
             position: absolute;
@@ -133,16 +164,16 @@
             animation: floatUp 0.7s ease-out forwards;
             z-index: 100;
         }
-
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
-        .reset-btn { margin: 40px 0; color: #ff5555; background: none; border: 1px solid #ff5555; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
+    <div id="save-toast">Game Saved!</div>
+
     <div class="header">
         <div class="credit-display" id="creditCount">0 Credits</div>
-        <div class="production-display">Factory Production: <span id="cpsCount">0</span>/sec</div>
+        <div class="production-display">Total Production: <span id="cpsCount">0</span>/sec</div>
     </div>
 
     <div class="buy-modes">
@@ -157,14 +188,17 @@
     </div>
 
     <div class="shop">
-        <h2 class="section-title">Technology Tiers (One-Time)</h2>
+        <h2 class="section-title">Technology Tiers</h2>
         <div id="tier-container"></div>
 
-        <h2 class="section-title">Factory Machines (Stackable)</h2>
+        <h2 class="section-title">Factory Machines</h2>
         <div id="machine-container"></div>
     </div>
 
-    <button class="reset-btn" onclick="resetGame()">Full Reset</button>
+    <div class="controls">
+        <button class="save-btn" onclick="manualSave()">Save Factory</button>
+        <button class="reset-btn" onclick="resetGame()">Full Reset</button>
+    </div>
 
     <script>
         let credits = 0;
@@ -172,16 +206,14 @@
         let currentTier = 0;
         const growthRate = 1.15;
 
-        // One-time Click Upgrades (Materials)
         const tierUpgrades = [
-            { name: "Copper Age", cost: 50, clickBoost: 5, label: "COPPER", class: "tier-1", desc: "Unlock copper tools to multiply your click power." },
-            { name: "Iron Age", cost: 500, clickBoost: 25, label: "IRON", class: "tier-2", desc: "Heavier, stronger, better. Significant click increase." },
-            { name: "Steel Age", cost: 5000, clickBoost: 150, label: "STEEL", class: "tier-3", desc: "Industrial grade steel for maximum manual output." },
-            { name: "Electronics", cost: 50000, clickBoost: 1000, label: "GOLD", class: "tier-4", desc: "Precision components for the digital era." },
-            { name: "Computing", cost: 500000, clickBoost: 10000, label: "DATA", class: "tier-5", desc: "The ultimate click power: Raw processing speed." }
+            { name: "Copper Age", cost: 50, clickBoost: 5, label: "COPPER", class: "tier-1", desc: "Unlock copper tools." },
+            { name: "Iron Age", cost: 500, clickBoost: 25, label: "IRON", class: "tier-2", desc: "Heavier, stronger material." },
+            { name: "Steel Age", cost: 5000, clickBoost: 150, label: "STEEL", class: "tier-3", desc: "Industrial grade durability." },
+            { name: "Electronics", cost: 50000, clickBoost: 1000, label: "GOLD", class: "tier-4", desc: "Precision digital components." },
+            { name: "Computing", cost: 500000, clickBoost: 10000, label: "DATA", class: "tier-5", desc: "The ultimate processing power." }
         ];
 
-        // Stackable Factory Upgrades
         const machineUpgrades = {
             small: { name: "Small Machine", desc: "A basic automated unit.", baseCost: 15, addAuto: 1 },
             big: { name: "Large Machine", desc: "Greater capacity, higher yield.", baseCost: 150, addAuto: 8 },
@@ -216,44 +248,47 @@
         function updateUI() {
             document.getElementById('creditCount').innerText = `${Math.floor(credits).toLocaleString()} Credits`;
             
-            // Calculate Production
             let totalCps = 0;
             Object.keys(machineUpgrades).forEach(id => totalCps += machineUpgrades[id].addAuto * inventory[id]);
             document.getElementById('cpsCount').innerText = totalCps.toLocaleString();
             window.currentCps = totalCps;
 
-            // Calculate Click Power
             let totalClick = 1;
             for(let i=0; i < currentTier; i++) { totalClick += tierUpgrades[i].clickBoost; }
             window.currentClickValue = totalClick;
 
-            // Update Machines
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
+                const yieldPerUnit = machineUpgrades[id].addAuto;
+                const totalMachineYield = yieldPerUnit * inventory[id];
+
                 btn.innerHTML = `Buy ${buyData.count}<br>${Math.round(buyData.cost).toLocaleString()} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
                 btn.onclick = () => buyMachine(id, buyData.count, buyData.cost);
-                document.getElementById(`count-${id}`).innerText = `Owned: ${inventory[id]}`;
+                
+                document.getElementById(`count-${id}`).innerHTML = `
+                    <span>Owned: ${inventory[id].toLocaleString()} (+${yieldPerUnit}/sec)</span>
+                    <span class="total-yield">Combined Production: ${totalMachineYield.toLocaleString()}/sec</span>
+                `;
             });
 
-            // Update Tiers
             const tierBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
                 tierBox.innerHTML = `
                     <div class="upgrade-card">
                         <div class="upgrade-info">
-                            <h3>Next: ${next.name}</h3>
+                            <h3>Next Tier: ${next.name}</h3>
                             <p>${next.desc}</p>
                             <div class="upgrade-stats">+${next.clickBoost.toLocaleString()} Click Power</div>
                         </div>
                         <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">
-                            Unlock Tier<br>${next.cost.toLocaleString()} C
+                            Evolve Shape<br>${next.cost.toLocaleString()} C
                         </button>
                     </div>`;
             } else {
-                tierBox.innerHTML = `<p style="text-align:center; color:#66cc66;">MAX TECHNOLOGY REACHED</p>`;
+                tierBox.innerHTML = `<p style="text-align:center; color:#66cc66; font-weight:bold;">MAX TECHNOLOGY ACHIEVED</p>`;
             }
         }
 
@@ -262,7 +297,6 @@
                 credits -= cost;
                 inventory[id] += count;
                 updateUI();
-                saveGame();
             }
         }
 
@@ -275,11 +309,52 @@
                 circle.innerText = next.label;
                 currentTier++;
                 updateUI();
-                saveGame();
+                saveGame(true); // Explicit save with toast
             }
         }
 
-        // Setup Shop
+        // --- SAVE SYSTEM ---
+
+        function showSavePopUp() {
+            const toast = document.getElementById('save-toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function saveGame(showToast = false) {
+            const data = { credits, inventory, currentTier };
+            localStorage.setItem("IndusClick_V9", JSON.stringify(data));
+            if(showToast) showSavePopUp();
+        }
+
+        function manualSave() {
+            saveGame(true);
+        }
+
+        function loadGame() {
+            const data = JSON.parse(localStorage.getItem("IndusClick_V9"));
+            if(data) {
+                credits = data.credits;
+                inventory = data.inventory || inventory;
+                currentTier = data.currentTier || 0;
+                if(currentTier > 0) {
+                    const circle = document.getElementById('circle');
+                    circle.className = tierUpgrades[currentTier-1].class;
+                    circle.innerText = tierUpgrades[currentTier-1].label;
+                }
+            }
+            updateUI();
+        }
+
+        function resetGame() {
+            if(confirm("Confirm Factory Wipe? All Tiers and Machines will be lost!")) { 
+                localStorage.removeItem("IndusClick_V9"); 
+                location.reload(); 
+            }
+        }
+
+        // --- INIT ---
+
         const machineBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
             machineBox.innerHTML += `
@@ -287,7 +362,7 @@
                     <div class="upgrade-info">
                         <h3>${machineUpgrades[id].name}</h3>
                         <p>${machineUpgrades[id].desc}</p>
-                        <div class="upgrade-stats" id="count-${id}">Owned: 0</div>
+                        <div class="upgrade-stats" id="count-${id}"></div>
                     </div>
                     <button class="buy-btn" id="btn-${id}"></button>
                 </div>`;
@@ -308,30 +383,16 @@
             setTimeout(() => txt.remove(), 700);
         }
 
-        function saveGame() {
-            localStorage.setItem("IndusClick_V7", JSON.stringify({credits, inventory, currentTier}));
-        }
+        setInterval(() => { 
+            if(window.currentCps > 0) { 
+                credits += (window.currentCps / 10); 
+                updateUI(); 
+            } 
+        }, 100);
 
-        function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusClick_V7"));
-            if(data) {
-                credits = data.credits;
-                inventory = data.inventory || inventory;
-                currentTier = data.currentTier || 0;
-                if(currentTier > 0) {
-                    const circle = document.getElementById('circle');
-                    circle.className = tierUpgrades[currentTier-1].class;
-                    circle.innerText = tierUpgrades[currentTier-1].label;
-                }
-            }
-            updateUI();
-        }
+        // Auto-save every 15 seconds with notification
+        setInterval(() => saveGame(true), 15000);
 
-        function resetGame() {
-            if(confirm("Full reset?")) { localStorage.clear(); location.reload(); }
-        }
-
-        setInterval(() => { if(window.currentCps > 0) { credits += (window.currentCps / 10); updateUI(); } }, 100);
         loadGame();
     </script>
 </body>
