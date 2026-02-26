@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Block Blast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+        :root {
+            --board-bg: #1e293b;
+            --cell-bg: #334155;
+            --cell-border: #475569;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            touch-action: none; /* Crucial for custom drag/drop */
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Board Styles */
+        #board-container {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+            background-color: var(--board-bg);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .grid-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell {
+            background-color: var(--cell-bg);
+            border-radius: 4px;
+            transition: background-color 0.1s;
+            position: relative;
+        }
+
+        .cell.filled {
+            box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.3), 
+                        inset -2px -2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.preview {
+            background-color: rgba(255, 255, 255, 0.3) !important;
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            transform: scale(0.9);
+            transition: all 0.05s;
+        }
+
+        /* Shape Tray Styles */
+        #tray {
+            height: 140px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 1rem;
+        }
+
+        .tray-shape-container {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .shape-grid {
+            display: grid;
+            gap: 2px;
+            pointer-events: none; /* Let parent handle events */
+        }
+
+        .shape-block {
+            border-radius: 4px;
+            box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.3), 
+                        inset -2px -2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dragging Ghost */
+        #ghost-shape {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.9;
+            transform: scale(1.1); /* Slightly larger when dragging */
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.5));
+            display: none;
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes clearLine {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); filter: brightness(1.5); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .anim-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .anim-clear { animation: clearLine 0.3s ease-out forwards; z-index: 10; }
+        
+        /* Floating Text Animation for Score */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+        .score-popup {
+            position: absolute;
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 50;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen pb-6">
+
+    <!-- Header / Score -->
+    <div class="w-full max-w-[400px] px-4 flex justify-between items-end mb-4 pt-6">
+        <div>
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                Block Blast
+            </h1>
+        </div>
+        <div class="flex flex-col items-end">
+            <div class="text-sm text-slate-400 font-semibold uppercase tracking-wider">Score</div>
+            <div id="score-display" class="text-4xl font-bold text-white leading-none">0</div>
+            <div class="text-xs text-slate-500 mt-1">Best: <span id="high-score-display">0</span></div>
+        </div>
+    </div>
+
+    <!-- Main Game Board -->
+    <div id="board-container" class="relative">
+        <div id="board" class="grid-board">
+            <!-- Cells generated by JS -->
+        </div>
+    </div>
+
+    <!-- Available Shapes Tray -->
+    <div id="tray">
+        <div class="tray-shape-container" id="tray-0"></div>
+        <div class="tray-shape-container" id="tray-1"></div>
+        <div class="tray-shape-container" id="tray-2"></div>
+    </div>
+
+    <!-- Ghost Element for Dragging -->
+    <div id="ghost-shape"></div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl text-center transform scale-95 transition-transform duration-300">
+            <h2 class="text-4xl font-bold text-white mb-2">Out of Moves!</h2>
+            <p class="text-slate-400 mb-6">You can't place any more shapes.</p>
+            
+            <div class="bg-slate-900 rounded-xl p-4 mb-6">
+                <div class="text-sm text-slate-400 uppercase">Final Score</div>
+                <div id="final-score" class="text-5xl font-bold text-yellow-400">0</div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition active:scale-95">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Configuration & Constants ---
+        const GRID_SIZE = 8;
+        const CELL_BASE_SIZE = 40; // Reference size for tray rendering
+        
+        // Shape Library: defines matrices (1=solid, 0=empty) and colors
+        const SHAPE_DEFS = [
+            // 1x1
+            { m: [[1]], c: '#3b82f6' }, // Blue
+            // 2x1 & 1x2
+            { m: [[1,1]], c: '#10b981' }, // Green
+            { m: [[1],[1]], c: '#10b981' }, 
+            // 3x1 & 1x3
+            { m: [[1,1,1]], c: '#f59e0b' }, // Amber
+            { m: [[1],[1],[1]], c: '#f59e0b' },
+            // 4x1 & 1x4
+            { m: [[1,1,1,1]], c: '#ef4444' }, // Red
+            { m: [[1],[1],[1],[1]], c: '#ef4444' },
+            // 5x1 & 1x5
+            { m: [[1,1,1,1,1]], c: '#8b5cf6' }, // Purple
+            { m: [[1],[1],[1],[1],[1]], c: '#8b5cf6' },
+            // 2x2 Square
+            { m: [[1,1],[1,1]], c: '#ec4899' }, // Pink
+            // 3x3 Square
+            { m: [[1,1,1],[1,1,1],[1,1,1]], c: '#6366f1' }, // Indigo
+            // 2x2 L-shapes
+            { m: [[1,0],[1,1]], c: '#14b8a6' }, // Teal
+            { m: [[0,1],[1,1]], c: '#14b8a6' },
+            { m: [[1,1],[1,0]], c: '#14b8a6' },
+            { m: [[1,1],[0,1]], c: '#14b8a6' },
+            // 3x3 L-shapes
+            { m: [[1,0,0],[1,0,0],[1,1,1]], c: '#f97316' }, // Orange
+            { m: [[0,0,1],[0,0,1],[1,1,1]], c: '#f97316' },
+            { m: [[1,1,1],[1,0,0],[1,0,0]], c: '#f97316' },
+            { m: [[1,1,1],[0,0,1],[0,0,1]], c: '#f97316' },
+            // T-shapes (3x2)
+            { m: [[1,1,1],[0,1,0]], c: '#06b6d4' }, // Cyan
+            { m: [[0,1,0],[1,1,1]], c: '#06b6d4' },
+            { m: [[1,0],[1,1],[1,0]], c: '#06b6d4' },
+            { m: [[0,1],[1,1],[0,1]], c: '#06b6d4' }
+        ];
+
+        // --- State Variables ---
+        let grid = []; // 8x8 array storing color strings or null
+        let score = 0;
+        let highScore = 0;
+        let currentShapes = [null, null, null]; // Holds data for the 3 tray slots
+        
+        // Dragging State
+        let isDragging = false;
+        let dragIndex = -1;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let currentCellSize = 0; // Calculated dynamically based on board DOM
+
+        // DOM Elements
+        const boardEl = document.getElementById('board');
+        const boardContainerEl = document.getElementById('board-container');
+        const scoreEl = document.getElementById('score-display');
+        const highScoreEl = document.getElementById('high-score-display');
+        const trayEls = [
+            document.getElementById('tray-0'),
+            document.getElementById('tray-1'),
+            document.getElementById('tray-2')
+        ];
+        const ghostEl = document.getElementById('ghost-shape');
+        const modalEl = document.getElementById('game-over-modal');
+        const finalScoreEl = document.getElementById('final-score');
+
+        function updateScoreDisplay() {
+            scoreEl.innerText = score;
+            highScoreEl.innerText = highScore;
+        }
+
+        // --- Initialization ---
+        function initGame() {
+            // Setup Grid state
+            grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+            score = 0;
+            updateScoreDisplay();
+            
+            // Build Board DOM
+            boardEl.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${r}-${c}`;
+                    boardEl.appendChild(cell);
+                }
+            }
+
+            modalEl.classList.add('hidden');
+            generateNewShapes();
+            
+            // Initial calc of cell size
+            updateBoardMetrics();
+        }
+
+        window.addEventListener('resize', updateBoardMetrics);
+
+        function updateBoardMetrics() {
+            const rect = boardEl.getBoundingClientRect();
+            // Account for gap (7 gaps of 2px)
+            currentCellSize = (rect.width - (GRID_SIZE - 1) * 2) / GRID_SIZE;
+        }
+
+        // --- Game Logic ---
+
+        function generateNewShapes() {
+            for (let i = 0; i < 3; i++) {
+                const randomShape = SHAPE_DEFS[Math.floor(Math.random() * SHAPE_DEFS.length)];
+                currentShapes[i] = JSON.parse(JSON.stringify(randomShape)); // Deep copy
+            }
+            renderTray();
+            checkGameOver();
+        }
+
+        function renderTray() {
+            for (let i = 0; i < 3; i++) {
+                const container = trayEls[i];
+                container.innerHTML = '';
+                container.style.opacity = '1';
+                
+                const shape = currentShapes[i];
+                if (!shape) continue;
+
+                const shapeDOM = createShapeDOM(shape, CELL_BASE_SIZE * 0.6); // Scale down for tray
+                container.appendChild(shapeDOM);
+                
+                // Attach identifiers for event handling
+                container.dataset.index = i;
+            }
+        }
+
+        function createShapeDOM(shape, cellSize) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'shape-grid';
+            
+            const rows = shape.m.length;
+            const cols = shape.m[0].length;
+            
+            wrapper.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+            wrapper.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const block = document.createElement('div');
+                    if (shape.m[r][c] === 1) {
+                        block.className = 'shape-block';
+                        block.style.backgroundColor = shape.c;
+                    } else {
+                        block.style.backgroundColor = 'transparent';
+                    }
+                    wrapper.appendChild(block);
+                }
+            }
+            return wrapper;
+        }
+
+        function updateBoardVisuals() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    const val = grid[r][c];
+                    
+                    // Reset classes, keep basic cell class
+                    cell.className = 'cell';
+                    
+                    if (val) {
+                        cell.classList.add('filled');
+                        cell.style.backgroundColor = val;
+                    } else {
+                        cell.style.backgroundColor = 'var(--cell-bg)';
+                        cell.style.boxShadow = 'none';
+                    }
+                }
+            }
+        }
+
+        // --- Drag and Drop Interaction System ---
+
+        // Global Event Listeners for Dragging
+        // Handle both Touch and Mouse
+        const interactionEvents = {
+            start: ['mousedown', 'touchstart'],
+            move: ['mousemove', 'touchmove'],
+            end: ['mouseup', 'touchend', 'touchcancel']
+        };
+
+        interactionEvents.start.forEach(evt => {
+            document.addEventListener(evt, handleDragStart, { passive: false });
+        });
+        interactionEvents.move.forEach(evt => {
+            document.addEventListener(evt, handleDragMove, { passive: false });
+        });
+        interactionEvents.end.forEach(evt => {
+            document.addEventListener(evt, handleDragEnd);
+        });
+
+        // Safely extract coordinates ensuring touch end events are handled
+        function getEventPoint(e) {
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            }
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function handleDragStart(e) {
+            if (modalEl.classList.contains('hidden') === false) return;
+
+            const target = e.target.closest('.tray-shape-container');
+            if (!target) return;
+
+            const index = parseInt(target.dataset.index);
+            const shape = currentShapes[index];
+            if (!shape) return;
+
+            // Prevent default to stop scrolling on touch devices
+            if (e.type === 'touchstart' && e.cancelable) {
+                e.preventDefault();
+            }
+
+            isDragging = true;
+            dragIndex = index;
+            target.style.opacity = '0.2'; // Dim original in tray
+
+            // Prepare Ghost
+            ghostEl.innerHTML = '';
+            // Make ghost blocks same size as board cells
+            const ghostShapeDOM = createShapeDOM(shape, currentCellSize);
+            ghostEl.appendChild(ghostShapeDOM);
+            ghostEl.style.display = 'block';
+
+            // Calculate center offset for smooth lifting
+            const shapeRows = shape.m.length;
+            const shapeCols = shape.m[0].length;
+            const shapeWidth = shapeCols * currentCellSize + (shapeCols - 1) * 2; // gap
+            const shapeHeight = shapeRows * currentCellSize + (shapeRows - 1) * 2;
+
+            const pt = getEventPoint(e);
+            
+            // Touch offset: lift shape ABOVE finger so user can see it
+            const touchOffset = e.type === 'touchstart' ? 60 : 20;
+
+            dragOffsetX = shapeWidth / 2;
+            dragOffsetY = shapeHeight + touchOffset; 
+
+            if (pt.x !== undefined && pt.y !== undefined) {
+                updateGhostPosition(pt.x, pt.y);
+            }
+            clearPreviews();
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault(); // Stop scrolling
+
+            const pt = getEventPoint(e);
+            if (pt.x === undefined || pt.y === undefined) return;
+
+            updateGhostPosition(pt.x, pt.y);
+
+            // Calculate potential grid position
+            const gridPos = getGridHoverPosition(pt.x, pt.y);
+            
+            clearPreviews();
+            
+            if (gridPos) {
+                const shape = currentShapes[dragIndex];
+                if (canPlaceShape(shape, gridPos.r, gridPos.c)) {
+                    drawPreview(shape, gridPos.r, gridPos.c);
+                }
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const pt = getEventPoint(e);
+            
+            ghostEl.style.display = 'none';
+            clearPreviews();
+            
+            const trayContainer = trayEls[dragIndex];
+            const shape = currentShapes[dragIndex];
+            const gridPos = pt.x !== undefined && pt.y !== undefined ? getGridHoverPosition(pt.x, pt.y) : null;
+
+            if (gridPos && canPlaceShape(shape, gridPos.r, gridPos.c)) {
+                // Successful Placement
+                placeShape(shape, gridPos.r, gridPos.c);
+                currentShapes[dragIndex] = null;
+                trayContainer.innerHTML = '';
+                
+                // Process game rules
+                processTurn();
+            } else {
+                // Snap back
+                if (trayContainer) trayContainer.style.opacity = '1';
+            }
+
+            dragIndex = -1;
+        }
+
+        function updateGhostPosition(x, y) {
+            ghostEl.style.left = `${x - dragOffsetX}px`;
+            ghostEl.style.top = `${y - dragOffsetY}px`;
+        }
+
+        // Determine which grid cell the top-left of the ghost shape is hovering over
+        function getGridHoverPosition(mouseX, mouseY) {
+            if (mouseX === undefined || mouseY === undefined || isNaN(mouseX) || isNaN(mouseY)) return null;
+
+            const rect = boardEl.getBoundingClientRect();
+            
+            // Coordinates of the top-left of the shape being dragged
+            const shapeX = mouseX - dragOffsetX;
+            const shapeY = mouseY - dragOffsetY;
+
+            // Check if shape overlaps board broadly
+            if (shapeX > rect.right || shapeX + currentCellSize < rect.left ||
+                shapeY > rect.bottom || shapeY + currentCellSize < rect.top) {
+                return null;
+            }
+
+            // Calculate grid index based on position relative to board
+            const col = Math.round((shapeX - rect.left) / (currentCellSize + 2)); // 2 is gap
+            const row = Math.round((shapeY - rect.top) / (currentCellSize + 2));
+
+            return { r: row, c: col };
+        }
+
+        // --- Core Rules & Mechanics ---
+
+        function canPlaceShape(shape, startR, startC) {
+            if (startR === undefined || startC === undefined || isNaN(startR) || isNaN(startC)) return false;
+
+            for (let r = 0; r < shape.m.length; r++) {
+                for (let c = 0; c < shape.m[0].length; c++) {
+                    if (shape.m[r][c] === 1) {
+                        const targetR = startR + r;
+                        const targetC = startC + c;
+                        
+                        // Check bounds and validate variables
+                        if (isNaN(targetR) || isNaN(targetC) || targetR < 0 || targetR >= GRID_SIZE || targetC < 0 || targetC >= GRID_SIZE) {
+                            return false;
+                        }
+
+                        // Added safety check: if array row doesn't exist or cell is filled
+                        if (!grid[targetR] || grid[targetR][targetC] !== null) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function drawPreview(shape, startR, startC) {
+            for (let r = 0; r < shape.m.length; r++) {
+                for (let c = 0; c < shape.m[0].length; c++) {
+                    if (shape.m[r][c] === 1) {
+                        const cell = document.getElementById(`cell-${startR + r}-${startC + c}`);
+                        if (cell) cell.classList.add('preview');
+                    }
+                }
+            }
+        }
+
+        function clearPreviews() {
+            document.querySelectorAll('.cell.preview').forEach(el => {
+                el.classList.remove('preview');
+            });
+        }
+
+        function placeShape(shape, startR, startC) {
+            let blocksPlaced = 0;
+            for (let r = 0; r < shape.m.length; r++) {
+                for (let c = 0; c < shape.m[0].length; c++) {
+                    if (shape.m[r][c] === 1) {
+                        grid[startR + r][startC + c] = shape.c;
+                        blocksPlaced++;
+                        
+                        // Placement animation
+                        const cell = document.getElementById(`cell-${startR + r}-${startC + c}`);
+                        cell.style.backgroundColor = shape.c;
+                        cell.classList.add('filled', 'anim-pop');
+                        // Remove anim class after it finishes so it can play again later
+                        setTimeout(() => cell.classList.remove('anim-pop'), 300);
+                    }
+                }
+            }
+            
+            // Score for placement (10 pts per block)
+            addScore(blocksPlaced * 10);
+            updateBoardVisuals();
+        }
+
+        async function processTurn() {
+            // Check for line clears
+            const linesCleared = checkAndClearLines();
+            
+            if (linesCleared > 0) {
+                // Score for lines: 1 line = 100, 2 lines = 300, 3 lines = 600, etc.
+                const lineScore = (linesCleared * (linesCleared + 1) / 2) * 100;
+                addScore(lineScore);
+                
+                // Show floating combo text
+                showFloatingText(`Combo x${linesCleared}!`);
+                
+                // Wait for clear animation
+                await new Promise(res => setTimeout(res, 300));
+                updateBoardVisuals(); // physically remove from view
+            }
+
+            // Check if tray is empty
+            if (currentShapes.every(s => s === null)) {
+                generateNewShapes();
+            } else {
+                checkGameOver();
+            }
+        }
+
+        function checkAndClearLines() {
+            let rowsToClear = [];
+            let colsToClear = [];
+
+            // Find full rows
+            for (let r = 0; r < GRID_SIZE; r++) {
+                if (grid[r].every(cell => cell !== null)) {
+                    rowsToClear.push(r);
+                }
+            }
+
+            // Find full columns
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let isFull = true;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (grid[r][c] === null) {
+                        isFull = false;
+                        break;
+                    }
+                }
+                if (isFull) colsToClear.push(c);
+            }
+
+            const totalLines = rowsToClear.length + colsToClear.length;
+            if (totalLines === 0) return 0;
+
+            // Mark and animate cleared cells
+            const cellsToClear = new Set();
+            
+            rowsToClear.forEach(r => {
+                for(let c=0; c<GRID_SIZE; c++) cellsToClear.add(`${r},${c}`);
+            });
+            colsToClear.forEach(c => {
+                for(let r=0; r<GRID_SIZE; r++) cellsToClear.add(`${r},${c}`);
+            });
+
+            cellsToClear.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                grid[r][c] = null; // Update logical state
+                
+                // Trigger animation
+                const cellEl = document.getElementById(`cell-${r}-${c}`);
+                cellEl.classList.add('anim-clear');
+                setTimeout(() => cellEl.classList.remove('anim-clear'), 300);
+            });
+
+            return totalLines;
+        }
+
+        function checkGameOver() {
+            // Can ANY remaining shape fit ANYWHERE?
+            for (let i = 0; i < 3; i++) {
+                const shape = currentShapes[i];
+                if (!shape) continue;
+
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (canPlaceShape(shape, r, c)) {
+                            return; // Found at least one valid move, game continues
+                        }
+                    }
+                }
+            }
+
+            // No valid moves found for any shape
+            triggerGameOver();
+        }
+
+        function triggerGameOver() {
+            finalScoreEl.innerText = score;
+            if (score > highScore) {
+                highScore = score;
+                highScoreEl.innerText = highScore;
+            }
+            modalEl.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            initGame();
+        }
+
+        function addScore(points) {
+            score += points;
+            
+            // Animate score counter (simple version)
+            scoreEl.innerText = score;
+            scoreEl.style.transform = 'scale(1.2)';
+            scoreEl.style.color = '#fbbf24'; // Flash yellow
+            setTimeout(() => {
+                scoreEl.style.transform = 'scale(1)';
+                scoreEl.style.color = 'white';
+            }, 200);
+            
+            if (score > highScore) {
+                highScore = score;
+                highScoreEl.innerText = highScore;
+            }
+        }
+
+        function showFloatingText(text) {
+            const el = document.createElement('div');
+            el.className = 'score-popup';
+            el.innerText = text;
+            
+            // Position randomly near the top of the board
+            const rect = boardContainerEl.getBoundingClientRect();
+            const left = rect.left + (rect.width / 2) - 40;
+            const top = rect.top + 50;
+            
+            el.style.left = `${left}px`;
+            el.style.top = `${top}px`;
+            
+            document.body.appendChild(el);
+            
+            setTimeout(() => el.remove(), 800);
+        }
+
+        // --- Start Game ---
+        window.onload = () => {
+            initGame();
+        };
+
+    </script>
+</body>
+</html>
