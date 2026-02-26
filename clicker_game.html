@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Clicker</title>
+    <title>Industrial Clicker - Credits Edition</title>
     <style>
         body {
             display: flex;
@@ -14,6 +14,7 @@
             background-color: #1b2a1d;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
+            overflow-x: hidden;
         }
         h1 {
             font-size: 2.5rem;
@@ -24,10 +25,11 @@
         .stats-container {
             text-align: center;
             margin-bottom: 20px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.3);
             padding: 15px;
             border-radius: 10px;
-            width: 300px;
+            width: 320px;
+            border: 1px solid #2d4a30;
         }
         .circle {
             width: 200px;
@@ -38,16 +40,30 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             cursor: pointer;
             user-select: none;
             box-shadow: 0 0 20px rgba(102, 204, 102, 0.2);
             transition: transform 0.05s linear;
+            position: relative;
         }
-        .circle:active {
-            transform: scale(0.92);
+        .circle:active { transform: scale(0.92); }
+
+        /* Floating Text Animation */
+        .floating-text {
+            position: absolute;
+            color: #66cc66;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+            animation: moveUp 0.6s ease-out forwards;
         }
+        @keyframes moveUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
         .shop {
             width: 95%;
             max-width: 550px;
@@ -58,9 +74,9 @@
             border: 1px solid #2d4a30;
         }
         .shop-item-container {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-bottom: 1px solid #2d4a30;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
         }
         .shop-item {
             width: 100%;
@@ -72,15 +88,11 @@
             font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: left;
             display: flex;
             justify-content: space-between;
+            transition: 0.2s;
         }
-        .shop-item:hover:not(.disabled) {
-            background-color: #66cc66;
-            color: #000;
-        }
+        .shop-item:hover:not(.disabled) { background-color: #66cc66; color: #000; }
         .shop-item.disabled {
             background-color: #222;
             border-color: #444;
@@ -88,18 +100,9 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
-        .item-info {
-            font-size: 0.85rem;
-            color: #aaddaa;
-            margin-top: 5px;
-            font-style: italic;
-        }
-        .upgrade-count {
-            font-size: 0.9rem;
-            color: #66cc66;
-            margin-top: 3px;
-            font-weight: bold;
-        }
+        .item-info { font-size: 0.85rem; color: #aaddaa; margin-top: 5px; font-style: italic; }
+        .upgrade-count { font-size: 0.9rem; color: #66cc66; font-weight: bold; }
+        
         .reset-button {
             margin-top: 30px;
             background-color: #631c1c;
@@ -108,15 +111,9 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            opacity: 0.8;
+            opacity: 0.7;
         }
         .reset-button:hover { opacity: 1; }
-        .back-button {
-            margin-top: 15px;
-            color: #888;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
@@ -124,56 +121,54 @@
     <h1>Industrial Clicker</h1>
     
     <div class="stats-container">
-        <div style="font-size: 1.8rem; font-weight: bold;">Clicks: <span id="clickCount">0</span></div>
-        <div style="color: #66cc66; margin-top: 5px;">Auto-Yield: <span id="cpsCount">0</span>/sec</div>
+        <div style="font-size: 1.8rem; font-weight: bold;"><span id="clickCount">0</span> Credits</div>
+        <div style="color: #66cc66; margin-top: 5px;">Production: <span id="cpsCount">0</span> Credits/sec</div>
     </div>
 
-    <div class="circle" id="circle">+1</div>
+    <div class="circle" id="circle">CLICK</div>
 
     <div class="shop">
         <h2 style="text-align: center; color: #66cc66; margin-top: 0;">Factory Upgrades</h2>
-        <div id="shop-list">
-            </div>
+        <div id="shop-list"></div>
     </div>
 
     <button class="reset-button" id="resetButton">Wipe Factory Data</button>
-    <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
-        // --- GAME DATA & CONFIG ---
-        let clicks = 0;
+        // --- GAME DATA ---
+        let credits = 0;
         let clickValue = 1;
         let autoClickValue = 0;
 
         const upgradeData = {
-            upgradeClick: { name: "Broken Tool", desc: "A chipped wrench that adds +1 to your manual clicks.", baseCost: 10, addClick: 1, addAuto: 0 },
-            autoClicker: { name: "Worker", desc: "Hires a laborer to click once every second.", baseCost: 50, addClick: 0, addAuto: 1 },
-            goldenClick: { name: "Rusty Tool", desc: "Old but reliable. Adds +5 to your manual clicks.", baseCost: 100, addClick: 5, addAuto: 0 },
-            superAutoClicker: { name: "Qualified Worker", desc: "Expert staff that generates 5 clicks per second.", baseCost: 200, addClick: 0, addAuto: 5 },
-            megaClick: { name: "Metal Tool", desc: "Industrial grade iron. Adds +10 to your manual clicks.", baseCost: 500, addClick: 10, addAuto: 0 },
-            ultraAutoClicker: { name: "Manager", desc: "Optimizes the floor to generate 20 clicks per second.", baseCost: 1000, addClick: 0, addAuto: 20 },
-            platinumClick: { name: "Golden Tool", desc: "Highly conductive. Adds +50 to your manual clicks.", baseCost: 2500, addClick: 50, addAuto: 0 },
-            hyperAutoClicker: { name: "Broken Machinery", desc: "Spins wildly, creating 50 clicks per second.", baseCost: 5000, addClick: 0, addAuto: 50 },
-            diamondClick: { name: "Platinum Tool", desc: "Virtually indestructible. Adds +100 to manual clicks.", baseCost: 10000, addClick: 100, addAuto: 0 },
-            ultimateAutoClicker: { name: "Mended Machinery", desc: "Restored tech that outputs 200 clicks per second.", baseCost: 20000, addClick: 0, addAuto: 200 },
-            galacticClick: { name: "Radioactive Tool", desc: "Glowing with energy. Adds +500 to manual clicks.", baseCost: 50000, addClick: 500, addAuto: 0 },
-            cosmicAutoClicker: { name: "Diamond Machinery", desc: "High-pressure output of 500 clicks per second.", baseCost: 100000, addClick: 0, addAuto: 500 },
-            universalClick: { name: "Nuclear Tool", desc: "Fission-powered. Adds +1,000 to manual clicks.", baseCost: 250000, addClick: 1000, addAuto: 0 },
-            infinityAutoClicker: { name: "New Factory Branch", desc: "A whole new building generating 1,000 clicks/sec.", baseCost: 500000, addClick: 0, addAuto: 1000 },
-            omegaClick: { name: "Plasma Tool", desc: "The ultimate tool. Adds +5,000 to manual clicks.", baseCost: 1000000, addClick: 5000, addAuto: 0 }
+            upgradeClick: { name: "Broken Tool", desc: "+1 per manual click.", baseCost: 10, addClick: 1, addAuto: 0 },
+            autoClicker: { name: "Worker", desc: "+1 Credit every second.", baseCost: 50, addClick: 0, addAuto: 1 },
+            goldenClick: { name: "Rusty Tool", desc: "+5 per manual click.", baseCost: 100, addClick: 5, addAuto: 0 },
+            superAutoClicker: { name: "Qualified Worker", desc: "+5 Credits every second.", baseCost: 200, addClick: 0, addAuto: 5 },
+            megaClick: { name: "Metal Tool", desc: "+10 per manual click.", baseCost: 500, addClick: 10, addAuto: 0 },
+            ultraAutoClicker: { name: "Manager", desc: "+20 Credits every second.", baseCost: 1000, addClick: 0, addAuto: 20 },
+            platinumClick: { name: "Golden Tool", desc: "+50 per manual click.", baseCost: 2500, addClick: 50, addAuto: 0 },
+            hyperAutoClicker: { name: "Broken Machinery", desc: "+50 Credits every second.", baseCost: 5000, addClick: 0, addAuto: 50 },
+            diamondClick: { name: "Platinum Tool", desc: "+100 per manual click.", baseCost: 10000, addClick: 100, addAuto: 0 },
+            ultimateAutoClicker: { name: "Mended Machinery", desc: "+200 Credits every second.", baseCost: 20000, addClick: 0, addAuto: 200 },
+            galacticClick: { name: "Radioactive Tool", desc: "+500 per manual click.", baseCost: 50000, addClick: 500, addAuto: 0 },
+            cosmicAutoClicker: { name: "Diamond Machinery", desc: "+500 Credits every second.", baseCost: 100000, addClick: 0, addAuto: 500 },
+            universalClick: { name: "Nuclear Tool", desc: "+1,000 per manual click.", baseCost: 250000, addClick: 1000, addAuto: 0 },
+            infinityAutoClicker: { name: "New Factory Branch", desc: "+1,000 Credits every second.", baseCost: 500000, addClick: 0, addAuto: 1000 },
+            omegaClick: { name: "Plasma Tool", desc: "+5,000 per manual click.", baseCost: 1000000, addClick: 5000, addAuto: 0 }
         };
 
         let inventory = {};
         Object.keys(upgradeData).forEach(id => inventory[id] = 0);
 
-        // --- LOGIC ---
+        // --- CORE LOGIC ---
 
         function calculateCost(id) {
             return Math.round(upgradeData[id].baseCost * Math.pow(1.15, inventory[id]));
         }
 
         function updateUI() {
-            document.getElementById('clickCount').textContent = Math.floor(clicks).toLocaleString();
+            document.getElementById('clickCount').textContent = Math.floor(credits).toLocaleString();
             document.getElementById('cpsCount').textContent = autoClickValue.toLocaleString();
             document.getElementById('circle').textContent = `+${clickValue.toLocaleString()}`;
 
@@ -182,12 +177,10 @@
                 const countDisplay = document.getElementById(`${id}-count`);
                 const cost = calculateCost(id);
                 
-                // Update Button Content (Name on left, Price on right)
-                btn.innerHTML = `<span>${upgradeData[id].name}</span> <span>${cost.toLocaleString()} 🪙</span>`;
+                btn.innerHTML = `<span>${upgradeData[id].name}</span> <span>${cost.toLocaleString()} Credits</span>`;
                 countDisplay.textContent = `Owned: ${inventory[id]}`;
 
-                // Availability check
-                if (clicks >= cost) {
+                if (credits >= cost) {
                     btn.classList.remove('disabled');
                     btn.disabled = false;
                 } else {
@@ -199,11 +192,9 @@
 
         function buyUpgrade(id) {
             const cost = calculateCost(id);
-            if (clicks >= cost) {
-                clicks -= cost;
+            if (credits >= cost) {
+                credits -= cost;
                 inventory[id]++;
-                
-                // Recalculate all totals from inventory to ensure accuracy
                 recalculatePowers();
                 updateUI();
                 saveGame();
@@ -219,28 +210,37 @@
             });
         }
 
+        // --- VISUALS ---
+
+        function createFloatingText(event) {
+            const floating = document.createElement('div');
+            floating.className = 'floating-text';
+            floating.innerText = `+${clickValue}`;
+            floating.style.left = `${event.clientX}px`;
+            floating.style.top = `${event.clientY}px`;
+            document.body.appendChild(floating);
+            setTimeout(() => floating.remove(), 600);
+        }
+
         // --- SAVE SYSTEM ---
 
         function saveGame() {
-            const saveData = {
-                clicks: clicks,
-                inventory: inventory
-            };
-            localStorage.setItem("IndustrialSave_v2", JSON.stringify(saveData));
+            const saveData = { credits, inventory };
+            localStorage.setItem("IndustrialSave_v3", JSON.stringify(saveData));
         }
 
         function loadGame() {
-            const saved = localStorage.getItem("IndustrialSave_v2");
+            const saved = localStorage.getItem("IndustrialSave_v3");
             if (saved) {
                 const data = JSON.parse(saved);
-                clicks = data.clicks || 0;
+                credits = data.credits || 0;
                 inventory = data.inventory || inventory;
                 recalculatePowers();
             }
             updateUI();
         }
 
-        // --- INIT ---
+        // --- INITIALIZATION ---
 
         const shopList = document.getElementById('shop-list');
         Object.keys(upgradeData).forEach(id => {
@@ -255,26 +255,28 @@
             document.getElementById(id).addEventListener('click', () => buyUpgrade(id));
         });
 
-        document.getElementById('circle').addEventListener('click', () => {
-            clicks += clickValue;
+        document.getElementById('circle').addEventListener('click', (e) => {
+            credits += clickValue;
+            createFloatingText(e);
             updateUI();
         });
 
         document.getElementById('resetButton').addEventListener('click', () => {
-            if(confirm("Are you sure? This will delete all your progress forever!")) {
-                localStorage.removeItem("IndustrialSave_v2");
+            if(confirm("Confirm Factory Wipe? All Credits and Upgrades will be lost!")) {
+                localStorage.removeItem("IndustrialSave_v3");
                 location.reload();
             }
         });
 
-        // Intervals
+        // Intervals: 10 ticks per second for smoothness
         setInterval(() => {
-            clicks += autoClickValue;
-            updateUI();
-        }, 1000);
+            if (autoClickValue > 0) {
+                credits += (autoClickValue / 10);
+                updateUI();
+            }
+        }, 100);
 
-        setInterval(saveGame, 10000); // Auto-save every 10 seconds
-
+        setInterval(saveGame, 15000);
         loadGame();
     </script>
 </body>
