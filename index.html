@@ -13,6 +13,7 @@
             --primary-dark: #6d28d9;
             --bg-dark: #0f172a;
             --card-bg: rgba(30, 41, 59, 0.7);
+            --card-broken: rgba(15, 23, 42, 0.95);
         }
 
         body {
@@ -45,6 +46,20 @@
             transform: translateY(-8px);
             border-color: var(--primary);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Broken State Styling - Darker but still clickable */
+        .game-card.is-broken {
+            background: var(--card-broken);
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .game-card.is-broken .game-icon {
+            filter: grayscale(1) opacity(0.3);
+        }
+
+        .game-card.is-broken h3 {
+            color: #64748b;
         }
 
         .game-card::before {
@@ -95,6 +110,17 @@
             text-transform: uppercase;
         }
 
+        .broken-badge {
+            font-size: 0.65rem;
+            background: linear-gradient(45deg, #ef4444, #b91c1c);
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -109,33 +135,62 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary);
         }
+
+        /* Mobile Menu Styles */
+        #mobile-menu {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+        }
+        #mobile-menu.hidden-menu {
+            max-height: 0;
+            opacity: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #mobile-menu.active-menu {
+            max-height: 300px;
+            opacity: 1;
+            pointer-events: auto;
+            padding: 1rem 0;
+        }
     </style>
 </head>
 <body class="pt-24 pb-12">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <span class="text-xl">👾</span>
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                    <span class="text-xl">👾</span>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    GAME HUB
+                </span>
             </div>
-            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                GAME HUB
-            </span>
-        </div>
-        
-        <div class="hidden md:flex items-center gap-8">
-            <a href="index.html" class="text-violet-400 font-semibold">Home</a>
-            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
-            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
-            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
+            
+            <!-- Desktop Links -->
+            <div class="hidden md:flex items-center gap-8">
+                <a href="index.html" class="text-violet-400 font-semibold">Home</a>
+                <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
+                <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+                <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
+            </div>
+
+            <!-- Hamburger Button -->
+            <button id="menu-toggle" class="md:hidden text-white focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
         </div>
 
-        <button class="md:hidden text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-        </button>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden-menu flex flex-col gap-4 mt-2 border-t border-white/5">
+            <a href="index.html" class="text-violet-400 font-semibold px-2">Home</a>
+            <a href="about.html" class="text-slate-400 hover:text-white transition-colors px-2">About</a>
+            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors px-2">Feedback</a>
+            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors px-2">Bugs</a>
+        </div>
     </nav>
 
     <!-- Hero Section -->
@@ -176,7 +231,7 @@
     <!-- Games Grid -->
     <main class="max-w-6xl mx-auto px-6">
         <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Game items are managed via JavaScript to easily add/remove -->
+            <!-- Game items are managed via JavaScript -->
         </div>
 
         <!-- Coming Soon -->
@@ -199,19 +254,37 @@
     </footer>
 
     <script>
+        // Hamburger Menu Logic
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIcon = document.getElementById('menu-icon');
+
+        menuToggle.addEventListener('click', () => {
+            const isOpen = mobileMenu.classList.contains('active-menu');
+            if (isOpen) {
+                mobileMenu.classList.remove('active-menu');
+                mobileMenu.classList.add('hidden-menu');
+                menuIcon.setAttribute('d', 'M4 6h16M4 12h16m-7 6h7');
+            } else {
+                mobileMenu.classList.remove('hidden-menu');
+                mobileMenu.classList.add('active-menu');
+                menuIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            }
+        });
+
         const games = [
-            { name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false },
-            { name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false },
-            { name: "Pong", url: "pong_game.html", icon: "🏓", beta: false },
-            { name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true },
-            { name: "Blockblast", url: "blockblast.html", icon: "🧱", beta: true },
-            { name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true },
-            { name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false },
-            { name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false },
-            { name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false },
-            { name: "Poker", url: "poker.html", icon: "💎", beta: true },
-            { name: "Mining", url: "Mining.html", icon: "⛏️", beta: false },
-            { name: "Loopy Puzzle", url: "Loopy.html", icon: "➰", beta: false }
+            { name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false, broken: false },
+            { name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false },
+            { name: "Pong", url: "pong_game.html", icon: "🏓", beta: false, broken: false },
+            { name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true, broken: false },
+            { name: "Blockblast", url: "blockblast.html", icon: "🧱", beta: true, broken: true },
+            { name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true, broken: true },
+            { name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false, broken: false },
+            { name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: true },
+            { name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false, broken: false },
+            { name: "Poker", url: "poker.html", icon: "💎", beta: true, broken: false },
+            { name: "Mining", url: "Mining.html", icon: "⛏️", beta: false, broken: false },
+            { name: "Loopy Puzzle", url: "Loopy.html", icon: "➰", beta: false, broken: false }
         ];
 
         const grid = document.getElementById('game-grid');
@@ -227,18 +300,27 @@
 
             filtered.forEach(game => {
                 const card = document.createElement('div');
-                card.className = "game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer";
+                card.className = `game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer ${game.broken ? 'is-broken' : ''}`;
+                
+                // Keep clickable even if broken
                 card.onclick = () => window.location.href = game.url;
                 
+                let badgeHtml = "";
+                if (game.broken) {
+                    badgeHtml = '<span class="broken-badge">BROKEN</span>';
+                } else if (game.beta) {
+                    badgeHtml = '<span class="beta-badge">BETA</span>';
+                }
+
                 card.innerHTML = `
-                    <div class="text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center">
+                    <div class="game-icon text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center transition-all">
                         ${game.icon}
                     </div>
                     <div class="flex items-center gap-2 mb-2">
-                        <h3 class="font-bold text-lg">${game.name}</h3>
-                        ${game.beta ? '<span class="beta-badge">BETA</span>' : ''}
+                        <h3 class="font-bold text-lg transition-colors">${game.name}</h3>
+                        ${badgeHtml}
                     </div>
-                    <p class="text-slate-500 text-sm">Launch game engine</p>
+                    <p class="text-slate-500 text-sm">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
                     <div class="mt-6 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-0 transition-opacity hover:opacity-100">
                         PLAY NOW
                     </div>
@@ -257,7 +339,6 @@
             renderGames(query);
         }
 
-        // Initial render
         renderGames();
     </script>
 
