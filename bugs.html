@@ -3,166 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bugs - Game Hub</title>
+    <title>Known Issues | Game Hub</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* General Navbar Styling */
-        .navbar {
-            width: 100%;
-            background-color: #004d00; /* Dark Green */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
+        :root {
+            --primary: #8b5cf6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.6);
         }
 
-        .navbar button, .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 0 25px;
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .navbar a:hover, .navbar button:hover {
-            background-color: #66cc66; /* Light Green */
-            border-color: #66cc66;
-        }
-
-        .navbar .nav-left {
-            display: flex;
-            align-items: center;
-        }
-
-        .navbar .nav-right {
-            display: flex;
-            align-items: center;
-        }
-
-        .navbar a, .navbar button {
-            font-weight: 600;
-        }
-
-        /* Main Content Styling */
         body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #1b2a1d; /* Very dark green, almost grey */
-            color: white;
-            padding-top: 80px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
         }
 
-        .bugs-content {
-            text-align: center;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #66cc66; /* Light Green */
+        .bug-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
         }
 
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #adacac;
+        .bug-card:hover {
+            border-color: rgba(244, 63, 94, 0.4); /* Rosy border for bugs */
+            transform: translateY(-2px);
         }
 
-        .bug-list {
-            text-align: left;
-            margin: 20px auto;
-            max-width: 600px;
-            padding: 15px;
-            background-color: #333333; /* Darker background */
-            border-radius: 10px;
+        .accent-gradient {
+            background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .bug-item {
-            padding: 10px;
-            border-bottom: 1px solid #fff;
-        }
-
-        .feedback-link {
-            color: #66cc66; /* Light Green */
-            font-size: 16px;
-            text-decoration: none;
-        }
-
-        .feedback-link:hover {
-            text-decoration: underline;
+        .bug-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #f43f5e;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 12px;
+            box-shadow: 0 0 8px rgba(244, 63, 94, 0.6);
         }
     </style>
 </head>
-<body>
+<body class="pt-32 pb-20">
 
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="nav-left">
-            <button onclick="window.location.href='index.html'">Home</button>
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <span class="text-xl">👾</span>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                GAME HUB
+            </span>
         </div>
-        <div class="nav-right">
-            <a href="about.html">About</a>
-            <a href="feedback.html">Feedback</a>
-            <a href="bugs.html">Bugs</a>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
+            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
+            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+            <a href="bugs.html" class="text-violet-400 font-semibold">Bugs</a>
         </div>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="max-w-4xl mx-auto px-6 text-center mb-12">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+            Tracked <span class="accent-gradient">Bugs</span>
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            A live list of active issues our team is currently investigating.
+        </p>
     </div>
 
     <!-- Main Content -->
-    <div class="bugs-content">
-        <h1>Bugs List</h1>
-        <h2>Known issues for games in the Game Hub</h2>
+    <main class="max-w-4xl mx-auto px-6 space-y-6">
+        
+        <div class="grid grid-cols-1 gap-6">
+            
+            <!-- Snake Game -->
+            <div class="bug-card p-8 rounded-3xl">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <span class="mr-3">🐍</span> Snake Game
+                </h2>
+                <ul class="space-y-3 text-slate-400">
+                    <li class="flex items-center"><span class="bug-dot"></span> Inconsistent responsiveness on different screen sizes</li>
+                    <li class="flex items-center"><span class="bug-dot"></span> Speed does not reset properly after game over</li>
+                    <li class="flex items-center"><span class="bug-dot"></span> Swipe input delay when restarting</li>
+                    <li class="flex items-center"><span class="bug-dot"></span> Initial direction bug on first swipe</li>
+                </ul>
+            </div>
 
-        <div class="bug-list">
-            <div class="bug-item">
-                <strong>Snake Game</strong>
-                <p>Bug: Doesn't work on all screen sizes</p>
-                <p>Bug: Speed doesn't reset after death</p>
-                <p>Bug: Sometimes doesn't wait for swipe when restarting</p>
-                <p>Bug: doesn't start in the direction of swipe</p>
+            <!-- Pong -->
+            <div class="bug-card p-8 rounded-3xl">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <span class="mr-3">🏓</span> Pong
+                </h2>
+                <ul class="space-y-3 text-slate-400">
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Ball occasionally clips into paddles</li>
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Difficulty spikes on non-standard aspect ratios</li>
+                </ul>
             </div>
-            <div class="bug-item">
-                <strong>Tic-Tac-Toe (BETA)</strong>
-                <p>No known bugs</p>
+
+            <!-- Industrial Clicker -->
+            <div class="bug-card p-8 rounded-3xl border-l-4 border-l-amber-500">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold flex items-center">
+                        <span class="mr-3">⚙️</span> Industrial Clicker
+                    </h2>
+                    <span class="px-3 py-1 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full uppercase tracking-wider">Critical</span>
+                </div>
+                <ul class="space-y-3 text-slate-400">
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Save file system is currently disabled for maintenance</li>
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Purchase UI for items below 'Broken Machinery' is hidden</li>
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Price scaling and availability indicators missing</li>
+                </ul>
             </div>
-            <div class="bug-item">
-                <strong>Pong</strong>
-                <p>Bug: The ball can get stuck on the paddle</p>
-                <p>Bug: Doesn't work on all aspect ratios, can be really hard</p>
+
+            <!-- Blockblast -->
+            <div class="bug-card p-8 rounded-3xl">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <span class="mr-3 text-2xl">🧱</span> Blockblast
+                </h2>
+                <p class="text-rose-400 font-bold mb-2">Service Outage</p>
+                <ul class="space-y-3 text-slate-400">
+                    <li class="flex items-start"><span class="bug-dot mt-1.5"></span> Game engine failing to load on certain browsers</li>
+                </ul>
             </div>
-            <div class="bug-item">
-                <strong>Industrial Clicker (BETA</strong>
-                <p>Bug: Save files do not work</p>
-                <p>Bug: You can purchase items below 'Broken Machinery', but it does not show: increased price, quantity and availability.</p>
-            </div>
-            <div class="bug-item">
-                <strong>Blackjack</strong>
-            </div>
-            <div class="bug-item">
-                <strong>Blockblast (BETA)</strong>
-                <p>Bug: Doesn't work</p>
-            </div>
-            <div class="bug-item">
-                <strong>Tower Defence (BETA)</strong>
-            </div>
-            <div class="bug-item">
-                <strong>General</strong>
-                <p>Bug: Colours are currently differnt across the site</p>
+
+            <!-- General -->
+            <div class="bug-card p-8 rounded-3xl bg-violet-600/5">
+                <h2 class="text-xl font-bold mb-4 flex items-center text-violet-400">
+                    <span class="mr-3 text-2xl">🌐</span> General Site Issues
+                </h2>
+                <p class="text-slate-400 italic">
+                    "We are currently consolidating our design system to fix inconsistent color palettes across various game pages."
+                </p>
             </div>
         </div>
 
-        <p>If you find any other bugs, please visit the <a href="feedback.html" class="feedback-link">Feedback</a> page.</p>
-    </div>
+        <!-- Feedback CTA -->
+        <div class="mt-12 p-8 text-center">
+            <p class="text-slate-400 mb-6">Found a bug not listed here?</p>
+            <a href="feedback.html" class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-8 py-4 rounded-2xl font-bold transition-all no-underline shadow-lg shadow-violet-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+                </svg>
+                Report New Issue
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
+        <p class="text-sm">Help us build the perfect arcade.</p>
+    </footer>
 
 </body>
 </html>
