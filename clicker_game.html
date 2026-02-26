@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Clicker: Evolution</title>
+    <title>Industrial Clicker: Quantum Evolution</title>
     <style>
         :root {
             --primary: #66cc66;
@@ -11,6 +12,7 @@
             --panel-bg: rgba(0, 0, 0, 0.4);
             --border: #2d4a30;
             --save-color: #44aaff;
+            --quantum: #b300ff;
         }
 
         body {
@@ -32,23 +34,19 @@
             padding: 20px;
             border-radius: 12px;
             width: 90%;
-            max-width: 600px;
+            max-width: 650px;
             border: 1px solid var(--border);
             position: sticky;
             top: 10px;
             z-index: 1000;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
         .credit-display { font-size: 2.5rem; font-weight: bold; color: white; margin: 0; }
-        .production-display { color: var(--primary); font-size: 1.1rem; margin-top: 5px; }
+        .production-display { color: var(--primary); font-size: 1rem; margin-top: 5px; opacity: 0.9; }
+        .total-stat { font-size: 0.8rem; color: #888; margin-top: 5px; }
 
-        .buy-modes {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
+        .buy-modes { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-btn {
             background: #222;
             border: 1px solid var(--primary);
@@ -57,17 +55,11 @@
             cursor: pointer;
             border-radius: 4px;
             font-weight: bold;
+            transition: 0.2s;
         }
-
         .mode-btn.active { background: var(--primary); color: black; }
 
-        .click-area {
-            height: 220px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+        .click-area { height: 240px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
 
         #circle {
             width: 160px;
@@ -78,24 +70,29 @@
             font-weight: bold;
             cursor: pointer;
             user-select: none;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-align: center;
-            padding: 10px;
-            box-shadow: 0 0 20px rgba(102, 204, 102, 0.1);
+            padding: 15px;
+            font-size: 1.1rem;
         }
+        #circle:active { transform: scale(0.9); }
 
-        #circle:active { transform: scale(0.92); }
+        /* Evolution Shapes */
+        .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; } /* Stone */
+        .tier-1 { border-radius: 50%; background: #b87333; border: 4px solid #e39a5d; } /* Copper */
+        .tier-2 { border-radius: 15%; background: #a19d94; border: 4px solid #ced4da; } /* Iron */
+        .tier-3 { border-radius: 5px;  background: #4682b4; border: 4px solid #87ceeb; } /* Steel */
+        .tier-4 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #ffd700; color: black; } /* Electronics */
+        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #00f2ff; color: black; box-shadow: 0 0 20px #00f2ff; } /* Computing */
+        .tier-6 { border-radius: 50% 0 50% 0; background: #e0e0e0; border: 4px solid #ff0055; color: black; } /* Nanotech */
+        .tier-7 { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); background: #1a1a1a; border: 2px solid #00ff00; box-shadow: 0 0 25px #00ff00; } /* Fusion */
+        .tier-8 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); background: #ffffff; color: black; } /* Antimatter */
+        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 2s infinite; box-shadow: 0 0 40px var(--quantum); } /* Quantum */
 
-        /* Tier Shapes */
-        .tier-0 { border-radius: 50%; background: #553311; border: 4px solid #885522; }
-        .tier-1 { border-radius: 50%; background: #b87333; border: 4px solid #e39a5d; }
-        .tier-2 { border-radius: 15%; background: #a19d94; border: 4px solid #ced4da; }
-        .tier-3 { border-radius: 5px;  background: #4682b4; border: 4px solid #87ceeb; }
-        .tier-4 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #ffd700; border: none; }
-        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #00f2ff; border: none; box-shadow: 0 0 30px #00f2ff; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         .shop { width: 100%; max-width: 750px; }
-        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; }
+        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 30px 0 10px; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
 
         .upgrade-card {
             background: var(--panel-bg);
@@ -111,24 +108,22 @@
 
         .upgrade-info h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
         .upgrade-info p { margin: 5px 0; font-size: 0.8rem; color: #aaa; }
-        .upgrade-stats { font-size: 0.85rem; color: var(--primary); font-weight: bold; display: flex; flex-direction: column; gap: 2px; }
-        .total-yield { color: #aaa; font-weight: normal; font-size: 0.75rem; }
+        .upgrade-stats { font-size: 0.85rem; color: var(--primary); font-weight: bold; display: flex; flex-direction: column; }
+        .total-yield { color: #888; font-weight: normal; font-size: 0.75rem; }
 
         .buy-btn {
             background: #004d00;
             color: white;
             border: 1px solid var(--primary);
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             cursor: pointer;
-            min-width: 150px;
+            min-width: 160px;
             font-weight: bold;
             text-align: center;
         }
+        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; background: #111; border-color: #333; }
 
-        .buy-btn.disabled { opacity: 0.3; cursor: not-allowed; background: #222; }
-
-        /* Pop-up Notification Styling */
         #save-toast {
             position: fixed;
             bottom: 20px;
@@ -137,43 +132,36 @@
             color: white;
             padding: 12px 24px;
             border-radius: 8px;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             transform: translateY(100px);
             opacity: 0;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: 0.4s;
             z-index: 2000;
         }
         #save-toast.show { transform: translateY(0); opacity: 1; }
 
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin: 40px 0;
-        }
-
-        .save-btn { color: var(--save-color); background: none; border: 1px solid var(--save-color); cursor: pointer; padding: 8px 15px; border-radius: 4px; font-weight: bold; }
-        .save-btn:hover { background: var(--save-color); color: white; }
-        .reset-btn { color: #ff5555; background: none; border: 1px solid #ff5555; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
+        .controls { display: flex; gap: 15px; margin: 40px 0; }
+        .save-btn { color: var(--save-color); background: none; border: 1px solid var(--save-color); cursor: pointer; padding: 10px 20px; border-radius: 4px; font-weight: bold; }
+        .reset-btn { color: #ff5555; background: none; border: 1px solid #ff5555; cursor: pointer; padding: 10px 20px; border-radius: 4px; }
 
         .floating-text {
             position: absolute;
             color: var(--primary);
             font-weight: bold;
             pointer-events: none;
-            animation: floatUp 0.7s ease-out forwards;
+            animation: floatUp 0.8s ease-out forwards;
             z-index: 100;
         }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="save-toast">Game Saved!</div>
+    <div id="save-toast">Factory Data Synced</div>
 
     <div class="header">
         <div class="credit-display" id="creditCount">0 Credits</div>
         <div class="production-display">Total Production: <span id="cpsCount">0</span>/sec</div>
+        <div class="total-stat">Lifetime Earnings: <span id="totalEarned">0</span></div>
     </div>
 
     <div class="buy-modes">
@@ -184,42 +172,54 @@
     </div>
 
     <div class="click-area">
-        <div id="circle" class="tier-0">START</div>
+        <div id="circle" class="tier-0">STONE</div>
     </div>
 
     <div class="shop">
         <h2 class="section-title">Technology Tiers</h2>
         <div id="tier-container"></div>
 
-        <h2 class="section-title">Factory Machines</h2>
+        <h2 class="section-title">Industrial Infrastructure</h2>
         <div id="machine-container"></div>
     </div>
 
     <div class="controls">
-        <button class="save-btn" onclick="manualSave()">Save Factory</button>
-        <button class="reset-btn" onclick="resetGame()">Full Reset</button>
+        <button class="save-btn" onclick="manualSave()">Manual Save</button>
+        <button class="reset-btn" onclick="resetGame()">Hard Reset</button>
     </div>
 
     <script>
         let credits = 0;
+        let totalEarned = 0;
         let buyMode = 1;
         let currentTier = 0;
         const growthRate = 1.15;
 
+        // Expanded Technology Tiers
         const tierUpgrades = [
-            { name: "Copper Age", cost: 50, clickBoost: 5, label: "COPPER", class: "tier-1", desc: "Unlock copper tools." },
-            { name: "Iron Age", cost: 500, clickBoost: 25, label: "IRON", class: "tier-2", desc: "Heavier, stronger material." },
-            { name: "Steel Age", cost: 5000, clickBoost: 150, label: "STEEL", class: "tier-3", desc: "Industrial grade durability." },
-            { name: "Electronics", cost: 50000, clickBoost: 1000, label: "GOLD", class: "tier-4", desc: "Precision digital components." },
-            { name: "Computing", cost: 500000, clickBoost: 10000, label: "DATA", class: "tier-5", desc: "The ultimate processing power." }
+            { name: "Copper Tools", cost: 100, clickBoost: 8, label: "COPPER", class: "tier-1", desc: "Basic metalwork for better manual harvesting." },
+            { name: "Iron Forge", cost: 1500, clickBoost: 45, label: "IRON", class: "tier-2", desc: "Heavy iron tools for industrial-strength clicking." },
+            { name: "Steel Refining", cost: 15000, clickBoost: 250, label: "STEEL", class: "tier-3", desc: "High-grade steel construction." },
+            { name: "Micro-Circuitry", cost: 100000, clickBoost: 1200, label: "GOLD", class: "tier-4", desc: "Early digital logic gates for click efficiency." },
+            { name: "Silicon Processing", cost: 750000, clickBoost: 6000, label: "DATA", class: "tier-5", desc: "Super-conductive clicking interfaces." },
+            { name: "Nanotech Assembly", cost: 5000000, clickBoost: 35000, label: "NANO", class: "tier-6", desc: "Manipulating atoms to generate credits." },
+            { name: "Fusion Ignition", cost: 50000000, clickBoost: 200000, label: "FUSION", class: "tier-7", desc: "Tapping into the power of a miniature sun." },
+            { name: "Antimatter Drive", cost: 500000000, clickBoost: 1500000, label: "VOID", class: "tier-8", desc: "Using annihilation energy to warp credit production." },
+            { name: "Quantum Core", cost: 10000000000, clickBoost: 10000000, label: "QUANTUM", class: "tier-9", desc: "Every click exists in every state simultaneously." }
         ];
 
+        // Expanded Permanent Machines
         const machineUpgrades = {
-            small: { name: "Small Machine", desc: "A basic automated unit.", baseCost: 15, addAuto: 1 },
-            big: { name: "Large Machine", desc: "Greater capacity, higher yield.", baseCost: 150, addAuto: 8 },
-            line: { name: "Assembly Line", desc: "Optimized for speed.", baseCost: 1200, addAuto: 45 },
-            factory: { name: "Grand Factory", desc: "Massive industrial complex.", baseCost: 15000, addAuto: 250 },
-            hub: { name: "Digital Hub", desc: "The center of all production.", baseCost: 200000, addAuto: 2000 }
+            manual: { name: "Manual Crank", desc: "A simple hand-powered generator.", baseCost: 15, addAuto: 1 },
+            steam: { name: "Steam Engine", desc: "The heart of the first revolution.", baseCost: 250, addAuto: 10 },
+            electric: { name: "Power Turbine", desc: "Harnessing steady electricity.", baseCost: 2000, addAuto: 65 },
+            diesel: { name: "Diesel Generator", desc: "Heavy fuel for heavy profit.", baseCost: 18000, addAuto: 420 },
+            hydro: { name: "Hydroelectric Dam", desc: "Flowing water, flowing credits.", baseCost: 150000, addAuto: 2800 },
+            nuclear: { name: "Fission Reactor", desc: "Splitting atoms for massive yield.", baseCost: 1200000, addAuto: 18000 },
+            thermal: { name: "Geothermal Plant", desc: "Tapping the planet's core.", baseCost: 15000000, addAuto: 115000 },
+            orbital: { name: "Solar Satellite", desc: "Beaming energy from orbit.", baseCost: 250000000, addAuto: 950000 },
+            particle: { name: "Hadron Collider", desc: "Smashing particles for profit.", baseCost: 5000000000, addAuto: 12000000 },
+            singularity: { name: "Singularity Well", desc: "Capturing a black hole's energy.", baseCost: 100000000000, addAuto: 350000000 }
         };
 
         let inventory = {};
@@ -247,6 +247,7 @@
 
         function updateUI() {
             document.getElementById('creditCount').innerText = `${Math.floor(credits).toLocaleString()} Credits`;
+            document.getElementById('totalEarned').innerText = Math.floor(totalEarned).toLocaleString();
             
             let totalCps = 0;
             Object.keys(machineUpgrades).forEach(id => totalCps += machineUpgrades[id].addAuto * inventory[id]);
@@ -261,15 +262,14 @@
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
                 const yieldPerUnit = machineUpgrades[id].addAuto;
-                const totalMachineYield = yieldPerUnit * inventory[id];
-
+                
                 btn.innerHTML = `Buy ${buyData.count}<br>${Math.round(buyData.cost).toLocaleString()} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
                 btn.onclick = () => buyMachine(id, buyData.count, buyData.cost);
                 
                 document.getElementById(`count-${id}`).innerHTML = `
-                    <span>Owned: ${inventory[id].toLocaleString()} (+${yieldPerUnit}/sec)</span>
-                    <span class="total-yield">Combined Production: ${totalMachineYield.toLocaleString()}/sec</span>
+                    <span>Owned: ${inventory[id].toLocaleString()} (+${yieldPerUnit.toLocaleString()}/sec)</span>
+                    <span class="total-yield">Combined: ${(yieldPerUnit * inventory[id]).toLocaleString()}/sec</span>
                 `;
             });
 
@@ -279,7 +279,7 @@
                 tierBox.innerHTML = `
                     <div class="upgrade-card">
                         <div class="upgrade-info">
-                            <h3>Next Tier: ${next.name}</h3>
+                            <h3>Next Era: ${next.name}</h3>
                             <p>${next.desc}</p>
                             <div class="upgrade-stats">+${next.clickBoost.toLocaleString()} Click Power</div>
                         </div>
@@ -288,7 +288,7 @@
                         </button>
                     </div>`;
             } else {
-                tierBox.innerHTML = `<p style="text-align:center; color:#66cc66; font-weight:bold;">MAX TECHNOLOGY ACHIEVED</p>`;
+                tierBox.innerHTML = `<p style="text-align:center; color:var(--quantum); font-weight:bold; font-size:1.2rem;">QUANTUM SUPREMACY REACHED</p>`;
             }
         }
 
@@ -304,37 +304,32 @@
             const next = tierUpgrades[currentTier];
             if (credits >= next.cost) {
                 credits -= next.cost;
-                const circle = document.getElementById('circle');
-                circle.className = next.class;
-                circle.innerText = next.label;
                 currentTier++;
+                const circle = document.getElementById('circle');
+                circle.className = tierUpgrades[currentTier-1].class;
+                circle.innerText = tierUpgrades[currentTier-1].label;
                 updateUI();
-                saveGame(true); // Explicit save with toast
+                saveGame(true);
             }
         }
 
-        // --- SAVE SYSTEM ---
-
-        function showSavePopUp() {
-            const toast = document.getElementById('save-toast');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-
         function saveGame(showToast = false) {
-            const data = { credits, inventory, currentTier };
-            localStorage.setItem("IndusClick_V9", JSON.stringify(data));
-            if(showToast) showSavePopUp();
+            const data = { credits, totalEarned, inventory, currentTier };
+            localStorage.setItem("IndusClick_Quantum_V1", JSON.stringify(data));
+            if(showToast) {
+                const toast = document.getElementById('save-toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            }
         }
 
-        function manualSave() {
-            saveGame(true);
-        }
+        function manualSave() { saveGame(true); }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusClick_V9"));
+            const data = JSON.parse(localStorage.getItem("IndusClick_Quantum_V1"));
             if(data) {
-                credits = data.credits;
+                credits = data.credits || 0;
+                totalEarned = data.totalEarned || 0;
                 inventory = data.inventory || inventory;
                 currentTier = data.currentTier || 0;
                 if(currentTier > 0) {
@@ -347,13 +342,10 @@
         }
 
         function resetGame() {
-            if(confirm("Confirm Factory Wipe? All Tiers and Machines will be lost!")) { 
-                localStorage.removeItem("IndusClick_V9"); 
-                location.reload(); 
+            if(confirm("Are you sure? This deletes everything, including Quantum Tiers.")) { 
+                localStorage.clear(); location.reload(); 
             }
         }
-
-        // --- INIT ---
 
         const machineBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
@@ -370,29 +362,26 @@
 
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue;
-            showFloat(e);
+            totalEarned += window.currentClickValue;
+            const txt = document.createElement('div');
+            txt.className = 'floating-text';
+            txt.innerText = `+${window.currentClickValue.toLocaleString()}`;
+            txt.style.left = e.clientX + 'px'; txt.style.top = e.clientY + 'px';
+            document.body.appendChild(txt);
+            setTimeout(() => txt.remove(), 800);
             updateUI();
         });
 
-        function showFloat(e) {
-            const txt = document.createElement('div');
-            txt.className = 'floating-text';
-            txt.innerText = `+${window.currentClickValue}`;
-            txt.style.left = e.clientX + 'px'; txt.style.top = e.clientY + 'px';
-            document.body.appendChild(txt);
-            setTimeout(() => txt.remove(), 700);
-        }
-
         setInterval(() => { 
             if(window.currentCps > 0) { 
-                credits += (window.currentCps / 10); 
+                let gain = window.currentCps / 10;
+                credits += gain; 
+                totalEarned += gain;
                 updateUI(); 
             } 
         }, 100);
 
-        // Auto-save every 15 seconds with notification
-        setInterval(() => saveGame(true), 15000);
-
+        setInterval(() => saveGame(true), 30000); // Auto-save every 30s
         loadGame();
     </script>
 </body>
