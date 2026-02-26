@@ -3,297 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Game</title>
+    <title>5-Card Stud Poker</title>
     <style>
+        :root {
+            --poker-green: #2E7D32;
+            --card-bg: #ffffff;
+            --gold: #FFD700;
+        }
         body {
-            font-family: Arial, sans-serif;
-            background-color: #2a2a2a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
             color: white;
             text-align: center;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+        }
+        .game-board {
+            background-color: var(--poker-green);
+            border: 10px solid #4E342E;
+            border-radius: 100px;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
         }
         .cards {
             display: flex;
             justify-content: center;
             margin: 20px 0;
+            min-height: 120px;
         }
         .card {
-            border: 1px solid #ccc;
+            border: 2px solid #ccc;
             border-radius: 8px;
-            width: 60px;
-            height: 90px;
+            width: 80px;
+            height: 120px;
             margin: 0 5px;
-            background: white;
+            background: var(--card-bg);
             color: black;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #result {
-            margin-top: 20px;
             font-size: 24px;
             font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            position: relative;
         }
-        #betting {
-            margin-top: 20px;
+        .card.red { color: #d32f2f; }
+        .card.black { color: #212121; }
+        .card.hidden {
+            background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 10px, #fff 10px, #fff 20px);
+            color: transparent;
         }
-        .chip {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            background-color: gold;
-            border-radius: 50%;
-            margin: 0 10px;
+        .card-value { position: absolute; top: 5px; left: 8px; font-size: 16px; }
+        .card-suit { font-size: 40px; }
+        
+        button {
+            background-color: #1976D2;
+            color: white;
+            padding: 10px 20px;
+            border: 2px solid #0D47A1;
+            border-radius: 8px;
+            cursor: pointer;
             font-size: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: black;
+            font-weight: bold;
+            margin: 5px;
+            transition: 0.2s;
         }
-        #playerBet {
-            margin-top: 20px;
+        button:hover:not(:disabled) { background-color: #1565C0; transform: scale(1.05); }
+        button:disabled { background-color: #555; border-color: #444; cursor: not-allowed; }
+        
+        #result { margin-top: 20px; font-size: 24px; font-weight: bold; min-height: 30px; color: var(--gold); }
+        .stats { display: flex; justify-content: space-around; font-size: 20px; margin: 20px 0; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; }
+        .chip-count { color: var(--gold); font-weight: bold; }
+        
+        .rulebook {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
         }
-        #chips {
-            margin-top: 20px;
-        }
+        .rulebook h2 { text-align: center; border-bottom: 2px solid var(--gold); padding-bottom: 10px; }
+        .rule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     </style>
 </head>
 <body>
-    <h1>Poker Game</h1>
-    <p>Click "Deal" to get a poker hand!</p>
-    <button id="dealButton">Deal</button>
 
-    <div class="cards" id="playerHand"></div>
-    <div class="cards" id="computerHand"></div>
+    <h1>Texas Hold'em Style: 5-Card Stud</h1>
+    
+    <div class="game-board">
+        <h2>Computer's Hand</h2>
+        <div class="cards" id="computerHand"></div>
+        
+        <div id="result">Welcome to the table! Click Deal to start.</div>
+        
+        <div class="stats">
+            <div>Your Chips: <span class="chip-count" id="chips">100</span></div>
+            <div>Pot: <span class="chip-count" id="pot">0</span></div>
+            <div>Current Bet: <span class="chip-count" id="playerBet">0</span></div>
+        </div>
 
-    <div id="result"></div>
-    <div id="betting">
-        <button id="betButton">Bet 10</button>
-        <button id="raiseButton">Raise</button>
-        <button id="foldButton">Fold</button>
+        <h2>Your Hand</h2>
+        <div class="cards" id="playerHand"></div>
+
+        <div id="controls">
+            <button id="dealButton">Deal New Hand</button>
+            <button id="betButton" disabled>Bet 10</button>
+            <button id="raiseButton" disabled>Raise 20</button>
+            <button id="callButton" disabled>Call / Showdown</button>
+            <button id="foldButton" disabled>Fold</button>
+        </div>
     </div>
-    <div id="playerBet"></div>
-    <div id="chips"></div>
+
+    <div class="rulebook">
+        <h2>📜 Poker Rulebook & Guide</h2>
+        <div class="rule-grid">
+            <div>
+                <h3>Possible Actions</h3>
+                <ul>
+                    <li><strong>Deal:</strong> Starts a new round. Ante (cost to play) is 0 right now.</li>
+                    <li><strong>Bet:</strong> Place 10 chips into the pot.</li>
+                    <li><strong>Raise:</strong> Increase the current bet by placing 20 chips into the pot.</li>
+                    <li><strong>Call / Showdown:</strong> Match the bet and reveal the computer's cards to see who wins the pot!</li>
+                    <li><strong>Fold:</strong> Surrender your hand. You lose any chips you put into the pot this round.</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Hand Rankings (Best to Worst)</h3>
+                <ol>
+                    <li><strong>Royal Flush:</strong> A, K, Q, J, 10 all of the same suit.</li>
+                    <li><strong>Straight Flush:</strong> Five consecutive cards of the same suit.</li>
+                    <li><strong>Four of a Kind:</strong> Four cards of the same rank.</li>
+                    <li><strong>Full House:</strong> Three of a kind plus a pair.</li>
+                    <li><strong>Flush:</strong> Any five cards of the same suit.</li>
+                    <li><strong>Straight:</strong> Five consecutive cards of mixed suits.</li>
+                    <li><strong>Three of a Kind:</strong> Three cards of the same rank.</li>
+                    <li><strong>Two Pair:</strong> Two different pairs.</li>
+                    <li><strong>One Pair:</strong> Two cards of the same rank.</li>
+                    <li><strong>High Card:</strong> Highest card in your hand plays.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const suits = ['♥', '♦', '♣', '♠'];
+        const suits = [{symbol: '♥', color: 'red'}, {symbol: '♦', color: 'red'}, {symbol: '♣', color: 'black'}, {symbol: '♠', color: 'black'}];
         const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        const handRanks = {
-            'Royal Flush': 10,
-            'Straight Flush': 9,
-            'Four of a Kind': 8,
-            'Full House': 7,
-            'Flush': 6,
-            'Straight': 5,
-            'Three of a Kind': 4,
-            'Two Pair': 3,
-            'One Pair': 2,
-            'High Card': 1,
+        const handRanks = { 'Royal Flush': 10, 'Straight Flush': 9, 'Four of a Kind': 8, 'Full House': 7, 'Flush': 6, 'Straight': 5, 'Three of a Kind': 4, 'Two Pair': 3, 'One Pair': 2, 'High Card': 1 };
+
+        let deck = [], playerHand = [], computerHand = [];
+        let playerChips = 100, pot = 0, currentBet = 0;
+        let gameActive = false;
+
+        const DOM = {
+            dealBtn: document.getElementById('dealButton'),
+            betBtn: document.getElementById('betButton'),
+            raiseBtn: document.getElementById('raiseButton'),
+            callBtn: document.getElementById('callButton'),
+            foldBtn: document.getElementById('foldButton'),
+            pHand: document.getElementById('playerHand'),
+            cHand: document.getElementById('computerHand'),
+            res: document.getElementById('result'),
+            chips: document.getElementById('chips'),
+            pot: document.getElementById('pot'),
+            bet: document.getElementById('playerBet')
         };
 
-        let deck = [];
-        let playerHand = [];
-        let computerHand = [];
-        let playerChips = 100;
-        let currentBet = 0;
-        let playerCurrentBet = 0;
-
-        // Create deck of cards
         function createDeck() {
-            const deck = [];
+            let newDeck = [];
             for (let suit of suits) {
                 for (let value of values) {
-                    deck.push({ value, suit });
+                    newDeck.push({ value, suit: suit.symbol, color: suit.color });
                 }
             }
-            return deck;
+            return newDeck.sort(() => Math.random() - 0.5); // Quick shuffle
         }
 
-        // Shuffle the deck of cards
-        function shuffleDeck(deck) {
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-        }
-
-        // Draw specified number of cards from the deck
-        function drawCards(count) {
-            return deck.splice(0, count);
-        }
-
-        // Display cards on the UI
-        function displayCards(container, cards) {
+        function displayCards(container, cards, hidden = false) {
             container.innerHTML = '';
-            for (let card of cards) {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card';
-                cardElement.innerHTML = `${card.value}<br>${card.suit}`;
-                container.appendChild(cardElement);
-            }
+            cards.forEach(card => {
+                const div = document.createElement('div');
+                if (hidden) {
+                    div.className = 'card hidden';
+                } else {
+                    div.className = `card ${card.color}`;
+                    div.innerHTML = `<span class="card-value">${card.value}</span><span class="card-suit">${card.suit}</span>`;
+                }
+                container.appendChild(div);
+            });
         }
 
-        // Convert card value to numeric value
-        function getCardValue(card) {
-            const cardValueMap = {
-                '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
-                '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
-            };
-            return cardValueMap[card.value];
+        function getCardValue(val) {
+            const map = { 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+            return map[val] || parseInt(val);
         }
 
-        // Evaluate the hand and return rank
         function evaluateHand(hand) {
-            const valuesCount = {};
-            const suitsCount = {};
-
-            hand.forEach(card => {
-                valuesCount[card.value] = (valuesCount[card.value] || 0) + 1;
-                suitsCount[card.suit] = (suitsCount[card.suit] || 0) + 1;
+            const counts = {}, suitsCount = {};
+            hand.forEach(c => {
+                let v = getCardValue(c.value);
+                counts[v] = (counts[v] || 0) + 1;
+                suitsCount[c.suit] = (suitsCount[c.suit] || 0) + 1;
             });
 
-            const valueCounts = Object.values(valuesCount).sort((a, b) => b - a);
-            const isFlush = Object.values(suitsCount).includes(5);
-            const sortedValues = hand.map(card => getCardValue(card)).sort((a, b) => a - b);
-            const isStraight = sortedValues[4] - sortedValues[0] === 4 && new Set(sortedValues).size === 5;
+            const countValues = Object.values(counts).sort((a, b) => b - a);
+            const isFlush = Object.values(suitsCount).some(c => c === 5);
+            const sortedVals = Object.keys(counts).map(Number).sort((a, b) => a - b);
+            
+            let isStraight = sortedVals.length === 5 && (sortedVals[4] - sortedVals[0] === 4);
+            // Handle A-2-3-4-5 straight
+            if (!isStraight && sortedVals.join(',') === '2,3,4,5,14') {
+                isStraight = true;
+                sortedVals[4] = 1; // Treat Ace as low
+                sortedVals.sort((a, b) => a - b);
+            }
+
+            let rank = 'High Card';
+            let tieBreaker = sortedVals[sortedVals.length - 1]; // Default to highest card
 
             if (isStraight && isFlush) {
-                if (sortedValues[4] === 14) {
-                    return { rank: 'Royal Flush', value: 14 }; // Royal Flush
-                }
-                return { rank: 'Straight Flush', value: sortedValues[4] }; // Straight Flush
-            }
-            if (valueCounts[0] === 4) {
-                return { rank: 'Four of a Kind', value: sortedValues[2] };
-            }
-            if (valueCounts[0] === 3 && valueCounts[1] === 2) {
-                return { rank: 'Full House', value: sortedValues[2] };
-            }
-            if (isFlush) {
-                return { rank: 'Flush', value: sortedValues[4] };
-            }
-            if (isStraight) {
-                return { rank: 'Straight', value: sortedValues[4] };
-            }
-            if (valueCounts[0] === 3) {
-                return { rank: 'Three of a Kind', value: sortedValues[2] };
-            }
-            if (valueCounts[0] === 2 && valueCounts[1] === 2) {
-                return { rank: 'Two Pair', value: sortedValues[3] };
-            }
-            if (valueCounts[0] === 2) {
-                return { rank: 'One Pair', value: sortedValues[1] };
-            }
-            return { rank: 'High Card', value: sortedValues[4] };
+                rank = sortedVals[4] === 14 ? 'Royal Flush' : 'Straight Flush';
+            } else if (countValues[0] === 4) rank = 'Four of a Kind';
+            else if (countValues[0] === 3 && countValues[1] === 2) rank = 'Full House';
+            else if (isFlush) rank = 'Flush';
+            else if (isStraight) rank = 'Straight';
+            else if (countValues[0] === 3) rank = 'Three of a Kind';
+            else if (countValues[0] === 2 && countValues[1] === 2) rank = 'Two Pair';
+            else if (countValues[0] === 2) rank = 'One Pair';
+
+            return { rank, score: handRanks[rank], tieBreaker };
         }
 
-        // Determine the winner of the round
-        function determineWinner() {
-            const playerScore = evaluateHand(playerHand);
-            const computerScore = evaluateHand(computerHand);
-
-            if (handRanks[playerScore.rank] > handRanks[computerScore.rank]) {
-                return 'Player Wins!';
-            }
-            if (handRanks[playerScore.rank] < handRanks[computerScore.rank]) {
-                return 'Computer Wins!';
-            }
-            if (playerScore.value > computerScore.value) {
-                return 'Player Wins!';
-            }
-            if (playerScore.value < computerScore.value) {
-                return 'Computer Wins!';
-            }
-            return 'It\'s a Tie!';
+        function updateUI() {
+            DOM.chips.textContent = playerChips;
+            DOM.pot.textContent = pot;
+            DOM.bet.textContent = currentBet;
+            
+            DOM.dealBtn.disabled = gameActive;
+            DOM.betBtn.disabled = !gameActive || playerChips < 10;
+            DOM.raiseBtn.disabled = !gameActive || playerChips < 20;
+            DOM.callBtn.disabled = !gameActive;
+            DOM.foldBtn.disabled = !gameActive;
         }
 
-        // Update the player's chip count
-        function updateChips() {
-            document.getElementById('chips').innerHTML = `Chips: <span class="chip">${playerChips}</span>`;
+        function addToPot(amount) {
+            playerChips -= amount;
+            currentBet += amount;
+            pot += amount * 2; // Simulating the computer matching your bet instantly
+            updateUI();
         }
 
-        // Update the player's current bet
-        function updatePlayerBet() {
-            document.getElementById('playerBet').innerHTML = `Your Bet: ${playerCurrentBet}`;
-        }
-
-        const dealButton = document.getElementById('dealButton');
-        const betButton = document.getElementById('betButton');
-        const raiseButton = document.getElementById('raiseButton');
-        const foldButton = document.getElementById('foldButton');
-        const playerHandContainer = document.getElementById('playerHand');
-        const computerHandContainer = document.getElementById('computerHand');
-        const resultContainer = document.getElementById('result');
-
-        // Handle the 'Deal' button click
-        dealButton.addEventListener('click', () => {
+        DOM.dealBtn.addEventListener('click', () => {
+            if (playerChips <= 0) { DOM.res.textContent = "You're out of chips! Refresh to play again."; return; }
             deck = createDeck();
-            shuffleDeck(deck);
-            playerHand = drawCards(5);
-            computerHand = drawCards(5);
-
-            displayCards(playerHandContainer, playerHand);
-            displayCards(computerHandContainer, computerHand);
-
-            resultContainer.textContent = 'Round started. Make your move!';
-            playerCurrentBet = 0;
-            currentBet = 0;
-            updatePlayerBet();
-            updateChips();
+            playerHand = deck.splice(0, 5);
+            computerHand = deck.splice(0, 5);
+            
+            pot = 0; currentBet = 0; gameActive = true;
+            
+            displayCards(DOM.pHand, playerHand);
+            displayCards(DOM.cHand, computerHand, true); // Hide computer cards
+            DOM.res.textContent = 'Hand dealt. Your move!';
+            updateUI();
         });
 
-        // Handle the 'Bet' button click
-        betButton.addEventListener('click', () => {
-            if (playerChips >= 10) {
-                playerChips -= 10;
-                currentBet += 10;
-                playerCurrentBet = 10;
-                resultContainer.textContent = 'You bet 10 chips.';
-                updatePlayerBet();
-                updateChips();
+        DOM.betBtn.addEventListener('click', () => {
+            addToPot(10);
+            DOM.res.textContent = 'You bet 10. Computer matches.';
+        });
+
+        DOM.raiseBtn.addEventListener('click', () => {
+            addToPot(20);
+            DOM.res.textContent = 'You raised 20! Computer matches.';
+        });
+
+        DOM.foldBtn.addEventListener('click', () => {
+            DOM.res.textContent = 'You folded. Computer takes the pot.';
+            gameActive = false;
+            updateUI();
+        });
+
+        DOM.callBtn.addEventListener('click', () => {
+            gameActive = false;
+            displayCards(DOM.cHand, computerHand, false); // Reveal computer cards
+            
+            const pScore = evaluateHand(playerHand);
+            const cScore = evaluateHand(computerHand);
+            
+            let message = `You: ${pScore.rank} | Computer: ${cScore.rank}. `;
+            
+            if (pScore.score > cScore.score || (pScore.score === cScore.score && pScore.tieBreaker > cScore.tieBreaker)) {
+                message += "You win the pot!";
+                playerChips += pot;
+            } else if (pScore.score < cScore.score || (pScore.score === cScore.score && pScore.tieBreaker < cScore.tieBreaker)) {
+                message += "Computer wins!";
             } else {
-                resultContainer.textContent = 'Not enough chips!';
+                message += "It's a tie! Pot split.";
+                playerChips += pot / 2;
             }
-        });
-
-        // Handle the 'Raise' button click
-        raiseButton.addEventListener('click', () => {
-            if (playerChips >= 20) {
-                playerChips -= 20;
-                currentBet += 20;
-                playerCurrentBet += 20;
-                resultContainer.textContent = `You raised 20 chips. Your bet is now ${playerCurrentBet} chips.`;
-                updatePlayerBet();
-                updateChips();
-            } else {
-                resultContainer.textContent = 'Not enough chips to raise!';
-            }
-        });
-
-        // Handle the 'Fold' button click
-        foldButton.addEventListener('click', () => {
-            resultContainer.textContent = 'You folded. Computer wins this round.';
-            playerChips += currentBet; // Refund the bet
-            currentBet = 0;
-            playerCurrentBet = 0;
-            updateChips();
+            
+            DOM.res.textContent = message;
+            pot = 0; currentBet = 0;
+            updateUI();
         });
     </script>
 </body>
 </html>
-
