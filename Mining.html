@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Core: Deep Dive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            background-color: #0a0a0a;
+            image-rendering: pixelated; 
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            min-width: 120px;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 10px;
+            background: #333;
+            margin-top: 5px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.2s;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .shop-card {
+            background: #111;
+            border: 2px solid #00d2ff;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
+        }
+
+        .upgrade-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+        }
+
+        .upgrade-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            border: none;
+            padding: 8px 16px;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            transition: transform 0.1s, box-shadow 0.2s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 210, 255, 0.4);
+        }
+
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .toast {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -50px); }
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            display: none; /* Hidden by default, toggled via JS */
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            pointer-events: auto;
+            z-index: 40;
+        }
+
+        #mobile-controls.active {
+            display: block;
+        }
+
+        .d-pad-btn {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.2rem;
+            user-select: none;
+        }
+        
+        .d-pad-btn:active { background: rgba(0, 210, 255, 0.3); }
+        .d-up { top: 0; left: 50%; transform: translateX(-50%); }
+        .d-down { bottom: 0; left: 50%; transform: translateX(-50%); }
+        .d-left { top: 50%; left: 0; transform: translateY(-50%); }
+        .d-right { top: 50%; right: 0; transform: translateY(-50%); }
+
+        @media (max-width: 768px) {
+            .hud-panel { padding: 5px; font-size: 0.8rem; }
+            .pixel-font { font-size: 0.7rem; }
+            #mobile-controls { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer">
+        <!-- Top HUD -->
+        <div class="flex justify-between w-full p-2 max-w-5xl mx-auto gap-2">
+            <div class="hud-panel text-cyan-400">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-gem"></i>
+                    <span id="money-display" class="pixel-font text-white">0</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-1">CASH</div>
+            </div>
+
+            <div class="hud-panel text-red-400 flex-1 mx-1">
+                <div class="flex justify-between text-xs mb-1">
+                    <span><i class="fas fa-gas-pump"></i> FUEL</span>
+                    <span id="fuel-text">100%</span>
+                </div>
+                <div class="bar-container">
+                    <div id="fuel-bar" class="bar-fill bg-gradient-to-r from-red-600 to-orange-500" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <div class="hud-panel text-blue-400 flex-1 mx-1">
+                <div class="flex justify-between text-xs mb-1">
+                    <span><i class="fas fa-shield-alt"></i> HULL</span>
+                    <span id="hull-text">100%</span>
+                </div>
+                <div class="bar-container">
+                    <div id="hull-bar" class="bar-fill bg-gradient-to-r from-blue-600 to-cyan-500" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <div class="hud-panel text-green-400 flex-1 mx-1">
+                <div class="flex justify-between text-xs mb-1">
+                    <span><i class="fas fa-box"></i> CARGO</span>
+                    <span id="cargo-text">0/10</span>
+                </div>
+                <div class="bar-container">
+                    <div id="cargo-bar" class="bar-fill bg-gradient-to-r from-green-600 to-emerald-400" style="width: 0%"></div>
+                </div>
+            </div>
+
+             <div class="hud-panel text-purple-400">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-layer-group"></i>
+                    <span id="depth-display" class="pixel-font text-white">0m</span>
+                </div>
+                 <div class="text-xs text-gray-400 mt-1">DEPTH</div>
+            </div>
+        </div>
+        
+        <!-- Utility Buttons -->
+        <div class="absolute top-2 right-2 flex flex-col gap-2 z-50 pointer-events-auto">
+            <button onclick="game.toggleMobileControls()" class="bg-blue-900/80 border border-blue-500 text-blue-100 text-[10px] p-2 rounded hover:bg-blue-700 transition-colors">
+                <i class="fas fa-gamepad"></i> D-PAD
+            </button>
+            <button onclick="game.saveGame(true)" class="bg-green-900/80 border border-green-500 text-green-100 text-[10px] p-2 rounded hover:bg-green-700 transition-colors">
+                <i class="fas fa-save"></i> SAVE
+            </button>
+            <button onclick="game.manualRespawn()" class="bg-red-900/80 border border-red-500 text-red-100 text-[10px] p-2 rounded hover:bg-red-700 transition-colors">
+                <i class="fas fa-ambulance"></i> STUCK?
+            </button>
+        </div>
+
+        <!-- Center Notification Area -->
+        <div id="message-area" class="absolute top-1/3 w-full text-center pointer-events-none"></div>
+
+        <!-- Touch Controls (Mobile) -->
+        <div id="mobile-controls">
+            <div class="d-pad-btn d-up"><i class="fas fa-arrow-up"></i></div>
+            <div class="d-pad-btn d-down"><i class="fas fa-arrow-down"></i></div>
+            <div class="d-pad-btn d-left"><i class="fas fa-arrow-left"></i></div>
+            <div class="d-pad-btn d-right"><i class="fas fa-arrow-right"></i></div>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="modal">
+        <div class="shop-card">
+            <div class="text-center mb-6">
+                <h2 class="pixel-font text-2xl text-cyan-400 mb-2">Refinery & Workshop</h2>
+                <p class="text-gray-400 text-sm">Automated systems repaired. Ores sold automatically.</p>
+                <div class="mt-4 p-3 bg-gray-800 rounded text-green-400">
+                    <i class="fas fa-check-circle"></i> Sold Cargo for $<span id="last-sold-amount">0</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Drill Upgrade -->
+                <div class="upgrade-row">
+                    <div>
+                        <div class="text-lg font-bold text-white"><i class="fas fa-hammer"></i> Drill Power</div>
+                        <div class="text-xs text-gray-400">Dig through harder rocks faster.</div>
+                        <div class="text-xs text-cyan-300 mt-1">Lvl <span id="lvl-drill">1</span></div>
+                    </div>
+                    <button class="btn" id="btn-drill" onclick="game.shop.buy('drill')">
+                        $<span id="cost-drill">100</span>
+                    </button>
+                </div>
+
+                <!-- Fuel Upgrade -->
+                <div class="upgrade-row">
+                    <div>
+                        <div class="text-lg font-bold text-white"><i class="fas fa-gas-pump"></i> Fuel Tank</div>
+                        <div class="text-xs text-gray-400">Stay underground longer.</div>
+                        <div class="text-xs text-cyan-300 mt-1">Lvl <span id="lvl-fuel">1</span></div>
+                    </div>
+                    <button class="btn" id="btn-fuel" onclick="game.shop.buy('fuel')">
+                        $<span id="cost-fuel">150</span>
+                    </button>
+                </div>
+
+                <!-- Cargo Upgrade -->
+                <div class="upgrade-row">
+                    <div>
+                        <div class="text-lg font-bold text-white"><i class="fas fa-box-open"></i> Cargo Hold</div>
+                        <div class="text-xs text-gray-400">Carry more minerals.</div>
+                        <div class="text-xs text-cyan-300 mt-1">Lvl <span id="lvl-cargo">1</span></div>
+                    </div>
+                    <button class="btn" id="btn-cargo" onclick="game.shop.buy('cargo')">
+                        $<span id="cost-cargo">200</span>
+                    </button>
+                </div>
+
+                <!-- Engine Upgrade -->
+                <div class="upgrade-row">
+                    <div>
+                        <div class="text-lg font-bold text-white"><i class="fas fa-tachometer-alt"></i> Engine</div>
+                        <div class="text-xs text-gray-400">Move and fly faster.</div>
+                        <div class="text-xs text-cyan-300 mt-1">Lvl <span id="lvl-engine">1</span></div>
+                    </div>
+                    <button class="btn" id="btn-engine" onclick="game.shop.buy('engine')">
+                        $<span id="cost-engine">300</span>
+                    </button>
+                </div>
+                
+                 <!-- Hull Upgrade -->
+                <div class="upgrade-row">
+                    <div>
+                        <div class="text-lg font-bold text-white"><i class="fas fa-shield-alt"></i> Hull</div>
+                        <div class="text-xs text-gray-400">Resist damage from falling.</div>
+                        <div class="text-xs text-cyan-300 mt-1">Lvl <span id="lvl-hull">1</span></div>
+                    </div>
+                    <button class="btn" id="btn-hull" onclick="game.shop.buy('hull')">
+                        $<span id="cost-hull">500</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center space-y-2">
+                <button class="btn bg-red-500 w-full py-4 text-lg" onclick="game.closeShop()">RETURN TO SURFACE</button>
+                <button class="btn bg-gray-700 w-full py-2 text-xs text-gray-400" onclick="game.resetSave()">WIPE SAVE DATA (START OVER)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal">
+        <div class="shop-card text-center border-red-500 shadow-red-900">
+            <h2 class="pixel-font text-3xl text-red-500 mb-4">CRITICAL FAILURE</h2>
+            <p class="text-gray-300 mb-6" id="death-reason">Fuel Depleted.</p>
+            <p class="text-sm text-gray-500 mb-8">Emergency Rescue Service deducted 50% of your cash.</p>
+            <button class="btn w-full py-4 text-lg" onclick="game.respawn()">REBOOT SYSTEM</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * NEON CORE MINER
+     * A self-contained arcade mining game.
+     */
+
+    // --- Configuration & Constants ---
+    const TILE_SIZE = 40;
+    const CHUNK_WIDTH = 30; // Tiles wide
+    const CHUNK_HEIGHT = 3000; // Tiles deep (Significantly deeper now)
+    
+    // Block Types and Definitions
+    const BLOCKS = {
+        SKY: { id: 0, color: '#1a1a2e', hardness: 0, value: 0, name: 'Sky' },
+        DIRT: { id: 1, color: '#5D4037', hardness: 10, value: 0, name: 'Dirt' },
+        STONE: { id: 2, color: '#616161', hardness: 20, value: 0, name: 'Stone' },
+        HARD_STONE: { id: 3, color: '#424242', hardness: 45, value: 0, name: 'Basalt' },
+        DEEPSLATE: { id: 4, color: '#2a2a2a', hardness: 100, value: 0, name: 'Deepslate' },
+        BEDROCK: { id: 99, color: '#000000', hardness: 9999, value: 0, name: 'Bedrock' },
+        
+        // Ores
+        COAL: { id: 10, color: '#212121', border: '#000', hardness: 15, value: 10, name: 'Coal' },
+        IRON: { id: 11, color: '#8D6E63', border: '#D7CCC8', hardness: 30, value: 20, name: 'Iron' },
+        SILVER: { id: 12, color: '#90A4AE', border: '#ECEFF1', hardness: 40, value: 40, name: 'Silver' },
+        GOLD: { id: 13, color: '#FFB300', border: '#FFECB3', hardness: 60, value: 80, name: 'Gold' },
+        RUBY: { id: 14, color: '#D32F2F', border: '#FFCDD2', hardness: 80, value: 200, name: 'Ruby' },
+        EMERALD: { id: 15, color: '#388E3C', border: '#C8E6C9', hardness: 120, value: 400, name: 'Emerald' },
+        DIAMOND: { id: 16, color: '#00BCD4', border: '#E0F7FA', hardness: 180, value: 800, name: 'Diamond' },
+        OBSIDIAN: { id: 17, color: '#311B92', border: '#B39DDB', hardness: 250, value: 2000, name: 'Obsid. Core' }
+    };
+
+    const UPGRADES = {
+        drill: { base: 100, scale: 1.6, max: 20 },
+        fuel: { base: 150, scale: 1.5, max: 20 },
+        cargo: { base: 200, scale: 1.7, max: 15 },
+        engine: { base: 300, scale: 1.6, max: 10 },
+        hull: { base: 500, scale: 1.6, max: 10 }
+    };
+
+    // --- Audio System ---
+    class AudioSystem {
+        constructor() {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.enabled = true;
+        }
+
+        playTone(freq, type, duration, vol = 0.1) {
+            if (!this.enabled || this.ctx.state === 'suspended') {
+                this.ctx.resume().catch(() => {});
+            }
+            if (this.ctx.state !== 'running') return;
+
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        }
+
+        playDig() { this.playTone(100 + Math.random() * 50, 'square', 0.1, 0.05); }
+        playCollect() { this.playTone(800 + Math.random() * 200, 'sine', 0.2, 0.05); }
+        playCash() { this.playTone(1200, 'triangle', 0.4, 0.1); }
+        playError() { this.playTone(150, 'sawtooth', 0.3, 0.1); }
+        playExplosion() { this.playTone(50, 'sawtooth', 0.5, 0.2); }
+    }
+
+    // --- Particle System ---
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.size = Math.random() * 4 + 2;
+            this.speedX = (Math.random() - 0.5) * 4;
+            this.speedY = (Math.random() - 0.5) * 4;
+            this.life = 1.0;
+            this.decay = 0.05 + Math.random() * 0.05;
+        }
+
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.life -= this.decay;
+            this.size *= 0.9;
+        }
+
+        draw(ctx, cameraX, cameraY) {
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.life;
+            ctx.fillRect(this.x - cameraX, this.y - cameraY, this.size, this.size);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    // --- Game Logic ---
+    class Game {
+        constructor() {
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.audio = new AudioSystem();
+            
+            // State
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.canvas.width = this.width;
+            this.canvas.height = this.height;
+
+            this.lastTime = 0;
+            this.particles = [];
+            this.floatingTexts = [];
+            
+            // World
+            this.map = {}; // Sparse matrix "x,y" -> Block
+            this.generateSurface();
+
+            // Player Stats
+            this.player = {
+                x: 5 * TILE_SIZE, // Start to the left of the shop (Tile 5)
+                y: -TILE_SIZE * 2, // Start in air
+                width: 30,
+                height: 30,
+                vx: 0,
+                vy: 0,
+                money: 0,
+                cargo: [],
+                shopCooldown: 0,
+                stats: {
+                    fuelMax: 100,
+                    fuel: 100,
+                    cargoMax: 5,
+                    drillPower: 2,
+                    speed: 0.5,
+                    hull: 100,
+                    hullMax: 100
+                },
+                upgrades: {
+                    drill: 1, fuel: 1, cargo: 1, engine: 1, hull: 1
+                },
+                drilling: false,
+                drillTarget: null,
+                facing: 1 // 1 right, -1 left
+            };
+
+            this.camera = { x: 0, y: 0 };
+            this.keys = {};
+            this.mouse = { x: 0, y: 0, down: false }; // Track mouse
+            
+            this.loadGame(); // Load saved progress before starting
+            
+            // Interaction Handles
+            this.shop = new Shop(this);
+            this.setupInputs();
+            this.resize();
+
+            // Auto-detect touch devices and show D-PAD
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('mobile-controls').classList.add('active');
+            }
+
+            // Auto-save every 30 seconds
+            setInterval(() => this.saveGame(), 30000);
+
+            window.addEventListener('resize', () => this.resize());
+            
+            // Start Loop
+            requestAnimationFrame((t) => this.loop(t));
+        }
+
+        toggleMobileControls() {
+            document.getElementById('mobile-controls').classList.toggle('active');
+        }
+
+        saveGame(manual = false) {
+            try {
+                // Find all blocks the player has mined so they don't regenerate
+                const minedBlocks = Object.keys(this.map).filter(k => this.map[k].id === 0);
+                const saveData = {
+                    player: {
+                        x: this.player.x,
+                        y: this.player.y,
+                        money: this.player.money,
+                        cargo: this.player.cargo,
+                        stats: this.player.stats,
+                        upgrades: this.player.upgrades
+                    },
+                    minedBlocks: minedBlocks
+                };
+                localStorage.setItem('neon_miner_save', JSON.stringify(saveData));
+                if (manual) {
+                    this.showFloatingText("GAME SAVED", this.player.x, this.player.y, '#0f0');
+                    this.audio.playCollect();
+                }
+            } catch(e) {
+                if (manual) this.showFloatingText("SAVE FAILED", this.player.x, this.player.y, '#f00');
+                console.error("Local Storage Error:", e);
+            }
+        }
+
+        loadGame() {
+            const saveStr = localStorage.getItem('neon_miner_save');
+            if (saveStr) {
+                try {
+                    const saveData = JSON.parse(saveStr);
+                    
+                    // Restore Player State Safely
+                    this.player.x = saveData.player.x;
+                    this.player.y = saveData.player.y;
+                    this.player.money = saveData.player.money;
+                    this.player.cargo = saveData.player.cargo || [];
+                    this.player.stats = { ...this.player.stats, ...saveData.player.stats };
+                    this.player.upgrades = { ...this.player.upgrades, ...saveData.player.upgrades };
+                    
+                    // Restore Mined Blocks (Sky)
+                    if (saveData.minedBlocks) {
+                        saveData.minedBlocks.forEach(key => {
+                            this.map[key] = { ...BLOCKS.SKY };
+                        });
+                    }
+                    console.log("Game loaded successfully.");
+                } catch(e) {
+                    console.error("Save file corrupted, starting fresh.", e);
+                }
+            }
+        }
+
+        resize() {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.canvas.width = this.width;
+            this.canvas.height = this.height;
+            this.ctx.imageSmoothingEnabled = false;
+        }
+
+        generateSurface() {
+            // Generate bedrock walls
+            for (let y = -5; y < CHUNK_HEIGHT; y++) {
+                this.setBlock(-1, y, BLOCKS.BEDROCK);
+                this.setBlock(CHUNK_WIDTH, y, BLOCKS.BEDROCK);
+            }
+            // Floor at bottom
+            for (let x = -1; x <= CHUNK_WIDTH; x++) {
+                this.setBlock(x, CHUNK_HEIGHT, BLOCKS.BEDROCK);
+            }
+            // Shop platform
+            for(let x=10; x<20; x++) {
+                this.setBlock(x, 0, { ...BLOCKS.HARD_STONE, name: 'Platform', value: 0 });
+            }
+        }
+
+        getBlock(x, y) {
+            // Coordinate to Grid Key
+            const key = `${Math.floor(x)},${Math.floor(y)}`;
+            if (this.map[key]) return this.map[key];
+
+            // Procedural Generation
+            if (x < 0 || x >= CHUNK_WIDTH) return BLOCKS.BEDROCK;
+            if (y < 0) return BLOCKS.SKY;
+            if (y >= CHUNK_HEIGHT) return BLOCKS.BEDROCK;
+
+            return this.generateBlock(x, y);
+        }
+
+        generateBlock(x, y) {
+            const key = `${Math.floor(x)},${Math.floor(y)}`;
+            
+            let type = BLOCKS.DIRT;
+            const rand = Math.random();
+
+            // Depth Layers
+            if (y > 40) type = BLOCKS.STONE;
+            if (y > 200) type = BLOCKS.HARD_STONE;
+            if (y > 800) type = BLOCKS.DEEPSLATE;
+            if (y > 2500) type = BLOCKS.OBSIDIAN;
+
+            // Ore Generation Chances
+            // Adjust probability based on depth (rarer overall to slow progression)
+            if (y > 5 && rand > 0.93) {
+                if (y < 100) type = Math.random() > 0.6 ? BLOCKS.COAL : BLOCKS.IRON;
+                else if (y < 300) type = Math.random() > 0.6 ? BLOCKS.IRON : BLOCKS.SILVER;
+                else if (y < 600) type = Math.random() > 0.6 ? BLOCKS.SILVER : BLOCKS.GOLD;
+                else if (y < 1000) type = Math.random() > 0.6 ? BLOCKS.GOLD : BLOCKS.RUBY;
+                else if (y < 1500) type = Math.random() > 0.6 ? BLOCKS.RUBY : BLOCKS.EMERALD;
+                else if (y < 2500) type = Math.random() > 0.7 ? BLOCKS.EMERALD : BLOCKS.DIAMOND;
+                else type = Math.random() > 0.8 ? BLOCKS.OBSIDIAN : BLOCKS.DIAMOND;
+            }
+
+            // Create new block instance (so HP is unique)
+            const block = { ...type, hp: type.hardness, maxHp: type.hardness };
+            this.map[key] = block;
+            return block;
+        }
+
+        setBlock(x, y, type) {
+            const key = `${x},${y}`;
+            this.map[key] = { ...type, hp: type.hardness, maxHp: type.hardness };
+        }
+
+        removeBlock(x, y) {
+            const key = `${x},${y}`;
+            // Mark as SKY (Air) so it doesn't regenerate as Dirt
+            this.map[key] = { ...BLOCKS.SKY }; 
+        }
+
+        setupInputs() {
+            window.addEventListener('keydown', e => this.keys[e.code] = true);
+            window.addEventListener('keyup', e => this.keys[e.code] = false);
+
+            // Mouse / Touch Mining Inputs
+            const updateMouse = (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                this.mouse.x = clientX - rect.left;
+                this.mouse.y = clientY - rect.top;
+            };
+
+            this.canvas.addEventListener('mousedown', (e) => {
+                this.mouse.down = true;
+                updateMouse(e);
+            });
+            window.addEventListener('mouseup', () => this.mouse.down = false);
+            this.canvas.addEventListener('mousemove', (e) => {
+                if(this.mouse.down) updateMouse(e);
+            });
+
+            this.canvas.addEventListener('touchstart', (e) => {
+                this.mouse.down = true;
+                updateMouse(e);
+                // Prevent default scrolling if touching canvas
+                if(e.cancelable) e.preventDefault(); 
+            }, {passive: false});
+            window.addEventListener('touchend', () => this.mouse.down = false);
+            this.canvas.addEventListener('touchmove', (e) => {
+                if(this.mouse.down) updateMouse(e);
+            }, {passive: false});
+
+            // Mobile Controls
+            const handleTouch = (btn, code, active) => {
+                btn.addEventListener(active ? 'touchstart' : 'touchend', (e) => {
+                    e.preventDefault();
+                    this.keys[code] = active;
+                });
+                // Also mouse for testing
+                btn.addEventListener(active ? 'mousedown' : 'mouseup', (e) => {
+                     e.preventDefault();
+                     this.keys[code] = active;
+                });
+            };
+
+            const controls = [
+                { sel: '.d-up', code: 'ArrowUp' },
+                { sel: '.d-down', code: 'ArrowDown' },
+                { sel: '.d-left', code: 'ArrowLeft' },
+                { sel: '.d-right', code: 'ArrowRight' }
+            ];
+
+            controls.forEach(c => {
+                const el = document.querySelector(c.sel);
+                handleTouch(el, c.code, true);
+                handleTouch(el, c.code, false);
+            });
+        }
+
+        update(dt) {
+            if(document.getElementById('shop-modal').classList.contains('active')) return;
+            if(document.getElementById('game-over-modal').classList.contains('active')) return;
+
+            const p = this.player;
+            
+            // Physics Constants
+            const GRAVITY = 0.25;
+            const FRICTION_AIR = 0.98;
+            const FRICTION_GROUND = 0.8;
+            const ACCEL = p.stats.speed;
+            const JETPACK = p.stats.speed * 1.5;
+
+            // Inputs
+            if (this.keys['ArrowLeft'] || this.keys['KeyA']) { 
+                p.vx -= ACCEL; 
+                p.facing = -1; 
+            }
+            if (this.keys['ArrowRight'] || this.keys['KeyD']) { 
+                p.vx += ACCEL; 
+                p.facing = 1; 
+            }
+            
+            let isFlying = false;
+            if (this.keys['ArrowUp'] || this.keys['Space'] || this.keys['KeyW']) {
+                if (p.stats.fuel > 0) {
+                    p.vy -= JETPACK;
+                    p.stats.fuel -= 0.12; // Increased flight fuel cost (was 0.1)
+                    isFlying = true;
+                    this.createParticles(p.x + 15, p.y + 30, '#00e5ff', 1); // Neon cyan exhaust
+                }
+            }
+
+            // Gravity
+            p.vy += GRAVITY;
+            p.vx *= isFlying ? FRICTION_AIR : FRICTION_GROUND;
+            p.vy *= FRICTION_AIR; // Air resistance
+
+            // Collision Detection & Movement
+            // X Axis
+            p.x += p.vx;
+            this.handleCollisions(p, 'x');
+
+            // Y Axis
+            p.y += p.vy;
+            this.handleCollisions(p, 'y');
+
+            // Drilling Logic
+            this.handleDrilling(dt);
+            this.handleMouseMining();
+
+            // Fuel Mechanic
+            if (p.y > 0) { // Underground
+                p.stats.fuel -= 0.02; // Increased idle drain (was 0.01)
+            } else {
+                // Surface Refuel
+                if (p.stats.fuel < p.stats.fuelMax) {
+                    p.stats.fuel += 1;
+                    if(p.stats.fuel > p.stats.fuelMax) p.stats.fuel = p.stats.fuelMax;
+                }
+                
+                // Reduce Shop Cooldown
+                if (p.shopCooldown > 0) p.shopCooldown--;
+
+                // Open Shop if stopped on platform and no cooldown
+                if (Math.abs(p.vx) < 0.5 && Math.abs(p.vy) < 0.5 && p.y <= 0 && p.shopCooldown <= 0) {
+                     // Check overlap with shop area
+                     const gridX = Math.floor((p.x + p.width/2) / TILE_SIZE);
+                     if(gridX >= 10 && gridX <= 20) {
+                         this.openShop();
+                     }
+                }
+            }
+
+            // Death Check
+            if (p.stats.fuel <= 0) {
+                this.die("Out of Fuel");
+            }
+            if (p.stats.hull <= 0) {
+                this.die("Hull Critical");
+            }
+
+            // Camera Follow
+            this.camera.x = p.x - this.width / 2 + p.width/2;
+            this.camera.y = p.y - this.height / 2 + p.height/2;
+
+            // Clamp Camera
+            if(this.camera.y < -300) this.camera.y = -300;
+
+            // Update UI
+            this.updateUI();
+
+            // Particles
+            this.particles.forEach((pt, i) => {
+                pt.update();
+                if (pt.life <= 0) this.particles.splice(i, 1);
+            });
+            
+            // Text
+            this.floatingTexts.forEach((ft, i) => {
+                ft.y -= 1;
+                ft.life -= 0.02;
+                if(ft.life <= 0) this.floatingTexts.splice(i, 1);
+            });
+        }
+
+        handleCollisions(p, axis) {
+            // Helper to get grid coordinates of player corners
+            const corners = [
+                { x: p.x, y: p.y },
+                { x: p.x + p.width, y: p.y },
+                { x: p.x, y: p.y + p.height },
+                { x: p.x + p.width, y: p.y + p.height }
+            ];
+
+            for (let c of corners) {
+                const gx = Math.floor(c.x / TILE_SIZE);
+                const gy = Math.floor(c.y / TILE_SIZE);
+                const block = this.getBlock(gx, gy);
+
+                if (block && block.id !== 0) {
+                    // Collision found
+                    if (axis === 'x') {
+                        if (p.vx > 0) p.x = gx * TILE_SIZE - p.width - 0.1;
+                        if (p.vx < 0) p.x = (gx + 1) * TILE_SIZE + 0.1;
+                        p.vx = 0;
+                    } else {
+                        // Impact damage
+                        if (p.vy > 8) {
+                            const dmg = Math.floor((p.vy - 8) * 10);
+                            p.stats.hull -= dmg;
+                            this.showFloatingText(`-${dmg} HP`, p.x, p.y, '#f00');
+                            this.audio.playExplosion();
+                            this.createParticles(p.x + 15, p.y + 30, '#FF0000', 10);
+                        }
+
+                        if (p.vy > 0) p.y = gy * TILE_SIZE - p.height - 0.1;
+                        if (p.vy < 0) p.y = (gy + 1) * TILE_SIZE + 0.1;
+                        p.vy = 0;
+                    }
+                }
+            }
+        }
+
+        handleDrilling(dt) {
+            const p = this.player;
+            let drillX, drillY;
+
+            if (this.keys['ArrowDown'] || this.keys['KeyS']) {
+                drillX = Math.floor((p.x + p.width / 2) / TILE_SIZE);
+                drillY = Math.floor((p.y + p.height + 2) / TILE_SIZE);
+            } else if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
+                drillX = Math.floor((p.x - 2) / TILE_SIZE);
+                drillY = Math.floor((p.y + p.height / 2) / TILE_SIZE);
+            } else if (this.keys['ArrowRight'] || this.keys['KeyD']) {
+                drillX = Math.floor((p.x + p.width + 2) / TILE_SIZE);
+                drillY = Math.floor((p.y + p.height / 2) / TILE_SIZE);
+            } else {
+                p.drilling = false;
+                return;
+            }
+
+            // Keyboard drilling only checks adjacent
+            const block = this.getBlock(drillX, drillY);
+            if (block && block.id !== 0 && block.id !== 99) { 
+                 // Ensure distance check for keyboard too (should always be true due to logic above, but good for safety)
+                const dist = Math.abs(p.x + p.width/2 - (drillX * TILE_SIZE + TILE_SIZE/2)) + 
+                             Math.abs(p.y + p.height/2 - (drillY * TILE_SIZE + TILE_SIZE/2));
+                
+                if(dist < TILE_SIZE * 1.5) {
+                    p.drilling = true;
+                    this.performDrill(block, drillX, drillY);
+                } else {
+                    p.drilling = false;
+                }
+            } else {
+                p.drilling = false;
+            }
+        }
+
+        handleMouseMining() {
+            if (!this.mouse.down) return;
+
+            const p = this.player;
+            // Convert screen mouse to world coordinates
+            const worldX = this.mouse.x + this.camera.x;
+            const worldY = this.mouse.y + this.camera.y;
+            
+            const gridX = Math.floor(worldX / TILE_SIZE);
+            const gridY = Math.floor(worldY / TILE_SIZE);
+
+            // Calculate distance from player center to block center
+            const blockCx = gridX * TILE_SIZE + TILE_SIZE/2;
+            const blockCy = gridY * TILE_SIZE + TILE_SIZE/2;
+            const playerCx = p.x + p.width/2;
+            const playerCy = p.y + p.height/2;
+
+            const dx = blockCx - playerCx;
+            const dy = blockCy - playerCy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            // Mining Range (e.g., 3 tiles = 120px)
+            const RANGE = TILE_SIZE * 3.5;
+
+            if (dist <= RANGE) {
+                const block = this.getBlock(gridX, gridY);
+                if (block && block.id !== 0 && block.id !== 99) {
+                    this.performDrill(block, gridX, gridY);
+                    
+                    // Visual laser/beam effect
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(playerCx - this.camera.x, playerCy - this.camera.y);
+                    this.ctx.lineTo(blockCx - this.camera.x, blockCy - this.camera.y);
+                    this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+            }
+        }
+
+        performDrill(block, x, y) {
+             const p = this.player;
+             p.stats.fuel -= 0.07; // Increased drilling fuel cost (was 0.05)
+
+             block.hp -= p.stats.drillPower;
+             this.createParticles(x * TILE_SIZE + TILE_SIZE/2, y * TILE_SIZE + TILE_SIZE/2, block.color, 1);
+             this.audio.playDig();
+             
+             if (block.hp <= 0) {
+                 this.collectBlock(block, x, y);
+                 this.removeBlock(x, y);
+                 this.audio.playCollect();
+             }
+        }
+
+        collectBlock(block, x, y) {
+            if (block.value > 0) {
+                if (this.player.cargo.length < this.player.stats.cargoMax) {
+                    this.player.cargo.push(block);
+                    this.showFloatingText(`+${block.name}`, x * TILE_SIZE, y * TILE_SIZE, '#fff');
+                } else {
+                    this.showFloatingText(`FULL!`, x * TILE_SIZE, y * TILE_SIZE, '#f00');
+                    this.audio.playError();
+                }
+            }
+        }
+
+        createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                this.particles.push(new Particle(x, y, color));
+            }
+        }
+
+        showFloatingText(text, x, y, color) {
+            this.floatingTexts.push({
+                text, x, y, color, life: 1.0
+            });
+        }
+
+        openShop() {
+            // Sell logic
+            let totalValue = 0;
+            this.player.cargo.forEach(item => totalValue += item.value);
+            
+            if(totalValue > 0) {
+                this.player.money += totalValue;
+                this.audio.playCash();
+            }
+            
+            document.getElementById('last-sold-amount').innerText = totalValue;
+            this.player.cargo = []; // Empty cargo
+            this.player.stats.hull = this.player.stats.hullMax; // Repair on dock
+
+            document.getElementById('shop-modal').classList.add('active');
+            this.shop.updateButtons();
+        }
+
+        closeShop() {
+            document.getElementById('shop-modal').classList.remove('active');
+            // Move player slightly up and add cooldown
+            this.player.y -= 5;
+            this.player.shopCooldown = 120; // 2 seconds (at 60fps) cooldown
+            this.saveGame(); // Save progress upon leaving shop
+        }
+
+        resetSave() {
+            if (confirm("Are you sure you want to wipe all progress and start over?")) {
+                localStorage.removeItem('neon_miner_save');
+                location.reload(); // Refresh page to clear memory
+            }
+        }
+
+        manualRespawn() {
+            // Emergency extract - no penalty, just moves you
+            this.player.x = 5 * TILE_SIZE;
+            this.player.y = -TILE_SIZE * 2;
+            this.player.vx = 0;
+            this.player.vy = 0;
+            this.showFloatingText("EVACUATED", this.player.x, this.player.y, '#00ff00');
+        }
+
+        respawn() {
+            document.getElementById('game-over-modal').classList.remove('active');
+            this.player.x = 5 * TILE_SIZE; // Respawn left of shop
+            this.player.y = -TILE_SIZE * 2;
+            this.player.vx = 0;
+            this.player.vy = 0;
+            this.player.stats.fuel = this.player.stats.fuelMax;
+            this.player.stats.hull = this.player.stats.hullMax;
+            this.player.cargo = [];
+            this.player.shopCooldown = 60;
+            this.player.money = Math.floor(this.player.money / 2); // Penalty
+        }
+
+        die(reason) {
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('game-over-modal').classList.add('active');
+        }
+
+        updateUI() {
+            document.getElementById('money-display').innerText = this.player.money;
+            document.getElementById('depth-display').innerText = Math.max(0, Math.floor(this.player.y / TILE_SIZE)) + 'm';
+            
+            // Fuel Bar
+            const fuelPct = (this.player.stats.fuel / this.player.stats.fuelMax) * 100;
+            document.getElementById('fuel-bar').style.width = `${Math.max(0, fuelPct)}%`;
+            document.getElementById('fuel-text').innerText = Math.floor(fuelPct) + '%';
+            
+            // Hull Bar
+            const hullPct = (this.player.stats.hull / this.player.stats.hullMax) * 100;
+            document.getElementById('hull-bar').style.width = `${Math.max(0, hullPct)}%`;
+            document.getElementById('hull-text').innerText = Math.floor(hullPct) + '%';
+
+            // Cargo Bar
+            const cargoPct = (this.player.cargo.length / this.player.stats.cargoMax) * 100;
+            document.getElementById('cargo-bar').style.width = `${cargoPct}%`;
+            document.getElementById('cargo-text').innerText = `${this.player.cargo.length}/${this.player.stats.cargoMax}`;
+        }
+
+        draw() {
+            // Clear
+            this.ctx.fillStyle = '#050505';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            const camX = Math.floor(this.camera.x);
+            const camY = Math.floor(this.camera.y);
+
+            // Draw Sky Gradient
+            if (camY < 500) {
+                 const gradient = this.ctx.createLinearGradient(0, -camY - 500, 0, -camY + 200);
+                 gradient.addColorStop(0, "#000000");
+                 gradient.addColorStop(1, "#1a1a2e");
+                 this.ctx.fillStyle = gradient;
+                 this.ctx.fillRect(0, 0, this.width, this.height);
+            }
+
+            // Draw Blocks (Visible Only)
+            const startCol = Math.floor(camX / TILE_SIZE);
+            const endCol = startCol + (this.width / TILE_SIZE) + 1;
+            const startRow = Math.floor(camY / TILE_SIZE);
+            const endRow = startRow + (this.height / TILE_SIZE) + 1;
+
+            for (let x = startCol; x <= endCol; x++) {
+                for (let y = startRow; y <= endRow; y++) {
+                    const block = this.getBlock(x, y);
+                    if (block && block.id !== 0) {
+                        const px = Math.floor(x * TILE_SIZE - camX);
+                        const py = Math.floor(y * TILE_SIZE - camY);
+                        
+                        // Main Block
+                        this.ctx.fillStyle = block.color;
+                        this.ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+
+                        // 3D Bevel Effect
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; // Top/Left highlight
+                        this.ctx.fillRect(px, py, TILE_SIZE, 4);
+                        this.ctx.fillRect(px, py, 4, TILE_SIZE);
+                        
+                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; // Bottom/Right shadow
+                        this.ctx.fillRect(px, py + TILE_SIZE - 4, TILE_SIZE, 4);
+                        this.ctx.fillRect(px + TILE_SIZE - 4, py, 4, TILE_SIZE);
+
+                        // Ore Detail (Gem in center)
+                        if (block.value > 0) {
+                            this.ctx.fillStyle = block.border || '#fff';
+                            const size = block.value > 100 ? 10 : 6;
+                            
+                            // Draw a diamond shape
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(px + TILE_SIZE/2, py + TILE_SIZE/2 - size);
+                            this.ctx.lineTo(px + TILE_SIZE/2 + size, py + TILE_SIZE/2);
+                            this.ctx.lineTo(px + TILE_SIZE/2, py + TILE_SIZE/2 + size);
+                            this.ctx.lineTo(px + TILE_SIZE/2 - size, py + TILE_SIZE/2);
+                            this.ctx.fill();
+                            
+                            // Glowing Effect
+                            this.ctx.shadowColor = block.border || '#fff';
+                            this.ctx.shadowBlur = 10;
+                            this.ctx.fill();
+                            this.ctx.shadowBlur = 0; // Reset
+                        }
+
+                        // Cracks based on HP
+                        if(block.hp < block.maxHp) {
+                             this.ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                             this.ctx.lineWidth = 2;
+                             this.ctx.beginPath();
+                             this.ctx.moveTo(px + 5, py + 5);
+                             this.ctx.lineTo(px + TILE_SIZE/2, py + TILE_SIZE/2);
+                             this.ctx.lineTo(px + TILE_SIZE - 5, py + TILE_SIZE/2 + 5);
+                             this.ctx.stroke();
+                             this.ctx.lineWidth = 1;
+                        }
+                    }
+                }
+            }
+
+            // Draw Shop Building
+            const shopX = 14 * TILE_SIZE - camX;
+            const shopY = -TILE_SIZE * 3 - camY;
+            this.ctx.fillStyle = '#222';
+            this.ctx.fillRect(shopX, shopY, TILE_SIZE * 3, TILE_SIZE * 3);
+            this.ctx.fillStyle = '#0ff'; // Neon sign
+            this.ctx.font = '20px "Press Start 2P"';
+            this.ctx.fillText("SHOP", shopX - 10, shopY - 10);
+
+            // Draw Particles
+            this.particles.forEach(p => p.draw(this.ctx, camX, camY));
+
+            // Draw Player
+            const px = Math.floor(this.player.x - camX);
+            const py = Math.floor(this.player.y - camY);
+            
+            this.ctx.save();
+            this.ctx.translate(px + this.player.width/2, py + this.player.height/2);
+            if(this.player.facing === -1) this.ctx.scale(-1, 1);
+            
+            // Draw Drill Body - Improved Detail
+            this.ctx.fillStyle = '#e65100'; // Darker orange outline
+            this.ctx.fillRect(-16, -16, 32, 32);
+            this.ctx.fillStyle = '#ff9800'; // Orange body
+            this.ctx.fillRect(-14, -14, 28, 28);
+            
+            // Cockpit Glow
+            this.ctx.fillStyle = '#00e5ff'; // Cyan Glass
+            this.ctx.fillRect(2, -10, 10, 16);
+            this.ctx.fillStyle = '#ffffff'; // Glass Reflection
+            this.ctx.fillRect(4, -8, 3, 6);
+            
+            // Treads
+            this.ctx.fillStyle = '#1a1a1a';
+            this.ctx.fillRect(-18, 12, 36, 8);
+            this.ctx.fillStyle = '#5d4037';
+            for(let i=-16; i<16; i+=6) {
+                this.ctx.fillRect(i, 12, 4, 8); // Tread ridges
+            }
+
+            // Drill Bit (Animate if drilling)
+            this.ctx.fillStyle = '#e0e0e0';
+            if (this.player.drilling) {
+                const offset = Math.random() * 6;
+                this.ctx.fillRect(16, -6, 12 + offset, 12); // Side drill
+                this.ctx.fillStyle = '#9e9e9e'; // Drill grooves
+                this.ctx.fillRect(18, -4, 10 + offset, 2);
+                this.ctx.fillRect(18, 0, 10 + offset, 2);
+                
+                this.ctx.fillStyle = '#e0e0e0';
+                this.ctx.fillRect(-6, 18, 12, 8 + offset); // Bottom drill
+            } else {
+                this.ctx.fillRect(16, -4, 8, 8);
+                this.ctx.fillRect(-4, 18, 8, 6);
+            }
+
+            this.ctx.restore();
+
+            // === DYNAMIC LIGHTING OVERLAY ===
+            const depth = Math.max(0, this.player.y);
+            if (depth > 0) {
+                // Determine darkness based on depth
+                const darkness = Math.min(0.97, depth / 500); 
+                
+                const pcx = px + this.player.width/2;
+                const pcy = py + this.player.height/2;
+                
+                // Flickering light radius based on drill status
+                const baseRadius = this.player.drilling ? 200 : 160;
+                const lightRadius = baseRadius + (Math.random() * 8); 
+                
+                // 1. Draw Darkness Gradient (Transparent center, dark edges)
+                const darkGradient = this.ctx.createRadialGradient(
+                    pcx, pcy, lightRadius * 0.3, // Inner transparent area
+                    pcx, pcy, lightRadius        // Outer dark area
+                );
+                
+                darkGradient.addColorStop(0, 'rgba(5, 5, 12, 0)');
+                darkGradient.addColorStop(0.8, `rgba(5, 5, 12, ${darkness * 0.8})`);
+                darkGradient.addColorStop(1, `rgba(5, 5, 12, ${darkness})`);
+                
+                this.ctx.fillStyle = darkGradient;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // 2. Draw Glow Tint (Adds colored light to the center)
+                const tintGradient = this.ctx.createRadialGradient(
+                    pcx, pcy, 0, 
+                    pcx, pcy, lightRadius * 0.8
+                );
+                
+                // Warm yellow light that pulses slightly when drilling, removing the harsh blue flash
+                const tintColor = this.player.drilling ? 'rgba(255, 230, 160, 0.2)' : 'rgba(255, 220, 150, 0.15)';
+                const fadeColor = 'rgba(255, 220, 150, 0)';
+                
+                tintGradient.addColorStop(0, tintColor);
+                tintGradient.addColorStop(1, fadeColor);
+                
+                this.ctx.fillStyle = tintGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(pcx, pcy, lightRadius, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            // Draw Floating Text
+            this.floatingTexts.forEach(ft => {
+                this.ctx.fillStyle = ft.color;
+                this.ctx.font = 'bold 20px "Rajdhani"';
+                this.ctx.strokeStyle = 'black';
+                this.ctx.lineWidth = 3; // Thicker stroke for readability in light/dark
+                this.ctx.globalAlpha = ft.life;
+                this.ctx.strokeText(ft.text, ft.x - camX, ft.y - camY);
+                this.ctx.fillText(ft.text, ft.x - camX, ft.y - camY);
+                this.ctx.globalAlpha = 1.0;
+            });
+        }
+
+        loop(time) {
+            const dt = time - this.lastTime;
+            this.lastTime = time;
+
+            this.update(dt);
+            this.draw();
+
+            requestAnimationFrame((t) => this.loop(t));
+        }
+    }
+
+    // --- Shop Logic ---
+    class Shop {
+        constructor(game) {
+            this.game = game;
+        }
+
+        buy(type) {
+            const p = this.game.player;
+            const upg = UPGRADES[type];
+            const currentLvl = p.upgrades[type];
+            
+            if (currentLvl >= upg.max) return;
+
+            const cost = Math.floor(upg.base * Math.pow(upg.scale, currentLvl - 1));
+
+            if (p.money >= cost) {
+                p.money -= cost;
+                p.upgrades[type]++;
+                this.applyUpgrade(type);
+                this.game.audio.playCash();
+                this.updateButtons();
+                this.game.saveGame(); // Save immediately when buying
+            } else {
+                this.game.audio.playError();
+            }
+        }
+
+        applyUpgrade(type) {
+            const p = this.game.player;
+            const lvl = p.upgrades[type];
+            
+            switch(type) {
+                case 'drill': p.stats.drillPower = 2 + (lvl * 1.5); break;
+                case 'fuel': 
+                    p.stats.fuelMax = 100 + (lvl * 50); 
+                    p.stats.fuel = p.stats.fuelMax; // Refill on upgrade
+                    break;
+                case 'cargo': p.stats.cargoMax = 5 + (lvl * 3); break;
+                case 'engine': p.stats.speed = 0.5 + (lvl * 0.1); break;
+                case 'hull': p.stats.hullMax = 100 + (lvl * 50); p.stats.hull = p.stats.hullMax; break;
+            }
+        }
+
+        updateButtons() {
+            const p = this.game.player;
+            
+            for (let type in UPGRADES) {
+                const upg = UPGRADES[type];
+                const lvl = p.upgrades[type];
+                const cost = Math.floor(upg.base * Math.pow(upg.scale, lvl - 1));
+                
+                const btn = document.getElementById(`btn-${type}`);
+                const costSpan = document.getElementById(`cost-${type}`);
+                const lvlSpan = document.getElementById(`lvl-${type}`);
+
+                lvlSpan.innerText = lvl;
+                
+                if (lvl >= upg.max) {
+                    btn.innerText = "MAXED";
+                    btn.disabled = true;
+                } else {
+                    costSpan.innerText = cost;
+                    btn.disabled = p.money < cost;
+                }
+            }
+        }
+    }
+
+    // Start
+    const game = new Game();
+
+</script>
+</body>
+</html>
