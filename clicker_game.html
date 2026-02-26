@@ -12,267 +12,260 @@
             margin: 0;
             padding: 20px;
             background-color: #1b2a1d;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
         }
         h1 {
             font-size: 2.5rem;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             color: #66cc66;
+            text-shadow: 2px 2px #000;
+        }
+        .stats-container {
+            text-align: center;
+            margin-bottom: 20px;
         }
         .circle {
             width: 200px;
             height: 200px;
-            background-color: #004d00;
+            background: radial-gradient(circle, #006400 0%, #004d00 100%);
+            border: 4px solid #66cc66;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 2rem;
+            font-weight: bold;
             cursor: pointer;
-            margin: 30px;
-            transition: transform 0.1s ease;
+            user-select: none;
+            box-shadow: 0 0 20px rgba(102, 204, 102, 0.2);
+            transition: transform 0.05s linear;
         }
         .circle:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
         }
         .shop {
-            width: 80%;
+            width: 90%;
+            max-width: 500px;
             margin: 20px auto;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .shop-item-container {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #2d4a30;
+            padding-bottom: 10px;
         }
         .shop-item {
+            width: 100%;
             background-color: #004d00;
             color: white;
-            padding: 10px 20px;
-            margin: 10px 0;
+            padding: 12px;
             border-radius: 5px;
-            border: none;
+            border: 1px solid #66cc66;
             font-size: 1rem;
             cursor: pointer;
-            text-align: center;
-            transition: background-color 0.3s ease;
+            transition: all 0.2s ease;
         }
-        .shop-item:hover {
+        .shop-item:hover:not(.disabled) {
             background-color: #66cc66;
+            color: #000;
         }
         .shop-item.disabled {
-            background-color: #adacac;
+            background-color: #333;
+            border-color: #555;
+            color: #888;
             cursor: not-allowed;
-        }
-        .back-button {
-            margin-top: 20px;
-            background-color: #004d00;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1rem;
-            text-decoration: none;
-            text-align: center;
-            display: inline-block;
-            transition: background-color 0.3s ease;
-        }
-        .back-button:hover {
-            background-color: #66cc66;
+            opacity: 0.7;
         }
         .upgrade-count {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #66cc66;
             margin-top: 5px;
+            font-weight: bold;
+        }
+        .reset-button {
+            margin-top: 30px;
+            background-color: #631c1c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .back-button {
+            margin-top: 15px;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <h1>Industrial Clicker</h1>
-    <div class="circle" id="circle">+1</div>
-    <p>Clicks: <span id="clickCount">0</span></p>
-    <h3>⚠️SAVE FILES CURRENTLY DO NOT WORK⚠️</h3>
 
-    <div class="shop">
-        <h2>Shop</h2>
-        <div id="upgradeClickDiv">
-            <button class="shop-item disabled" id="upgradeClick">Broken Tool (+1 per click) - 10 clicks</button>
-            <p class="upgrade-count" id="upgradeClickCount">Purchased: 0</p>
-        </div>
-        <div id="autoClickerDiv">
-            <button class="shop-item disabled" id="autoClicker">Worker (+1 click/sec) - 50 clicks</button>
-            <p class="upgrade-count" id="autoClickerCount">Purchased: 0</p>
-        </div>
-        <div id="goldenClickDiv">
-            <button class="shop-item disabled" id="goldenClick">Rusty Tool (+5 per click) - 100 clicks</button>
-            <p class="upgrade-count" id="goldenClickCount">Purchased: 0</p>
-        </div>
-        <div id="superAutoClickerDiv">
-            <button class="shop-item disabled" id="superAutoClicker">Qualified Worker (+5 clicks/sec) - 200 clicks</button>
-            <p class="upgrade-count" id="superAutoClickerCount">Purchased: 0</p>
-        </div>
-        <div id="megaClickDiv">
-            <button class="shop-item disabled" id="megaClick">Metal Tool (+10 per click) - 500 clicks</button>
-            <p class="upgrade-count" id="megaClickCount">Purchased: 0</p>
-        </div>
-        <div id="ultraAutoClickerDiv">
-            <button class="shop-item disabled" id="ultraAutoClicker">Manager (+20 clicks/sec) - 1000 clicks</button>
-            <p class="upgrade-count" id="ultraAutoClickerCount">Purchased: 0</p>
-        </div>
-        <div id="platinumClickDiv">
-            <button class="shop-item disabled" id="platinumClick">Golden Tool (+50 per click) - 2500 clicks</button>
-            <p class="upgrade-count" id="platinumClickCount">Purchased: 0</p>
-        </div>
-        <div id="hyperAutoClickerDiv">
-            <button class="shop-item disabled" id="hyperAutoClicker">Broken Machinery (+50 clicks/sec) - 5000 clicks</button>
-            <p class="upgrade-count" id="hyperAutoClickCount">Purchased: 0</p>
-        </div>
-        <div id="diamondClickDiv">
-            <button class="shop-item disabled" id="diamondClick">Platinum Tool (+100 per click) - 10000 clicks</button>
-            <p class="upgrade-count" id="diamondClickCount">Purchased: 0</p>
-        </div>
-        <div id="ultimateAutoClickerDiv">
-            <button class="shop-item disabled" id="ultimateAutoClicker">Mended Machinery (+200 clicks/sec) - 20000 clicks</button>
-            <p class="upgrade-count" id="ultimateAutoClickerCount">Purchased: 0</p>
-        </div>
-        <div id="galacticClickDiv">
-            <button class="shop-item disabled" id="galacticClick">Radioactive Tool (+500 per click) - 50000 clicks</button>
-            <p class="upgrade-count" id="galacticClickCount">Purchased: 0</p>
-        </div>
-        <div id="cosmicAutoClickerDiv">
-            <button class="shop-item disabled" id="cosmicAutoClicker">Diamond Machinery (+500 clicks/sec) - 100000 clicks</button>
-            <p class="upgrade-count" id="cosmicAutoClickCount">Purchased: 0</p>
-        </div>
-        <div id="universalClickDiv">
-            <button class="shop-item disabled" id="universalClick">Nuclear Tool (+1000 per click) - 250000 clicks</button>
-            <p class="upgrade-count" id="universalClickCount">Purchased: 0</p>
-        </div>
-        <div id="infinityAutoClickerDiv">
-            <button class="shop-item disabled" id="infinityAutoClicker">New Factory Branch (+1000 clicks/sec) - 500000 clicks</button>
-            <p class="upgrade-count" id="infinityAutoClickCount">Purchased: 0</p>
-        </div>
-        <div id="omegaClickDiv">
-            <button class="shop-item disabled" id="omegaClick">Plasma Tool (+5000 per click) - 1000000 clicks</button>
-            <p class="upgrade-count" id="omegaClickCount">Purchased: 0</p>
-        </div>
+    <h1>Industrial Clicker</h1>
+    
+    <div class="stats-container">
+        <p style="font-size: 1.5rem;">Clicks: <span id="clickCount">0</span></p>
+        <p style="color: #66cc66;">Per Second: <span id="cpsCount">0</span></p>
     </div>
 
+    <div class="circle" id="circle">+1</div>
 
-    <button class="reset-button" id="resetButton">Reset Game</button>
+    <div class="shop">
+        <h2>Industrial Exchange</h2>
+        <div id="shop-list">
+            </div>
+    </div>
+
+    <button class="reset-button" id="resetButton">Wipe Save Data</button>
     <a href="index.html" class="back-button">Back to Home</a>
 
     <script>
+        // --- GAME DATA ---
         let clicks = 0;
         let clickValue = 1;
-
-        const items = {
-            upgradeClick: { cost: 10, effect: () => clickValue += 1, count: 0 },
-            autoClicker: { cost: 50, effect: () => autoClick(1), count: 0 },
-            goldenClick: { cost: 100, effect: () => clickValue += 5, count: 0 },
-            superAutoClicker: { cost: 200, effect: () => autoClick(5), count: 0 },
-            megaClick: { cost: 500, effect: () => clickValue += 10, count: 0 },
-            ultraAutoClicker: { cost: 1000, effect: () => autoClick(20), count: 0 },
-            platinumClick: { cost: 2500, effect: () => clickValue += 50, count: 0 },
-            hyperAutoClicker: { cost: 5000, effect: () => autoClick(50), count: 0 },
-            diamondClick: { cost: 10000, effect: () => clickValue += 100, count: 0 },
-            ultimateAutoClicker: { cost: 20000, effect: () => autoClick(200), count: 0 },
-            galacticClick: { cost: 50000, effect: () => clickValue += 500, count: 0 },
-            cosmicAutoClicker: { cost: 100000, effect: () => autoClick(500), count: 0 },
-            universalClick: { cost: 250000, effect: () => clickValue += 1000, count: 0 },
-            infinityAutoClicker: { cost: 500000, effect: () => autoClick(1000), count: 0 },
-            omegaClick: { cost: 1000000, effect: () => clickValue += 5000, count: 0 },
-        };
-
         let autoClickValue = 0;
 
-        function autoClick(value) {
-            autoClickValue += value;
+        const upgradeData = {
+            upgradeClick: { name: "Broken Tool", baseCost: 10, addClick: 1, addAuto: 0 },
+            autoClicker: { name: "Worker", baseCost: 50, addClick: 0, addAuto: 1 },
+            goldenClick: { name: "Rusty Tool", baseCost: 100, addClick: 5, addAuto: 0 },
+            superAutoClicker: { name: "Qualified Worker", baseCost: 200, addClick: 0, addAuto: 5 },
+            megaClick: { name: "Metal Tool", baseCost: 500, addClick: 10, addAuto: 0 },
+            ultraAutoClicker: { name: "Manager", baseCost: 1000, addClick: 0, addAuto: 20 },
+            platinumClick: { name: "Golden Tool", baseCost: 2500, addClick: 50, addAuto: 0 },
+            hyperAutoClicker: { name: "Broken Machinery", baseCost: 5000, addClick: 0, addAuto: 50 },
+            diamondClick: { name: "Platinum Tool", baseCost: 10000, addClick: 100, addAuto: 0 },
+            ultimateAutoClicker: { name: "Mended Machinery", baseCost: 20000, addClick: 0, addAuto: 200 },
+            galacticClick: { name: "Radioactive Tool", baseCost: 50000, addClick: 500, addAuto: 0 },
+            cosmicAutoClicker: { name: "Diamond Machinery", baseCost: 100000, addClick: 0, addAuto: 500 },
+            universalClick: { name: "Nuclear Tool", baseCost: 250000, addClick: 1000, addAuto: 0 },
+            infinityAutoClicker: { name: "New Factory Branch", baseCost: 500000, addClick: 0, addAuto: 1000 },
+            omegaClick: { name: "Plasma Tool", baseCost: 1000000, addClick: 5000, addAuto: 0 }
+        };
+
+        // Initialize state
+        let inventory = {};
+        Object.keys(upgradeData).forEach(id => inventory[id] = 0);
+
+        // --- CORE FUNCTIONS ---
+
+        function calculateCost(id) {
+            return Math.round(upgradeData[id].baseCost * Math.pow(1.15, inventory[id]));
         }
 
+        function updateUI() {
+            document.getElementById('clickCount').textContent = Math.floor(clicks).toLocaleString();
+            document.getElementById('cpsCount').textContent = autoClickValue.toLocaleString();
+            document.getElementById('circle').textContent = `+${clickValue}`;
+
+            // Update Shop Buttons
+            Object.keys(upgradeData).forEach(id => {
+                const btn = document.getElementById(id);
+                const countText = document.getElementById(`${id}-count`);
+                const cost = calculateCost(id);
+                
+                btn.textContent = `${upgradeData[id].name} (${cost} clicks)`;
+                countText.textContent = `Owned: ${inventory[id]}`;
+
+                if (clicks >= cost) {
+                    btn.classList.remove('disabled');
+                    btn.disabled = false;
+                } else {
+                    btn.classList.add('disabled');
+                    btn.disabled = true;
+                }
+            });
+        }
+
+        function buyUpgrade(id) {
+            const cost = calculateCost(id);
+            if (clicks >= cost) {
+                clicks -= cost;
+                inventory[id]++;
+                
+                // Apply effects
+                clickValue += upgradeData[id].addClick;
+                autoClickValue += upgradeData[id].addAuto;
+                
+                updateUI();
+                saveGame();
+            }
+        }
+
+        // --- SAVE/LOAD SYSTEM ---
+
+        function saveGame() {
+            const saveData = {
+                clicks: clicks,
+                inventory: inventory,
+                // We recalculate clickValue/autoClickValue on load to prevent bugs
+            };
+            localStorage.setItem("IndustrialClicker_v1", JSON.stringify(saveData));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem("IndustrialClicker_v1");
+            if (saved) {
+                const data = JSON.parse(saved);
+                clicks = data.clicks || 0;
+                inventory = data.inventory || inventory;
+
+                // Re-calculate total powers from inventory
+                clickValue = 1;
+                autoClickValue = 0;
+                Object.keys(inventory).forEach(id => {
+                    clickValue += (upgradeData[id].addClick * inventory[id]);
+                    autoClickValue += (upgradeData[id].addAuto * inventory[id]);
+                });
+            }
+            updateUI();
+        }
+
+        // --- INITIALIZATION ---
+
+        // Create Shop HTML
+        const shopList = document.getElementById('shop-list');
+        Object.keys(upgradeData).forEach(id => {
+            const container = document.createElement('div');
+            container.className = 'shop-item-container';
+            container.innerHTML = `
+                <button class="shop-item" id="${id}"></button>
+                <div class="upgrade-count" id="${id}-count">Owned: 0</div>
+            `;
+            shopList.appendChild(container);
+            
+            document.getElementById(id).addEventListener('click', () => buyUpgrade(id));
+        });
+
+        // Main Click
+        document.getElementById('circle').addEventListener('click', () => {
+            clicks += clickValue;
+            updateUI();
+        });
+
+        // Reset
+        document.getElementById('resetButton').addEventListener('click', () => {
+            if(confirm("Reset all industrial progress?")) {
+                localStorage.removeItem("IndustrialClicker_v1");
+                location.reload();
+            }
+        });
+
+        // Game Loop (Every 1 second)
         setInterval(() => {
             clicks += autoClickValue;
             updateUI();
         }, 1000);
 
-        const circle = document.getElementById('circle');
-        circle.addEventListener('click', () => {
-            clicks += clickValue;
-            updateUI();
-        });
+        // Auto-Save Loop (Every 15 seconds)
+        setInterval(saveGame, 15000);
 
-        function updateUI() {
-            document.getElementById('clickCount').textContent = Math.round(clicks);
-            for (const id in items) {
-                const item = items[id];
-                const button = document.getElementById(id);
-                const count = document.getElementById(`${id}Count`);
-                count.textContent = `Purchased: ${item.count}`;
-                button.textContent = `${button.textContent.split(' - ')[0]} - ${item.cost} clicks`; // Update cost display
-                if (clicks >= item.cost) {
-                    button.classList.remove('disabled');
-                } else {
-                    button.classList.add('disabled');
-                }
-            }
-        }
+        // Startup
+        loadGame();
 
-        for (const id in items) {
-            document.getElementById(id).addEventListener('click', () => {
-                const item = items[id];
-                if (clicks >= item.cost) {
-                    clicks -= item.cost;
-                    item.cost = Math.round(item.cost * 1.15);
-                    item.effect();
-                    item.count += 1;
-                    updateUI();
-                }
-            });
-        }
-
-        // Save progress to localStorage
-        function saveProgress() {
-            const saveData = {
-                clicks,
-                clickValue,
-                autoClickValue,
-                items: Object.keys(items).reduce((acc, itemKey) => {
-                    acc[itemKey] = items[itemKey].count;
-                    return acc;
-                }, {})
-            };
-            localStorage.setItem("industrialClickerSave", JSON.stringify(saveData));
-        }
-
-        // Load progress from localStorage
-        function loadProgress() {
-            const saveData = JSON.parse(localStorage.getItem("industrialClickerSave"));
-            if (saveData) {
-                clicks = saveData.clicks;
-                clickValue = saveData.clickValue;
-                autoClickValue = saveData.autoClickValue;
-
-                // Restore item counts
-                Object.keys(saveData.items).forEach(itemKey => {
-                    items[itemKey].count = saveData.items[itemKey];
-                });
-            }
-        }
-
-        function resetGame() {
-            if (confirm("Are you sure you want to reset your game? This action cannot be undone.")) {
-                localStorage.removeItem('clickerGameSave');
-                clicks = 0;
-                clickValue = 1;
-                autoClickValue = 0;
-                for (const id in items) {
-                    items[id].cost = items[id].cost / Math.pow(1.15, items[id].count);
-                    items[id].count = 0;
-                }
-                updateUI();
-            }
-        }
-
-        document.getElementById('resetButton').addEventListener('click', resetGame);
-
-        window.addEventListener('beforeunload', saveProgress);
-        window.addEventListener('load', () => {
-            loadProgress();
-            updateUI();
-        });
     </script>
 </body>
 </html>
