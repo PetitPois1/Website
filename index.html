@@ -3,209 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Hub</title>
+    <title>Game Hub | Premium Gaming Portal</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* General Navbar Styling */
-        .navbar {
-            width: 100%;
-            background-color: #1b2a1d; /* Dark Green */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px; /* Increased padding for more space */
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #6d28d9;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
         }
 
-        .navbar button, .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 20px; /* Increased gap between elements */
-            margin: 0 25px; 
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .navbar a:hover, .navbar button:hover {
-            background-color: #6200ea;
-            border-color: #6200ea; /* Add border color on hover for effect */
-        }
-
-        .navbar .nav-left {
-            display: flex;
-            align-items: center;
-        }
-
-        .navbar .nav-right {
-            display: flex;
-            align-items: center;
-        }
-
-        /* Main Content Styling */
         body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #1b2a1d; /* Dark Green Background */
-            color: white;
-            padding-top: 80px; /* Adjust to make room for navbar */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
         }
 
-        .home-content {
-            text-align: center;
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Flexbox Layout for Buttons */
-        .game-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center; /* Always center the buttons */
-            margin-bottom: 20px;
+        .game-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .game-button {
-            background-color: #6200ea;
-            color: white;
-            font-size: 16px;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px;
-            transition: background-color 0.3s ease;
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(139, 92, 246, 0.1);
         }
 
-        .game-button:hover {
-            background-color: #3700b3;
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.05),
+                transparent
+            );
+            transition: 0.5s;
         }
 
-        /* Search Bar Styling */
-        .search-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .search-wrapper {
+            position: relative;
+            max-width: 500px;
+            width: 100%;
         }
 
         .search-bar {
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #6200ea;
-            border-radius: 5px;
-            width: 300px;
-            background-color: #555; /* Gray background */
-            color: white; /* White text */
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
 
-        .clear-btn {
-            background-color: transparent;
-            border: none;
-            color: #6200ea;
-            font-size: 18px;
-            cursor: pointer;
-            margin-left: -35px;
-            margin-top: 5px;
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+            background: rgba(30, 41, 59, 1);
         }
 
-        /* More Games Button Styling */
-        .more-games {
-            margin-top: 20px; /* Give extra margin to push it down */
+        .beta-badge {
+            font-size: 0.65rem;
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        /* Footer Styling */
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 14px;
-            color: #adacac;
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .footer a {
-            color: #6200ea;
-            text-decoration: none;
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
         }
-
-        .footer a:hover {
-            text-decoration: underline;
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
         }
     </style>
 </head>
-<body>
+<body class="pt-24 pb-12">
 
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="nav-left">
-            <button onclick="window.location.href='index.html'">Home</button>
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <span class="text-xl">👾</span>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                GAME HUB
+            </span>
         </div>
-        <div class="nav-right">
-            <a href="about.html">About</a>
-            <a href="feedback.html">Feedback</a>
-            <a href="bugs.html">Bugs</a>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="index.html" class="text-violet-400 font-semibold">Home</a>
+            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
+            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
+        </div>
+
+        <button class="md:hidden text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="max-w-6xl mx-auto px-6 text-center mb-12">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+            Discover Your Next <span class="text-violet-500">Adventure</span>
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+            Explore our collection of hand-crafted arcade experiences. 
+            <span class="inline-block px-2 py-1 bg-amber-500/10 text-amber-500 rounded text-sm font-medium border border-amber-500/20">
+                Beta versions active ⚠️
+            </span>
+        </p>
+    </header>
+
+    <!-- Search Section -->
+    <div class="max-w-6xl mx-auto px-6 mb-12 flex justify-center">
+        <div class="search-wrapper">
+            <input 
+                type="text" 
+                id="search-bar" 
+                class="search-bar w-full py-4 px-6 pr-12 rounded-2xl text-white placeholder-slate-500" 
+                placeholder="Find a game..." 
+                oninput="filterGames()" 
+            />
+            <button 
+                id="clear-btn" 
+                onclick="clearSearch()"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </button>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="home-content">
-        <h1>Welcome to Game Hub 👾</h1>
-        <h2>Beta games may not work ⚠️</h2>
-
-        <!-- Search Bar -->
-        <div class="search-container">
-            <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game..." oninput="filterGames()" />
-            <button class="clear-btn" id="clear-btn" onclick="clearSearch()">X</button>
+    <!-- Games Grid -->
+    <main class="max-w-6xl mx-auto px-6">
+        <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Game items are managed via JavaScript to easily add/remove -->
         </div>
 
-        <!-- Game Buttons -->
-        <div class="game-buttons">
-            <button class="game-button" onclick="window.location.href='snake_game.html'">Snake Game</button>
-            <button class="game-button" onclick="window.location.href='tic-tac-toe.html'">Tic-Tac-Toe</button>
-            <button class="game-button" onclick="window.location.href='pong_game.html'">Pong</button>
-            <button class="game-button" onclick="window.location.href='clicker_game.html'">Industrial Clicker (BETA)</button>
-            <button class="game-button" onclick="window.location.href='blockblast.html'">Blockblast (BETA)</button>
-            <button class="game-button" onclick="window.location.href='tower-defence.html'">Tower Defence (BETA)</button>
-            <button class="game-button" onclick="window.location.href='blackjack.html'">Blackjack</button>
-            <button class="game-button" onclick="window.location.href='Pac-Man.html'">Pac-Man</button>
-            <button class="game-button" onclick="window.location.href='Flappybird.html'">Flappy bird</button>
-            <button class="game-button" onclick="window.location.href='poker.html'">Poker (BETA)</button>
-            <button class="game-button" onclick="window.location.href='Mining.html'">Mining</button>
+        <!-- Coming Soon -->
+        <div class="mt-16 text-center p-12 border-2 border-dashed border-slate-800 rounded-3xl">
+            <h3 class="text-xl font-bold mb-2">Want more?</h3>
+            <p class="text-slate-400 mb-6">We are developing new experiences every week.</p>
+            <button 
+                onclick="window.location.href='upcoming.html'"
+                class="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-violet-500 hover:text-white transition-all transform hover:scale-105"
+            >
+                View Roadmap
+            </button>
         </div>
+    </main>
 
-        <!-- More Games Button -->
-        <div class="more-games">
-            <button class="game-button" onclick="window.location.href='upcoming.html'">More games coming soon</button>
-        </div>
-    </div>
-
-    <!-- Footer with Version Information -->
-    <div class="footer">
-        <p>Current Version: <a href="updates.html">v0.1.0</a></p>
-    </div>
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
+        <p class="mb-2">© 2024 Game Hub. All rights reserved.</p>
+        <p class="text-sm">Engine Version <a href="updates.html" class="text-violet-500 hover:underline">v0.1.0</a></p>
+    </footer>
 
     <script>
-        // Clear the search bar
-        function clearSearch() {
-            document.getElementById('search-bar').value = '';
-            filterGames(); // Apply filter after clearing
-        }
+        const games = [
+            { name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false },
+            { name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false },
+            { name: "Pong", url: "pong_game.html", icon: "🏓", beta: false },
+            { name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true },
+            { name: "Blockblast", url: "blockblast.html", icon: "🧱", beta: true },
+            { name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true },
+            { name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false },
+            { name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false },
+            { name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false },
+            { name: "Poker", url: "poker.html", icon: "💎", beta: true },
+            { name: "Mining", url: "Mining.html", icon: "⛏️", beta: false }
+        ];
 
-        // Filter the game buttons based on search input
-        function filterGames() {
-            const searchQuery = document.getElementById('search-bar').value.toLowerCase();
-            const buttons = document.querySelectorAll('.game-button');
+        const grid = document.getElementById('game-grid');
+
+        function renderGames(filter = "") {
+            grid.innerHTML = "";
+            const filtered = games.filter(g => g.name.toLowerCase().includes(filter.toLowerCase()));
             
-            buttons.forEach(button => {
-                const gameName = button.innerText.toLowerCase();
-                if (gameName.includes(searchQuery)) {
-                    button.style.display = 'inline-block'; // Show the button
-                } else {
-                    button.style.display = 'none'; // Hide the button
-                }
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500">No games found matching "${filter}"</div>`;
+                return;
+            }
+
+            filtered.forEach(game => {
+                const card = document.createElement('div');
+                card.className = "game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer";
+                card.onclick = () => window.location.href = game.url;
+                
+                card.innerHTML = `
+                    <div class="text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center">
+                        ${game.icon}
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <h3 class="font-bold text-lg">${game.name}</h3>
+                        ${game.beta ? '<span class="beta-badge">BETA</span>' : ''}
+                    </div>
+                    <p class="text-slate-500 text-sm">Launch game engine</p>
+                    <div class="mt-6 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-0 transition-opacity hover:opacity-100">
+                        PLAY NOW
+                    </div>
+                `;
+                grid.appendChild(card);
             });
         }
+
+        function clearSearch() {
+            document.getElementById('search-bar').value = '';
+            renderGames();
+        }
+
+        function filterGames() {
+            const query = document.getElementById('search-bar').value;
+            renderGames(query);
+        }
+
+        // Initial render
+        renderGames();
     </script>
 
 </body>
