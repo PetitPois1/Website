@@ -3,151 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - Game Hub</title>
+    <title>About | Game Hub</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* General Navbar Styling */
-        .navbar {
-            width: 100%;
-            background-color: #004d00; /* Dark green */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
+        :root {
+            --primary: #8b5cf6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.6);
         }
 
-        .navbar button, .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 0 25px;
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .navbar a:hover, .navbar button:hover {
-            background-color: #66cc66; /* Light green */
-            border-color: #66cc66;
-        }
-
-        /* Page Content Styling */
         body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #1b2a1d; /* Very dark green, almost grey */
-            color: white;
-            padding-top: 80px; /* Adjust to make room for navbar */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
         }
 
-        .about-content {
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        h1 {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 30px;
-            color: #66cc66; /* Light green */
+        .about-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
         }
 
-        .section {
-            background-color: #333333; /* Darker background for sections */
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        .about-section:hover {
+            border-color: rgba(139, 92, 246, 0.3);
         }
 
-        .section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-            color: #66cc66; /* Light green */
-        }
-
-        .section p {
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-
-        /* Links */
-        a {
-            color: #66cc66; /* Light green */
-            text-decoration: underline;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
-            .section h2 {
-                font-size: 1.5rem;
-            }
-
-            .section p {
-                font-size: 0.9rem;
-            }
+        .accent-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
     </style>
 </head>
-<body>
+<body class="pt-32 pb-20">
+
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="nav-left">
-            <button onclick="window.location.href='index.html'">Home</button>
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <span class="text-xl">👾</span>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                GAME HUB
+            </span>
         </div>
-        <div class="nav-right">
-            <a href="about.html">About</a>
-            <a href="feedback.html">Feedback</a>
-            <a href="bugs.html">Bugs</a>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
+            <a href="about.html" class="text-violet-400 font-semibold">About</a>
+            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
         </div>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="max-w-4xl mx-auto px-6 text-center mb-16">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+            Our <span class="accent-gradient">Story</span>
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed">
+            Welcome to Game Hub, a digital playground where creativity meets technology. 
+            Born from curiosity and fueled by experimentation.
+        </p>
     </div>
 
-    <!-- About Page Content -->
-    <div class="about-content">
-        <h1>About Game Hub</h1>
-
-        <div class="section">
-            <h2>Our Mission</h2>
-            <p>
-                We wish to bring quality games to people all over the world that you can play 
-                any time and anywhere!
-            </p>
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 space-y-8">
+        
+        <!-- Mission -->
+        <div class="about-section p-8 rounded-3xl">
+            <div class="flex items-start gap-4">
+                <div class="p-3 bg-violet-500/10 rounded-2xl text-violet-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold mb-3">Our Mission</h2>
+                    <p class="text-slate-400 leading-relaxed text-lg">
+                        We aim to bring quality, accessible games to everyone across the globe. Whether you're on a 5-minute break or settling in for a session, our goal is to provide fun that's just one click away, anytime and anywhere.
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <div class="section">
-            <h2>Our Games</h2>
-            <p>
-                All our games are made experimentally using AI so bare with us! Please leave 
-                any game suggestions in the feedback forms under the "Other" section. Thanks! 
-            </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- AI Innovation -->
+            <div class="about-section p-8 rounded-3xl">
+                <div class="p-3 bg-blue-500/10 rounded-2xl text-blue-400 w-fit mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 13V4" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-3">AI Powered</h3>
+                <p class="text-slate-400 leading-relaxed">
+                    All our games are created experimentally using cutting-edge AI. This allows us to rapidly prototype and bring new ideas to life. Please bear with us as we fine-tune each experience!
+                </p>
+            </div>
+
+            <!-- The Team -->
+            <div class="about-section p-8 rounded-3xl">
+                <div class="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400 w-fit mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Student Led</h3>
+                <p class="text-slate-400 leading-relaxed">
+                    We're a group of students passionate about the future of tech. What started as a fun project to test AI capabilities evolved into the platform you see today.
+                </p>
+            </div>
         </div>
 
-        <div class="section">
-            <h2>Our Team</h2>
-            <p>
-                We are a group of schoolkids who just wanted to have some fun while testing 
-                AI and then it became this! 
+        <!-- Support -->
+        <div class="about-section p-8 rounded-3xl text-center">
+            <h2 class="text-2xl font-bold mb-4">Got Ideas?</h2>
+            <p class="text-slate-400 mb-8 max-w-xl mx-auto">
+                We're always looking for suggestions. If you have a game idea or found a bug, your feedback helps us grow.
             </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="feedback.html" class="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 rounded-xl font-bold transition-all no-underline">
+                    Send Feedback
+                </a>
+                <a href="bugs.html" class="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-xl font-bold transition-all no-underline">
+                    Report a Bug
+                </a>
+            </div>
         </div>
+    </main>
 
-        <div class="section">
-            <h2>Contact Us</h2>
-            <p>
-                If you have questions, feedback, or just want to chat, feel free to visit 
-                our <a href="feedback.html">feedback page</a>.
-            </p>
-        </div>
-    </div>
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
+        <p class="text-sm">Made with ❤️ for the gaming community</p>
+    </footer>
+
 </body>
 </html>
