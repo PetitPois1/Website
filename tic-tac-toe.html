@@ -35,9 +35,10 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
             margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        .score-item { text-align: center; font-weight: bold; }
+        .score-item { text-align: center; font-weight: bold; min-width: 100px; }
         .score-val { display: block; font-size: 28px; color: var(--accent); }
 
         .controls { margin-bottom: 20px; }
@@ -48,6 +49,7 @@
             color: white;
             border: 1px solid var(--accent);
             cursor: pointer;
+            outline: none;
         }
 
         .board {
@@ -73,7 +75,7 @@
             border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .cell:hover { background: rgba(255, 255, 255, 0.05); }
+        .cell:hover { background: rgba(255, 255, 255, 0.05); transform: scale(1.02); }
         .cell.x { color: var(--x-color); text-shadow: 0 0 15px var(--x-color); }
         .cell.o { color: var(--o-color); text-shadow: 0 0 15px var(--o-color); }
 
@@ -83,7 +85,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             padding: 20px 40px;
             border-radius: 10px;
             font-size: 32px;
@@ -92,6 +94,7 @@
             transition: opacity 0.4s;
             border: 2px solid var(--accent);
             text-align: center;
+            white-space: nowrap;
         }
 
         .show-status { opacity: 1; }
@@ -112,20 +115,18 @@
             border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
+            text-transform: uppercase;
             transition: 0.3s;
         }
 
-        button:hover {
-            background: var(--accent);
-            color: var(--bg);
-        }
+        button:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
     </style>
 </head>
 <body>
 
     <div class="score-board">
-        <div class="score-item">PLAYER X <span class="score-val" id="x-score">0</span></div>
-        <div class="score-item">PLAYER O <span class="score-val" id="o-score">0</span></div>
+        <div class="score-item">PLAYER (X) <span class="score-val" id="x-score">0</span></div>
+        <div class="score-item" id="player-o-label">AI (O) <span class="score-val" id="o-score">0</span></div>
     </div>
 
     <div class="controls">
@@ -166,6 +167,7 @@
         const statusDisplay = document.getElementById('game-status');
         const turnDisplay = document.getElementById('turn-indicator');
         const difficulty = document.getElementById('difficulty');
+        const oLabel = document.getElementById('player-o-label');
 
         const winConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -179,19 +181,14 @@
             const index = e.target.getAttribute('data-index');
             if (board[index] !== '' || !isGameActive) return;
 
-            // 1. Place move for whoever's turn it is
             executeMove(index, currentPlayer);
 
-            // 2. Check if that move ended the game
             if (checkWin(currentPlayer)) return;
 
-            // 3. Determine what happens next based on mode
             if (difficulty.value === 'coop') {
                 swapTurn();
             } else {
-                // VS AI Mode
-                isGameActive = false; // Disable clicks until AI moves
-                currentPlayer = 'O'; 
+                isGameActive = false; 
                 turnDisplay.textContent = "AI is thinking...";
                 setTimeout(aiTurn, 600);
             }
@@ -234,7 +231,8 @@
 
             if (win) {
                 updateScore(player);
-                announceResult(player + " Wins!");
+                const winMsg = (difficulty.value !== 'coop' && player === 'O') ? "AI Wins!" : player + " Wins!";
+                announceResult(winMsg);
                 return true;
             }
 
@@ -262,6 +260,14 @@
             setTimeout(resetGame, 2000);
         }
 
+        function updateLabels() {
+            if (difficulty.value === 'coop') {
+                oLabel.innerHTML = `PLAYER (O) <span class="score-val" id="o-score">${oScore}</span>`;
+            } else {
+                oLabel.innerHTML = `AI (O) <span class="score-val" id="o-score">${oScore}</span>`;
+            }
+        }
+
         function resetGame(fullReset = false) {
             board = ['', '', '', '', '', '', '', '', ''];
             isGameActive = true;
@@ -276,8 +282,10 @@
             if (fullReset) {
                 xScore = 0; oScore = 0;
                 document.getElementById('x-score').textContent = "0";
-                document.getElementById('o-score').textContent = "0";
             }
+            
+            // This ensures the label updates whenever mode changes or game resets
+            updateLabels();
         }
 
         function getRandomMove() {
@@ -305,6 +313,9 @@
             }
             return null;
         }
+
+        // Initialize labels on load
+        updateLabels();
     </script>
 </body>
 </html>
