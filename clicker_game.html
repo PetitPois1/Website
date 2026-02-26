@@ -27,6 +27,31 @@
             overflow-x: hidden;
         }
 
+        /* News Ticker */
+        .ticker-wrap {
+            width: 100%;
+            max-width: 650px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 5px 0;
+            border-radius: 4px;
+        }
+        .ticker {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 25s linear infinite;
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
         /* Header & Stats */
         .header {
             text-align: center;
@@ -241,13 +266,17 @@
         </div>
     </div>
 
+    <div class="ticker-wrap">
+        <div class="ticker" id="ticker-text">Welcome to Industrial Clicker. Click the stone to begin production.</div>
+    </div>
+
     <div class="header">
         <div class="credit-display" id="creditCount">0 Credits</div>
         <div class="production-display">Production: <span id="cpsCount">0</span>/sec</div>
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn" onclick="toggleSettings()">STATS & SETTINGS</button>
+        <button class="nav-btn" onclick="toggleSettings()">STATS & ACHIEVEMENTS</button>
     </div>
 
     <div class="buy-modes">
@@ -278,7 +307,16 @@
         let currentTier = 0;
         const growthRate = 1.15;
 
-        // Achievements Definition
+        const headlines = {
+            start: ["Local entrepreneur found hitting rocks with other rocks.", "Stone production at an all-time high.", "Manual labor is back in fashion."],
+            copper: ["Copper tools discovered; local hammers rejoice.", "Statues of you are being built (out of copper).", "The Bronze Age is calling."],
+            iron: ["Iron forges burning 24/7.", "Local blacksmiths become millionaires.", "Iron production spikes; sword sales plummet."],
+            steel: ["Steel beams are the new currency.", "Skyscrapers rising in your name.", "Rust-proof profits recorded."],
+            electronics: ["Gold circuits revolutionize clicking.", "The digital age has arrived.", "Local internet speed increases by 10%."],
+            data: ["Silicon Valley relocates to your factory floor.", "Cloud storage overflowing with credits.", "Processing power exceeds human limits."],
+            quantum: ["Reality itself being used for industrial output.", "Quantum clicks exist in two banks at once.", "The factory has achieved enlightenment."]
+        };
+
         const achievements = [
             { id: 'first_click', name: "Industrialist", desc: "Click for the first time", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'rich_1k', name: "Small Business", desc: "Earn 1,000 credits all-time", icon: "💰", check: () => totalEarned >= 1000 },
@@ -295,17 +333,17 @@
         ];
         let unlockedAchievements = [];
 
-        // Data
+        // FIXED POWER SYSTEM: Each tier has a specific, non-additive value.
         const tierUpgrades = [
-            { name: "Copper Tools", cost: 100, clickBoost: 8, label: "COPPER", class: "tier-1", desc: "Basic metalwork." },
-            { name: "Iron Forge", cost: 1500, clickBoost: 45, label: "IRON", class: "tier-2", desc: "Heavy industrial strength." },
-            { name: "Steel Refining", cost: 15000, clickBoost: 250, label: "STEEL", class: "tier-3", desc: "Durable high-grade alloy." },
-            { name: "Micro-Circuitry", cost: 100000, clickBoost: 1200, label: "GOLD", class: "tier-4", desc: "Digital logic gates." },
-            { name: "Silicon Processing", cost: 750000, clickBoost: 6000, label: "DATA", class: "tier-5", desc: "Super-conductive clicking." },
-            { name: "Nanotech Assembly", cost: 5000000, clickBoost: 35000, label: "NANO", class: "tier-6", desc: "Atomic manipulation." },
-            { name: "Fusion Ignition", cost: 50000000, clickBoost: 200000, label: "FUSION", class: "tier-7", desc: "Miniature sun power." },
-            { name: "Antimatter Drive", cost: 500000000, clickBoost: 1500000, label: "VOID", class: "tier-8", desc: "Annihilation energy." },
-            { name: "Quantum Core", cost: 10000000000, clickBoost: 10000000, label: "QUANTUM", class: "tier-9", desc: "Infinite states." }
+            { name: "Copper Tools", cost: 100, clickValue: 10, label: "COPPER", class: "tier-1", desc: "Upgrade power to 10/click." },
+            { name: "Iron Forge", cost: 1500, clickValue: 50, label: "IRON", class: "tier-2", desc: "Upgrade power to 50/click." },
+            { name: "Steel Refining", cost: 15000, clickValue: 300, label: "STEEL", class: "tier-3", desc: "Upgrade power to 300/click." },
+            { name: "Micro-Circuitry", cost: 100000, clickValue: 1500, label: "GOLD", class: "tier-4", desc: "Upgrade power to 1,500/click." },
+            { name: "Silicon Processing", cost: 750000, clickValue: 8000, label: "DATA", class: "tier-5", desc: "Upgrade power to 8,000/click." },
+            { name: "Nanotech Assembly", cost: 5000000, clickValue: 45000, label: "NANO", class: "tier-6", desc: "Upgrade power to 45,000/click." },
+            { name: "Fusion Ignition", cost: 50000000, clickValue: 250000, label: "FUSION", class: "tier-7", desc: "Upgrade power to 250,000/click." },
+            { name: "Antimatter Drive", cost: 500000000, clickValue: 1750000, label: "VOID", class: "tier-8", desc: "Upgrade power to 1.75M/click." },
+            { name: "Quantum Core", cost: 10000000000, clickValue: 15000000, label: "QUANTUM", class: "tier-9", desc: "Upgrade power to 15M/click." }
         ];
 
         const machineUpgrades = {
@@ -324,7 +362,6 @@
         let inventory = {};
         Object.keys(machineUpgrades).forEach(id => inventory[id] = 0);
 
-        // UI & Logic
         function toggleSettings() {
             const el = document.getElementById('settings-overlay');
             const isOpening = el.style.display !== 'flex';
@@ -355,11 +392,13 @@
             document.getElementById('cpsCount').innerText = Math.floor(totalCps).toLocaleString();
             window.currentCps = totalCps;
 
-            let totalClick = 1;
-            for(let i=0; i < currentTier; i++) totalClick += tierUpgrades[i].clickBoost;
-            window.currentClickValue = totalClick;
+            // FIXED POWER LOGIC: Use current tier value or base 1.
+            let clickVal = 1;
+            if (currentTier > 0) {
+                clickVal = tierUpgrades[currentTier - 1].clickValue;
+            }
+            window.currentClickValue = clickVal;
 
-            // Machines
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
@@ -369,7 +408,6 @@
                 document.getElementById(`count-${id}`).innerHTML = `Owned: ${inventory[id]} (+${machineUpgrades[id].addAuto}/s)`;
             });
 
-            // Tiers
             const tierBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
@@ -377,6 +415,23 @@
             } else tierBox.innerHTML = `<p style="text-align:center; color:var(--quantum);">MAX TIER</p>`;
 
             checkAchievements();
+            updateTicker();
+        }
+
+        function updateTicker() {
+            let key = "start";
+            if (currentTier >= 9) key = "quantum";
+            else if (currentTier >= 6) key = "data";
+            else if (currentTier >= 4) key = "electronics";
+            else if (currentTier >= 3) key = "steel";
+            else if (currentTier >= 2) key = "iron";
+            else if (currentTier >= 1) key = "copper";
+            
+            const list = headlines[key];
+            const currentText = document.getElementById('ticker-text').innerText;
+            if (!list.includes(currentText)) {
+                document.getElementById('ticker-text').innerText = list[Math.floor(Math.random() * list.length)];
+            }
         }
 
         function evolveTier() {
@@ -432,14 +487,14 @@
 
         function saveGame(silent = false) {
             const data = { credits, totalEarned, totalClicks, playTimeSeconds, inventory, currentTier, unlockedAchievements };
-            localStorage.setItem("IndusQuantum_V10", JSON.stringify(data));
+            localStorage.setItem("IndusQuantum_V11", JSON.stringify(data));
             if(!silent) notify("Factory Saved");
         }
 
         function manualSave() { saveGame(); }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusQuantum_V10"));
+            const data = JSON.parse(localStorage.getItem("IndusQuantum_V11"));
             if(data) {
                 credits = data.credits || 0;
                 totalEarned = data.totalEarned || 0;
@@ -483,7 +538,6 @@
             updateUI();
         });
 
-        // Intervals
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gain = window.currentCps / 10;
@@ -494,6 +548,7 @@
 
         setInterval(() => { playTimeSeconds++; }, 1000);
         setInterval(() => saveGame(true), 60000);
+        setInterval(updateTicker, 15000); // Change headline every 15s
 
         loadGame();
     </script>
