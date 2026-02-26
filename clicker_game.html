@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Clicker: Quantum Evolution</title>
+    <title>Industrial Clicker: Evolution</title>
     <style>
         :root {
             --primary: #66cc66;
             --bg-dark: #1b2a1d;
-            --panel-bg: rgba(0, 0, 0, 0.85);
+            --panel-bg: rgba(0, 0, 0, 0.9);
             --border: #2d4a30;
             --save-color: #44aaff;
             --quantum: #b300ff;
@@ -23,14 +23,14 @@
             margin: 0;
             padding: 20px;
             background-color: var(--bg-dark);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             overflow-x: hidden;
         }
 
-        /* Ticker, Header, Nav styles remain same as v11 */
+        /* UI Elements */
         .ticker-wrap { width: 100%; max-width: 650px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; white-space: nowrap; padding: 5px 0; border-radius: 4px; }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker 30s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
         .header { text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; width: 90%; max-width: 650px; border: 1px solid var(--border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(8px); }
@@ -38,9 +38,9 @@
         .production-display { color: var(--primary); font-size: 1rem; margin-top: 5px; }
 
         .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .nav-btn { background: #222; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .nav-btn { background: #222; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover { background: var(--primary); color: black; }
 
-        /* Admin Button - Hidden by default */
         #admin-nav-btn { display: none; border-color: var(--admin); color: var(--admin); }
 
         .buy-modes { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -48,55 +48,44 @@
         .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #1b2a1d; }
 
         .click-area { height: 220px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
-        #circle { width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: 0.2s; text-align: center; padding: 15px; }
-        #circle:active { transform: scale(0.9); }
+        #circle { width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: 0.15s; text-align: center; padding: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        #circle:active { transform: scale(0.92); }
 
-        /* Tiers 0-9 classes remain same */
+        /* Tier Visuals */
         .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
-        .tier-1 { border-radius: 50%; background: #b87333; border: 4px solid #e39a5d; }
-        .tier-2 { border-radius: 15%; background: #a19d94; border: 4px solid #ced4da; }
-        .tier-3 { border-radius: 5px;  background: #4682b4; border: 4px solid #87ceeb; }
-        .tier-4 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #ffd700; color: black; }
-        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #00f2ff; color: black; }
-        .tier-6 { border-radius: 50% 0 50% 0; background: #e0e0e0; border: 4px solid #ff0055; color: black; }
-        .tier-7 { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); background: #111; border: 2px solid #00ff00; }
-        .tier-8 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); background: #fff; color: black; }
-        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
+        .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
+        .tier-3 { border-radius: 8px;  background: #4682b4; border: 4px solid #2c5272; }
+        .tier-4 { border-radius: 0; background: #c0c0c0; border: 4px solid #ffd700; }
+        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; border: 2px solid white; }
+        .tier-6 { border-radius: 50% 0 50% 0; background: #e0e0e0; border: 4px solid #ff4500; }
+        .tier-7 { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); background: #000; border: 2px solid #00ff00; }
+        .tier-8 { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background: #fff; color: black; }
+        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; }
 
+        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); transform: scale(1.05); } 100% { box-shadow: 0 0 10px var(--quantum); } }
+
+        /* Shop Layout */
         .shop { width: 100%; max-width: 700px; }
-        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 1rem; }
+        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
         .upgrade-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 15px; }
         .upgrade-info h3 { margin: 0; color: var(--primary); font-size: 1rem; }
         .upgrade-info p { margin: 4px 0; font-size: 0.8rem; color: #aaa; }
         .upgrade-stats { font-size: 0.8rem; color: var(--primary); font-weight: bold; }
-        .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 10px; border-radius: 4px; cursor: pointer; min-width: 140px; font-weight: bold; }
-        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; }
+        .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 12px; border-radius: 4px; cursor: pointer; min-width: 150px; font-weight: bold; }
+        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
 
         /* Overlays */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; display: none; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
-        
-        /* Code Input Section */
-        .code-section { margin-top: 20px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center; }
-        .code-input { padding: 10px; border-radius: 4px; border: 1px solid var(--primary); background: #111; color: white; width: 60%; margin-right: 10px; font-family: monospace; }
+        .code-section { margin-top: 20px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid #333; }
+        .code-input { padding: 12px; border-radius: 4px; border: 1px solid var(--primary); background: #111; color: white; width: 60%; margin-right: 10px; font-family: monospace; }
 
-        /* Admin Panel Styles */
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 600px; }
-        .admin-btn { background: #330000; border: 1px solid var(--admin); color: var(--admin); padding: 10px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        .admin-btn:hover { background: var(--admin); color: white; }
-
-        /* Stats & Achievement styles remain same */
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px; }
-        .stat-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #333; }
-        .stat-box h4 { margin: 0; color: #888; font-size: 0.8rem; }
-        .stat-box p { margin: 5px 0 0; font-size: 1.2rem; font-weight: bold; color: var(--primary); }
-        .achievements-list { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 10px; }
-        .ach-item { background: #111; padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 15px; opacity: 0.4; border: 1px solid #222; }
-        .ach-item.unlocked { opacity: 1; border-color: var(--gold); background: #1a1a00; }
-
+        .admin-btn { background: #330000; border: 1px solid var(--admin); color: var(--admin); padding: 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--save-color); padding: 12px 20px; border-radius: 4px; font-weight: bold; opacity: 0; transition: 0.4s; z-index: 2000; }
         #toast.show { opacity: 1; }
-        .floating-text { position: absolute; color: var(--primary); font-weight: bold; pointer-events: none; animation: float 0.7s forwards; }
+        .floating-text { position: absolute; color: var(--primary); font-weight: bold; pointer-events: none; animation: float 0.7s forwards; text-shadow: 1px 1px 2px black; }
         @keyframes float { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
     </style>
 </head>
@@ -105,24 +94,24 @@
     <div id="toast">Saved</div>
 
     <div id="settings-overlay" class="overlay">
-        <button class="nav-btn" style="margin-bottom: 20px;" onclick="toggleOverlay('settings-overlay')">BACK TO FACTORY</button>
-        
-        <h2 class="section-title">FACTORY RECORDS</h2>
-        <div class="stats-grid">
-            <div class="stat-box"><h4>All-Time Credits</h4><p id="stat-alltime">0</p></div>
-            <div class="stat-box"><h4>Total Clicks</h4><p id="stat-clicks">0</p></div>
-            <div class="stat-box"><h4>Playtime</h4><p id="stat-time">0m</p></div>
-            <div class="stat-box"><h4>Production</h4><p id="stat-cps">0/s</p></div>
+        <button class="nav-btn" style="margin-bottom: 20px;" onclick="toggleOverlay('settings-overlay')">RETURN TO WORK</button>
+        <h2 class="section-title">GLOBAL STATISTICS</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width:100%; max-width:600px;">
+            <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; text-align:center;">
+                <h4 style="margin:0; font-size:0.7rem; color:#888;">ALL-TIME EARNINGS</h4>
+                <p id="stat-alltime" style="font-size:1.2rem; color:var(--primary); margin:5px 0 0;">0</p>
+            </div>
+            <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; text-align:center;">
+                <h4 style="margin:0; font-size:0.7rem; color:#888;">PLAYTIME</h4>
+                <p id="stat-time" style="font-size:1.2rem; color:var(--primary); margin:5px 0 0;">0s</p>
+            </div>
         </div>
 
-        <h2 class="section-title">REDEEM CODES</h2>
+        <h2 class="section-title">REDEEM ACCESS CODES</h2>
         <div class="code-section">
-            <input type="text" id="promo-code" class="code-input" placeholder="Enter code...">
-            <button class="nav-btn" onclick="redeemCode()">REDEEM</button>
+            <input type="text" id="promo-code" class="code-input" placeholder="ACCESS_CODE_HERE">
+            <button class="nav-btn" onclick="redeemCode()">SUBMIT</button>
         </div>
-
-        <h2 class="section-title">ACHIEVEMENTS</h2>
-        <div class="achievements-list" id="ach-container"></div>
 
         <div style="margin-top: 50px;">
             <button class="nav-btn" onclick="manualSave()" style="border-color: var(--save-color); color: var(--save-color);">MANUAL SAVE</button>
@@ -131,27 +120,26 @@
     </div>
 
     <div id="admin-overlay" class="overlay">
-        <button class="nav-btn" style="margin-bottom: 20px; border-color: var(--admin); color: var(--admin);" onclick="toggleOverlay('admin-overlay')">CLOSE ADMIN PANEL</button>
-        <h2 class="section-title" style="color: var(--admin); border-color: var(--admin);">DEV TEAM COMMAND CENTER</h2>
-        
+        <button class="nav-btn" style="margin-bottom: 20px; border-color: var(--admin); color: var(--admin);" onclick="toggleOverlay('admin-overlay')">EXIT ADMIN CONSOLE</button>
+        <h2 class="section-title" style="color: var(--admin); border-color: var(--admin);">OVERRIDE COMMANDS</h2>
         <div class="admin-grid">
-            <button class="admin-btn" onclick="adminAddCredits()">+1 Million Credits</button>
-            <button class="admin-btn" onclick="adminMaxTier()">Instant Max Tier</button>
-            <button class="admin-btn" onclick="adminAddMachines()">+50 All Machines</button>
-            <button class="admin-btn" onclick="adminZeroCredits()">Reset Bank to 0</button>
+            <button class="admin-btn" onclick="adminAddCredits()">GRANT 10M CREDITS</button>
+            <button class="admin-btn" onclick="adminMaxTier()">UNLOCK ALL TECH</button>
+            <button class="admin-btn" onclick="adminAddMachines()">ADD 100 TO ALL UNITS</button>
+            <button class="admin-btn" onclick="adminZeroCredits()">RESET CURRENCY</button>
         </div>
     </div>
 
-    <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome back, Director.</div></div>
+    <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome to the Evolution. Progress is slow, but inevitable.</div></div>
 
     <div class="header">
         <div class="credit-display" id="creditCount">0 Credits</div>
-        <div class="production-display">Production: <span id="cpsCount">0</span>/sec</div>
+        <div class="production-display">Automated Yield: <span id="cpsCount">0</span>/sec</div>
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">STATS & CODES</button>
-        <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')">ADMIN PANEL</button>
+        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RECORDS & CODES</button>
+        <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')">ADMIN CONSOLE</button>
     </div>
 
     <div class="buy-modes">
@@ -164,42 +152,42 @@
     <div class="click-area"><div id="circle" class="tier-0">STONE</div></div>
 
     <div class="shop">
-        <h2 class="section-title">TECHNOLOGY TIERS</h2>
+        <h2 class="section-title">TECHNOLOGICAL AGES</h2>
         <div id="tier-container"></div>
-        <h2 class="section-title">FACTORY INFRASTRUCTURE</h2>
+        <h2 class="section-title">PRODUCTION FACILITIES</h2>
         <div id="machine-container"></div>
     </div>
 
     <script>
         let credits = 0, totalEarned = 0, totalClicks = 0, playTimeSeconds = 0, buyMode = 1, currentTier = 0;
         let adminUnlocked = false;
-        const growthRate = 1.15;
-        let unlockedAchievements = [];
+        const growthRate = 1.25; // Increased difficulty from 1.15
         let usedCodes = [];
 
+        // Updated Names and Logical Progression
         const tierUpgrades = [
-            { name: "Copper Tools", cost: 100, clickValue: 10, label: "COPPER", class: "tier-1", desc: "Upgrade power to 10/click." },
-            { name: "Iron Forge", cost: 1500, clickValue: 50, label: "IRON", class: "tier-2", desc: "Upgrade power to 50/click." },
-            { name: "Steel Refining", cost: 15000, clickValue: 300, label: "STEEL", class: "tier-3", desc: "Upgrade power to 300/click." },
-            { name: "Micro-Circuitry", cost: 100000, clickValue: 1500, label: "GOLD", class: "tier-4", desc: "Upgrade power to 1,500/click." },
-            { name: "Silicon Processing", cost: 750000, clickValue: 8000, label: "DATA", class: "tier-5", desc: "Upgrade power to 8,000/click." },
-            { name: "Nanotech Assembly", cost: 5000000, clickValue: 45000, label: "NANO", class: "tier-6", desc: "Upgrade power to 45,000/click." },
-            { name: "Fusion Ignition", cost: 50000000, clickValue: 250000, label: "FUSION", class: "tier-7", desc: "Upgrade power to 250,000/click." },
-            { name: "Antimatter Drive", cost: 500000000, clickValue: 1750000, label: "VOID", class: "tier-8", desc: "Upgrade power to 1.75M/click." },
-            { name: "Quantum Core", cost: 10000000000, clickValue: 15000000, label: "QUANTUM", class: "tier-9", desc: "Upgrade power to 15M/click." }
+            { name: "Bronze Tools", cost: 250, clickValue: 12, label: "BRONZE", class: "tier-1", desc: "Hardened alloys for more efficient harvesting." },
+            { name: "Iron Workings", cost: 3500, clickValue: 65, label: "IRON", class: "tier-2", desc: "High-durability tools for industrial output." },
+            { name: "Steel Forging", cost: 45000, clickValue: 400, label: "STEEL", class: "tier-3", desc: "The foundation of the modern structural world." },
+            { name: "Machine Automation", cost: 250000, clickValue: 2200, label: "FACTORY", class: "tier-4", desc: "Assisted clicking via basic mechanical logic." },
+            { name: "Circuitry & Logic", cost: 1500000, clickValue: 12000, label: "DIGITAL", class: "tier-5", desc: "Processing clicks at the speed of silicon." },
+            { name: "Atomic Synthesis", cost: 12000000, clickValue: 85000, label: "ATOMIC", class: "tier-6", desc: "Splitting atoms for energy-dense manual input." },
+            { name: "Plasma Confinement", cost: 100000000, clickValue: 500000, label: "PLASMA", class: "tier-7", desc: "Super-heated plasma-assisted generation." },
+            { name: "Antimatter Mastery", cost: 2500000000, clickValue: 4500000, label: "VOID", class: "tier-8", desc: "Harnessing the annihilation of matter." },
+            { name: "Quantum Tunneling", cost: 50000000000, clickValue: 40000000, label: "QUANTUM", class: "tier-9", desc: "Bypassing the laws of physics for infinite yield." }
         ];
 
         const machineUpgrades = {
-            manual: { name: "Manual Crank", addAuto: 1, baseCost: 15 },
-            steam: { name: "Steam Engine", addAuto: 10, baseCost: 250 },
-            electric: { name: "Power Turbine", addAuto: 65, baseCost: 2000 },
-            diesel: { name: "Diesel Gen", addAuto: 420, baseCost: 18000 },
-            hydro: { name: "Hydro Dam", addAuto: 2800, baseCost: 150000 },
-            nuclear: { name: "Fission Reactor", addAuto: 18000, baseCost: 1200000 },
-            thermal: { name: "Geothermal Plant", addAuto: 115000, baseCost: 15000000 },
-            orbital: { name: "Solar Satellite", addAuto: 950000, baseCost: 250000000 },
-            particle: { name: "Hadron Collider", addAuto: 12000000, baseCost: 5000000000 },
-            singularity: { name: "Singularity Well", addAuto: 350000000, baseCost: 100000000000 }
+            gatherer: { name: "Manual Gatherer", addAuto: 1, baseCost: 20 },
+            blacksmith: { name: "Village Blacksmith", addAuto: 12, baseCost: 350 },
+            watermill: { name: "Industrial Watermill", addAuto: 80, baseCost: 3000 },
+            steam: { name: "Coal Steam Engine", addAuto: 550, baseCost: 25000 },
+            oil: { name: "Petroleum Refinery", addAuto: 3800, baseCost: 220000 },
+            nuclear: { name: "Fission Plant", addAuto: 25000, baseCost: 1800000 },
+            solar: { name: "Orbital Solar Array", addAuto: 180000, baseCost: 25000000 },
+            fusion: { name: "Helium-3 Fusion Cell", addAuto: 1500000, baseCost: 400000000 },
+            dyson: { name: "Dyson Swarm Fragment", addAuto: 14000000, baseCost: 8000000000 },
+            singularity: { name: "Dark Matter Well", addAuto: 450000000, baseCost: 250000000000 }
         };
 
         let inventory = {};
@@ -218,24 +206,24 @@
 
             if (val === "Freebie1") {
                 credits += 10000; totalEarned += 10000;
-                usedCodes.push(val); notify("Received 10,000 Credits!");
-            } else if (val === "DevTeamTest12") {
+                usedCodes.push(val); notify("Granted: 10,000 Credits");
+            } else if (val === "AA") {
                 adminUnlocked = true;
                 document.getElementById('admin-nav-btn').style.display = 'block';
-                usedCodes.push(val); notify("Admin Panel Unlocked!");
+                usedCodes.push(val); notify("Admin Privileges Granted");
             } else {
-                notify("Invalid Code");
+                notify("Access Denied: Invalid Code");
             }
             document.getElementById('promo-code').value = "";
             updateUI();
             saveGame(true);
         }
 
-        /* ADMIN COMMANDS */
-        function adminAddCredits() { credits += 1000000; totalEarned += 1000000; updateUI(); notify("Cheat: +1M Credits"); }
-        function adminMaxTier() { currentTier = 9; applyTierVisuals(); updateUI(); notify("Cheat: Max Tech Unlocked"); }
-        function adminAddMachines() { Object.keys(inventory).forEach(id => inventory[id] += 50); updateUI(); notify("Cheat: +50 All Machines"); }
-        function adminZeroCredits() { credits = 0; updateUI(); notify("Cheat: Bank Wiped"); }
+        /* ADMIN FUNCTIONS */
+        function adminAddCredits() { credits += 10000000; totalEarned += 10000000; updateUI(); notify("Admin: +10M Credits"); }
+        function adminMaxTier() { currentTier = 9; applyTierVisuals(); updateUI(); notify("Admin: Tech Maxed"); }
+        function adminAddMachines() { Object.keys(inventory).forEach(id => inventory[id] += 100); updateUI(); notify("Admin: +100 Units Added"); }
+        function adminZeroCredits() { credits = 0; updateUI(); notify("Admin: Currency Wiped"); }
 
         function applyTierVisuals() {
             const circle = document.getElementById('circle');
@@ -267,16 +255,16 @@
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
-                btn.innerHTML = `Buy ${buyData.count}<br>${Math.round(buyData.cost).toLocaleString()} C`;
+                btn.innerHTML = `Acquire ${buyData.count}<br>${Math.round(buyData.cost).toLocaleString()} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
-                document.getElementById(`count-${id}`).innerText = `Owned: ${inventory[id]} (+${machineUpgrades[id].addAuto}/s)`;
+                document.getElementById(`count-${id}`).innerText = `Fleet: ${inventory[id].toLocaleString()} (+${(machineUpgrades[id].addAuto * inventory[id]).toLocaleString()}/s)`;
             });
 
             const tierBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
-                tierBox.innerHTML = `<div class="upgrade-card"><div class="upgrade-info"><h3>Next: ${next.name}</h3><p>${next.desc}</p></div><button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">Evolve<br>${next.cost.toLocaleString()} C</button></div>`;
-            } else tierBox.innerHTML = `<p style="text-align:center; color:var(--quantum);">MAX TIER</p>`;
+                tierBox.innerHTML = `<div class="upgrade-card"><div class="upgrade-info"><h3>Enter ${next.name}</h3><p>${next.desc}</p></div><button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">Evolve Age<br>${next.cost.toLocaleString()} C</button></div>`;
+            } else tierBox.innerHTML = `<p style="text-align:center; color:var(--quantum); font-weight:bold;">MAXIMUM EVOLUTION REACHED</p>`;
             
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
         }
@@ -308,13 +296,13 @@
         }
 
         function saveGame(silent = false) {
-            const data = { credits, totalEarned, totalClicks, playTimeSeconds, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes };
-            localStorage.setItem("IndusQuantum_V12", JSON.stringify(data));
-            if(!silent) notify("Factory Saved");
+            const data = { credits, totalEarned, totalClicks, playTimeSeconds, inventory, currentTier, adminUnlocked, usedCodes };
+            localStorage.setItem("IndusEvolution_V13", JSON.stringify(data));
+            if(!silent) notify("Progress Synchronized");
         }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusQuantum_V12"));
+            const data = JSON.parse(localStorage.getItem("IndusEvolution_V13"));
             if(data) {
                 credits = data.credits || 0; totalEarned = data.totalEarned || 0;
                 totalClicks = data.totalClicks || 0; playTimeSeconds = data.playTimeSeconds || 0;
@@ -326,12 +314,11 @@
             updateUI();
         }
 
-        function resetGame() { if(confirm("Hard Reset?")) { localStorage.clear(); location.reload(); } }
+        function resetGame() { if(confirm("This will PERMANENTLY delete all progress. Continue?")) { localStorage.clear(); location.reload(); } }
 
-        /* Setup machines shop */
         const mBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
-            mBox.innerHTML += `<div class="upgrade-card"><div class="upgrade-info"><h3>${machineUpgrades[id].name}</h3><p>${machineUpgrades[id].desc}</p><div class="upgrade-stats" id="count-${id}"></div></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
+            mBox.innerHTML += `<div class="upgrade-card"><div class="upgrade-info"><h3>${machineUpgrades[id].name}</h3><p>Yields ${machineUpgrades[id].addAuto} per second.</p><div class="upgrade-stats" id="count-${id}"></div></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
         });
 
         function buyMachine(id) {
@@ -356,8 +343,6 @@
 
         function updateStatsPage() {
             document.getElementById('stat-alltime').innerText = Math.floor(totalEarned).toLocaleString();
-            document.getElementById('stat-clicks').innerText = totalClicks.toLocaleString();
-            document.getElementById('stat-cps').innerText = Math.floor(window.currentCps).toLocaleString();
             document.getElementById('stat-time').innerText = `${Math.floor(playTimeSeconds / 60)}m ${playTimeSeconds % 60}s`;
         }
 
