@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loopy Hamiltonian Puzzle</title>
+    
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Load Babel to understand JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-neutral-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // --- Inline SVG Icons ---
+        const RotateCcw = ({ className, strokeWidth = 2 }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        );
+        const Clock = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        );
+        const Info = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        );
+        const Trophy = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        );
+
+        const W = 10;
+        const H = 10;
+        const CELL_SIZE = 50;
+
+        // --- Helper Functions ---
+        const connects = (piece, dir) => {
+            if (dir === 'N') return piece === 1 || piece === 3 || piece === 6;
+            if (dir === 'S') return piece === 1 || piece === 4 || piece === 5;
+            if (dir === 'E') return piece === 2 || piece === 3 || piece === 4;
+            if (dir === 'W') return piece === 2 || piece === 5 || piece === 6;
+            return false;
+        };
+
+        const opposite = (dir) => {
+            if (dir === 'N') return 'S';
+            if (dir === 'S') return 'N';
+            if (dir === 'E') return 'W';
+            if (dir === 'W') return 'E';
+            return null;
+        };
+
+        const getDir = (from, to) => {
+            if (to.r < from.r) return 'N';
+            if (to.r > from.r) return 'S';
+            if (to.c < from.c) return 'W';
+            if (to.c > from.c) return 'E';
+            return null;
+        };
+
+        const getPiece = (d1, d2) => {
+            const dirs = [d1, d2].sort().join('');
+            if (dirs === 'NS') return 1;
+            if (dirs === 'EW') return 2;
+            if (dirs === 'EN') return 3;
+            if (dirs === 'ES') return 4;
+            if (dirs === 'SW') return 5;
+            if (dirs === 'NW') return 6;
+            return 0;
+        };
+
+        // --- Advanced Logical Deduction Engine ---
+
+        // Checks how many valid exits a specific cell currently has
+        const getLiberties = (board, holes, r, c) => {
+            let libs = 0;
+            let dirs = ['N', 'S', 'E', 'W'];
+            for (let i=0; i<4; i++) {
+                let d = dirs[i];
+                let nr = r + (d==='S'?1:d==='N'?-1:0);
+                let nc = c + (d==='E'?1:d==='W'?-1:0);
+                if (nr >= 0 && nr < H && nc >= 0 && nc < W && !holes[nr][nc]) {
+                    let np = board[nr][nc];
+                    if (np === 0 || connects(np, opposite(d))) libs++;
+                }
+            }
+            return libs;
+        };
+
+        // Ensures we don't accidentally close the loop before filling the board
+        const wouldFormPrematureLoop = (board, holes, r, c, p, totalValidCells) => {
+            let d = null;
+            if (connects(p, 'N')) d = 'N';
+            else if (connects(p, 'S')) d = 'S';
+            else if (connects(p, 'E')) d = 'E';
+            else if (connects(p, 'W')) d = 'W';
+            if(!d) return false;
+
+            board[r][c] = p; 
+            
+            let enterDir = opposite(d);
+            let nextR = r + (d==='S'?1:d==='N'?-1:0);
+            let nextC = c + (d==='E'?1:d==='W'?-1:0);
+            
+            let pathLen = 1;
+            let isLoop = false;
+            
+            while (true) {
+                if (nextR < 0 || nextR >= H || nextC < 0 || nextC >= W) break;
+                if (holes[nextR][nextC]) break;
+                
+                let np = board[nextR][nextC];
+                if (np === 0) break;
+                if (!connects(np, enterDir)) break;
+                
+                pathLen++;
+                if (nextR === r && nextC === c) {
+                    isLoop = true;
+                    break;
+                }
+                
+                let nd = null;
+                if (enterDir !== 'N' && connects(np, 'N')) nd = 'N';
+                else if (enterDir !== 'S' && connects(np, 'S')) nd = 'S';
+                else if (enterDir !== 'E' && connects(np, 'E')) nd = 'E';
+                else if (enterDir !== 'W' && connects(np, 'W')) nd = 'W';
+                
+                if (!nd) break; 
+                
+                enterDir = opposite(nd);
+                nextR = nextR + (nd==='S'?1:nd==='N'?-1:0);
+                nextC = nextC + (nd==='E'?1:nd==='W'?-1:0);
+            }
+            
+            board[r][c] = 0;
+            return isLoop && pathLen < totalValidCells;
+        };
+
+        // Strict validation: Must connect correctly AND not trap neighboring cells
+        const isValidStrict = (board, holes, r, c, p, totalValidCells) => {
+            if (connects(p, 'N') && (r === 0 || holes[r-1][c])) return false;
+            if (connects(p, 'S') && (r === H-1 || holes[r+1][c])) return false;
+            if (connects(p, 'E') && (c === W-1 || holes[r][c+1])) return false;
+            if (connects(p, 'W') && (c === 0 || holes[r][c-1])) return false;
+            
+            if (r > 0 && !holes[r-1][c] && board[r-1][c] !== 0) {
+                if (connects(p, 'N') !== connects(board[r-1][c], 'S')) return false;
+            }
+            if (r < H-1 && !holes[r+1][c] && board[r+1][c] !== 0) {
+                if (connects(p, 'S') !== connects(board[r+1][c], 'N')) return false;
+            }
+            if (c > 0 && !holes[r][c-1] && board[r][c-1] !== 0) {
+                if (connects(p, 'W') !== connects(board[r][c-1], 'E')) return false;
+            }
+            if (c < W-1 && !holes[r][c+1] && board[r][c+1] !== 0) {
+                if (connects(p, 'E') !== connects(board[r][c+1], 'W')) return false;
+            }
+            
+            if (wouldFormPrematureLoop(board, holes, r, c, p, totalValidCells)) return false;
+            
+            board[r][c] = p;
+            let validNeighbors = true;
+            
+            if (r > 0 && !holes[r-1][c] && board[r-1][c] === 0 && getLiberties(board, holes, r-1, c) < 2) validNeighbors = false;
+            else if (r < H-1 && !holes[r+1][c] && board[r+1][c] === 0 && getLiberties(board, holes, r+1, c) < 2) validNeighbors = false;
+            else if (c > 0 && !holes[r][c-1] && board[r][c-1] === 0 && getLiberties(board, holes, r, c-1) < 2) validNeighbors = false;
+            else if (c < W-1 && !holes[r][c+1] && board[r][c+1] === 0 && getLiberties(board, holes, r, c+1) < 2) validNeighbors = false;
+            
+            board[r][c] = 0;
+            return validNeighbors;
+        };
+
+        // Basic deduction loop (fills cells that only have 1 possible valid piece left)
+        const applyBasicLogic = (board, holes, totalValidCells) => {
+            let changed = true;
+            let isValid = true;
+            while (changed && isValid) {
+                changed = false;
+                for (let r = 0; r < H; r++) {
+                    for (let c = 0; c < W; c++) {
+                        if (!holes[r][c] && board[r][c] === 0) {
+                            let validPieces = [];
+                            for (let p = 1; p <= 6; p++) {
+                                if (isValidStrict(board, holes, r, c, p, totalValidCells)) {
+                                    validPieces.push(p);
+                                }
+                            }
+                            if (validPieces.length === 0) {
+                                isValid = false; // Contradiction found!
+                                break;
+                            }
+                            if (validPieces.length === 1) {
+                                board[r][c] = validPieces[0]; // Forced move
+                                changed = true;
+                            }
+                        }
+                    }
+                    if (!isValid) break;
+                }
+            }
+            return isValid;
+        };
+
+        // Multi-scenario solver: Tries "what if" scenarios to logically deduce pieces
+        const canSolveLogically = (startBoard, holes, totalValidCells, lookaheadDepth) => {
+            let board = startBoard.map(row => [...row]);
+
+            const solve = (currentBoard, depth) => {
+                // Apply all immediate forced moves
+                if (!applyBasicLogic(currentBoard, holes, totalValidCells)) return false;
+
+                // Are we finished?
+                let emptyCount = 0;
+                for (let r = 0; r < H; r++) {
+                    for (let c = 0; c < W; c++) {
+                        if (!holes[r][c] && currentBoard[r][c] === 0) emptyCount++;
+                    }
+                }
+                if (emptyCount === 0) return true;
+
+                // If stuck, use "Lookahead" (Multi-scenario deduction)
+                if (depth > 0) {
+                    let madeProgress = false;
+                    for (let r = 0; r < H; r++) {
+                        for (let c = 0; c < W; c++) {
+                            if (!holes[r][c] && currentBoard[r][c] === 0) {
+                                let validOptions = [];
+                                for (let p = 1; p <= 6; p++) {
+                                    if (isValidStrict(currentBoard, holes, r, c, p, totalValidCells)) {
+                                        let hypoBoard = currentBoard.map(row => [...row]);
+                                        hypoBoard[r][c] = p;
+                                        
+                                        // If this hypothetical piece creates a cascading contradiction, it's invalid
+                                        if (applyBasicLogic(hypoBoard, holes, totalValidCells)) {
+                                            validOptions.push(p);
+                                        }
+                                    }
+                                }
+                                if (validOptions.length === 0) return false; // Entire branch breaks
+                                if (validOptions.length === 1) {
+                                    currentBoard[r][c] = validOptions[0]; // We deduced it!
+                                    madeProgress = true;
+                                }
+                            }
+                        }
+                        if (madeProgress) break;
+                    }
+                    if (madeProgress) {
+                        return solve(currentBoard, depth);
+                    }
+                }
+                return false;
+            };
+
+            return solve(board, lookaheadDepth);
+        };
+
+        // Standard validator for human gameplay (doesn't solve, just checks immediate validity)
+        const getValidPieces = (board, holes, r, c) => {
+            const valid = [0];
+            for (let p = 1; p <= 6; p++) {
+                if (connects(p, 'N') && (r === 0 || holes[r-1][c])) continue;
+                if (connects(p, 'S') && (r === H - 1 || holes[r+1][c])) continue;
+                if (connects(p, 'E') && (c === W - 1 || holes[r][c+1])) continue;
+                if (connects(p, 'W') && (c === 0 || holes[r][c-1])) continue;
+
+                let n = r > 0 && !holes[r-1][c] ? board[r-1][c] : 0;
+                let s = r < H - 1 && !holes[r+1][c] ? board[r+1][c] : 0;
+                let e = c < W - 1 && !holes[r][c+1] ? board[r][c+1] : 0;
+                let w = c > 0 && !holes[r][c-1] ? board[r][c-1] : 0;
+
+                let isValid = true;
+                if (n !== 0) {
+                    if (connects(p, 'N') && !connects(n, 'S')) isValid = false;
+                    if (!connects(p, 'N') && connects(n, 'S')) isValid = false;
+                }
+                if (s !== 0) {
+                    if (connects(p, 'S') && !connects(s, 'N')) isValid = false;
+                    if (!connects(p, 'S') && connects(s, 'N')) isValid = false;
+                }
+                if (e !== 0) {
+                    if (connects(p, 'E') && !connects(e, 'W')) isValid = false;
+                    if (!connects(p, 'E') && connects(e, 'W')) isValid = false;
+                }
+                if (w !== 0) {
+                    if (connects(p, 'W') && !connects(w, 'E')) isValid = false;
+                    if (!connects(p, 'W') && connects(w, 'E')) isValid = false;
+                }
+
+                if (isValid) valid.push(p);
+            }
+            return valid;
+        };
+
+
+        const generateLevel = (difficulty) => {
+            let maxRetries = 100;
+            
+            while (maxRetries > 0) {
+                maxRetries--;
+                
+                // Create random dead zones (holes)
+                const hW = 3, hH = 2;
+                const hx = Math.floor(Math.random() * (W - hW - 1)) + 1;
+                const hy = Math.floor(Math.random() * (H - hH - 1)) + 1;
+                
+                const holes = Array(H).fill(null).map(() => Array(W).fill(false));
+                let unvisitedCount = 0;
+                
+                for (let r = 0; r < H; r++) {
+                    for (let c = 0; c < W; c++) {
+                        if (r >= hy && r < hy + hH && c >= hx && c < hx + hW) {
+                            holes[r][c] = true;
+                        } else {
+                            unvisitedCount++;
+                        }
+                    }
+                }
+                
+                let visited = Array(H).fill(null).map((_, r) => Array(W).fill(false).map((_, c) => holes[r][c]));
+                let path = [];
+                let steps = 0;
+                let S = {r: 0, c: 0};
+                let E = {r: 0, c: 1};
+                
+                visited[S.r][S.c] = true;
+                path.push(S);
+                
+                const getNeighbors = (r, c, ignoreE) => {
+                    let dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                    let n = [];
+                    for (let [dr, dc] of dirs) {
+                        let nr = r + dr, nc = c + dc;
+                        if (nr >= 0 && nr < H && nc >= 0 && nc < W && !visited[nr][nc]) {
+                            if (ignoreE && nr === E.r && nc === E.c) continue;
+                            n.push({r: nr, c: nc});
+                        }
+                    }
+                    return n;
+                };
+                
+                // Generate a random valid Hamiltonian Path
+                const dfs = (currR, currC) => {
+                    steps++;
+                    if (steps > 25000) return false;
+                    
+                    if (path.length === unvisitedCount) return (currR === E.r && currC === E.c);
+                    
+                    let isSecondToLast = path.length === unvisitedCount - 1;
+                    let neighbors = getNeighbors(currR, currC, !isSecondToLast);
+                    
+                    if (isSecondToLast) {
+                        let hasE = neighbors.some(n => n.r === E.r && n.c === E.c);
+                        if (!hasE) return false;
+                        neighbors = [{r: E.r, c: E.c}];
+                    } else {
+                        let scoredNeighbors = neighbors.map(n => {
+                            let onward = getNeighbors(n.r, n.c, true).length;
+                            return {n, onward, rand: Math.random()};
+                        });
+                        scoredNeighbors.sort((a, b) => {
+                            if (a.onward !== b.onward) return a.onward - b.onward;
+                            return a.rand - b.rand;
+                        });
+                        neighbors = scoredNeighbors.map(sn => sn.n);
+                    }
+                    
+                    for (let n of neighbors) {
+                        visited[n.r][n.c] = true;
+                        path.push(n);
+                        if (dfs(n.r, n.c)) return true;
+                        visited[n.r][n.c] = false;
+                        path.pop();
+                    }
+                    return false;
+                };
+                
+                let found = dfs(S.r, S.c);
+                
+                if (found) {
+                    let solution = Array(H).fill(null).map(() => Array(W).fill(0));
+                    for (let i = 0; i < path.length; i++) {
+                        let prev = i === 0 ? path[path.length - 1] : path[i - 1];
+                        let curr = path[i];
+                        let next = i === path.length - 1 ? path[0] : path[i + 1];
+                        solution[curr.r][curr.c] = getPiece(getDir(curr, prev), getDir(curr, next));
+                    }
+                    
+                    // Difficulty Logic: The stronger the lookahead depth, the more pieces we can strip.
+                    let targetKeepRatio = difficulty === 'easy' ? 0.40 : difficulty === 'medium' ? 0.20 : 0.00;
+                    let targetKeepCount = Math.floor(unvisitedCount * targetKeepRatio);
+                    
+                    // Easy: 0 Depth (Basic neighbors). Medium/Hard: 1 Depth (Forced-move multi-scenarios).
+                    let lookaheadDepth = difficulty === 'easy' ? 0 : 1;
+                    
+                    let currentBoard = solution.map(row => [...row]);
+                    let coords = [];
+                    for (let r = 0; r < H; r++) {
+                        for (let c = 0; c < W; c++) {
+                            if (!holes[r][c]) coords.push({r, c});
+                        }
+                    }
+                    
+                    // Randomize piece removal order
+                    for (let i = coords.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [coords[i], coords[j]] = [coords[j], coords[i]];
+                    }
+                    
+                    let currentGivenCount = unvisitedCount;
+                    
+                    // Strip pieces logically
+                    for (let {r, c} of coords) {
+                        if (currentGivenCount <= targetKeepCount) break;
+                        
+                        let backup = currentBoard[r][c];
+                        currentBoard[r][c] = 0; // Try removing it
+                        
+                        // If the engine can still solve it without guessing, keep it removed!
+                        if (canSolveLogically(currentBoard, holes, unvisitedCount, lookaheadDepth)) {
+                            currentGivenCount--;
+                        } else {
+                            currentBoard[r][c] = backup; // Cannot solve it logically, put it back
+                        }
+                    }
+
+                    let given = Array(H).fill(null).map(() => Array(W).fill(false));
+                    let startBoard = Array(H).fill(null).map(() => Array(W).fill(0));
+
+                    for (let r = 0; r < H; r++) {
+                        for (let c = 0; c < W; c++) {
+                            if (!holes[r][c] && currentBoard[r][c] !== 0) {
+                                given[r][c] = true;
+                                startBoard[r][c] = currentBoard[r][c];
+                            }
+                        }
+                    }
+
+                    return { solution, given, startBoard, holes };
+                }
+            }
+        };
+
+        const checkWinCondition = (board, holes) => {
+            let validCellCount = 0;
+            for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                    if (!holes[r][c]) {
+                        validCellCount++;
+                        if (board[r][c] === 0) return false;
+                    } else {
+                        if (board[r][c] !== 0) return false;
+                    }
+                }
+            }
+
+            for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                    if (holes[r][c]) continue;
+                    let p = board[r][c];
+                    if (connects(p, 'N') && (r === 0 || holes[r-1][c] || !connects(board[r - 1][c], 'S'))) return false;
+                    if (connects(p, 'S') && (r === H - 1 || holes[r+1][c] || !connects(board[r + 1][c], 'N'))) return false;
+                    if (connects(p, 'E') && (c === W - 1 || holes[r][c+1] || !connects(board[r][c + 1], 'W'))) return false;
+                    if (connects(p, 'W') && (c === 0 || holes[r][c-1] || !connects(board[r][c - 1], 'E'))) return false;
+                }
+            }
+
+            let visited = Array(H).fill(null).map(() => Array(W).fill(false));
+            let startR = -1, startC = -1;
+            for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                    if (!holes[r][c]) {
+                        startR = r; startC = c; break;
+                    }
+                }
+                if (startR !== -1) break;
+            }
+
+            let currR = startR, currC = startC, count = 0, fromDir = null;
+
+            while (count < validCellCount) {
+                if (visited[currR][currC]) break;
+                visited[currR][currC] = true;
+                count++;
+
+                let p = board[currR][currC];
+                let connections = ['N', 'S', 'E', 'W'].filter(d => connects(p, d));
+                
+                if (connections.length !== 2) return false;
+                
+                let nextDir = null;
+                if (fromDir === null) {
+                    nextDir = connections[0];
+                } else {
+                    let enterDir = opposite(fromDir);
+                    if (connections[0] !== enterDir && connections[1] !== enterDir) return false;
+                    nextDir = connections[0] === enterDir ? connections[1] : connections[0];
+                }
+
+                if (nextDir === 'N') { currR--; fromDir = 'N'; }
+                if (nextDir === 'S') { currR++; fromDir = 'S'; }
+                if (nextDir === 'E') { currC++; fromDir = 'E'; }
+                if (nextDir === 'W') { currC--; fromDir = 'W'; }
+            }
+
+            return count === validCellCount;
+        };
+
+        function App() {
+            const [difficulty, setDifficulty] = useState('medium');
+            const [gameState, setGameState] = useState('idle');
+            const [time, setTime] = useState(0);
+            const [startTime, setStartTime] = useState(null);
+            const [showHelp, setShowHelp] = useState(false);
+            
+            const [board, setBoard] = useState([]);
+            const [given, setGiven] = useState([]);
+            const [holes, setHoles] = useState([]);
+            const [hoveredCell, setHoveredCell] = useState(null);
+
+            const reqRef = useRef();
+
+            const startNewGame = useCallback((diff) => {
+                setGameState('generating');
+                
+                // Set timeout allows React to render the loading screen before blocking thread
+                setTimeout(() => {
+                    const level = generateLevel(diff || difficulty);
+                    if(!level) return;
+                    setBoard(level.startBoard);
+                    setGiven(level.given);
+                    setHoles(level.holes);
+                    setGameState('playing');
+                    setStartTime(Date.now());
+                    setTime(0);
+                    setHoveredCell(null);
+                }, 50);
+            }, [difficulty]);
+
+            useEffect(() => {
+                if (gameState === 'idle') startNewGame();
+            }, [gameState, startNewGame]);
+
+            useEffect(() => {
+                const updateTimer = () => {
+                    if (gameState === 'playing' && startTime) {
+                        setTime(Date.now() - startTime);
+                        reqRef.current = requestAnimationFrame(updateTimer);
+                    }
+                };
+                if (gameState === 'playing') reqRef.current = requestAnimationFrame(updateTimer);
+                return () => cancelAnimationFrame(reqRef.current);
+            }, [gameState, startTime]);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (gameState !== 'playing' || !hoveredCell || !holes.length) return;
+                    const { r, c } = hoveredCell;
+                    if (given[r][c] || holes[r][c]) return;
+
+                    const keyMap = {
+                        '0': 0, 'Backspace': 0, 'Delete': 0, ' ': 0,
+                        '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6
+                    };
+
+                    if (keyMap[e.key] !== undefined) {
+                        e.preventDefault();
+                        let val = keyMap[e.key];
+                        
+                        if (val === 0) {
+                            updateCell(r, c, 0);
+                        } else {
+                            let valid = getValidPieces(board, holes, r, c);
+                            if (valid.includes(val)) {
+                                updateCell(r, c, val);
+                            }
+                        }
+                    }
+                };
+
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [gameState, hoveredCell, board, given, holes]);
+
+            const updateCell = (r, c, newValue) => {
+                let newBoard = [...board];
+                newBoard[r] = [...newBoard[r]];
+                newBoard[r][c] = newValue;
+                setBoard(newBoard);
+
+                if (checkWinCondition(newBoard, holes)) {
+                    setGameState('won');
+                }
+            };
+
+            const handleCellClick = (r, c, e) => {
+                e.preventDefault();
+                if (gameState !== 'playing' || given[r][c] || holes[r][c]) return;
+
+                let current = board[r][c];
+                let valid = getValidPieces(board, holes, r, c);
+                
+                let idx = valid.indexOf(current);
+                let nextIdx;
+                
+                if (e.type === 'contextmenu') {
+                    nextIdx = idx <= 0 ? valid.length - 1 : idx - 1;
+                } else {
+                    nextIdx = idx === -1 ? 0 : (idx + 1) % valid.length;
+                }
+
+                updateCell(r, c, valid[nextIdx]);
+            };
+
+            const formatTime = (ms) => {
+                const mins = Math.floor(ms / 60000);
+                const secs = Math.floor((ms % 60000) / 1000);
+                const millis = Math.floor((ms % 1000) / 10);
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(2, '0')}`;
+            };
+
+            const widthPixels = W * CELL_SIZE;
+            const heightPixels = H * CELL_SIZE;
+
+            if (!holes.length) return <div className="min-h-screen bg-neutral-100" />;
+
+            return (
+                <div className="min-h-screen bg-neutral-100 text-slate-800 font-sans flex flex-col items-center py-8 px-4 selection:bg-transparent">
+                    <div className="max-w-xl w-full bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                    <RotateCcw className="w-8 h-8 text-blue-600" strokeWidth={3} />
+                                    LOOPY
+                                </h1>
+                                <p className="text-slate-500 text-sm font-semibold mt-1 tracking-widest uppercase">Hamiltonian Puzzle</p>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <div className="flex items-center text-slate-700 font-mono text-2xl font-bold bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                                    <Clock className="w-5 h-5 mr-2 text-slate-400" />
+                                    {formatTime(time)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center gap-2">
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                {['easy', 'medium', 'hard'].map((diff) => (
+                                    <button
+                                        key={diff}
+                                        onClick={() => { setDifficulty(diff); startNewGame(diff); }}
+                                        className={`px-4 py-2 text-sm font-bold uppercase rounded-lg transition-all ${
+                                            difficulty === diff 
+                                            ? 'bg-white shadow-sm text-blue-600' 
+                                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                                        }`}
+                                    >
+                                        {diff}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowHelp(!showHelp)} className="p-2.5 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-xl transition-colors">
+                                    <Info className="w-6 h-6" />
+                                </button>
+                                <button onClick={() => startNewGame(difficulty)} className="p-2.5 text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center gap-2 font-bold shadow-sm" title="New Game">
+                                    <RotateCcw className="w-5 h-5" /> New
+                                </button>
+                            </div>
+                        </div>
+
+                        {showHelp && (
+                            <div className="mt-4 p-5 bg-blue-50 text-blue-900 rounded-xl text-sm leading-relaxed border border-blue-100 shadow-inner">
+                                <p className="font-bold mb-2">How to Play:</p>
+                                <ul className="list-disc pl-5 space-y-1 mb-3">
+                                    <li>Connect all lines into a <strong>single continuous loop</strong>.</li>
+                                    <li>The loop must pass through <strong>every single square</strong> exactly once.</li>
+                                    <li>Route around the grey <strong>dead zone</strong>!</li>
+                                </ul>
+                                <p className="font-bold mb-2">Controls:</p>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li><strong>Mouse:</strong> Left-click to cycle forward. Right-click backward.</li>
+                                    <li><strong>Keyboard:</strong> Hover over a cell and press <code>1-6</code> to place.</li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="relative max-w-xl w-full flex justify-center select-none touch-none">
+                        {gameState === 'generating' && (
+                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+                                <div className="bg-white px-8 py-6 rounded-2xl shadow-xl border-2 border-blue-200 flex flex-col items-center">
+                                    <RotateCcw className="w-10 h-10 text-blue-500 animate-spin mb-3" />
+                                    <span className="text-blue-600 font-bold text-xl tracking-tight">Generating Puzzle...</span>
+                                    <span className="text-blue-400 text-sm mt-2 font-medium">Guaranteeing logical solution</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {gameState === 'won' && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none bg-white/20 backdrop-blur-[2px] rounded-xl">
+                                <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl border-4 border-green-500 flex flex-col items-center transform scale-110 transition-transform duration-300">
+                                    <Trophy className="w-16 h-16 text-yellow-500 mb-2" />
+                                    <span className="text-green-600 font-black text-3xl tracking-tight uppercase">Puzzle Solved!</span>
+                                    <span className="text-slate-500 font-mono font-bold mt-2">{formatTime(time)}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <svg 
+                            width={widthPixels}
+                            height={heightPixels}
+                            className={`bg-white rounded-xl shadow-md border-4 transition-all duration-500 ${gameState === 'won' ? 'border-green-500 shadow-green-200/50 shadow-2xl' : 'border-slate-800'}`}
+                            onContextMenu={(e) => e.preventDefault()}
+                            onMouseLeave={() => setHoveredCell(null)}
+                        >
+                            {Array.from({ length: H - 1 }).map((_, r) => (
+                                <line key={`hline-${r}`} x1="0" y1={(r + 1) * CELL_SIZE} x2={widthPixels} y2={(r + 1) * CELL_SIZE} stroke="#f1f5f9" strokeWidth="2" />
+                            ))}
+                            {Array.from({ length: W - 1 }).map((_, c) => (
+                                <line key={`vline-${c}`} x1={(c + 1) * CELL_SIZE} y1="0" x2={(c + 1) * CELL_SIZE} y2={heightPixels} stroke="#f1f5f9" strokeWidth="2" />
+                            ))}
+
+                            {board.map((row, r) => row.map((piece, c) => {
+                                const x = c * CELL_SIZE;
+                                const y = r * CELL_SIZE;
+                                const cx = x + CELL_SIZE / 2;
+                                const cy = y + CELL_SIZE / 2;
+                                
+                                const isGiven = given[r][c];
+                                const isHole = holes[r][c];
+                                const isHovered = hoveredCell?.r === r && hoveredCell?.c === c && gameState === 'playing';
+                                
+                                if (isHole) {
+                                    return (
+                                        <g key={`cell-${r}-${c}`}>
+                                            <rect x={x+4} y={y+4} width={CELL_SIZE-8} height={CELL_SIZE-8} fill="#e2e8f0" rx="6" />
+                                        </g>
+                                    );
+                                }
+
+                                const strokeColor = gameState === 'won' ? "#10b981" : isGiven ? "#0f172a" : "#3b82f6";
+                                const strokeW = 8;
+                                const strokeCap = "round";
+
+                                let pathElement = null;
+                                if (piece === 1) pathElement = <line x1={cx} y1={y} x2={cx} y2={y + CELL_SIZE} />;
+                                else if (piece === 2) pathElement = <line x1={x} y1={cy} x2={x + CELL_SIZE} y2={cy} />;
+                                else if (piece === 3) pathElement = <path d={`M ${cx} ${y} Q ${cx} ${cy} ${x + CELL_SIZE} ${cy}`} fill="none" />;
+                                else if (piece === 4) pathElement = <path d={`M ${x + CELL_SIZE} ${cy} Q ${cx} ${cy} ${cx} ${y + CELL_SIZE}`} fill="none" />;
+                                else if (piece === 5) pathElement = <path d={`M ${cx} ${y + CELL_SIZE} Q ${cx} ${cy} ${x} ${cy}`} fill="none" />;
+                                else if (piece === 6) pathElement = <path d={`M ${x} ${cy} Q ${cx} ${cy} ${cx} ${y}`} fill="none" />;
+
+                                return (
+                                    <g 
+                                        key={`cell-${r}-${c}`} 
+                                        onClick={(e) => handleCellClick(r, c, e)}
+                                        onContextMenu={(e) => handleCellClick(r, c, e)}
+                                        onMouseEnter={() => setHoveredCell({r, c})}
+                                        className={isGiven ? "" : "cursor-pointer"}
+                                    >
+                                        <rect 
+                                            x={x} y={y} 
+                                            width={CELL_SIZE} height={CELL_SIZE} 
+                                            fill={isHovered && !isGiven ? "#eff6ff" : "transparent"} 
+                                            className="transition-colors duration-150"
+                                        />
+                                        
+                                        {pathElement && React.cloneElement(pathElement, { 
+                                            stroke: strokeColor, 
+                                            strokeWidth: strokeW, 
+                                            strokeLinecap: strokeCap 
+                                        })}
+
+                                        {piece === 0 && !isGiven && (
+                                            <circle cx={cx} cy={cy} r="2" fill="#cbd5e1" className="opacity-50" />
+                                        )}
+                                    </g>
+                                );
+                            }))}
+                        </svg>
+                    </div>
+                    
+                    <div className="mt-8 flex gap-6 text-slate-500 font-medium text-sm">
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">1</span> │</div>
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">2</span> ─</div>
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">3</span> └</div>
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">4</span> ┌</div>
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">5</span> ┐</div>
+                        <div className="flex items-center gap-2"><span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded shadow-sm">6</span> ┘</div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
