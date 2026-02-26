@@ -2,292 +2,321 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pac-Man Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Pac-Man Pro Mobile</title>
     <style>
         body {
             margin: 0;
-            padding: 0;
             background-color: #000;
+            color: #fff;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
         }
-        canvas {
-            border: 2px solid white;
-            display: block;
-        }
-        .score {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-        .restart-btn {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px 40px;
-            font-size: 20px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .restart-btn:hover {
-            background-color: #d32f2f;
-        }
-        .dpad {
-            position: absolute;
-            bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
-        .dpad button {
-            width: 60px;
-            height: 60px;
-            background-color: #444;
-            color: white;
-            font-size: 18px;
-            border: none;
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(33, 33, 255, 0.5);
+            border: 4px solid #2121ff;
             border-radius: 10px;
-            cursor: pointer;
         }
-        .dpad button:active {
-            background-color: #666;
+        canvas { display: block; }
+        .ui-layer {
+            position: absolute;
+            top: -40px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            font-weight: bold;
         }
-        .dpad .vertical {
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 6px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #ffff00;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="score" id="score">Score: 0</div>
-    <canvas id="pacmanGame" width="800" height="400"></canvas>
-    <button id="restartButton" class="restart-btn">Restart</button>
-    <div class="dpad">
-        <div class="vertical">
-            <button id="up">▲</button>
+
+    <div id="game-container">
+        <div class="ui-layer">
+            <span>SCORE: <span id="score">0</span></span>
+            <span>HIGH: <span id="highScore">0</span></span>
         </div>
-        <div class="horizontal">
-            <button id="left">◄</button>
-            <button id="right">►</button>
-        </div>
-        <div class="vertical">
-            <button id="down">▼</button>
+        <canvas id="pacmanCanvas"></canvas>
+        <div id="overlay">
+            <h1 style="color: #ffff00; margin: 0;">PAC-MAN</h1>
+            <p>SWIPE TO MOVE</p>
+            <button onclick="startGame()">START GAME</button>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById("pacmanGame");
-        const ctx = canvas.getContext("2d");
-        const scoreElement = document.getElementById("score");
-        const restartButton = document.getElementById("restartButton");
+<script>
+    const canvas = document.getElementById("pacmanCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const highEl = document.getElementById("highScore");
+    const overlay = document.getElementById("overlay");
 
-        const pacMan = {
-            x: 400,
-            y: 200,
-            radius: 15,
-            angleStart: 0.2 * Math.PI,
-            angleEnd: 1.8 * Math.PI,
-            speed: 5,
-            direction: "right"
+    // Game Constants
+    const TILE_SIZE = 20;
+    const MAP = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
+        [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+        [1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1],
+        [1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1],
+        [1,1,1,1,0,1,0,1,1,2,1,1,0,1,0,1,1,1,1],
+        [0,0,0,0,0,0,0,1,2,2,2,1,0,0,0,0,0,0,0],
+        [1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1],
+        [1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1],
+        [1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+        [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1],
+        [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
+        [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    let pacman, ghosts, pellets, score, highScore, gameRunning, animationId;
+    highScore = localStorage.getItem("pacmanHighScore") || 0;
+    highEl.innerText = highScore;
+
+    function init() {
+        // Size canvas to fit screen
+        const padding = 60;
+        const availableHeight = window.innerHeight - padding * 2;
+        const mapW = MAP[0].length * TILE_SIZE;
+        const mapH = MAP.length * TILE_SIZE;
+        const scale = Math.min((window.innerWidth - 40) / mapW, availableHeight / mapH);
+        
+        canvas.width = mapW * scale;
+        canvas.height = mapH * scale;
+        ctx.scale(scale, scale);
+
+        score = 0;
+        scoreEl.innerText = score;
+        
+        pacman = {
+            x: 9 * TILE_SIZE + TILE_SIZE/2,
+            y: 15 * TILE_SIZE + TILE_SIZE/2,
+            dir: { x: 0, y: 0 },
+            nextDir: { x: 0, y: 0 },
+            speed: 2,
+            radius: TILE_SIZE / 2 - 2,
+            mouth: 0,
+            mouthDir: 0.1
         };
 
-        const ghosts = [
-            { x: 100, y: 100, radius: 15, color: "red", direction: "right" },
-            { x: 700, y: 100, radius: 15, color: "blue", direction: "down" }
+        ghosts = [
+            { x: 9 * TILE_SIZE + TILE_SIZE/2, y: 9 * TILE_SIZE + TILE_SIZE/2, color: '#ff0000', dir: {x: 1, y: 0} },
+            { x: 9 * TILE_SIZE + TILE_SIZE/2, y: 9 * TILE_SIZE + TILE_SIZE/2, color: '#ffb8ff', dir: {x: -1, y: 0} }
         ];
 
-        const walls = [
-            { x: 50, y: 50, width: 700, height: 20 },
-            { x: 50, y: 330, width: 700, height: 20 },
-            { x: 50, y: 50, width: 20, height: 300 },
-            { x: 730, y: 50, width: 20, height: 300 },
-            { x: 200, y: 150, width: 400, height: 20 },
-            { x: 200, y: 230, width: 20, height: 80 },
-            { x: 580, y: 200, width: 100, height: 20 }
-        ];
+        pellets = [];
+        for(let row=0; row<MAP.length; row++) {
+            for(let col=0; col<MAP[row].length; col++) {
+                if(MAP[row][col] === 0) pellets.push({ x: col * TILE_SIZE + TILE_SIZE/2, y: row * TILE_SIZE + TILE_SIZE/2 });
+            }
+        }
+    }
 
-        const pellets = [
-            { x: 100, y: 100, radius: 5 },
-            { x: 700, y: 100, radius: 5 },
-            { x: 400, y: 150, radius: 5 },
-            { x: 250, y: 250, radius: 5 },
-            { x: 550, y: 300, radius: 5 },
-            { x: 150, y: 300, radius: 5 }
-        ];
+    function draw() {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        let score = 0;
-        let isGameOver = false;
+        // Draw Walls
+        for(let row=0; row<MAP.length; row++) {
+            for(let col=0; col<MAP[row].length; col++) {
+                if(MAP[row][col] === 1) {
+                    ctx.fillStyle = "#2121ff";
+                    ctx.fillRect(col * TILE_SIZE + 2, row * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                }
+            }
+        }
 
-        const directions = {
-            ArrowUp: { dx: 0, dy: -1 },
-            ArrowDown: { dx: 0, dy: 1 },
-            ArrowLeft: { dx: -1, dy: 0 },
-            ArrowRight: { dx: 1, dy: 0 }
-        };
-
-        const dpadButtons = {
-            up: "ArrowUp",
-            down: "ArrowDown",
-            left: "ArrowLeft",
-            right: "ArrowRight"
-        };
-
-        let currentDirection = "ArrowRight";
-
-        // D-pad button event listeners
-        Object.keys(dpadButtons).forEach(btnId => {
-            document.getElementById(btnId).addEventListener("click", () => {
-                currentDirection = dpadButtons[btnId];
-            });
-        });
-
-        function drawPacMan() {
+        // Draw Pellets
+        ctx.fillStyle = "#ffb8ae";
+        pellets.forEach(p => {
             ctx.beginPath();
-            ctx.arc(pacMan.x, pacMan.y, pacMan.radius, pacMan.angleStart, pacMan.angleEnd);
-            ctx.lineTo(pacMan.x, pacMan.y);
-            ctx.fillStyle = "yellow";
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
             ctx.fill();
-        }
-
-        function drawGhosts() {
-            ghosts.forEach(ghost => {
-                ctx.beginPath();
-                ctx.arc(ghost.x, ghost.y, ghost.radius, 0, 2 * Math.PI);
-                ctx.fillStyle = ghost.color;
-                ctx.fill();
-            });
-        }
-
-        function drawWalls() {
-            walls.forEach(wall => {
-                ctx.fillStyle = "blue";
-                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
-            });
-        }
-
-        function drawPellets() {
-            pellets.forEach(pellet => {
-                ctx.beginPath();
-                ctx.arc(pellet.x, pellet.y, pellet.radius, 0, 2 * Math.PI);
-                ctx.fillStyle = "white";
-                ctx.fill();
-            });
-        }
-
-        function movePacMan() {
-            const { dx, dy } = directions[currentDirection];
-            pacMan.x += dx * pacMan.speed;
-            pacMan.y += dy * pacMan.speed;
-
-            walls.forEach(wall => {
-                if (pacMan.x + pacMan.radius > wall.x && pacMan.x - pacMan.radius < wall.x + wall.width &&
-                    pacMan.y + pacMan.radius > wall.y && pacMan.y - pacMan.radius < wall.y + wall.height) {
-                    pacMan.x -= dx * pacMan.speed;
-                    pacMan.y -= dy * pacMan.speed;
-                }
-            });
-        }
-
-        function moveGhosts() {
-            ghosts.forEach(ghost => {
-                const dx = pacMan.x - ghost.x;
-                const dy = pacMan.y - ghost.y;
-
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    ghost.direction = dx > 0 ? "right" : "left";
-                } else {
-                    ghost.direction = dy > 0 ? "down" : "up";
-                }
-
-                const { dx: ghostDx, dy: ghostDy } = directions[`Arrow${ghost.direction.charAt(0).toUpperCase() + ghost.direction.slice(1)}`] || { dx: 0, dy: 0 };
-                ghost.x += ghostDx * 2;
-                ghost.y += ghostDy * 2;
-
-                walls.forEach(wall => {
-                    if (ghost.x + ghost.radius > wall.x && ghost.x - ghost.radius < wall.x + wall.width &&
-                        ghost.y + ghost.radius > wall.y && ghost.y - ghost.radius < wall.y + wall.height) {
-                        ghost.x -= ghostDx * 2;
-                        ghost.y -= ghostDy * 2;
-                    }
-                });
-            });
-        }
-
-        function checkCollisions() {
-            pellets.forEach((pellet, index) => {
-                if (Math.hypot(pacMan.x - pellet.x, pacMan.y - pellet.y) < pacMan.radius + pellet.radius) {
-                    pellets.splice(index, 1);
-                    score += 10;
-                    scoreElement.textContent = `Score: ${score}`;
-                }
-            });
-
-            ghosts.forEach(ghost => {
-                if (Math.hypot(pacMan.x - ghost.x, pacMan.y - ghost.y) < pacMan.radius + ghost.radius) {
-                    isGameOver = true;
-                    restartButton.style.display = "block";
-                    alert("Game Over! Final Score: " + score);
-                }
-            });
-        }
-
-        function gameLoop() {
-            if (isGameOver) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawWalls();
-            drawPellets();
-            drawGhosts();
-            drawPacMan();
-
-            movePacMan();
-            moveGhosts();
-            checkCollisions();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        restartButton.addEventListener("click", () => {
-            pacMan.x = 400;
-            pacMan.y = 200;
-            score = 0;
-            scoreElement.textContent = "Score: 0";
-            pellets.push(
-                { x: 100, y: 100, radius: 5 },
-                { x: 700, y: 100, radius: 5 },
-                { x: 400, y: 150, radius: 5 },
-                { x: 250, y: 250, radius: 5 },
-                { x: 550, y: 300, radius: 5 },
-                { x: 150, y: 300, radius: 5 }
-            );
-            ghosts.forEach(ghost => {
-                ghost.x = Math.random() * 700 + 50;
-                ghost.y = Math.random() * 300 + 50;
-            });
-            isGameOver = false;
-            restartButton.style.display = "none";
-            gameLoop();
         });
 
+        // Draw Pacman
+        ctx.save();
+        ctx.translate(pacman.x, pacman.y);
+        const angle = Math.atan2(pacman.dir.y, pacman.dir.x);
+        ctx.rotate(angle);
+        ctx.fillStyle = "#ffff00";
+        ctx.beginPath();
+        ctx.arc(0, 0, pacman.radius, pacman.mouth, Math.PI * 2 - pacman.mouth);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        ctx.restore();
+
+        // Draw Ghosts
+        ghosts.forEach(g => {
+            ctx.fillStyle = g.color;
+            // Body
+            ctx.beginPath();
+            ctx.arc(g.x, g.y - 2, pacman.radius, Math.PI, 0);
+            ctx.lineTo(g.x + pacman.radius, g.y + pacman.radius);
+            ctx.lineTo(g.x - pacman.radius, g.y + pacman.radius);
+            ctx.fill();
+            // Eyes
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(g.x - 4 + (g.dir.x * 2), g.y - 4 + (g.dir.y * 2), 3, 0, Math.PI * 2);
+            ctx.arc(g.x + 4 + (g.dir.x * 2), g.y - 4 + (g.dir.y * 2), 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function update() {
+        // Pacman Grid Alignment for turning
+        if (pacman.x % TILE_SIZE === TILE_SIZE/2 && pacman.y % TILE_SIZE === TILE_SIZE/2) {
+            const col = Math.floor(pacman.x / TILE_SIZE);
+            const row = Math.floor(pacman.y / TILE_SIZE);
+
+            // Check if can turn in nextDir
+            if (!isWall(col + pacman.nextDir.x, row + pacman.nextDir.y)) {
+                pacman.dir = {...pacman.nextDir};
+            }
+            // Check if blocked in current dir
+            if (isWall(col + pacman.dir.x, row + pacman.dir.y)) {
+                pacman.dir = { x: 0, y: 0 };
+            }
+        }
+
+        pacman.x += pacman.dir.x * pacman.speed;
+        pacman.y += pacman.dir.y * pacman.speed;
+
+        // Animate mouth
+        if(pacman.dir.x !== 0 || pacman.dir.y !== 0) {
+            pacman.mouth += pacman.mouthDir;
+            if(pacman.mouth > 0.5 || pacman.mouth < 0) pacman.mouthDir *= -1;
+        }
+
+        // Pellets collision
+        pellets.forEach((p, i) => {
+            if (Math.hypot(p.x - pacman.x, p.y - pacman.y) < 10) {
+                pellets.splice(i, 1);
+                score += 10;
+                scoreEl.innerText = score;
+            }
+        });
+
+        // Ghost Movement (Simple AI)
+        ghosts.forEach(g => {
+            if (g.x % TILE_SIZE === TILE_SIZE/2 && g.y % TILE_SIZE === TILE_SIZE/2) {
+                const possible = [
+                    {x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}
+                ].filter(d => !isWall(Math.floor(g.x/TILE_SIZE) + d.x, Math.floor(g.y/TILE_SIZE) + d.y));
+                
+                // Don't reverse immediately if possible
+                const nonReverse = possible.filter(d => d.x !== -g.dir.x || d.y !== -g.dir.y);
+                const finalChoices = nonReverse.length > 0 ? nonReverse : possible;
+                g.dir = finalChoices[Math.floor(Math.random() * finalChoices.length)];
+            }
+            g.x += g.dir.x * (pacman.speed - 0.5);
+            g.y += g.dir.y * (pacman.speed - 0.5);
+
+            // Ghost Collision
+            if (Math.hypot(g.x - pacman.x, g.y - pacman.y) < TILE_SIZE) {
+                gameOver();
+            }
+        });
+
+        if(pellets.length === 0) gameOver("YOU WIN!");
+    }
+
+    function isWall(col, row) {
+        if (row < 0 || row >= MAP.length || col < 0 || col >= MAP[0].length) return true;
+        return MAP[row][col] === 1;
+    }
+
+    function gameOver(msg = "GAME OVER") {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        if(score > highScore) {
+            highScore = score;
+            localStorage.setItem("pacmanHighScore", highScore);
+            highEl.innerText = highScore;
+        }
+        overlay.querySelector('h1').innerText = msg;
+        overlay.style.display = 'flex';
+    }
+
+    function gameLoop() {
+        if(!gameRunning) return;
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        overlay.style.display = 'none';
+        init();
+        gameRunning = true;
         gameLoop();
-    </script>
+    }
+
+    // Touch Controls (Swiping)
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    });
+
+    window.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].screenX - touchStartX;
+        const dy = e.changedTouches[0].screenY - touchStartY;
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+            pacman.nextDir = { x: dx > 0 ? 1 : -1, y: 0 };
+        } else {
+            pacman.nextDir = { x: 0, y: dy > 0 ? 1 : -1 };
+        }
+    });
+
+    // Keyboard fallback
+    window.addEventListener('keydown', e => {
+        if(e.key === "ArrowUp") pacman.nextDir = {x: 0, y: -1};
+        if(e.key === "ArrowDown") pacman.nextDir = {x: 0, y: 1};
+        if(e.key === "ArrowLeft") pacman.nextDir = {x: -1, y: 0};
+        if(e.key === "ArrowRight") pacman.nextDir = {x: 1, y: 0};
+    });
+
+    init();
+    draw();
+</script>
 </body>
 </html>
-
