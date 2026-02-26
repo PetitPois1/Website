@@ -3,108 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feedback - Game Hub</title>
+    <title>Feedback | Game Hub</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* General Navbar Styling */
-        .navbar {
-            width: 100%;
-            background-color: #1b2a1d; /* Dark Green */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
+        :root {
+            --primary: #8b5cf6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.6);
         }
 
-        .navbar button, .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 0 25px;
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .navbar a:hover, .navbar button:hover {
-            background-color: #32CD32; /* Light Green */
-            border-color: #32CD32;
-        }
-
-        /* Main Content Styling */
         body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #1b2a1d; /* Dark Green background */
-            color: white;
-            padding-top: 80px; /* Adjust to make room for navbar */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
         }
 
-        .feedback-content {
-            text-align: center;
-            padding: 20px;
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+        .form-glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #adacac;
-        }
-
-        .form-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white; /* Keep the white background for the form */
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        .accent-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         iframe {
-            width: 100%;
-            height: 522px; /* Adjust height to fit form */
-            border: none;
-            border-radius: 10px;
+            filter: invert(0.9) hue-rotate(180deg); /* Subtle adjustment to help form blend with dark theme */
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
         }
 
+        iframe:hover {
+            opacity: 1;
+        }
+        
+        /* Loading skeleton effect */
+        .loader-bg {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
-<body>
+<body class="pt-32 pb-20">
 
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="nav-left">
-            <button onclick="window.location.href='index.html'">Home</button>
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <span class="text-xl">👾</span>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                GAME HUB
+            </span>
         </div>
-        <div class="nav-right">
-            <a href="about.html">About</a>
-            <a href="feedback.html">Feedback</a>
-            <a href="bugs.html">Bugs</a>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
+            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
+            <a href="feedback.html" class="text-violet-400 font-semibold">Feedback</a>
+            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
         </div>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="max-w-4xl mx-auto px-6 text-center mb-12">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+            Give us <span class="accent-gradient">Feedback</span>
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            Your thoughts help us build better games. Whether it's a new idea or a feature request, we're listening.
+        </p>
     </div>
 
-    <!-- Feedback Form -->
-    <div class="feedback-content">
-        <h1>Feedback</h1>
-        <h2>Your feedback helps us improve!</h2>
-
-        <div class="form-container">
+    <!-- Feedback Form Container -->
+    <main class="max-w-4xl mx-auto px-6">
+        <div class="form-glass rounded-[2.5rem] overflow-hidden relative">
+            <!-- Loader Background (visible while iframe loads) -->
+            <div class="absolute inset-0 loader-bg -z-10"></div>
+            
             <!-- Google Form Embed -->
-            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfSN8QDhOO02nXy8SpidRk3T1t-YP5m1USp6DlXBnTH6y6v4A/viewform?embedded=true" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+            <iframe 
+                src="https://docs.google.com/forms/d/e/1FAIpQLSfSN8QDhOO02nXy8SpidRk3T1t-YP5m1USp6DlXBnTH6y6v4A/viewform?embedded=true" 
+                class="w-full h-[700px] border-none block"
+                title="Feedback Form"
+            >
+                Loading…
+            </iframe>
         </div>
-    </div>
+
+        <!-- Alternative Contact -->
+        <div class="mt-12 text-center text-slate-500">
+            <p class="flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-violet-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                </svg>
+                Fast-track bug reports on the <a href="bugs.html" class="text-violet-400 hover:underline">Bugs Page</a>
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
+        <p class="text-sm">Game Hub is built for the players, by the students.</p>
+    </footer>
 
 </body>
 </html>
