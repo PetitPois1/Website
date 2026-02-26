@@ -28,9 +28,8 @@
             overflow-x: hidden;
         }
 
-        /* Funny Ticker */
         .ticker-wrap { width: 100%; max-width: 650px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; white-space: nowrap; padding: 5px 0; border-radius: 4px; }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker 20s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
         .header { text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; width: 90%; max-width: 650px; border: 1px solid var(--border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(8px); }
@@ -38,7 +37,7 @@
         .production-display { color: var(--primary); font-size: 1rem; margin-top: 5px; }
 
         .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .nav-btn { background: #222; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        .nav-btn { background: #222; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         #admin-nav-btn { display: none; border-color: var(--admin); color: var(--admin); }
 
         .buy-modes { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -46,10 +45,9 @@
         .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #1b2a1d; }
 
         .click-area { height: 220px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
-        #circle { width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: 0.15s; text-align: center; padding: 15px; }
-        #circle:active { transform: scale(0.92); }
+        #circle { width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: 0.1s; text-align: center; padding: 15px; }
+        #circle:active { transform: scale(0.95); }
 
-        /* Tier Visuals */
         .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
         .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
         .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
@@ -57,18 +55,17 @@
         .tier-4 { border-radius: 0; background: #c0c0c0; border: 4px solid #ffd700; }
         .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; border: 2px solid white; }
         .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); transform: scale(1.05); } 100% { box-shadow: 0 0 10px var(--quantum); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
 
-        /* Overlays */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; display: none; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
-        .achievements-list { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .ach-item { background: #111; padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 15px; opacity: 0.3; border: 1px solid #222; }
+        .achievements-list { width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .ach-item { background: #111; padding: 10px; border-radius: 6px; display: flex; align-items: center; gap: 10px; opacity: 0.2; border: 1px solid #222; font-size: 0.8rem; }
         .ach-item.unlocked { opacity: 1; border-color: var(--gold); background: #1a1a00; }
 
         .shop { width: 100%; max-width: 700px; }
         .upgrade-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 15px; }
         .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 1rem; text-transform: uppercase; }
-        .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 12px; border-radius: 4px; cursor: pointer; min-width: 150px; font-weight: bold; }
+        .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 12px; border-radius: 4px; cursor: pointer; min-width: 140px; font-weight: bold; }
         .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; }
 
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--save-color); padding: 12px 20px; border-radius: 4px; font-weight: bold; opacity: 0; transition: 0.4s; z-index: 2000; }
@@ -80,114 +77,109 @@
     <div id="toast">Saved</div>
 
     <div id="settings-overlay" class="overlay">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">CLOSE RECORDS</button>
-        
-        <h2 class="section-title">GLOBAL RECORDS</h2>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width:100%; max-width:600px; text-align:center;">
-            <div style="background:#111; padding:10px; border-radius:8px;">
-                <h4 style="margin:0; font-size:0.7rem; color:#888;">ALL-TIME PROFIT</h4>
-                <p id="stat-alltime" style="font-size:1.2rem; color:var(--primary); margin:5px 0 0;">0</p>
-            </div>
-            <div style="background:#111; padding:10px; border-radius:8px;">
-                <h4 style="margin:0; font-size:0.7rem; color:#888;">TOTAL CLICKS</h4>
-                <p id="stat-clicks" style="font-size:1.2rem; color:var(--primary); margin:5px 0 0;">0</p>
-            </div>
-        </div>
-
-        <h2 class="section-title">ACHIEVEMENTS</h2>
+        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RETURN</button>
+        <h2 class="section-title">ACHIEVEMENTS (12 Total)</h2>
         <div id="ach-container" class="achievements-list"></div>
-
-        <h2 class="section-title">ACCESS CODES</h2>
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; width:100%; max-width:600px; text-align:center;">
-            <input type="text" id="promo-code" style="padding:10px; background:#111; color:white; border:1px solid var(--primary); width:60%;" placeholder="CODE">
-            <button class="nav-btn" onclick="redeemCode()">SUBMIT</button>
-        </div>
-        
-        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:30px;">HARD RESET</button>
+        <h2 class="section-title">PROMO CODES</h2>
+        <input type="text" id="promo-code" style="padding:10px; background:#111; color:white; border:1px solid var(--primary);" placeholder="CODE">
+        <button class="nav-btn" onclick="redeemCode()">SUBMIT</button>
+        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">HARD RESET</button>
     </div>
 
     <div id="admin-overlay" class="overlay">
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT ADMIN</button>
-        <h2 class="section-title" style="color:var(--admin);">DEV COMMANDS</h2>
-        <button class="nav-btn" onclick="credits += 10000000; updateUI();">ADD 10M CREDITS</button>
-        <button class="nav-btn" onclick="currentTier = 9; updateUI(); applyTierVisuals();" style="margin-top:10px;">MAX TECH AGE</button>
+        <button class="nav-btn" onclick="credits += 1e9; updateUI();" style="margin-top:20px;">+1 BILLION CREDITS</button>
+        <button class="nav-btn" onclick="currentTier = 9; updateUI(); applyTierVisuals();" style="margin-top:10px;">MAX TECH</button>
     </div>
 
-    <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome to the Evolution...</div></div>
+    <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome...</div></div>
 
     <div class="header">
-        <div class="credit-display" id="creditCount">0 Credits</div>
-        <div class="production-display">Yield: <span id="cpsCount">0</span>/sec</div>
+        <div class="credit-display" id="creditCount">0</div>
+        <div class="production-display">CPS: <span id="cpsCount">0</span></div>
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RECORDS & CODES</button>
-        <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')">ADMIN CONSOLE</button>
+        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RECORDS</button>
+        <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')">ADMIN</button>
     </div>
 
     <div class="buy-modes">
         <button id="mode-1" class="mode-btn active" onclick="setBuyMode(1)">x1</button>
         <button id="mode-10" class="mode-btn" onclick="setBuyMode(10)">x10</button>
-        <button id="mode-100" class="mode-btn" onclick="setBuyMode(100)">x100</button>
         <button id="mode-max" class="mode-btn" onclick="setBuyMode('max')">MAX</button>
     </div>
 
     <div class="click-area"><div id="circle" class="tier-0">STONE</div></div>
 
     <div class="shop">
-        <h2 class="section-title">TECHNOLOGICAL AGES</h2>
+        <h2 class="section-title">EVOLUTION TIERS</h2>
         <div id="tier-container"></div>
-        <h2 class="section-title">PRODUCTION FACILITIES</h2>
+        <h2 class="section-title">INFRASTRUCTURE</h2>
         <div id="machine-container"></div>
     </div>
 
     <script>
-        let credits = 0, totalEarned = 0, totalClicks = 0, playTimeSeconds = 0, buyMode = 1, currentTier = 0;
-        let adminUnlocked = false, unlockedAchievements = [], usedCodes = [];
+        let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
+        let adminUnlocked = false, unlockedAchievements = [], usedCodes = [], buyMode = 1;
         const growthRate = 1.25;
 
-        // Funnier Headlines
+        // Number Formatter
+        function f(n) {
+            if (n < 1000) return Math.floor(n).toString();
+            const units = ["k", "Mil", "Bil", "Tril", "Quad"];
+            const unit = Math.floor((n.toFixed(0).length - 1) / 3) * 3;
+            const num = (n / ('1e' + unit)).toFixed(2);
+            const unitname = units[Math.floor(unit / 3) - 1];
+            return num + unitname;
+        }
+
         const tickerData = {
-            start: ["Local entrepreneur hits rock with rocks; neighbors concerned.", "Breaking: Stone found to be very hard when hit.", "Man discovers 'The Thud' - Scientists baffled.", "Caveman IPO valuation reaches 4 berries."],
-            bronze: ["Copper found! Shiny rocks are the new meta.", "Local blacksmith accidentally invents the spoon.", "Bronze Age fashion: More metal, less pelt.", "Local village trades 10 rocks for 1 shiny rock."],
-            iron: ["Iron discovered; local woodworkers feeling threatened.", "Swords now 30% pointier than bronze equivalents.", "Rust discovered - Local blacksmith says 'It adds character'.", "Iron: It's like stone, but angry."],
-            industrial: ["Smokestacks are the new trees.", "Child labor laws haven't been invented yet - Efficiency spikes!", "Steam engines: Making loud noises for profit.", "Local river now 40% coal by volume."],
-            digital: ["Internet invented; 90% of bandwidth used for cat drawings.", "Silicon: Turns out we've been walking on gold this whole time.", "Local man 'downloads' a car; police confused.", "Clicking intensity reaches 400Hz."],
-            quantum: ["Reality found to be a suggestion, not a rule.", "Credits now exist in two banks at once until observed.", "CEO transcends physical form; still expects 10% growth.", "Universe.zip successfully extracted."]
+            start: ["Local entrepreneur hits rock with rocks.", "Man discovers 'The Thud'.", "Caveman IPO reaches 4 berries."],
+            bronze: ["Copper found! Shiny rocks are the new meta.", "Blacksmith accidentally invents the spoon."],
+            iron: ["Iron discovered; local woodworkers threatened.", "Swords now 30% pointier."],
+            digital: ["Internet invented; 90% bandwidth used for cat drawings.", "CEO transcends physical form."],
+            quantum: ["Credits exist in two banks at once until observed.", "Universe.zip successfully extracted."]
         };
 
         const achievements = [
-            { id: 'c1', name: "First Contact", desc: "Click the rock.", icon: "🪨", check: () => totalClicks >= 1 },
-            { id: 'c100', name: "Carpal Tunnel", desc: "Click 100 times.", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'e1k', name: "Berry Rich", desc: "Earn 1,000 credits.", icon: "🍓", check: () => totalEarned >= 1000 },
-            { id: 'e1m', name: "CEO of Earth", desc: "Earn 1,000,000 credits.", icon: "🌍", check: () => totalEarned >= 1000000 },
-            { id: 't1', name: "Metal Head", desc: "Reach the Bronze Age.", icon: "🥉", check: () => currentTier >= 1 },
-            { id: 't9', name: "Reality Glitch", desc: "Reach the Quantum Age.", icon: "🌌", check: () => currentTier >= 9 }
+            { id: 'a1', name: "Industrialist", desc: "First Click", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'a2', name: "Hobbyist", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
+            { id: 'a3', name: "Sore Wrists", desc: "1,000 Clicks", icon: "⚡", check: () => totalClicks >= 1000 },
+            { id: 'a4', name: "Pocket Change", desc: "Earn 1k", icon: "💰", check: () => totalEarned >= 1000 },
+            { id: 'a5', name: "Affluence", desc: "Earn 100k", icon: "💎", check: () => totalEarned >= 100000 },
+            { id: 'a6', name: "Millionaire", desc: "Earn 1Mil", icon: "🏦", check: () => totalEarned >= 1000000 },
+            { id: 'a7', name: "Billionaire", desc: "Earn 1Bil", icon: "🏆", check: () => totalEarned >= 1000000000 },
+            { id: 'a8', name: "Bronze Age", desc: "Unlock Bronze", icon: "🥉", check: () => currentTier >= 1 },
+            { id: 'a9', name: "Industrialist", desc: "Unlock Factory", icon: "🏭", check: () => currentTier >= 4 },
+            { id: 'a10', name: "Godhood", desc: "Unlock Quantum", icon: "🌌", check: () => currentTier >= 9 },
+            { id: 'a11', name: "Automation", desc: "Reach 1k CPS", icon: "⚙️", check: () => window.currentCps >= 1000 },
+            { id: 'a12', name: "Super Speed", desc: "Reach 1Mil CPS", icon: "🚀", check: () => window.currentCps >= 1000000 }
         ];
 
         const tierUpgrades = [
-            { name: "Bronze Tools", cost: 300, clickValue: 15, label: "BRONZE", class: "tier-1", desc: "Less rock-on-rock, more metal-on-rock." },
-            { name: "Iron Workings", cost: 4000, clickValue: 75, label: "IRON", class: "tier-2", desc: "Heavier, sturdier, angrier." },
-            { name: "Steel Forging", cost: 50000, clickValue: 450, label: "STEEL", class: "tier-3", desc: "Modernity is just better iron." },
-            { name: "Machine Automation", cost: 300000, clickValue: 2500, label: "FACTORY", class: "tier-4", desc: "Why click when pistons can do it?" },
-            { name: "Circuitry", cost: 2000000, clickValue: 15000, label: "DIGITAL", class: "tier-5", desc: "Micro-clicks for macro-bucks." },
-            { name: "Atomic Synthesis", cost: 15000000, clickValue: 100000, label: "ATOMIC", class: "tier-6", desc: "Splitting atoms to hit stones." },
-            { name: "Plasma Logic", cost: 120000000, clickValue: 600000, label: "PLASMA", class: "tier-7", desc: "The sun in the palm of your hand." },
-            { name: "Antimatter", cost: 3000000000, clickValue: 5000000, label: "VOID", class: "tier-8", desc: "The clicking of nothingness." },
-            { name: "Quantum Core", cost: 60000000000, clickValue: 50000000, label: "QUANTUM", class: "tier-9", desc: "I click, therefore I am... everywhere." }
+            { name: "Bronze Tools", cost: 300, clickValue: 15, label: "BRONZE", class: "tier-1", desc: "Metal hits harder." },
+            { name: "Iron Workings", cost: 4000, clickValue: 75, label: "IRON", class: "tier-2", desc: "Sturdier input." },
+            { name: "Steel Forging", cost: 50000, clickValue: 450, label: "STEEL", class: "tier-3", desc: "Standardized power." },
+            { name: "Machine Automation", cost: 300000, clickValue: 2500, label: "FACTORY", class: "tier-4", desc: "Piston assisted." },
+            { name: "Circuitry", cost: 2000000, clickValue: 15000, label: "DIGITAL", class: "tier-5", desc: "Speed of light." },
+            { name: "Atomic Synthesis", cost: 15000000, clickValue: 100000, label: "ATOMIC", class: "tier-6", desc: "Nuclear clicks." },
+            { name: "Plasma Logic", cost: 120000000, clickValue: 600000, label: "PLASMA", class: "tier-7", desc: "Solar input." },
+            { name: "Antimatter", cost: 3000000000, clickValue: 5000000, label: "VOID", class: "tier-8", desc: "Null clicks." },
+            { name: "Quantum Core", cost: 60000000000, clickValue: 50000000, label: "QUANTUM", class: "tier-9", desc: "Reality hacking." }
         ];
 
         const machineUpgrades = {
             gatherer: { name: "Rock Picker", addAuto: 1, baseCost: 25 },
-            blacksmith: { name: "Sweaty Blacksmith", addAuto: 15, baseCost: 400 },
+            blacksmith: { name: "Blacksmith", addAuto: 15, baseCost: 400 },
             mill: { name: "Water Wheel", addAuto: 100, baseCost: 4000 },
-            engine: { name: "Steam Chonker", addAuto: 650, baseCost: 30000 },
-            refinery: { name: "Oil Driller", addAuto: 4500, baseCost: 250000 },
-            nuke: { name: "Uranium TOSHER", addAuto: 30000, baseCost: 2000000 },
-            solar: { name: "Space Mirror", addAuto: 200000, baseCost: 30000000 },
-            fusion: { name: "Mini-Sun", addAuto: 2000000, baseCost: 500000000 },
-            swarm: { name: "Dyson Shard", addAuto: 18000000, baseCost: 10000000000 },
-            well: { name: "The Void Hole", addAuto: 500000000, baseCost: 300000000000 }
+            engine: { name: "Steam Engine", addAuto: 650, baseCost: 30000 },
+            refinery: { name: "Oil Refinery", addAuto: 4500, baseCost: 250000 },
+            nuke: { name: "Nuclear Plant", addAuto: 30000, baseCost: 2000000 },
+            solar: { name: "Space Solar", addAuto: 200000, baseCost: 30000000 },
+            fusion: { name: "Fusion Core", addAuto: 2000000, baseCost: 500000000 },
+            swarm: { name: "Dyson Swarm", addAuto: 18000000, baseCost: 10000000000 },
+            well: { name: "Void Well", addAuto: 500000000, baseCost: 300000000000 }
         };
 
         let inventory = {};
@@ -205,27 +197,25 @@
             achievements.forEach(ach => {
                 const isUnlocked = unlockedAchievements.includes(ach.id);
                 container.innerHTML += `<div class="ach-item ${isUnlocked ? 'unlocked' : ''}">
-                    <div style="font-size:1.5rem;">${isUnlocked ? ach.icon : '❓'}</div>
-                    <div><strong>${isUnlocked ? ach.name : '???'}</strong><br><small>${ach.desc}</small></div>
+                    <div style="font-size:1.2rem;">${isUnlocked ? ach.icon : '❓'}</div>
+                    <div><strong>${isUnlocked ? ach.name : '???'}</strong><br>${ach.desc}</div>
                 </div>`;
             });
-            document.getElementById('stat-alltime').innerText = Math.floor(totalEarned).toLocaleString();
-            document.getElementById('stat-clicks').innerText = totalClicks.toLocaleString();
         }
 
         function redeemCode() {
             const val = document.getElementById('promo-code').value;
-            if(val === "Freebie1") { credits += 10000; notify("Gained 10k Credits!"); }
-            else if(val === "AA") { adminUnlocked = true; notify("Admin Unlocked!"); }
+            if(val === "Freebie1") { credits += 10000; notify("Gained 10k!"); }
+            else if(val === "AA") { adminUnlocked = true; notify("Admin On!"); }
             document.getElementById('promo-code').value = '';
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('creditCount').innerText = `${Math.floor(credits).toLocaleString()} Credits`;
+            document.getElementById('creditCount').innerText = f(credits) + " Credits";
             let totalCps = 0;
             Object.keys(machineUpgrades).forEach(id => totalCps += machineUpgrades[id].addAuto * inventory[id]);
-            document.getElementById('cpsCount').innerText = Math.floor(totalCps).toLocaleString();
+            document.getElementById('cpsCount').innerText = f(totalCps) + "/sec";
             window.currentCps = totalCps;
 
             let clickVal = (currentTier > 0) ? tierUpgrades[currentTier - 1].clickValue : 1;
@@ -234,16 +224,16 @@
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
-                btn.innerHTML = `Buy ${buyData.count}<br>${Math.round(buyData.cost).toLocaleString()} C`;
+                btn.innerHTML = `Buy ${buyData.count}<br>${f(buyData.cost)} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
-                document.getElementById(`count-${id}`).innerText = `Owned: ${inventory[id]} (+${(machineUpgrades[id].addAuto * inventory[id]).toLocaleString()}/s)`;
+                document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)} CPS | Owned: ${inventory[id]}`;
             });
 
             const tBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
-                tBox.innerHTML = `<div class="upgrade-card"><div><h3>${next.name}</h3><p>${next.desc}</p></div><button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">EVOLVE<br>${next.cost.toLocaleString()} C</button></div>`;
-            } else tBox.innerHTML = `<p style="color:var(--quantum); text-align:center;">YOU ARE THE APEX</p>`;
+                tBox.innerHTML = `<div class="upgrade-card"><div><h3>${next.name}</h3><p>${next.desc} (${f(next.clickValue)}/Click)</p></div><button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">EVOLVE<br>${f(next.cost)} C</button></div>`;
+            } else tBox.innerHTML = `<p style="color:var(--quantum); text-align:center;">MAX TECH REACHED</p>`;
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
             checkAchievements();
@@ -251,13 +241,7 @@
         }
 
         function updateTicker() {
-            let key = "start";
-            if (currentTier >= 9) key = "quantum";
-            else if (currentTier >= 5) key = "digital";
-            else if (currentTier >= 3) key = "industrial";
-            else if (currentTier >= 2) key = "iron";
-            else if (currentTier >= 1) key = "bronze";
-            
+            let key = (currentTier >= 9) ? "quantum" : (currentTier >= 5) ? "digital" : (currentTier >= 2) ? "iron" : (currentTier >= 1) ? "bronze" : "start";
             const list = tickerData[key];
             if(!list.includes(document.getElementById('ticker-text').innerText)) {
                 document.getElementById('ticker-text').innerText = list[Math.floor(Math.random()*list.length)];
@@ -306,15 +290,15 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        function setBuyMode(m) { buyMode = m; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); updateUI(); }
+        function setBuyMode(m) { buyMode = m; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); updateUI(); event.target.classList.add('active'); }
 
         function saveGame() {
             const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked };
-            localStorage.setItem("IndusEvo_V14", JSON.stringify(data));
+            localStorage.setItem("IndusEvo_V15", JSON.stringify(data));
         }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusEvo_V14"));
+            const data = JSON.parse(localStorage.getItem("IndusEvo_V15"));
             if(data) {
                 credits = data.credits; totalEarned = data.totalEarned; totalClicks = data.totalClicks;
                 inventory = data.inventory; currentTier = data.currentTier;
@@ -324,11 +308,11 @@
             updateUI();
         }
 
-        function resetGame() { if(confirm("Wipe everything?")) { localStorage.clear(); location.reload(); } }
+        function resetGame() { if(confirm("Hard Reset?")) { localStorage.clear(); location.reload(); } }
 
         const mBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
-            mBox.innerHTML += `<div class="upgrade-card"><div><h3>${machineUpgrades[id].name}</h3><p id="count-${id}"></p></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
+            mBox.innerHTML += `<div class="upgrade-card"><div><h3>${machineUpgrades[id].name}</h3><p id="info-${id}"></p></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
         });
 
         document.getElementById('circle').addEventListener('click', (e) => {
