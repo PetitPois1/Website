@@ -3,90 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom</title>
+    <title>Upcoming Games | Game Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #8b5cf6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.6);
+        }
+
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1e1e2f;
-            font-family: 'Arial', sans-serif;
-            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
         }
-        h1 {
-            font-size: 2.8rem;
-            text-align: center;
-            margin-bottom: 40px;
-            font-weight: 600;
-            color: #bb86fc;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .game-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+
+        .game-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .game-item {
-            background-color: #3700b3;
-            color: white;
-            font-size: 18px;
-            padding: 15px 30px;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 250px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease-in-out;
+
+        .game-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            transform: translateY(-4px);
+            background: rgba(30, 41, 59, 0.8);
         }
-        .game-item:hover {
-            background-color: #6200ea;
-            transform: translateY(-5px);
-        }
-        .game-item:active {
-            background-color: #3700b3;
-            transform: translateY(0);
-        }
-        footer {
-            position: fixed;
-            bottom: 20px;
-            text-align: center;
-            font-size: 14px;
-            color: #bbb;
-        }
-        footer a {
-            color: #6200ea;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s ease;
-        }
-        footer a:hover {
-            color: #bb86fc;
+
+        .accent-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
     </style>
 </head>
-<body>
-    <div class="home-content">
-        <h1>Upcoming Games</h1>
-        <ul class="game-list">
-            <li class="game-item">Tower Defence (IN PROGRESS)</li>
-            <li class="game-item">Clicker Game (UNDERGOING RENNOVATION)</li>
-            <li class="game-item">Blockblast (IN PROGRESS)</li>
-            <li class="game-item">Battle IO</li>
-            <li class="game-item">Texas Hold 'em</li>
-            <li class="game-item">DOOM</li>
-            
-            
-        </ul>
+<body class="pt-32 pb-20">
+
+    <!-- Navbar -->
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <span class="text-xl">👾</span>
+            </div>
+            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                GAME HUB
+            </span>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
+            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
+            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="max-w-4xl mx-auto px-6 text-center mb-16">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+            Upcoming <span class="accent-gradient">Releases</span>
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            Our student developers are hard at work. Here's a look at the projects currently in the lab.
+        </p>
     </div>
-    <footer>
-        <p>Powered by GameHub | <a href="index.html">Back to Home</a></p>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6">
+        <!-- The ID where JavaScript will inject the cards -->
+        <div id="game-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Cards will be generated here -->
+        </div>
+
+        <!-- Back Home Link -->
+        <div class="mt-16 text-center">
+            <a href="index.html" class="text-slate-500 hover:text-violet-400 transition-colors flex items-center justify-center gap-2 font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Back to Game Hub Home
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
+        <p class="text-sm">Powered by GameHub | Student-led Innovation</p>
     </footer>
+
+    <script>
+        /**
+         * EDIT THIS LIST TO ADD/CHANGE GAMES
+         * name: The title of the game
+         * icon: Emoji icon
+         * status: The label on the badge (e.g., In Progress, Planned)
+         * statusColor: 'violet', 'amber', or 'slate'
+         * description: Short summary of the game
+         */
+        const upcomingGames = [
+            {
+                name: "Tower Defence",
+                icon: "🏹",
+                status: "In Progress",
+                statusColor: "violet",
+                description: "Strategic base protection with multiple turret types and enemy waves."
+            },
+            {
+                name: "Industrial Clicker",
+                icon: "⚙️",
+                status: "Renovating",
+                statusColor: "amber",
+                description: "A complete overhaul of the save system and economy balance."
+            },
+            {
+                name: "Blockblast",
+                icon: "🧱",
+                status: "In Progress",
+                statusColor: "violet",
+                description: "Fast-paced puzzle action. Currently optimizing for browser performance."
+            },
+            {
+                name: "Battle IO",
+                icon: "⚔️",
+                status: "Planned",
+                statusColor: "slate",
+                description: "Multiplayer arena combat. Our most ambitious project yet."
+            },
+            {
+                name: "Texas Hold 'em",
+                icon: "🃏",
+                status: "Planned",
+                statusColor: "slate",
+                description: "A clean, focused card game experience with AI opponents."
+            },
+            {
+                name: "Retro Shooter",
+                icon: "🔥",
+                status: "Planned",
+                statusColor: "slate",
+                description: "Exploring technology to bring classic shooter mechanics to the web."
+            }
+        ];
+
+        // Function to render the cards automatically
+        function renderGames() {
+            const container = document.getElementById('game-container');
+            
+            const html = upcomingGames.map(game => {
+                // Determine the CSS classes for the badge color
+                let badgeClass = "bg-violet-600/10 text-violet-400";
+                if (game.statusColor === "amber") badgeClass = "bg-amber-400/10 text-amber-400";
+                if (game.statusColor === "slate") badgeClass = "bg-slate-500/10 text-slate-400";
+
+                return `
+                    <div class="game-card p-6 rounded-3xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-3xl">${game.icon}</span>
+                                <span class="px-3 py-1 rounded-full font-bold text-[0.7rem] uppercase tracking-wider ${badgeClass}">
+                                    ${game.status}
+                                </span>
+                            </div>
+                            <h2 class="text-2xl font-bold mb-2">${game.name}</h2>
+                            <p class="text-slate-400 text-sm">${game.description}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Run the render function on load
+        window.onload = renderGames;
+    </script>
+
 </body>
 </html>
