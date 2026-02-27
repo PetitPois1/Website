@@ -216,6 +216,7 @@
             align-items: center;
             z-index: 100;
             pointer-events: auto;
+            transition: background 0.5s;
         }
 
         h1 {
@@ -225,6 +226,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+            transition: all 0.3s ease;
         }
         
         /* Floating Text Animation */
@@ -278,18 +280,17 @@
         </div>
     </div>
 
-    <!-- Start Screen -->
     <div id="start-screen">
-        <h1>NEON CORE</h1>
+        <h1 id="main-title" onclick="triggerEasterEgg()" style="cursor: pointer; user-select: none;">NEON CORE</h1>
         <button class="btn btn-large" onclick="startGame()">INITIALIZE SYSTEM</button>
         <div class="tutorial">
             Mouse/Touch to Move<br>
             Click/Tap to Launch Ball<br>
-            Destroy Bricks -> Get Money -> Upgrade
+            Destroy Bricks -> Get Money -> Upgrade<br>
+            <em>(Psst... try clicking the title 5 times)</em>
         </div>
     </div>
 
-    <!-- Shop Modal -->
     <div id="shop-modal">
         <div class="shop-header">
             <h2 class="shop-title">UPGRADE MODULE</h2>
@@ -297,8 +298,7 @@
         </div>
         
         <div class="upgrade-list">
-            <!-- Items injected by JS -->
-        </div>
+            </div>
 
         <div class="shop-footer">
             <button class="btn btn-large" onclick="closeShop()">NEXT WAVE</button>
@@ -309,7 +309,6 @@
 <script>
 /**
  * AUDIO ENGINE
- * Synthesizes sounds using Web Audio API to avoid external assets.
  */
 const AudioEngine = {
     ctx: null,
@@ -341,29 +340,24 @@ const AudioEngine = {
     },
 
     playHit() {
-        // High pitched ping
         this.playTone(800 + Math.random() * 200, 'sine', 0.1, 0.1);
     },
 
     playPaddleHit() {
-        // Lower thud
         this.playTone(300, 'square', 0.1, 0.05);
     },
 
     playDestroy() {
-        // Crunch noise
         this.playTone(100 + Math.random() * 50, 'sawtooth', 0.2, 0.1);
         this.playTone(50 + Math.random() * 50, 'square', 0.2, 0.1);
     },
 
     playCoin() {
-        // Coin sparkle
         this.playTone(1200, 'sine', 0.1, 0.05);
         setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.05), 50);
     },
 
     playLaunch() {
-        // Laser pew
         if(!this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -390,14 +384,39 @@ let gameState = {
     wave: 1,
     lives: 5,
     gameOver: false,
-    shopOpen: false
+    shopOpen: false,
+    insaneMode: false // New tracker for the Easter Egg
+};
+
+// Easter Egg Logic
+let eggClicks = 0;
+window.triggerEasterEgg = function() {
+    if (gameState.insaneMode) return; // Already triggered
+    eggClicks++;
+    
+    // Play a rising pitch sound on click
+    if(AudioEngine.ctx) AudioEngine.playTone(400 + (eggClicks * 100), 'sawtooth', 0.1, 0.05);
+    else AudioEngine.init(); // Initialize audio if not already done
+
+    if (eggClicks === 5) {
+        gameState.insaneMode = true;
+        const title = document.getElementById('main-title');
+        title.innerText = "INSANE CORE";
+        title.style.background = "linear-gradient(to right, #ff0000, #ff8800)";
+        title.style.webkitBackgroundClip = "text";
+        title.style.textShadow = "0 0 50px rgba(255, 0, 0, 0.8)";
+        document.getElementById('start-screen').style.background = "rgba(50,0,0,0.9)";
+        
+        AudioEngine.playDestroy(); // Explosion sound
+        AudioEngine.playLaunch();
+    }
 };
 
 const upgrades = [
     { id: 'damage', name: 'Ball Damage', desc: 'Destroy harder bricks', cost: 50, level: 1, multiplier: 1.5, type: 'stat' },
     { id: 'width', name: 'Paddle Size', desc: 'Wider paddle', cost: 100, level: 1, multiplier: 1.3, type: 'stat' },
     { id: 'greed', name: 'Greed', desc: 'More $ per brick', cost: 75, level: 1, multiplier: 1.5, type: 'passive' },
-    { id: 'speed', name: 'Ball Speed', desc: 'Faster ball', cost: 30, level: 1, multiplier: 1.5, type: 'stat' }, // Actually makes it harder but clears faster
+    { id: 'speed', name: 'Ball Speed', desc: 'Faster ball', cost: 30, level: 1, multiplier: 1.5, type: 'stat' }, 
     { id: 'multiball', name: 'Multi-Ball', desc: 'Start wave with +1 ball', cost: 500, level: 0, multiplier: 2.0, type: 'active' }
 ];
 
@@ -410,14 +429,13 @@ class Paddle {
         this.h = 15;
         this.x = canvas.width / 2 - this.w / 2;
         this.y = canvas.height - 50;
-        this.color = '#00f3ff';
+        this.color = gameState.insaneMode ? '#ff0000' : '#00f3ff';
     }
 
     update(inputX) {
         if (inputX) {
             this.x = inputX - this.w / 2;
         }
-        // Bounds check
         if (this.x < 0) this.x = 0;
         if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
     }
@@ -439,11 +457,11 @@ class Ball {
         this.y = y;
         this.radius = 6;
         this.speed = 6;
-        this.dx = 0; // Starts stuck to paddle
+        this.dx = 0; 
         this.dy = 0;
         this.active = false;
         this.damage = 1;
-        this.color = '#fff';
+        this.color = gameState.insaneMode ? '#ffaa00' : '#fff';
     }
 
     launch() {
@@ -457,7 +475,6 @@ class Ball {
 
     update(paddle) {
         if (!this.active) {
-            // Stick to paddle
             this.x = paddle.x + paddle.w / 2;
             this.y = paddle.y - this.radius - 2;
             return;
@@ -466,35 +483,31 @@ class Ball {
         this.x += this.dx;
         this.y += this.dy;
 
-        // Wall collisions
         if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
             this.dx *= -1;
-            AudioEngine.playHit();
+            // Only play hit sound randomly in insane mode to save ears
+            if(!gameState.insaneMode || Math.random() < 0.1) AudioEngine.playHit();
         }
         if (this.y - this.radius < 0) {
             this.dy *= -1;
-            AudioEngine.playHit();
+            if(!gameState.insaneMode || Math.random() < 0.1) AudioEngine.playHit();
         }
 
-        // Paddle Collision
         if (
             this.y + this.radius > paddle.y &&
             this.y - this.radius < paddle.y + paddle.h &&
             this.x > paddle.x &&
             this.x < paddle.x + paddle.w
         ) {
-            // Hit paddle
             this.dy = -Math.abs(this.dy);
             
-            // Influence X speed based on where it hit the paddle
             let hitPoint = this.x - (paddle.x + paddle.w / 2);
-            // Normalize hit point (-1 to 1)
             hitPoint = hitPoint / (paddle.w / 2);
             
-            this.dx = hitPoint * (this.speed * 0.8); // Add spin/angle
-            AudioEngine.playPaddleHit();
+            this.dx = hitPoint * (this.speed * 0.8); 
+            if(!gameState.insaneMode || Math.random() < 0.1) AudioEngine.playPaddleHit();
             
-            createParticles(this.x, this.y, 5, '#00f3ff');
+            createParticles(this.x, this.y, 5, gameState.insaneMode ? '#ff0000' : '#00f3ff');
         }
     }
 
@@ -518,13 +531,13 @@ class Brick {
         this.h = h;
         this.maxHp = hp;
         this.hp = hp;
-        this.type = type; // 'normal', 'hard', 'gold', 'boss'
+        this.type = type; 
     }
 
     draw() {
         if (this.hp <= 0) return;
 
-        let color = '#ff00ff'; // default
+        let color = '#ff00ff'; 
         if (this.type === 'normal') color = `hsl(${this.hp * 30}, 70%, 50%)`;
         if (this.type === 'hard') color = '#ff0000';
         if (this.type === 'gold') color = '#ffcc00';
@@ -536,7 +549,6 @@ class Brick {
         ctx.shadowBlur = 10;
         ctx.shadowColor = color;
         
-        // Flash white on hit
         if (this.hitFrame > 0) {
             ctx.fillStyle = '#fff';
             this.hitFrame--;
@@ -544,7 +556,6 @@ class Brick {
 
         ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, this.h - 4);
         
-        // Draw HP text for boss or hard blocks
         if (this.hp > 1) {
             ctx.fillStyle = '#000';
             ctx.font = '10px Arial';
@@ -601,20 +612,32 @@ let particles = [];
 let inputX = canvas.width / 2;
 
 function spawnBalls() {
-    balls = [new Ball(0, 0)];
+    balls = [];
     
-    // Apply ball speed and damage upgrades
     const speedLevel = upgrades.find(u => u.id === 'speed').level;
-    balls[0].speed = 6 + (speedLevel - 1);
-    balls[0].damage = upgrades.find(u => u.id === 'damage').level;
-    
-    // Apply multi-ball upgrade
+    const damageLevel = upgrades.find(u => u.id === 'damage').level;
     const multiLevel = upgrades.find(u => u.id === 'multiball').level;
-    for(let i=0; i<multiLevel; i++) {
-        let b = new Ball(0, 0);
-        b.speed = balls[0].speed;
-        b.damage = balls[0].damage;
-        balls.push(b);
+
+    // --- INSANE MODE INJECTION ---
+    if (gameState.insaneMode) {
+        for(let i = 0; i < 100; i++) {
+            let b = new Ball(0, 0);
+            b.speed = (6 + (speedLevel - 1)) * 10; // 10x Speed!
+            b.damage = damageLevel; 
+            balls.push(b);
+        }
+    } else {
+        // Normal Spawning
+        balls.push(new Ball(0, 0));
+        balls[0].speed = 6 + (speedLevel - 1);
+        balls[0].damage = damageLevel;
+        
+        for(let i=0; i<multiLevel; i++) {
+            let b = new Ball(0, 0);
+            b.speed = balls[0].speed;
+            b.damage = balls[0].damage;
+            balls.push(b);
+        }
     }
 }
 
@@ -629,13 +652,11 @@ function initGame() {
     AudioEngine.init();
     resize();
     
-    // Reset State
     gameState.money = 0;
     gameState.wave = 1;
     gameState.lives = 5;
     gameState.gameOver = false;
     
-    // Reset Upgrades
     upgrades.forEach(u => u.level = 1);
     upgrades.find(u => u.id === 'multiball').level = 0;
     
@@ -652,7 +673,6 @@ function initGame() {
 function loadLevel(wave) {
     spawnBalls();
     
-    // Apply Paddle Width
     const widthLevel = upgrades.find(u => u.id === 'width').level;
     paddle.w = 100 + (widthLevel - 1) * 20;
 
@@ -666,20 +686,16 @@ function loadLevel(wave) {
 
     if (isBossLevel) {
         showMessage("BOSS BATTLE", "Destroy the Core");
-        // Create a giant block in the middle
         let bossHp = wave * 50;
         let b = new Brick(canvas.width/4, 50, canvas.width/2, 100, bossHp, 'boss');
         bricks.push(b);
         
-        // Some guard blocks
         for (let c = 0; c < cols; c++) {
              bricks.push(new Brick(c * brickW, 160, brickW, brickH, wave * 2, 'hard'));
         }
     } else {
-        // Standard Level Generation
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                // Randomly skip some bricks for variety
                 if (Math.random() > 0.1) {
                     let type = 'normal';
                     let hp = 1 + Math.floor(wave / 2);
@@ -736,10 +752,8 @@ function updateHUD() {
 function update() {
     if (gameState.shopOpen) return;
 
-    // Input to Paddle
     paddle.update(inputX);
 
-    // Update Balls
     let activeBalls = 0;
     balls.forEach(ball => {
         if (ball.y < canvas.height) {
@@ -749,9 +763,7 @@ function update() {
         }
     });
 
-    // Check Loss
     if (activeBalls === 0 && balls.every(b => b.active === true || b.y > canvas.height)) {
-        // Check if we haven't launched any yet (start of level)
         const unlaunched = balls.filter(b => !b.active);
         if (unlaunched.length === 0) {
             if (gameState.lives > 0) {
@@ -769,11 +781,9 @@ function update() {
         }
     }
 
-    // Update Particles
     particles.forEach(p => p.update());
     particles = particles.filter(p => p.life > 0);
 
-    // Check Win
     if (bricks.length === 0) {
         openShop();
     }
@@ -790,45 +800,43 @@ function checkBrickCollisions(ball) {
             ball.y + ball.radius > b.y &&
             ball.y - ball.radius < b.y + b.h
         ) {
-            // Collision logic
             ball.dy *= -1;
             b.hp -= ball.damage;
-            b.hitFrame = 5; // Flash effect
-            AudioEngine.playHit();
+            b.hitFrame = 5; 
+            
+            // Only play hit sounds rarely in insane mode to avoid audio crashing
+            if(!gameState.insaneMode || Math.random() < 0.05) AudioEngine.playHit();
 
             if (b.hp <= 0) {
                 bricks.splice(i, 1);
                 
-                // Reward
                 let reward = 10;
                 let color = '#fff';
                 
-                if (b.type === 'gold') { reward = 50; color = '#ffcc00'; AudioEngine.playCoin(); }
+                if (b.type === 'gold') { reward = 50; color = '#ffcc00'; if(!gameState.insaneMode) AudioEngine.playCoin(); }
                 else if (b.type === 'extraball') { 
                     reward = 10; 
                     color = '#00ffcc'; 
                     gameState.lives++; 
-                    AudioEngine.playCoin(); 
+                    if(!gameState.insaneMode) AudioEngine.playCoin(); 
                     showFloatingText("+1 BALL", b.x, b.y, color);
                 }
                 else if (b.type === 'duplicate') {
                     reward = 10;
                     color = '#00ff00';
-                    AudioEngine.playLaunch();
-                    // Split ball mechanics
+                    if(!gameState.insaneMode) AudioEngine.playLaunch();
                     let clone = new Ball(ball.x, ball.y);
                     clone.active = true;
                     clone.speed = ball.speed;
                     clone.damage = ball.damage;
-                    clone.dx = -ball.dx || (Math.random() - 0.5) * ball.speed; // Go opposite way
+                    clone.dx = -ball.dx || (Math.random() - 0.5) * ball.speed; 
                     clone.dy = ball.dy;
                     balls.push(clone);
                     showFloatingText("x2 BALL", b.x, b.y, color);
                 }
                 else if (b.type === 'boss') { reward = 1000; color = '#ff00ff'; }
-                else { AudioEngine.playDestroy(); }
+                else { if(!gameState.insaneMode) AudioEngine.playDestroy(); }
 
-                // Apply Greed Multiplier
                 const greedLvl = upgrades.find(u => u.id === 'greed').level;
                 reward = Math.floor(reward * (1 + (greedLvl-1)*0.2));
 
@@ -836,17 +844,15 @@ function checkBrickCollisions(ball) {
                 updateHUD();
                 
                 showFloatingText(`+$${reward}`, b.x, b.y, color);
-                createParticles(b.x + b.w/2, b.y + b.h/2, 10, color);
+                createParticles(b.x + b.w/2, b.y + b.h/2, gameState.insaneMode ? 2 : 10, color); // Less particles in insane mode
             }
-            // Only hit one brick per frame to prevent tunneling glitches
             break;
         }
     }
 }
 
 function draw() {
-    // Clear trail effect
-    ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+    ctx.fillStyle = gameState.insaneMode ? 'rgba(15, 0, 0, 0.3)' : 'rgba(5, 5, 5, 0.3)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     paddle.draw();
@@ -904,7 +910,7 @@ window.buyUpgrade = function(id) {
         gameState.money -= cost;
         u.level++;
         AudioEngine.playCoin();
-        openShop(); // Refresh UI
+        openShop(); 
     }
 };
 
@@ -912,7 +918,7 @@ window.closeShop = function() {
     document.getElementById('shop-modal').style.display = 'none';
     gameState.shopOpen = false;
     gameState.wave++;
-    gameState.lives += 2; // Reward completing wave
+    gameState.lives += 2; 
     updateHUD();
     loadLevel(gameState.wave);
 };
@@ -942,7 +948,6 @@ window.addEventListener('touchstart', () => {
     balls.forEach(b => b.launch());
 });
 
-// Initial Draw
 resize();
 ctx.fillStyle = '#111';
 ctx.fillRect(0,0, canvas.width, canvas.height);
