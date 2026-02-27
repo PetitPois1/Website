@@ -27,16 +27,19 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             overflow-x: hidden;
-            transition: background-color var(--transition-speed) ease;
+            transition: background-color var(--transition-speed) ease, background-image var(--transition-speed) ease;
         }
 
-        /* UI Optimization: Hardware acceleration for smooth tickers */
+        /* UI Optimization: Hardware acceleration */
         .ticker-wrap { width: 100%; max-width: 650px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; white-space: nowrap; padding: 5px 0; border-radius: 4px; }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; will-change: transform; }
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        .header { text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; width: 90%; max-width: 650px; border: 1px solid var(--border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(8px); }
-        .credit-display { font-size: 2.5rem; font-weight: bold; color: white; margin: 0; }
+        .header { text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; width: 90%; max-width: 650px; border: 1px solid var(--border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(8px); transition: all 0.5s; }
+        /* Late Game Visual Fix: Remove boxes for high tiers */
+        .header.no-box { border: none; background: transparent; backdrop-filter: none; }
+
+        .credit-display { font-size: 2.5rem; font-weight: bold; color: white; margin: 0; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .production-display { color: var(--primary); font-size: 1rem; margin-top: 5px; }
 
         .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
@@ -49,7 +52,7 @@
         .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #1b2a1d; }
 
         .click-area { height: 220px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; position: relative; }
-        #circle { width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: transform 0.05s; text-align: center; padding: 15px; position: relative; z-index: 5; }
+        #circle { width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: transform 0.05s; text-align: center; padding: 15px; position: relative; z-index: 5; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         #circle:active { transform: scale(0.92); }
 
         .floating-text { position: absolute; pointer-events: none; color: var(--primary); font-weight: bold; animation: floatUp 0.8s ease-out forwards; z-index: 10; }
@@ -62,8 +65,12 @@
         .tier-3 { border-radius: 8px;  background: #4682b4; border: 4px solid #2c5272; }
         .tier-4 { border-radius: 0; background: #c0c0c0; border: 4px solid #ffd700; }
         .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; border: 2px solid white; }
-        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
+        .tier-6 { border-radius: 50%; background: radial-gradient(circle, #ff4500, #8b0000); border: 2px solid #ff0; }
+        .tier-7 { border-radius: 15px; background: #ff00ff; box-shadow: 0 0 20px #ff00ff; border: none; }
+        .tier-8 { border-radius: 50%; background: #000; border: 2px solid #333; box-shadow: 0 0 30px #555; }
+        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; border: none; }
+        
+        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); transform: scale(1); } 50% { box-shadow: 0 0 30px var(--quantum); transform: scale(1.05); } 100% { box-shadow: 0 0 10px var(--quantum); transform: scale(1); } }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; display: none; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; box-sizing: border-box; }
         .achievements-list { width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
@@ -71,7 +78,9 @@
         .ach-item.unlocked { opacity: 1; border-color: var(--gold); background: #1a1a00; }
 
         .shop { width: 100%; max-width: 700px; padding-bottom: 50px; }
-        .upgrade-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 15px; }
+        .upgrade-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 15px; transition: 0.3s; }
+        .upgrade-card.no-box { border-color: transparent; background: transparent; }
+        
         .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 1rem; text-transform: uppercase; }
         .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 12px; border-radius: 4px; cursor: pointer; min-width: 140px; font-weight: bold; text-align: center; }
         .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; background: #222; }
@@ -80,6 +89,9 @@
 
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--save-color); padding: 12px 20px; border-radius: 4px; font-weight: bold; opacity: 0; transition: 0.4s; z-index: 2000; pointer-events: none;}
         #toast.show { opacity: 1; }
+
+        /* Admin Styles */
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 500px; }
     </style>
 </head>
 <body>
@@ -102,14 +114,20 @@
 
     <div id="admin-overlay" class="overlay">
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT ADMIN</button>
-        <h2 class="section-title" style="color:var(--admin)">ADMIN PANEL</h2>
-        <button class="nav-btn" onclick="credits += 1e9; updateUI();" style="margin-top:20px;">+1 BILLION CREDITS</button>
-        <button class="nav-btn" onclick="currentTier = 9; updateUI(); applyTierVisuals();" style="margin-top:10px;">MAX TECH ERA</button>
+        <h2 class="section-title" style="color:var(--admin)">DEBUG CONSOLE</h2>
+        <div class="admin-grid">
+            <button class="nav-btn" onclick="credits += 1e9; updateUI();">Add 1 Billion</button>
+            <button class="nav-btn" onclick="credits *= 10; updateUI();">x10 Money</button>
+            <button class="nav-btn" onclick="credits *= 1000; updateUI();">x1000 Money</button>
+            <button class="nav-btn" onclick="adminCompleteGame()">Complete Game</button>
+            <button class="nav-btn" onclick="currentTier = 9; updateUI(); applyTierVisuals();">Max Tech</button>
+            <button class="nav-btn" onclick="totalClicks += 1000; updateUI();">Add 1k Clicks</button>
+        </div>
     </div>
 
     <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome to the Industrial Age...</div></div>
 
-    <div class="header">
+    <div class="header" id="main-header">
         <div class="credit-display" id="creditCount">0</div>
         <div class="production-display">CPS: <span id="cpsCount">0</span></div>
     </div>
@@ -141,24 +159,40 @@
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1;
         let usedCodes = [];
-        const growthRate = 1.15; // Slightly lower growth for better early game pacing
+        const growthRate = 1.15;
 
         function f(n) {
             if (n < 1000) return Math.floor(n).toLocaleString();
-            const units = ["k", "Mil", "Bil", "Tril", "Quad", "Quin", "Sext"];
+            const units = ["k", "Mil", "Bil", "Tril", "Quad", "Quin", "Sext", "Sept", "Oct"];
             const unit = Math.floor((Math.floor(n).toString().length - 1) / 3) * 3;
             const num = (n / ('1e' + unit)).toFixed(2);
             return num + (units[Math.floor(unit / 3) - 1] || "");
         }
 
-        const eraBackgrounds = ["#1b2a1d", "#3d2b1f", "#2b2b2b", "#1a2a3a", "#0d0d1a", "#1a0033"];
+        const eraBackgrounds = [
+            "#1b2a1d", // Stone
+            "#3d2b1f", // Bronze
+            "#2b2b2b", // Iron
+            "#24243e", // Steel
+            "#1a1a2e", // Factory
+            "#0f0c29", // Digital
+            "#200122", // Atomic
+            "#000428", // Plasma
+            "#000000", // Void
+            "#12041d"  // Quantum
+        ];
 
         const tickerData = {
-            start: ["Local entrepreneur hits rock with rocks.", "Neighbours file concern report over child labour.", "Bill Rocks: 'Urg ug.', berry stocks rise."],
-            bronze: ["Copper found! Shiny rocks are the new meta.", "Blacksmith accidentally invents the spoon.", "Rock pickers classified as endangered species."],
-            iron: ["New age underway, Milennials confused by new Gen I slang.", "Swords now 30% pointier.", "Local creates 'Iron-Man' comic."],
-            digital: ["Internet invented; 90% bandwidth used for cat drawings.", "CEO transcends physical form.", "Spokesperson for GHO speak out against movies."],
-            quantum: ["Universe.zip successfully extracted.", "Treasured employees go missing in void well, CEO says it's 'completely safe'."]
+            start: ["Local entrepreneur hits rock with rocks.", "Neighbours file concern report over child labour.", "Bill Rocks: 'Urg ug.', berry stocks rise.", "Scientists wonder if 'Wheel' is a fad."],
+            bronze: ["Copper found! Shiny rocks are the new meta.", "Blacksmith accidentally invents the spoon.", "Rock pickers classified as endangered species.", "Tin prices soar as 'Bronze' becomes trending."],
+            iron: ["New age underway, Milennials confused by new Gen I slang.", "Swords now 30% pointier.", "Local creates 'Iron-Man' comic.", "Charcoal demand reaches all-time high."],
+            steel: ["Bridges are now significantly less likely to collapse.", "Railroads connect towns, people still late for work.", "Steelworkers unionize for more 'ham sandwich' breaks.", "Tall buildings invented; pigeons excited."],
+            factory: ["Smog is the new 'clean air'.", "Child labour replaced by loud steam things.", "Productivity up 400%, worker happiness... let's not talk about it.", "Standardized screws: The revolution you didn't know you needed."],
+            digital: ["Internet invented; 90% bandwidth used for cat drawings.", "CEO transcends physical form.", "Silicon Valley founded in a literal valley.", "Cloud storage actually just someone else's computer."],
+            atomic: ["Nuclear energy: Too cheap to meter, too scary to ignore.", "Glowing green waste makes for excellent night lights.", "Uranium found in breakfast cereal; provides 'explosive' energy.", "Fusion is only 20 years away (forever)."],
+            plasma: ["Plasma cutters make butter knives obsolete.", "Energy grids pulsing with the power of a thousand suns.", "Magnetic containment leaks lead to 'floating furniture' incidents.", "Neon lights now mandatory for aesthetic."],
+            void: ["Treasured employees go missing in void well, CEO says it's 'completely safe'.", "Dark matter: It's what's for dinner.", "Reality starting to look a bit pixelated at the edges.", "Nothingness has never been so profitable."],
+            quantum: ["Universe.zip successfully extracted.", "Quantum computers solve problems that don't exist yet.", "CEO exists in all offices simultaneously.", "Hacking reality for fun and profit."]
         };
 
         const achievements = [
@@ -254,7 +288,6 @@
             setTimeout(() => text.remove(), 800);
         }
 
-        // QOL: Separated Logic from UI for performance
         function updateUI() {
             document.getElementById('creditCount').innerText = f(credits) + " Credits";
             
@@ -266,21 +299,30 @@
             let clickVal = (currentTier > 0) ? tierUpgrades[currentTier - 1].clickValue : 1;
             window.currentClickValue = clickVal;
 
-            // QOL: Update machine buttons
+            // Late Game Visual Shift: Remove boxes for tiers 7+
+            const isLateGame = currentTier >= 7;
+            const header = document.getElementById('main-header');
+            if (isLateGame) header.classList.add('no-box');
+            else header.classList.remove('no-box');
+
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
+                const card = btn.parentElement;
+                
                 btn.innerHTML = `Buy ${buyData.count}<br>${f(buyData.cost)} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
                 document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)} CPS | Owned: ${inventory[id]}`;
+                
+                if (isLateGame) card.classList.add('no-box');
+                else card.classList.remove('no-box');
             });
 
-            // QOL: Update Tier Box with explicit benefit display
             const tBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
                 tBox.innerHTML = `
-                    <div class="upgrade-card">
+                    <div class="upgrade-card ${isLateGame ? 'no-box' : ''}">
                         <div>
                             <h3>${next.name}</h3>
                             <p>${next.desc}</p>
@@ -296,22 +338,32 @@
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
             
-            const bgIndex = Math.min(currentTier, eraBackgrounds.length - 1);
-            document.body.style.backgroundColor = eraBackgrounds[bgIndex];
+            document.body.style.backgroundColor = eraBackgrounds[currentTier];
 
             checkAchievements();
             updateTicker();
         }
 
         function updateTicker() {
-            let key = (currentTier >= 9) ? "quantum" : (currentTier >= 5) ? "digital" : (currentTier >= 2) ? "iron" : (currentTier >= 1) ? "bronze" : "start";
+            let key = "start";
+            if (currentTier >= 9) key = "quantum";
+            else if (currentTier >= 8) key = "void";
+            else if (currentTier >= 7) key = "plasma";
+            else if (currentTier >= 6) key = "atomic";
+            else if (currentTier >= 5) key = "digital";
+            else if (currentTier >= 4) key = "factory";
+            else if (currentTier >= 3) key = "steel";
+            else if (currentTier >= 2) key = "iron";
+            else if (currentTier >= 1) key = "bronze";
+
             const list = tickerData[key];
-            if(!list.includes(document.getElementById('ticker-text').innerText)) {
-                document.getElementById('ticker-text').innerText = list[Math.floor(Math.random()*list.length)];
+            const tickerEl = document.getElementById('ticker-text');
+            // Only change if current text isn't in the correct list
+            if(!list.includes(tickerEl.innerText)) {
+                tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
             }
         }
 
-        // QOL: Fixed Max Buy Math to prevent NaN/Infinity
         function getCostOfMany(id, amount) {
             let n = inventory[id], b = machineUpgrades[id].baseCost, r = growthRate;
             if (amount === 'max') {
@@ -353,6 +405,15 @@
                 c.className = "tier-0";
                 c.innerText = "STONE";
             }
+        }
+
+        function adminCompleteGame() {
+            credits = 1e15;
+            currentTier = 9;
+            Object.keys(inventory).forEach(id => inventory[id] = 1000);
+            applyTierVisuals();
+            updateUI();
+            notify("Game Completed via Admin");
         }
 
         function checkAchievements() {
@@ -409,7 +470,6 @@
             updateUI();
         });
 
-        // Loop: 10 ticks per second for smoother numbers
         setInterval(() => { if(window.currentCps > 0) { credits += window.currentCps/10; totalEarned += window.currentCps/10; updateUI(); } }, 100);
         setInterval(saveGame, 30000);
         loadGame();
