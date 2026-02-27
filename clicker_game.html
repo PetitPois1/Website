@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Industrial Clicker: Evolution</title>
     <style>
         :root {
             --primary: #66cc66;
             --bg-dark: #1b2a1d;
-            --panel-bg: rgba(0, 0, 0, 0.9);
+            --panel-bg: #000000; /* Solid background for mobile scrolling */
             --border: #2d4a30;
             --save-color: #44aaff;
             --quantum: #b300ff;
             --gold: #ffd700;
             --admin: #ff3333;
-            --transition-speed: 1.5s;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -22,43 +27,136 @@
             flex-direction: column;
             align-items: center;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: var(--bg-dark);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
             color: white;
             overflow-x: hidden;
-            transition: background-color var(--transition-speed) ease, background-image var(--transition-speed) ease;
+            transition: background-color 1s ease;
+            min-height: 100vh;
         }
 
-        /* UI Optimization: Hardware acceleration */
-        .ticker-wrap { width: 100%; max-width: 650px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; white-space: nowrap; padding: 5px 0; border-radius: 4px; }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; color: var(--primary); font-size: 0.85rem; font-weight: bold; }
+        /* FIXED HEADER AREA */
+        .fixed-top {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+            background: var(--panel-bg);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .ticker-wrap { 
+            width: 100%; 
+            background: rgba(0,0,0,0.8); 
+            overflow: hidden; 
+            white-space: nowrap; 
+            padding: 5px 0; 
+            font-size: 0.75rem;
+        }
+        
+        .ticker { 
+            display: inline-block; 
+            padding-left: 100%; 
+            animation: ticker 25s linear infinite; 
+            color: var(--primary); 
+        }
+        
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        .header { text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; width: 90%; max-width: 650px; border: 1px solid var(--border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(8px); transition: all 0.5s; }
-        /* Late Game Visual Fix: Remove boxes for high tiers */
-        .header.no-box { border: none; background: transparent; backdrop-filter: none; }
+        .header { 
+            text-align: center; 
+            padding: 15px; 
+            width: 100%;
+            max-width: 650px;
+        }
 
-        .credit-display { font-size: 2.5rem; font-weight: bold; color: white; margin: 0; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
-        .production-display { color: var(--primary); font-size: 1rem; margin-top: 5px; }
+        .credit-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 10px 20px;
+            display: inline-block;
+            box-shadow: 0 0 15px rgba(102, 204, 102, 0.2);
+            margin-bottom: 5px;
+        }
 
-        .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
-        .nav-btn { background: #222; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        .nav-btn:hover { background: var(--primary); color: black; }
-        #admin-nav-btn { display: none; border-color: var(--admin); color: var(--admin); }
+        .credit-display { 
+            font-size: 1.8rem; 
+            font-weight: bold; 
+            color: white; 
+            margin: 0; 
+        }
 
-        .buy-modes { display: flex; gap: 8px; margin-bottom: 20px; }
-        .mode-btn { background: #111; border: 1px solid #444; color: #888; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 0.9rem; }
+        .production-display { 
+            color: var(--primary); 
+            font-size: 0.9rem; 
+            font-weight: bold;
+        }
+
+        /* SCROLLABLE CONTENT AREA */
+        .main-content {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav-bar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
+        .nav-btn { 
+            background: #222; 
+            border: 1px solid var(--primary); 
+            color: var(--primary); 
+            padding: 8px 16px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 0.8rem;
+        }
+
+        .buy-modes { display: flex; gap: 8px; margin-bottom: 15px; }
+        .mode-btn { background: #111; border: 1px solid #444; color: #888; padding: 10px 15px; cursor: pointer; border-radius: 6px; }
         .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #1b2a1d; }
 
-        .click-area { height: 220px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; position: relative; }
-        #circle { width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; transition: transform 0.05s; text-align: center; padding: 15px; position: relative; z-index: 5; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        #circle:active { transform: scale(0.92); }
+        .click-area { 
+            height: 200px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            position: relative; 
+            width: 100%;
+            touch-action: manipulation; /* Prevents double-tap zoom */
+        }
+
+        #circle { 
+            width: 140px; 
+            height: 140px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: bold; 
+            cursor: pointer; 
+            user-select: none; 
+            transition: transform 0.05s; 
+            text-align: center; 
+            padding: 15px; 
+            position: relative; 
+            z-index: 5; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        #circle:active { transform: scale(0.90); }
 
         .floating-text { position: absolute; pointer-events: none; color: var(--primary); font-weight: bold; animation: floatUp 0.8s ease-out forwards; z-index: 10; }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* Tier Visuals */
+        /* Tier Visuals (Kept exactly as original) */
         .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
         .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
         .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
@@ -69,90 +167,102 @@
         .tier-7 { border-radius: 15px; background: #ff00ff; box-shadow: 0 0 20px #ff00ff; border: none; }
         .tier-8 { border-radius: 50%; background: #000; border: 2px solid #333; box-shadow: 0 0 30px #555; }
         .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; border: none; }
-        
         @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); transform: scale(1); } 50% { box-shadow: 0 0 30px var(--quantum); transform: scale(1.05); } 100% { box-shadow: 0 0 10px var(--quantum); transform: scale(1); } }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; display: none; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; box-sizing: border-box; }
-        .achievements-list { width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .ach-item { background: #111; padding: 10px; border-radius: 6px; display: flex; align-items: center; gap: 10px; opacity: 0.2; border: 1px solid #222; font-size: 0.8rem; }
-        .ach-item.unlocked { opacity: 1; border-color: var(--gold); background: #1a1a00; }
-
-        .shop { width: 100%; max-width: 700px; padding-bottom: 50px; }
-        .upgrade-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 15px; transition: 0.3s; }
-        .upgrade-card.no-box { border-color: transparent; background: transparent; }
+        .shop { width: 100%; padding-bottom: 80px; }
+        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
         
-        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 25px 0 10px; padding-bottom: 5px; font-size: 1rem; text-transform: uppercase; }
-        .buy-btn { background: #0a3d0a; color: white; border: 1px solid var(--primary); padding: 12px; border-radius: 4px; cursor: pointer; min-width: 140px; font-weight: bold; text-align: center; }
-        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; background: #222; }
+        .upgrade-card { 
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center; 
+            gap: 10px; 
+        }
 
-        .tier-benefit { font-size: 0.85rem; color: var(--gold); margin-top: 4px; font-style: italic; }
+        .buy-btn { 
+            background: #0a3d0a; 
+            color: white; 
+            border: 1px solid var(--primary); 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            min-width: 110px; 
+            font-weight: bold; 
+            font-size: 0.85rem;
+            text-align: center; 
+        }
+        .buy-btn.disabled { opacity: 0.3; cursor: not-allowed; background: #222; border-color: #444; }
 
-        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--save-color); padding: 12px 20px; border-radius: 4px; font-weight: bold; opacity: 0; transition: 0.4s; z-index: 2000; pointer-events: none;}
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
+        #toast { position: fixed; top: 20px; right: 20px; background: var(--save-color); padding: 12px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.4s; z-index: 3000; pointer-events: none; }
         #toast.show { opacity: 1; }
-
-        /* Admin Styles */
-        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 500px; }
     </style>
 </head>
 <body>
 
     <div id="toast">Saved</div>
 
-    <div id="settings-overlay" class="overlay">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RETURN</button>
-        <h2 class="section-title">ACHIEVEMENTS (12 Total)</h2>
-        <div id="ach-container" class="achievements-list"></div>
-        
-        <h2 class="section-title">PROMO CODES</h2>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="promo-code" style="padding:10px; background:#111; color:white; border:1px solid var(--primary);" placeholder="ENTER CODE">
-            <button class="nav-btn" onclick="redeemCode()">SUBMIT</button>
+    <div class="fixed-top">
+        <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome to the Industrial Age...</div></div>
+        <div class="header" id="main-header">
+            <div class="credit-box">
+                <div class="credit-display" id="creditCount">0</div>
+            </div>
+            <div class="production-display">CPS: <span id="cpsCount">0</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RECORDS</button>
+            <button class="nav-btn" onclick="saveGame(); notify('Game Saved!');" style="border-color: var(--save-color); color: var(--save-color);">SAVE</button>
+            <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; border-color:var(--admin); color:var(--admin);">ADMIN</button>
         </div>
 
-        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:50px; margin-bottom: 100px;">HARD RESET DATA</button>
+        <div class="buy-modes">
+            <button id="mode-1" class="mode-btn active" onclick="setBuyMode(1)">x1</button>
+            <button id="mode-10" class="mode-btn" onclick="setBuyMode(10)">x10</button>
+            <button id="mode-max" class="mode-btn" onclick="setBuyMode('max')">MAX</button>
+        </div>
+
+        <div class="click-area" id="click-parent">
+            <div id="circle" class="tier-0">STONE</div>
+        </div>
+
+        <div class="shop">
+            <h2 class="section-title">EVOLUTION TIERS</h2>
+            <div id="tier-container"></div>
+            <h2 class="section-title">INFRASTRUCTURE</h2>
+            <div id="machine-container"></div>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="overlay">
+        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RETURN</button>
+        <h2 class="section-title">ACHIEVEMENTS</h2>
+        <div id="ach-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%;"></div>
+        <h2 class="section-title">PROMO CODES</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="promo-code" style="padding:10px; background:#111; color:white; border:1px solid var(--primary); width:150px;" placeholder="ENTER CODE">
+            <button class="nav-btn" onclick="redeemCode()">SUBMIT</button>
+        </div>
+        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:50px;">HARD RESET DATA</button>
     </div>
 
     <div id="admin-overlay" class="overlay">
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT ADMIN</button>
         <h2 class="section-title" style="color:var(--admin)">DEBUG CONSOLE</h2>
-        <div class="admin-grid">
-            <button class="nav-btn" onclick="credits += 1e9; updateUI();">Add 1 Billion</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button class="nav-btn" onclick="credits += 1e9; updateUI();">Add 1 Bil</button>
             <button class="nav-btn" onclick="credits *= 10; updateUI();">x10 Money</button>
-            <button class="nav-btn" onclick="credits *= 1000; updateUI();">x1000 Money</button>
             <button class="nav-btn" onclick="adminCompleteGame()">Complete Game</button>
             <button class="nav-btn" onclick="currentTier = 9; updateUI(); applyTierVisuals();">Max Tech</button>
-            <button class="nav-btn" onclick="totalClicks += 1000; updateUI();">Add 1k Clicks</button>
         </div>
-    </div>
-
-    <div class="ticker-wrap"><div class="ticker" id="ticker-text">Welcome to the Industrial Age...</div></div>
-
-    <div class="header" id="main-header">
-        <div class="credit-display" id="creditCount">0</div>
-        <div class="production-display">CPS: <span id="cpsCount">0</span></div>
-    </div>
-
-    <div class="nav-bar">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">RECORDS</button>
-        <button class="nav-btn" onclick="saveGame(); notify('Game Saved!');" style="border-color: var(--save-color); color: var(--save-color);">SAVE GAME</button>
-        <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')">ADMIN</button>
-    </div>
-
-    <div class="buy-modes">
-        <button id="mode-1" class="mode-btn active" onclick="setBuyMode(1)">x1</button>
-        <button id="mode-10" class="mode-btn" onclick="setBuyMode(10)">x10</button>
-        <button id="mode-max" class="mode-btn" onclick="setBuyMode('max')">MAX</button>
-    </div>
-
-    <div class="click-area" id="click-parent">
-        <div id="circle" class="tier-0">STONE</div>
-    </div>
-
-    <div class="shop">
-        <h2 class="section-title">EVOLUTION TIERS</h2>
-        <div id="tier-container"></div>
-        <h2 class="section-title">INFRASTRUCTURE</h2>
-        <div id="machine-container"></div>
     </div>
 
     <script>
@@ -169,29 +279,18 @@
             return num + (units[Math.floor(unit / 3) - 1] || "");
         }
 
-        const eraBackgrounds = [
-            "#1b2a1d", // Stone
-            "#3d2b1f", // Bronze
-            "#2b2b2b", // Iron
-            "#24243e", // Steel
-            "#1a1a2e", // Factory
-            "#0f0c29", // Digital
-            "#200122", // Atomic
-            "#000428", // Plasma
-            "#000000", // Void
-            "#12041d"  // Quantum
-        ];
+        const eraBackgrounds = ["#1b2a1d", "#3d2b1f", "#2b2b2b", "#24243e", "#1a1a2e", "#0f0c29", "#200122", "#000428", "#000000", "#12041d"];
 
         const tickerData = {
             start: ["Local entrepreneur hits rock with rocks.", "Neighbours file concern report over child labour.", "Bill Rocks: 'Urg ug.', berry stocks rise.", "Scientists wonder if 'Wheel' is a fad."],
             bronze: ["Copper found! Shiny rocks are the new meta.", "Blacksmith accidentally invents the spoon.", "Rock pickers classified as endangered species.", "Tin prices soar as 'Bronze' becomes trending."],
-            iron: ["New age underway, Milennials confused by new Gen I slang.", "Swords now 30% pointier.", "Local creates 'Iron-Man' comic.", "Charcoal demand reaches all-time high."],
-            steel: ["Bridges are now significantly less likely to collapse.", "Railroads connect towns, people still late for work.", "Steelworkers unionize for more 'ham sandwich' breaks.", "Tall buildings invented; pigeons excited."],
-            factory: ["Smog is the new 'clean air'.", "Child labour replaced by loud steam things.", "Productivity up 400%, worker happiness... let's not talk about it.", "Standardized screws: The revolution you didn't know you needed."],
-            digital: ["Internet invented; 90% bandwidth used for cat drawings.", "CEO transcends physical form.", "Silicon Valley founded in a literal valley.", "Cloud storage actually just someone else's computer."],
-            atomic: ["Nuclear energy: Too cheap to meter, too scary to ignore.", "Glowing green waste makes for excellent night lights.", "Uranium found in breakfast cereal; provides 'explosive' energy.", "Fusion is only 20 years away (forever)."],
-            plasma: ["Plasma cutters make butter knives obsolete.", "Energy grids pulsing with the power of a thousand suns.", "Magnetic containment leaks lead to 'floating furniture' incidents.", "Neon lights now mandatory for aesthetic."],
-            void: ["Treasured employees go missing in void well, CEO says it's 'completely safe'.", "Dark matter: It's what's for dinner.", "Reality starting to look a bit pixelated at the edges.", "Nothingness has never been so profitable."],
+            iron: ["New age underway.", "Swords now 30% pointier.", "Local creates 'Iron-Man' comic.", "Charcoal demand reaches all-time high."],
+            steel: ["Bridges are now significantly less likely to collapse.", "Railroads connect towns.", "Steelworkers unionize.", "Tall buildings invented; pigeons excited."],
+            factory: ["Smog is the new 'clean air'.", "Child labour replaced by loud steam things.", "Productivity up 400%.", "Standardized screws: The revolution."],
+            digital: ["Internet invented; cat drawings everywhere.", "CEO transcends physical form.", "Silicon Valley founded.", "Cloud storage actually just someone else's computer."],
+            atomic: ["Nuclear energy: Too cheap to meter.", "Glowing green waste makes for excellent night lights.", "Uranium found in breakfast cereal.", "Fusion is only 20 years away."],
+            plasma: ["Plasma cutters make butter knives obsolete.", "Energy grids pulsing with power.", "Magnetic containment leaks lead to 'floating furniture'.", "Neon lights mandatory."],
+            void: ["Treasured employees go missing in void well.", "Dark matter: It's what's for dinner.", "Reality starting to look a bit pixelated.", "Nothingness has never been so profitable."],
             quantum: ["Universe.zip successfully extracted.", "Quantum computers solve problems that don't exist yet.", "CEO exists in all offices simultaneously.", "Hacking reality for fun and profit."]
         };
 
@@ -241,127 +340,48 @@
         function toggleOverlay(id) {
             const el = document.getElementById(id);
             el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
-            if(id === 'settings-overlay') updateAchUI();
-        }
-
-        function updateAchUI() {
-            const container = document.getElementById('ach-container');
-            container.innerHTML = '';
-            achievements.forEach(ach => {
-                const isUnlocked = unlockedAchievements.includes(ach.id);
-                container.innerHTML += `<div class="ach-item ${isUnlocked ? 'unlocked' : ''}">
-                    <div style="font-size:1.2rem;">${isUnlocked ? ach.icon : '❓'}</div>
-                    <div><strong>${isUnlocked ? ach.name : '???'}</strong><br>${ach.desc}</div>
-                </div>`;
-            });
-        }
-
-        function redeemCode() {
-            const val = document.getElementById('promo-code').value.trim();
-            if(usedCodes.includes(val)) {
-                notify("Code already used!");
-                document.getElementById('promo-code').value = '';
-                return;
-            }
-            if(val === "Freebie1.") { 
-                credits += 10000; totalEarned += 10000; 
-                usedCodes.push(val);
-                notify("+10k Credits!"); 
-            } else if(val === "AATESTING.") { 
-                adminUnlocked = true; 
-                usedCodes.push(val);
-                notify("Admin Panel Unlocked!"); 
-            } else {
-                notify("Invalid Code");
-            }
-            document.getElementById('promo-code').value = '';
-            updateUI();
-        }
-
-        function spawnFloatingText(val) {
-            const parent = document.getElementById('click-parent');
-            const text = document.createElement('div');
-            text.className = 'floating-text';
-            text.innerText = `+${f(val)}`;
-            text.style.left = (Math.random() * 60 + 20) + '%';
-            parent.appendChild(text);
-            setTimeout(() => text.remove(), 800);
         }
 
         function updateUI() {
-            document.getElementById('creditCount').innerText = f(credits) + " Credits";
+            document.getElementById('creditCount').innerText = f(credits);
             
             let totalCps = 0;
             Object.keys(machineUpgrades).forEach(id => totalCps += machineUpgrades[id].addAuto * inventory[id]);
-            document.getElementById('cpsCount').innerText = f(totalCps) + "/sec";
+            document.getElementById('cpsCount').innerText = f(totalCps);
             window.currentCps = totalCps;
 
             let clickVal = (currentTier > 0) ? tierUpgrades[currentTier - 1].clickValue : 1;
             window.currentClickValue = clickVal;
 
-            // Late Game Visual Shift: Remove boxes for tiers 7+
-            const isLateGame = currentTier >= 7;
-            const header = document.getElementById('main-header');
-            if (isLateGame) header.classList.add('no-box');
-            else header.classList.remove('no-box');
-
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
-                const card = btn.parentElement;
-                
-                btn.innerHTML = `Buy ${buyData.count}<br>${f(buyData.cost)} C`;
+                btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
                 document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)} CPS | Owned: ${inventory[id]}`;
-                
-                if (isLateGame) card.classList.add('no-box');
-                else card.classList.remove('no-box');
             });
 
             const tBox = document.getElementById('tier-container');
             if (currentTier < tierUpgrades.length) {
                 const next = tierUpgrades[currentTier];
                 tBox.innerHTML = `
-                    <div class="upgrade-card ${isLateGame ? 'no-box' : ''}">
+                    <div class="upgrade-card">
                         <div>
-                            <h3>${next.name}</h3>
-                            <p>${next.desc}</p>
-                            <div class="tier-benefit">New Click Value: ${f(next.clickValue)} per click</div>
+                            <h3 style="margin:0;">${next.name}</h3>
+                            <p style="font-size:0.8rem; margin:5px 0;">Value: ${f(next.clickValue)}/click</p>
                         </div>
                         <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">
                             EVOLVE<br>${f(next.cost)} C
                         </button>
                     </div>`;
             } else {
-                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; font-weight:bold;">MAX TECHNOLOGY REACHED</p>`;
+                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center;">MAX TECHNOLOGY</p>`;
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
-            
             document.body.style.backgroundColor = eraBackgrounds[currentTier];
-
             checkAchievements();
             updateTicker();
-        }
-
-        function updateTicker() {
-            let key = "start";
-            if (currentTier >= 9) key = "quantum";
-            else if (currentTier >= 8) key = "void";
-            else if (currentTier >= 7) key = "plasma";
-            else if (currentTier >= 6) key = "atomic";
-            else if (currentTier >= 5) key = "digital";
-            else if (currentTier >= 4) key = "factory";
-            else if (currentTier >= 3) key = "steel";
-            else if (currentTier >= 2) key = "iron";
-            else if (currentTier >= 1) key = "bronze";
-
-            const list = tickerData[key];
-            const tickerEl = document.getElementById('ticker-text');
-            // Only change if current text isn't in the correct list
-            if(!list.includes(tickerEl.innerText)) {
-                tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
-            }
         }
 
         function getCostOfMany(id, amount) {
@@ -391,7 +411,7 @@
                 currentTier++; 
                 applyTierVisuals(); 
                 updateUI(); 
-                notify("Advanced to a new era!");
+                notify("Advanced era!");
             }
         }
 
@@ -405,24 +425,6 @@
                 c.className = "tier-0";
                 c.innerText = "STONE";
             }
-        }
-
-        function adminCompleteGame() {
-            credits = 1e15;
-            currentTier = 9;
-            Object.keys(inventory).forEach(id => inventory[id] = 1000);
-            applyTierVisuals();
-            updateUI();
-            notify("Game Completed via Admin");
-        }
-
-        function checkAchievements() {
-            achievements.forEach(ach => {
-                if(!unlockedAchievements.includes(ach.id) && ach.check()) {
-                    unlockedAchievements.push(ach.id);
-                    notify(`Achievement: ${ach.name}`);
-                }
-            });
         }
 
         function notify(msg) {
@@ -441,11 +443,11 @@
 
         function saveGame() {
             const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes };
-            localStorage.setItem("IndusEvo_V15_Final", JSON.stringify(data));
+            localStorage.setItem("IndusEvo_Mobile_V1", JSON.stringify(data));
         }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusEvo_V15_Final"));
+            const data = JSON.parse(localStorage.getItem("IndusEvo_Mobile_V1"));
             if(data) {
                 credits = data.credits || 0; totalEarned = data.totalEarned || 0; totalClicks = data.totalClicks || 0;
                 inventory = data.inventory || inventory; currentTier = data.currentTier || 0;
@@ -456,18 +458,52 @@
             updateUI();
         }
 
-        function resetGame() { if(confirm("This will delete all progress. Are you sure?")) { localStorage.clear(); location.reload(); } }
+        function redeemCode() {
+            const val = document.getElementById('promo-code').value.trim();
+            if(val === "Freebie1." && !usedCodes.includes(val)) { 
+                credits += 10000; totalEarned += 10000; usedCodes.push(val); notify("+10k Credits!"); 
+            } else if(val === "AATESTING." && !usedCodes.includes(val)) { 
+                adminUnlocked = true; usedCodes.push(val); notify("Admin Panel Unlocked!"); 
+            }
+            updateUI();
+        }
 
-        // Init machine shop
-        const mBox = document.getElementById('machine-container');
-        Object.keys(machineUpgrades).forEach(id => {
-            mBox.innerHTML += `<div class="upgrade-card"><div><h3>${machineUpgrades[id].name}</h3><p id="info-${id}"></p></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
-        });
+        function updateTicker() {
+            const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "void", "quantum"];
+            const list = tickerData[keys[currentTier] || "start"];
+            const tickerEl = document.getElementById('ticker-text');
+            if(!list.includes(tickerEl.innerText)) {
+                tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
+            }
+        }
 
+        function checkAchievements() {
+            achievements.forEach(ach => {
+                if(!unlockedAchievements.includes(ach.id) && ach.check()) {
+                    unlockedAchievements.push(ach.id);
+                    notify(`Achievement: ${ach.name}`);
+                }
+            });
+        }
+
+        function resetGame() { if(confirm("Delete all progress?")) { localStorage.clear(); location.reload(); } }
+
+        // Click logic
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue; totalEarned += window.currentClickValue; totalClicks++;
-            spawnFloatingText(window.currentClickValue);
+            const text = document.createElement('div');
+            text.className = 'floating-text';
+            text.innerText = `+${f(window.currentClickValue)}`;
+            text.style.left = (Math.random() * 60 + 20) + '%';
+            document.getElementById('click-parent').appendChild(text);
+            setTimeout(() => text.remove(), 800);
             updateUI();
+        });
+
+        // Initialize Shop
+        const mBox = document.getElementById('machine-container');
+        Object.keys(machineUpgrades).forEach(id => {
+            mBox.innerHTML += `<div class="upgrade-card"><div><h3 style="margin:0; font-size:1rem;">${machineUpgrades[id].name}</h3><p id="info-${id}" style="margin:5px 0; font-size:0.75rem;"></p></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
         });
 
         setInterval(() => { if(window.currentCps > 0) { credits += window.currentCps/10; totalEarned += window.currentCps/10; updateUI(); } }, 100);
