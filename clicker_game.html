@@ -8,7 +8,7 @@
         :root {
             --primary: #66cc66;
             --bg-dark: #1b2a1d;
-            --panel-bg: #000000; /* Solid background for mobile scrolling */
+            --panel-bg: #000000; 
             --border: #2d4a30;
             --save-color: #44aaff;
             --quantum: #b300ff;
@@ -50,19 +50,22 @@
             padding-bottom: 10px;
         }
 
+        /* UPDATED: Larger News Ticker */
         .ticker-wrap { 
             width: 100%; 
-            background: rgba(0,0,0,0.8); 
+            background: rgba(0,0,0,0.9); 
             overflow: hidden; 
             white-space: nowrap; 
-            padding: 5px 0; 
-            font-size: 0.75rem;
+            padding: 12px 0; 
+            font-size: 1.1rem; /* Bigger font */
+            border-bottom: 1px solid #333;
+            font-weight: 500;
         }
         
         .ticker { 
             display: inline-block; 
             padding-left: 100%; 
-            animation: ticker 25s linear infinite; 
+            animation: ticker 30s linear infinite; 
             color: var(--primary); 
         }
         
@@ -90,6 +93,15 @@
             font-weight: bold; 
             color: white; 
             margin: 0; 
+        }
+
+        /* UPDATED: Currency Label */
+        .currency-label {
+            font-size: 0.7rem;
+            color: var(--primary);
+            letter-spacing: 2px;
+            display: block;
+            margin-top: -5px;
         }
 
         .production-display { 
@@ -132,7 +144,7 @@
             margin-bottom: 20px; 
             position: relative; 
             width: 100%;
-            touch-action: manipulation; /* Prevents double-tap zoom */
+            touch-action: manipulation; 
         }
 
         #circle { 
@@ -156,7 +168,6 @@
         .floating-text { position: absolute; pointer-events: none; color: var(--primary); font-weight: bold; animation: floatUp 0.8s ease-out forwards; z-index: 10; }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* Tier Visuals (Kept exactly as original) */
         .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
         .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
         .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
@@ -212,6 +223,7 @@
         <div class="header" id="main-header">
             <div class="credit-box">
                 <div class="credit-display" id="creditCount">0</div>
+                <span class="currency-label">CREDITS</span>
             </div>
             <div class="production-display">CPS: <span id="cpsCount">0</span></div>
         </div>
@@ -358,7 +370,8 @@
                 const btn = document.getElementById(`btn-${id}`);
                 btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)} C`;
                 btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
-                document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)} CPS | Owned: ${inventory[id]}`;
+                // UPDATED: 'Owned' changed to 'Fleet'
+                document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)} CPS | Fleet: ${inventory[id]}`;
             });
 
             const tBox = document.getElementById('tier-container');
@@ -488,7 +501,6 @@
 
         function resetGame() { if(confirm("Delete all progress?")) { localStorage.clear(); location.reload(); } }
 
-        // Click logic
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue; totalEarned += window.currentClickValue; totalClicks++;
             const text = document.createElement('div');
@@ -500,7 +512,6 @@
             updateUI();
         });
 
-        // Initialize Shop
         const mBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `<div class="upgrade-card"><div><h3 style="margin:0; font-size:1rem;">${machineUpgrades[id].name}</h3><p id="info-${id}" style="margin:5px 0; font-size:0.75rem;"></p></div><button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button></div>`;
