@@ -4,17 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Industrial Clicker: Evolution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         :root {
             --dynamic-accent: #66cc66; 
-            --bg-dark: #0f1710;
-            --panel-bg: #050505; 
-            --border: rgba(255,255,255,0.08);
+            --bg-dark: #0a0a0b;
+            --panel-bg: rgba(20, 20, 22, 0.95); 
+            --border: rgba(255,255,255,0.1);
             --save-color: #44aaff;
             --quantum: #b300ff;
             --gold: #ffd700;
             --admin: #ff3333;
-            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -25,13 +28,14 @@
             align-items: center;
             margin: 0;
             background-color: var(--bg-dark);
-            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-main);
             color: #e0e0e0;
             overflow-x: hidden;
             transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
         }
 
+        /* Fixed Top Header & Ticker Fixes */
         .fixed-top {
             position: sticky;
             top: 0;
@@ -40,128 +44,137 @@
             flex-direction: column;
             align-items: center;
             z-index: 1000;
-            background: rgba(5, 5, 5, 0.85);
-            backdrop-filter: blur(10px);
+            background: var(--panel-bg);
+            backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
         }
 
         .ticker-wrap { 
             width: 100%; 
-            background: rgba(0,0,0,0.4); 
+            background: rgba(0,0,0,0.6); 
             overflow: hidden; 
-            white-space: nowrap; 
-            padding: 6px 0; 
-            font-size: 0.75rem;
+            padding: 8px 0; 
             border-bottom: 1px solid var(--border);
         }
         
         .ticker { 
             display: inline-block; 
-            padding-left: 100%; 
-            animation: ticker 30s linear infinite; 
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker-scrolling 25s linear infinite; 
             color: var(--dynamic-accent); 
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
             text-transform: uppercase;
         }
         
-        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        @keyframes ticker-scrolling {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-200%); }
+        }
 
-        .header { text-align: center; padding: 15px; width: 100%; }
+        .header { text-align: center; padding: 20px 15px; width: 100%; }
 
         .credit-box {
             background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
             border: 1px solid var(--dynamic-accent);
-            border-radius: 16px;
-            padding: 12px 30px;
+            border-radius: 12px;
+            padding: 15px 40px;
             display: inline-block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4), inset 0 0 10px rgba(var(--dynamic-accent), 0.1);
             transition: transform 0.1s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        .credit-display { font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0; font-variant-numeric: tabular-nums; }
-        .currency-label { font-size: 0.7rem; color: var(--dynamic-accent); letter-spacing: 3px; display: block; opacity: 0.8; }
-        .production-display { color: #888; font-size: 0.85rem; margin-top: 8px; font-weight: 500; }
+        .credit-display { font-size: 2.5rem; font-weight: 900; color: #fff; margin: 0; font-family: var(--font-mono); }
+        .currency-label { font-size: 0.75rem; color: var(--dynamic-accent); letter-spacing: 4px; display: block; margin-top: 5px; opacity: 0.8; font-weight: 700; }
+        .production-display { color: #888; font-size: 0.9rem; margin-top: 12px; font-weight: 500; font-family: var(--font-mono); }
         .production-display span { color: var(--dynamic-accent); }
 
         .main-content { width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-        .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-bar { display: flex; gap: 10px; margin-bottom: 25px; width: 100%; }
         .nav-btn { 
+            flex: 1;
             background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #ccc; 
-            padding: 8px 16px; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.75rem;
-            transition: all 0.2s;
+            padding: 12px; cursor: pointer; border-radius: 8px; font-weight: 700; font-size: 0.75rem;
+            transition: all 0.2s; text-transform: uppercase;
         }
         .nav-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--dynamic-accent); color: white; }
 
-        .buy-modes { display: flex; gap: 8px; margin-bottom: 25px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 10px; }
-        .mode-btn { background: transparent; border: none; color: #666; padding: 8px 16px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
-        .mode-btn.active { background: var(--dynamic-accent); color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        .buy-modes { display: flex; gap: 8px; margin-bottom: 30px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px; width: 100%; }
+        .mode-btn { flex: 1; background: transparent; border: none; color: #666; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: 800; transition: 0.2s; }
+        .mode-btn.active { background: var(--dynamic-accent); color: #000; }
 
+        /* Click Area Improvements */
         .click-area { 
-            height: 220px; display: flex; justify-content: center; align-items: center; 
-            margin-bottom: 30px; position: relative; width: 100%; touch-action: manipulation; 
+            height: 240px; display: flex; justify-content: center; align-items: center; 
+            margin-bottom: 40px; position: relative; width: 100%; touch-action: manipulation; 
         }
 
         #circle { 
-            width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; 
-            font-weight: 900; cursor: pointer; user-select: none; transition: transform 0.05s, box-shadow 0.3s; 
+            width: 160px; height: 160px; display: flex; justify-content: center; align-items: center; 
+            font-weight: 900; cursor: pointer; user-select: none; transition: transform 0.05s; 
             text-align: center; padding: 15px; z-index: 5; color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
-        #circle:active { transform: scale(0.92); }
+        #circle:active { transform: scale(0.95); }
 
         .floating-text { 
-            position: fixed; 
-            pointer-events: none; 
-            color: var(--dynamic-accent); 
-            font-weight: 800; 
+            position: fixed; pointer-events: none; 
+            color: var(--dynamic-accent); font-weight: 900; 
             animation: floatUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; 
-            z-index: 2000; 
-            font-size: 1.3rem; 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            z-index: 2000; font-size: 1.4rem; font-family: var(--font-mono);
         }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-120px) scale(1.2); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* Tiers Styling */
-        .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #2d2822; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; box-shadow: 0 0 25px rgba(205,127,50,0.3); }
-        .tier-2 { border-radius: 25%; background: #9e9e9e; border: 6px solid #616161; }
-        .tier-3 { border-radius: 12px; background: #4682b4; border: 6px solid #2c5272; }
-        .tier-4 { border-radius: 0; background: #e0e0e0; border: 6px solid var(--gold); }
-        .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; }
-        .tier-6 { border-radius: 50%; background: #ff4444; border: 4px double white; }
-        .tier-7 { border-radius: 15px; background: #00ffff; box-shadow: 0 0 15px #00ffff; }
-        .tier-9 { border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%; background: var(--quantum); animation: pulse 2s infinite ease-in-out; }
-        .tier-10 { clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); background: white; color: black !important; }
+        /* Tier Visuals */
+        .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #332d26; }
+        .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; }
+        .tier-2 { border-radius: 15%; background: #9e9e9e; border: 6px solid #555; }
+        .tier-3 { border-radius: 8px; background: #4682b4; border: 4px solid #fff; }
+        .tier-4 { border-radius: 0; background: #333; border: 5px solid var(--gold); }
+        .tier-9 { animation: pulse 2s infinite; border-radius: 40%; background: var(--quantum); }
 
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } 50% { transform: scale(1.08); box-shadow: 0 0 40px var(--quantum); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
 
-        .shop { width: 100%; padding-bottom: 80px; }
-        .section-title { color: var(--dynamic-accent); border-bottom: 1px solid var(--border); margin: 30px 0 15px; padding-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; }
+        /* Shop Cards */
+        .shop { width: 100%; padding-bottom: 100px; }
+        .section-title { 
+            color: var(--dynamic-accent); border-bottom: 1px solid var(--border); 
+            margin: 40px 0 20px; padding-bottom: 10px; font-size: 0.8rem; 
+            text-transform: uppercase; letter-spacing: 3px; font-weight: 900;
+        }
         
         .upgrade-card { 
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; 
-            padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
-            transition: transform 0.2s, background 0.2s;
+            padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
         }
-        .upgrade-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); }
 
         .buy-btn { 
-            background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--dynamic-accent); 
-            padding: 10px; border-radius: 8px; cursor: pointer; min-width: 110px; 
-            font-weight: bold; font-size: 0.75rem; text-align: center; line-height: 1.4;
-            transition: all 0.2s;
+            background: rgba(255,255,255,0.03); color: white; border: 1px solid var(--dynamic-accent); 
+            padding: 12px; border-radius: 8px; cursor: pointer; min-width: 120px; 
+            font-weight: 800; font-size: 0.7rem; font-family: var(--font-mono);
         }
-        .buy-btn:not(.disabled):hover { background: var(--dynamic-accent); color: #000; transform: translateY(-2px); }
-        .buy-btn.disabled { opacity: 0.15; cursor: not-allowed; border-color: #444; color: #888; }
+        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,10,5,0.98); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; }
-        .ach-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; opacity: 0.3; transition: 0.5s; }
-        .ach-card.unlocked { opacity: 1; border-color: var(--gold); background: rgba(255, 215, 0, 0.05); box-shadow: 0 4px 15px rgba(255,215,0,0.1); }
+        /* Overlay & Stats */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 30px 20px; overflow-y: auto; }
+        
+        .stats-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 30px;
+        }
+        .stat-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-label { font-size: 0.6rem; color: #888; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .stat-value { font-family: var(--font-mono); color: var(--dynamic-accent); font-weight: bold; }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--save-color); color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; opacity: 0; transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 3000; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+        .ach-card { 
+            background: rgba(255,255,255,0.02); padding: 10px 5px; border-radius: 8px; 
+            border: 1px solid var(--border); text-align: center; opacity: 0.2; 
+        }
+        .ach-card.unlocked { opacity: 1; border-color: var(--gold); background: rgba(255,215,0,0.05); }
+
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--save-color); color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; opacity: 0; z-index: 3000; pointer-events: none; transition: 0.4s; }
         #toast.show { opacity: 1; bottom: 50px; }
     </style>
 </head>
@@ -170,19 +183,19 @@
     <div id="toast">Saved</div>
 
     <div class="fixed-top">
-        <div class="ticker-wrap"><div class="ticker" id="ticker-text">Initializing Industrial Simulation...</div></div>
+        <div class="ticker-wrap"><div class="ticker" id="ticker-text">Initializing Industrial Simulation... System Ready.</div></div>
         <div class="header">
             <div class="credit-box" id="credit-container">
                 <div class="credit-display" id="creditCount">0</div>
                 <span class="currency-label">CREDITS</span>
             </div>
-            <div class="production-display">AUTOMATED: <span id="cpsCount">0</span>/SEC</div>
+            <div class="production-display">AUTO: <span id="cpsCount">0</span>/SEC</div>
         </div>
     </div>
 
     <div class="main-content">
         <div class="nav-bar">
-            <button class="nav-btn" onclick="openRecords()">RECORDS</button>
+            <button class="nav-btn" onclick="openSettings()">SETTINGS</button>
             <button class="nav-btn" onclick="saveGame(true)" style="color: var(--save-color); border-color: var(--save-color);">SAVE</button>
             <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">DEBUG</button>
         </div>
@@ -193,7 +206,7 @@
             <button id="mode-max" class="mode-btn" onclick="setBuyMode('max')">MAX</button>
         </div>
 
-        <div class="click-area" id="click-parent">
+        <div class="click-area">
             <div id="circle" class="tier-0">STONE</div>
         </div>
 
@@ -206,17 +219,26 @@
     </div>
 
     <div id="settings-overlay" class="overlay">
-        <button class="nav-btn" style="width:100%; padding: 15px; margin-bottom: 20px;" onclick="toggleOverlay('settings-overlay')">RETURN TO PRODUCTION</button>
+        <button class="nav-btn" style="width:100%; padding: 15px; margin-bottom: 25px;" onclick="toggleOverlay('settings-overlay')">CLOSE SETTINGS</button>
+        
+        <h2 class="section-title">System Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-item"><span class="stat-label">Total Earned</span><div class="stat-value" id="stat-earned">0</div></div>
+            <div class="stat-item"><span class="stat-label">Total Clicks</span><div class="stat-value" id="stat-clicks">0</div></div>
+            <div class="stat-item"><span class="stat-label">Playtime</span><div class="stat-value" id="stat-time">0s</div></div>
+            <div class="stat-item"><span class="stat-label">Current Tier</span><div class="stat-value" id="stat-tier">0</div></div>
+        </div>
+
         <h2 class="section-title">Milestones</h2>
-        <div id="ach-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%;"></div>
+        <div id="ach-container" class="ach-grid"></div>
         
         <h2 class="section-title">Management</h2>
-        <div style="display: flex; gap: 10px; width: 100%;">
+        <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 20px;">
             <input type="text" id="promo-code" style="padding:12px; background:#000; color:white; border:1px solid var(--border); border-radius: 8px; flex-grow: 1;" placeholder="ENTER CODE">
             <button class="nav-btn" onclick="redeemCode()" style="border-color: var(--dynamic-accent)">REDEEM</button>
         </div>
         
-        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:40px; width: 100%; background: rgba(255,0,0,0.05)">TERMINATE ALL DATA</button>
+        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; width: 100%; background: rgba(255,0,0,0.05)">TERMINATE ALL DATA</button>
     </div>
 
     <div id="admin-overlay" class="overlay">
@@ -226,13 +248,14 @@
             <button class="nav-btn" onclick="credits *= 100; updateUI();">x100 Credits</button>
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
             <button class="nav-btn" onclick="currentTier = Math.min(currentTier + 1, tierUpgrades.length); applyTierVisuals(); updateUI();">Instant Evolve</button>
-            <button class="nav-btn" onclick="unlockedAchievements = achievements.map(a => a.id); notify('All achievements unlocked'); updateUI();">Unlock All Achievements</button>
         </div>
     </div>
 
     <script>
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
+        let startTime = Date.now();
+        let totalPlaytime = 0;
         const growthRate = 1.13; 
         let fractionalCredits = 0;
 
@@ -248,7 +271,7 @@
             return num + (units[unitIndex - 1] || "e" + (unitIndex * 3));
         }
 
-        const eraBackgrounds = ["#0f1710", "#1e140d", "#1a1a1a", "#121a24", "#252525", "#0a1525", "#1a0510", "#051a1a", "#000000", "#110022", "#000"];
+        const eraBackgrounds = ["#0a0a0b", "#1e140d", "#1a1a1a", "#0d1117", "#161b22", "#0d1117", "#1a0510", "#051a1a", "#000", "#110022", "#000"];
         const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#1e90ff", "#ff4444", "#00ffff", "#b300ff", "#ff00ff", "#ffffff"];
         
         const tickerData = {
@@ -294,24 +317,14 @@
         };
 
         const achievements = [
-            { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'a1', name: "Novice", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'a3', name: "Millionaire", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
-            // Building Unlock Achievements
-            { id: 'up1', name: "Manual Labor", desc: "Buy a Rock Picker", icon: "🪨", check: () => inventory.picker > 0 },
-            { id: 'up2', name: "Hot Metal", desc: "Buy a Blacksmith", icon: "🔥", check: () => inventory.smith > 0 },
-            { id: 'up3', name: "Hydraulic", desc: "Buy a Water Wheel", icon: "🌊", check: () => inventory.mill > 0 },
-            { id: 'up4', name: "Full Steam", desc: "Buy a Steam Engine", icon: "🚂", check: () => inventory.engine > 0 },
-            { id: 'up5', name: "Shocking", desc: "Buy an Electric Generator", icon: "⚡", check: () => inventory.generator > 0 },
-            { id: 'up6', name: "Industrialist", desc: "Buy a Power Plant", icon: "🏭", check: () => inventory.plant > 0 },
-            { id: 'up7', name: "IT Crowd", desc: "Buy a Data Centre", icon: "🖥️", check: () => inventory.server > 0 },
-            { id: 'up8', name: "Up There", desc: "Buy a Cloud Computer", icon: "☁️", check: () => inventory.cloud > 0 },
-            { id: 'up9', name: "Robot Master", desc: "Buy an AI Assistant", icon: "🤖", check: () => inventory.ai > 0 },
-            { id: 'up10', name: "Sub-Atomic", desc: "Buy a Quantum Rig", icon: "⚛️", check: () => inventory.quantum > 0 },
-            { id: 'up11', name: "Solar King", desc: "Buy a Dyson Swarm", icon: "☀️", check: () => inventory.swarm > 0 },
-            { id: 'up12', name: "Colonizer", desc: "Buy a Moon Branch", icon: "🌙", check: () => inventory.moon > 0 },
-            { id: 'up13', name: "The Abyss", desc: "Buy a Void Well", icon: "🕳️", check: () => inventory.void > 0 }
+            { id: 'a3', name: "Wealthy", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
+            { id: 'a4', name: "Tycoon", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
+            { id: 'up1', name: "Manual", desc: "Picker", icon: "🪨", check: () => inventory.picker > 0 },
+            { id: 'up4', name: "Steam", desc: "Engine", icon: "🚂", check: () => inventory.engine > 0 },
+            { id: 'up6', name: "Boss", desc: "Plant", icon: "🏭", check: () => inventory.plant > 0 },
+            { id: 'up10', name: "Sub-At", desc: "Quantum", icon: "⚛️", check: () => inventory.quantum > 0 }
         ];
 
         let inventory = {};
@@ -322,20 +335,55 @@
             el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        function openRecords() {
+        function openSettings() {
+            // Update Stats
+            document.getElementById('stat-earned').innerText = f(totalEarned);
+            document.getElementById('stat-clicks').innerText = totalClicks.toLocaleString();
+            document.getElementById('stat-tier').innerText = currentTier;
+            
+            const totalSecs = Math.floor(totalPlaytime + (Date.now() - startTime)/1000);
+            const h = Math.floor(totalSecs / 3600);
+            const m = Math.floor((totalSecs % 3600) / 60);
+            const s = totalSecs % 60;
+            document.getElementById('stat-time').innerText = `${h}h ${m}m ${s}s`;
+
             const container = document.getElementById('ach-container');
             container.innerHTML = '';
             achievements.forEach(ach => {
                 const isUnlocked = unlockedAchievements.includes(ach.id);
                 container.innerHTML += `
                     <div class="ach-card ${isUnlocked ? 'unlocked' : ''}">
-                        <div style="font-size:1.5rem">${ach.icon}</div>
-                        <div style="font-weight:bold; font-size:0.8rem">${ach.name}</div>
-                        <div style="font-size:0.6rem; color: #888">${ach.desc}</div>
+                        <div style="font-size:1.2rem">${ach.icon}</div>
+                        <div style="font-weight:bold; font-size:0.6rem; margin-top:3px">${ach.name}</div>
                     </div>
                 `;
             });
             toggleOverlay('settings-overlay');
+        }
+
+        function getCostOfMany(id, amount) {
+            let n = inventory[id] || 0;
+            let b = machineUpgrades[id].baseCost;
+            let r = growthRate;
+            let count = 0;
+            let totalCost = 0;
+
+            if (amount === 'max') {
+                // Geometric series: credits = b * (r^n * (r^count - 1)) / (r - 1)
+                // Solving for count: count = log( (credits*(r-1))/(b*r^n) + 1 ) / log(r)
+                count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
+                count = Math.max(0, count);
+            } else {
+                count = amount;
+            }
+
+            if (count > 0) {
+                totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
+            }
+            
+            if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e60; 
+
+            return { cost: totalCost, count: count };
         }
 
         function updateUI() {
@@ -357,7 +405,7 @@
                 const info = document.getElementById(`info-${id}`);
                 
                 if (btn) {
-                    btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)}`;
+                    btn.innerHTML = `BUY ${buyData.count > 0 ? buyData.count : (buyMode === 'max' ? 0 : buyMode)}<br>${f(buyData.cost)}`;
                     btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
                 }
                 if (info) {
@@ -371,15 +419,15 @@
                 tBox.innerHTML = `
                     <div class="upgrade-card">
                         <div>
-                            <h3 style="margin:0;">${next.name}</h3>
-                            <p style="font-size:0.7rem; margin:5px 0; color:#aaa;">Efficiency: ${f(next.clickValue)}/click</p>
+                            <h3 style="margin:0; font-size:0.9rem;">${next.name}</h3>
+                            <p style="font-size:0.7rem; margin:5px 0; color:#aaa;">New Output: ${f(next.clickValue)}/click</p>
                         </div>
                         <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">
                             EVOLVE<br>${f(next.cost)}
                         </button>
                     </div>`;
             } else {
-                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; font-weight:bold; width:100%">ULTIMATE EVOLUTION REACHED</p>`;
+                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; font-weight:900; width:100%">SINGULARITY ACHIEVED</p>`;
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
@@ -389,32 +437,6 @@
             document.body.style.backgroundColor = eraBackgrounds[currentTier] || "#000";
             
             checkAchievements();
-        }
-
-        function getCostOfMany(id, amount) {
-            let n = inventory[id] || 0;
-            let b = machineUpgrades[id].baseCost;
-            let r = growthRate;
-            let count = 0;
-            let totalCost = 0;
-
-            if (amount === 'max') {
-                count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r) + 1e-9);
-                count = Math.max(0, count);
-            } else {
-                count = amount;
-            }
-
-            if (count > 0) {
-                totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
-            } else if (amount !== 'max') {
-                totalCost = b * (Math.pow(r, n) * (Math.pow(r, amount) - 1)) / (r - 1);
-                count = amount;
-            }
-            
-            if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e60; 
-
-            return { cost: totalCost, count: count };
         }
 
         function buyMachine(id) {
@@ -434,7 +456,7 @@
                 applyTierVisuals(); 
                 updateUI(); 
                 notify("ERA ADVANCED!");
-                updateTicker(true);
+                updateTicker();
             }
         }
 
@@ -464,7 +486,9 @@
         }
 
         function saveGame(manual = false) {
-            const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes };
+            totalPlaytime += (Date.now() - startTime) / 1000;
+            startTime = Date.now();
+            const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes, totalPlaytime };
             localStorage.setItem("IndusEvo_V2", JSON.stringify(data));
             if(manual) notify("System Progress Saved");
         }
@@ -481,17 +505,18 @@
                 unlockedAchievements = data.unlockedAchievements || []; 
                 adminUnlocked = data.adminUnlocked || false;
                 usedCodes = data.usedCodes || [];
+                totalPlaytime = data.totalPlaytime || 0;
                 applyTierVisuals();
             }
             updateUI();
-            updateTicker(true);
+            updateTicker();
         }
 
-        function updateTicker(force = false) {
+        function updateTicker() {
             const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "quantum", "singularity"];
             const list = tickerData[keys[currentTier]] || tickerData.start;
             const tickerEl = document.getElementById('ticker-text');
-            tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
+            tickerEl.innerText = list[Math.floor(Math.random()*list.length)] + " | " + list[Math.floor(Math.random()*list.length)];
         }
 
         function checkAchievements() {
@@ -507,101 +532,70 @@
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
             if(val === "FREEBIE" && !usedCodes.includes(val)) {
-                credits += 5000; 
-                usedCodes.push(val); 
-                notify("+5,000 Credits!");
-                input.value = "";
-            } else if (val === "DEBUG" || val === "AA1") {
-                adminUnlocked = true; 
-                notify("Console Access Granted");
-                input.value = "";
+                credits += 5000; usedCodes.push(val); notify("+5,000 Credits!");
+            } else if (val === "DEBUG") {
+                adminUnlocked = true; notify("Console Access Granted");
             } else {
-                notify("Invalid or Expired Code");
+                notify("Invalid Code");
             }
+            input.value = "";
             updateUI();
         }
 
-        function resetGame() { if(confirm("This will permanently erase all industrial progress. Proceed?")) { localStorage.clear(); location.reload(); } }
+        function resetGame() { if(confirm("Permanently erase all data?")) { localStorage.clear(); location.reload(); } }
 
         document.getElementById('circle').addEventListener('click', (e) => {
             let multiplier = 1;
-            let isCrit = false;
-            if (Math.random() < 0.05) { 
-                multiplier = 5;
-                isCrit = true;
-            }
+            if (Math.random() < 0.05) multiplier = 5;
 
             const gain = window.currentClickValue * multiplier;
-            credits += gain; 
-            totalEarned += gain; 
-            totalClicks++;
+            credits += gain; totalEarned += gain; totalClicks++;
             
-            const container = document.getElementById('credit-container');
-            container.style.transform = "scale(1.05)";
-            setTimeout(() => container.style.transform = "scale(1)", 50);
-
             const text = document.createElement('div');
             text.className = 'floating-text';
-            
-            if(isCrit) {
-                text.style.color = "var(--gold)";
-                text.style.fontSize = "1.8rem";
-                text.innerText = `CRIT! +${f(gain)}`;
-            } else {
-                text.innerText = `+${f(gain)}`;
-            }
+            text.innerText = multiplier > 1 ? `CRIT! +${f(gain)}` : `+${f(gain)}`;
+            if(multiplier > 1) text.style.color = "var(--gold)";
             
             const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-            
             text.style.left = (x - 20) + 'px';
             text.style.top = (y - 20) + 'px';
             
             document.body.appendChild(text);
             setTimeout(() => text.remove(), 700);
-            
-            document.getElementById('creditCount').innerText = f(credits);
-            updateButtonAvailability();
+            updateUI();
         });
 
-        function updateButtonAvailability() {
-            Object.keys(machineUpgrades).forEach(id => {
-                const buyData = getCostOfMany(id, buyMode);
-                const btn = document.getElementById(`btn-${id}`);
-                if(btn) btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
-            });
-        }
-
+        // Initialize Shop Cards
         const mBox = document.getElementById('machine-container');
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `
                 <div class="upgrade-card">
                     <div>
-                        <h3 style="margin:0; font-size:0.9rem;">${machineUpgrades[id].name}</h3>
-                        <p id="info-${id}" style="margin:5px 0; font-size:0.7rem; color:#888;"></p>
+                        <h3 style="margin:0; font-size:0.85rem;">${machineUpgrades[id].name}</h3>
+                        <p id="info-${id}" style="margin:5px 0; font-size:0.65rem; color:#888;"></p>
                     </div>
                     <button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button>
                 </div>`;
         });
 
+        // Game Loop
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gainPerTick = window.currentCps / 10;
                 fractionalCredits += (gainPerTick % 1);
-                
                 let carry = Math.floor(fractionalCredits);
                 credits += Math.floor(gainPerTick) + carry;
                 totalEarned += Math.floor(gainPerTick) + carry;
-                
                 fractionalCredits %= 1;
                 document.getElementById('creditCount').innerText = f(credits);
             } 
         }, 100);
 
-        setInterval(updateButtonAvailability, 500);
+        setInterval(updateUI, 1000);
         setInterval(updateTicker, 15000);
-        setInterval(() => saveGame(false), 60000);
+        setInterval(() => saveGame(false), 30000);
         
         loadGame();
     </script>
