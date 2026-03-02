@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Pong - AI Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Pro Pong</title>
     <style>
         :root {
             --primary: #6200ea;
             --accent: #03dac6;
             --bg: #121212;
+        }
+        * {
+            /* Prevent accidental text selection and "pull-to-refresh" on mobile */
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
         body {
             margin: 0;
@@ -17,7 +23,7 @@
             align-items: center;
             background-color: var(--bg);
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             height: 100vh;
             overflow: hidden;
         }
@@ -26,45 +32,41 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            padding: 15px 30px;
+            padding: 10px 15px;
             background-color: #1f1f1f;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             box-sizing: border-box;
+            z-index: 10;
         }
         .score-board {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            letter-spacing: 2px;
-        }
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
         }
         select, button {
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 6px 12px;
+            font-size: 12px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 4px;
         }
-        button:hover { background-color: #7c4dff; }
         canvas {
             background-color: #000;
-            border: 4px solid #333;
-            margin-top: 20px;
-            box-shadow: 0 0 20px rgba(98, 0, 234, 0.2);
-            cursor: none; /* Hide cursor over game area */
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            display: block;
+        }
+        .ui-overlay {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
         }
         #startButton {
-            margin-top: 20px;
-            padding: 12px 40px;
-            font-size: 1.2rem;
-            text-transform: uppercase;
+            padding: 15px 30px;
+            font-size: 1rem;
             font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
     </style>
 </head>
@@ -72,35 +74,37 @@
 
 <header>
     <div class="score-board">
-        PLAYER <span id="playerScore" style="color: var(--accent)">0</span> 
-        &mdash; 
-        AI <span id="aiScore" style="color: #ff4081">0</span>
+        <span id="playerScore" style="color: var(--accent)">0</span> 
+        : 
+        <span id="aiScore" style="color: #ff4081">0</span>
     </div>
-    <div class="controls">
+    <div style="display: flex; gap: 8px;">
         <select id="difficulty">
-            <option value="easy">Beginner</option>
-            <option value="medium" selected>Intermediate</option>
-            <option value="hard">Grandmaster</option>
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Med</option>
+            <option value="hard">Hard</option>
         </select>
-        <button onclick="location.reload()">Reset Game</button>
+        <button onclick="location.reload()">Reset</button>
     </div>
 </header>
 
 <canvas id="pong"></canvas>
-<button id="startButton" onclick="toggleGame()">Start Match</button>
+
+<div class="ui-overlay">
+    <button id="startButton" onclick="toggleGame()">Start Game</button>
+</div>
 
 <script>
     const canvas = document.getElementById("pong");
     const ctx = canvas.getContext("2d");
     const startButton = document.getElementById("startButton");
 
-    // Game Constants
-    const PADDLE_WIDTH = 12;
-    const PADDLE_HEIGHT = 90;
-    const BALL_SIZE = 8;
-    const MAX_BOUNCE_ANGLE = Math.PI / 3; // 60 degrees
+    // Constants adjusted for mobile scale
+    const PADDLE_WIDTH = 10;
+    const PADDLE_HEIGHT = 80;
+    const BALL_SIZE = 7;
+    const MAX_BOUNCE_ANGLE = Math.PI / 3;
 
-    // Game State
     let gameState = {
         running: false,
         playerY: 0,
@@ -110,21 +114,47 @@
     };
 
     const difficultySettings = {
-        easy:   { ballSpeed: 6, aiSpeed: 3, jitter: 0.15 }, 
-        medium: { ballSpeed: 8, aiSpeed: 6, jitter: 0.05 },
-        hard:   { ballSpeed: 11, aiSpeed: 9, jitter: 0.01 }
+        easy:   { ballSpeed: 5, aiSpeed: 3.5 },
+        medium: { ballSpeed: 7, aiSpeed: 5.5 },
+        hard:   { ballSpeed: 10, aiSpeed: 8.5 }
     };
 
     function init() {
+        window.addEventListener('resize', resize);
         resize();
         resetPositions();
+        
+        // Touch events
+        canvas.addEventListener("touchstart", handleTouch, {passive: false});
+        canvas.addEventListener("touchmove", handleTouch, {passive: false});
+        // Mouse fallback
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            updatePlayerPos(e.clientY - rect.top);
+        });
+
         requestAnimationFrame(gameLoop);
     }
 
     function resize() {
-        canvas.width = window.innerWidth * 0.85;
-        canvas.height = window.innerHeight * 0.65;
+        // Take up most of the screen height minus header/button space
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight * 0.7; 
         resetPositions();
+    }
+
+    function handleTouch(e) {
+        e.preventDefault(); // Stop scrolling/bouncing
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        updatePlayerPos(touch.clientY - rect.top);
+    }
+
+    function updatePlayerPos(y) {
+        gameState.playerY = y - PADDLE_HEIGHT / 2;
+        // Keep in bounds
+        if (gameState.playerY < 0) gameState.playerY = 0;
+        if (gameState.playerY > canvas.height - PADDLE_HEIGHT) gameState.playerY = canvas.height - PADDLE_HEIGHT;
     }
 
     function resetPositions() {
@@ -139,10 +169,8 @@
         gameState.ball.y = canvas.height / 2;
         gameState.ball.speed = diff.ballSpeed;
         
-        // Random direction, but mostly horizontal
-        let angle = (Math.random() * 0.4 - 0.2); // Small initial vertical slice
+        let angle = (Math.random() * 0.4 - 0.2);
         let direction = Math.random() > 0.5 ? 1 : -1;
-        
         gameState.ball.dx = direction * gameState.ball.speed * Math.cos(angle);
         gameState.ball.dy = gameState.ball.speed * Math.sin(angle);
     }
@@ -153,50 +181,47 @@
         const ball = gameState.ball;
         const diff = difficultySettings[document.getElementById("difficulty").value];
 
-        // 1. Move Ball
         ball.x += ball.dx;
         ball.y += ball.dy;
 
-        // 2. Wall Collisions
+        // Top/Bottom wall bounce
         if (ball.y - BALL_SIZE < 0 || ball.y + BALL_SIZE > canvas.height) {
             ball.dy *= -1;
             ball.y = ball.y < 0 ? BALL_SIZE : canvas.height - BALL_SIZE;
         }
 
-        // 3. AI Movement (Predictive tracking)
+        // AI Logic
         const aiCenter = gameState.aiY + PADDLE_HEIGHT / 2;
-        // AI only moves if ball is coming towards it
         if (ball.dx > 0) {
-            const reactionThreshold = canvas.width * (diff === 'easy' ? 0.3 : 0.6);
-            if (ball.x > canvas.width - reactionThreshold) {
-                if (aiCenter < ball.y - 10) gameState.aiY += diff.aiSpeed;
-                else if (aiCenter > ball.y + 10) gameState.aiY -= diff.aiSpeed;
-            }
-        } else {
-            // Idle back to center
-            if (aiCenter < canvas.height / 2 - 10) gameState.aiY += 2;
-            else if (aiCenter > canvas.height / 2 + 10) gameState.aiY -= 2;
+            if (aiCenter < ball.y - 15) gameState.aiY += diff.aiSpeed;
+            else if (aiCenter > ball.y + 15) gameState.aiY -= diff.aiSpeed;
         }
         gameState.aiY = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, gameState.aiY));
 
-        // 4. Paddle Collisions
+        // Paddle Collision detection
         let paddle = (ball.dx < 0) ? 
-            { x: 0, y: gameState.playerY, type: 'player' } : 
-            { x: canvas.width - PADDLE_WIDTH, y: gameState.aiY, type: 'ai' };
+            { x: 0, y: gameState.playerY } : 
+            { x: canvas.width - PADDLE_WIDTH, y: gameState.aiY };
 
-        if (checkCollision(ball, paddle)) {
-            // Calculate hit position (-1 to 1)
-            let relativeIntersectY = (paddle.y + (PADDLE_HEIGHT / 2)) - ball.y;
-            let normalizedIntersectY = (relativeIntersectY / (PADDLE_HEIGHT / 2));
+        if (ball.x - BALL_SIZE < paddle.x + PADDLE_WIDTH && 
+            ball.x + BALL_SIZE > paddle.x && 
+            ball.y > paddle.y && 
+            ball.y < paddle.y + PADDLE_HEIGHT) {
+            
+            let intersectY = (paddle.y + (PADDLE_HEIGHT / 2)) - ball.y;
+            let normalizedIntersectY = (intersectY / (PADDLE_HEIGHT / 2));
             let bounceAngle = normalizedIntersectY * MAX_BOUNCE_ANGLE;
 
             let dir = ball.dx < 0 ? 1 : -1;
-            ball.speed += 0.2; // Increase speed on every hit
+            ball.speed += 0.25; 
             ball.dx = dir * ball.speed * Math.cos(bounceAngle);
             ball.dy = ball.speed * -Math.sin(bounceAngle);
+            
+            // Push ball out of paddle to prevent double collision
+            ball.x = (dir === 1) ? PADDLE_WIDTH + BALL_SIZE : canvas.width - PADDLE_WIDTH - BALL_SIZE;
         }
 
-        // 5. Scoring
+        // Scoring
         if (ball.x < 0) {
             gameState.scores.ai++;
             resetBall();
@@ -209,39 +234,29 @@
         document.getElementById("aiScore").innerText = gameState.scores.ai;
     }
 
-    function checkCollision(b, p) {
-        return b.x - BALL_SIZE < p.x + PADDLE_WIDTH &&
-               b.x + BALL_SIZE > p.x &&
-               b.y - BALL_SIZE < p.y + PADDLE_HEIGHT &&
-               b.y + BALL_SIZE > p.y;
-    }
-
     function draw() {
-        // Clear background
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw center line
-        ctx.setLineDash([10, 15]);
+        // Center line
+        ctx.strokeStyle = "#222";
+        ctx.setLineDash([5, 10]);
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2, 0);
         ctx.lineTo(canvas.width / 2, canvas.height);
-        ctx.strokeStyle = "#333";
         ctx.stroke();
-        ctx.setLineDash([]);
 
-        // Draw Paddles
+        // Paddles
         ctx.fillStyle = "#6200ea";
         ctx.fillRect(0, gameState.playerY, PADDLE_WIDTH, PADDLE_HEIGHT);
         ctx.fillStyle = "#ff4081";
         ctx.fillRect(canvas.width - PADDLE_WIDTH, gameState.aiY, PADDLE_WIDTH, PADDLE_HEIGHT);
 
-        // Draw Ball
+        // Ball
+        ctx.fillStyle = "#fff";
         ctx.beginPath();
         ctx.arc(gameState.ball.x, gameState.ball.y, BALL_SIZE, 0, Math.PI * 2);
-        ctx.fillStyle = "#fff";
         ctx.fill();
-        ctx.closePath();
     }
 
     function gameLoop() {
@@ -252,23 +267,10 @@
 
     function toggleGame() {
         gameState.running = !gameState.running;
-        startButton.innerText = gameState.running ? "Pause Game" : "Resume Match";
-        if (gameState.running && gameState.ball.speed === 0) resetBall();
+        startButton.innerText = gameState.running ? "Pause" : "Resume";
     }
 
-    // Input Listeners
-    canvas.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mouseY = e.clientY - rect.top;
-        gameState.playerY = mouseY - PADDLE_HEIGHT / 2;
-        // Clamp
-        if (gameState.playerY < 0) gameState.playerY = 0;
-        if (gameState.playerY > canvas.height - PADDLE_HEIGHT) gameState.playerY = canvas.height - PADDLE_HEIGHT;
-    });
-
-    window.addEventListener("resize", resize);
     init();
-
 </script>
 </body>
 </html>
