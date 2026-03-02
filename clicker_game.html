@@ -31,7 +31,6 @@
             min-height: 100vh;
         }
 
-        /* FIXED HEADER */
         .fixed-top {
             position: sticky;
             top: 0;
@@ -78,7 +77,6 @@
         .currency-label { font-size: 0.7rem; color: var(--primary); letter-spacing: 2px; display: block; margin-top: -5px; }
         .production-display { color: var(--primary); font-size: 0.9rem; font-weight: bold; margin-top: 5px; }
 
-        /* MAIN CONTENT */
         .main-content { width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
         .nav-bar { display: flex; gap: 8px; margin-bottom: 15px; }
@@ -103,10 +101,18 @@
         }
         #circle:active { transform: scale(0.92); }
 
-        .floating-text { position: absolute; pointer-events: none; color: var(--primary); font-weight: bold; animation: floatUp 0.7s ease-out forwards; z-index: 10; font-size: 1.2rem; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
+        .floating-text { 
+            position: fixed; 
+            pointer-events: none; 
+            color: var(--primary); 
+            font-weight: bold; 
+            animation: floatUp 0.7s ease-out forwards; 
+            z-index: 2000; 
+            font-size: 1.2rem; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* TIERS */
         .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
         .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
         .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
@@ -116,7 +122,6 @@
         .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--quantum); } 50% { transform: scale(1.05); box-shadow: 0 0 30px var(--quantum); } }
 
-        /* SHOP */
         .shop { width: 100%; padding-bottom: 50px; }
         .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
         
@@ -132,7 +137,6 @@
         }
         .buy-btn.disabled { opacity: 0.3; cursor: not-allowed; background: #222; border-color: #444; }
 
-        /* OVERLAYS */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
         .ach-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; text-align: center; opacity: 0.4; }
         .ach-card.unlocked { opacity: 1; border-color: var(--gold); }
@@ -197,7 +201,7 @@
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT DEBUG</button>
         <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
-            <button class="nav-btn" onclick="credits += 1e9; updateUI();">Add 1 Billion</button>
+            <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
             <button class="nav-btn" onclick="currentTier = 9; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
         </div>
     </div>
@@ -207,10 +211,9 @@
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
         const growthRate = 1.15;
 
-        // Formatter
         function f(n) {
             if (n < 1000) return Math.floor(n).toLocaleString();
-            const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx"];
+            const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
             const unitIndex = Math.floor((Math.log10(n) / 3));
             const num = (n / Math.pow(10, unitIndex * 3)).toFixed(2);
             return num + (units[unitIndex - 1] || "");
@@ -253,8 +256,18 @@
             smith: { name: "Blacksmith", addAuto: 8, baseCost: 150 },
             mill: { name: "Water Wheel", addAuto: 45, baseCost: 1200 },
             engine: { name: "Steam Engine", addAuto: 250, baseCost: 15000 },
-            plant: { name: "Power Plant", addAuto: 1800, baseCost: 200000 },
-            server: { name: "Data Center", addAuto: 12000, baseCost: 3000000 }
+            generator: { name: "Electric Generator", addAuto: 1200, baseCost: 140000 },
+            plant: { name: "Power Plant", addAuto: 6500, baseCost: 950000 },
+            server: { name: "Data Centre", addAuto: 35000, baseCost: 7500000 },
+            cloud: { name: "Cloud Computer", addAuto: 180000, baseCost: 60000000 },
+            ai: { name: "AI Assistant", addAuto: 950000, baseCost: 550000000 },
+            quantum: { name: "Quantum Computer", addAuto: 6000000, baseCost: 8000000000 },
+            swarm: { name: "Dyson Swarm", addAuto: 45000000, baseCost: 120000000000 },
+            satellite: { name: "Satellite", addAuto: 300000000, baseCost: 1500000000000 },
+            moon: { name: "Moon Branch", addAuto: 2500000000, baseCost: 20000000000000 },
+            alien: { name: "Alien Partnership", addAuto: 18000000000, baseCost: 350000000000000 },
+            sun: { name: "Sun-Powered Computer", addAuto: 150000000000, baseCost: 8000000000000000 },
+            void: { name: "Void Well", addAuto: 1000000000000, baseCost: 1.5e17 }
         };
 
         let inventory = {};
@@ -425,26 +438,35 @@
 
         function resetGame() { if(confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
+        // FIXED POSITIONING CLICK HANDLER
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue; 
             totalEarned += window.currentClickValue; 
             totalClicks++;
             
-            // Visual feedback
+            // Header scale feedback
             const container = document.getElementById('credit-container');
             container.style.transform = "scale(1.05)";
             setTimeout(() => container.style.transform = "scale(1)", 50);
 
+            // Create floating text at the exact mouse/touch coordinates
             const text = document.createElement('div');
             text.className = 'floating-text';
             text.innerText = `+${f(window.currentClickValue)}`;
-            text.style.left = (Math.random() * 60 + 20) + '%';
-            document.getElementById('click-parent').appendChild(text);
+            
+            // Use clientX/Y for viewport coordinates
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            text.style.left = (x - 20) + 'px';
+            text.style.top = (y - 20) + 'px';
+            
+            document.body.appendChild(text);
             setTimeout(() => text.remove(), 700);
             updateUI();
         });
 
-        // Initialize Shop
+        // Initialize Shop with new machines
         const mBox = document.getElementById('machine-container');
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `
