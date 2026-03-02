@@ -6,18 +6,18 @@
     <title>Industrial Clicker: Evolution</title>
     <style>
         :root {
-            /* Now dynamically updated via JS */
             --dynamic-accent: #66cc66; 
-            --bg-dark: #1b2a1d;
-            --panel-bg: #000000; 
-            --border: rgba(255,255,255,0.1);
+            --bg-dark: #0f1710;
+            --panel-bg: #050505; 
+            --border: rgba(255,255,255,0.08);
             --save-color: #44aaff;
             --quantum: #b300ff;
             --gold: #ffd700;
             --admin: #ff3333;
+            --card-bg: rgba(255, 255, 255, 0.04);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
             display: flex;
@@ -25,13 +25,14 @@
             align-items: center;
             margin: 0;
             background-color: var(--bg-dark);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+            color: #e0e0e0;
             overflow-x: hidden;
-            transition: background-color 1s ease;
+            transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
         }
 
+        /* Improved Glassmorphism Header */
         .fixed-top {
             position: sticky;
             top: 0;
@@ -40,25 +41,30 @@
             flex-direction: column;
             align-items: center;
             z-index: 1000;
-            background: var(--panel-bg);
-            border-bottom: 2px solid var(--border);
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
         }
 
         .ticker-wrap { 
             width: 100%; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.4); 
             overflow: hidden; 
             white-space: nowrap; 
-            padding: 10px 0; 
-            border-bottom: 1px solid #333;
+            padding: 6px 0; 
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border);
         }
         
         .ticker { 
             display: inline-block; 
             padding-left: 100%; 
-            animation: ticker 25s linear infinite; 
+            animation: ticker 30s linear infinite; 
             color: var(--dynamic-accent); 
-            font-weight: bold;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
@@ -66,40 +72,45 @@
         .header { text-align: center; padding: 15px; width: 100%; }
 
         .credit-box {
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
             border: 1px solid var(--dynamic-accent);
-            border-radius: 12px;
-            padding: 10px 25px;
+            border-radius: 16px;
+            padding: 12px 30px;
             display: inline-block;
-            transition: transform 0.1s, border-color 0.5s;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        .credit-display { font-size: 2rem; font-weight: 900; color: white; margin: 0; }
-        .currency-label { font-size: 0.7rem; color: var(--dynamic-accent); letter-spacing: 2px; display: block; margin-top: -5px; }
-        .production-display { color: var(--dynamic-accent); font-size: 0.9rem; font-weight: bold; margin-top: 5px; }
+        .credit-display { font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0; font-variant-numeric: tabular-nums; }
+        .currency-label { font-size: 0.7rem; color: var(--dynamic-accent); letter-spacing: 3px; display: block; opacity: 0.8; }
+        .production-display { color: #888; font-size: 0.85rem; margin-top: 8px; font-weight: 500; }
+        .production-display span { color: var(--dynamic-accent); }
 
-        .main-content { width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .main-content { width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-        .nav-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-btn { 
-            background: #222; border: 1px solid var(--dynamic-accent); color: var(--dynamic-accent); 
-            padding: 8px 12px; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 0.75rem;
-            transition: all 0.3s;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #ccc; 
+            padding: 8px 16px; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.75rem;
+            transition: all 0.2s;
         }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--dynamic-accent); color: white; }
 
-        .buy-modes { display: flex; gap: 5px; margin-bottom: 20px; }
-        .mode-btn { background: #111; border: 1px solid #444; color: #888; padding: 8px 15px; cursor: pointer; border-radius: 6px; }
-        .mode-btn.active { border-color: var(--dynamic-accent); color: var(--dynamic-accent); background: rgba(255,255,255,0.1); }
+        .buy-modes { display: flex; gap: 8px; margin-bottom: 25px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 10px; }
+        .mode-btn { background: transparent; border: none; color: #666; padding: 8px 16px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .mode-btn.active { background: var(--dynamic-accent); color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 
+        /* Clicking Area */
         .click-area { 
-            height: 180px; display: flex; justify-content: center; align-items: center; 
+            height: 220px; display: flex; justify-content: center; align-items: center; 
             margin-bottom: 30px; position: relative; width: 100%; touch-action: manipulation; 
         }
 
         #circle { 
-            width: 130px; height: 130px; display: flex; justify-content: center; align-items: center; 
-            font-weight: 900; cursor: pointer; user-select: none; transition: transform 0.05s; 
-            text-align: center; padding: 10px; z-index: 5; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 150px; height: 150px; display: flex; justify-content: center; align-items: center; 
+            font-weight: 900; cursor: pointer; user-select: none; transition: transform 0.05s, box-shadow 0.3s; 
+            text-align: center; padding: 15px; z-index: 5; color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         #circle:active { transform: scale(0.92); }
 
@@ -107,45 +118,50 @@
             position: fixed; 
             pointer-events: none; 
             color: var(--dynamic-accent); 
-            font-weight: bold; 
-            animation: floatUp 0.7s ease-out forwards; 
+            font-weight: 800; 
+            animation: floatUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; 
             z-index: 2000; 
-            font-size: 1.2rem; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 1.3rem; 
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-120px) scale(1.2); } }
 
-        .tier-0 { border-radius: 50%; background: #554433; border: 6px solid #332211; }
-        .tier-1 { border-radius: 50%; background: #b87333; border: 5px solid #8d5524; }
-        .tier-2 { border-radius: 20%; background: #a19d94; border: 5px solid #7a7a7a; }
-        .tier-3 { border-radius: 8px;  background: #4682b4; border: 4px solid #2c5272; }
-        .tier-4 { border-radius: 0; background: #c0c0c0; border: 4px solid #ffd700; }
+        /* Tiers Styling */
+        .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #2d2822; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; box-shadow: 0 0 25px rgba(205,127,50,0.3); }
+        .tier-2 { border-radius: 25%; background: #9e9e9e; border: 6px solid #616161; }
+        .tier-3 { border-radius: 12px; background: #4682b4; border: 6px solid #2c5272; }
+        .tier-4 { border-radius: 0; background: #e0e0e0; border: 6px solid var(--gold); }
         .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; }
-        .tier-9 { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; background: var(--quantum); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--quantum); } 50% { transform: scale(1.05); box-shadow: 0 0 30px var(--quantum); } }
+        .tier-9 { border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%; background: var(--quantum); animation: pulse 2s infinite ease-in-out; }
+        
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } 50% { transform: scale(1.08); box-shadow: 0 0 40px var(--quantum); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } }
 
-        .shop { width: 100%; padding-bottom: 50px; }
-        .section-title { color: var(--dynamic-accent); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        .shop { width: 100%; padding-bottom: 80px; }
+        .section-title { color: var(--dynamic-accent); border-bottom: 1px solid var(--border); margin: 30px 0 15px; padding-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; }
         
         .upgrade-card { 
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; 
-            padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; 
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; 
+            padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
+            transition: transform 0.2s, background 0.2s;
         }
+        .upgrade-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); }
 
         .buy-btn { 
-            background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--dynamic-accent); 
-            padding: 8px; border-radius: 6px; cursor: pointer; min-width: 100px; 
-            font-weight: bold; font-size: 0.8rem; text-align: center; 
+            background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--dynamic-accent); 
+            padding: 10px; border-radius: 8px; cursor: pointer; min-width: 110px; 
+            font-weight: bold; font-size: 0.75rem; text-align: center; line-height: 1.4;
+            transition: all 0.2s;
         }
-        .buy-btn:not(.disabled) { background: rgba(255,255,255,0.15); }
-        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: #444; }
+        .buy-btn:not(.disabled):hover { background: var(--dynamic-accent); color: #000; transform: translateY(-2px); }
+        .buy-btn.disabled { opacity: 0.15; cursor: not-allowed; border-color: #444; color: #888; }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .ach-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; text-align: center; opacity: 0.4; }
-        .ach-card.unlocked { opacity: 1; border-color: var(--gold); }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,10,5,0.98); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; }
+        .ach-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; opacity: 0.3; transition: 0.5s; }
+        .ach-card.unlocked { opacity: 1; border-color: var(--gold); background: rgba(255, 215, 0, 0.05); box-shadow: 0 4px 15px rgba(255,215,0,0.1); }
 
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--save-color); padding: 12px 24px; border-radius: 50px; font-weight: bold; opacity: 0; transition: 0.3s; z-index: 3000; pointer-events: none; }
-        #toast.show { opacity: 1; bottom: 40px; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--save-color); color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; opacity: 0; transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 3000; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast.show { opacity: 1; bottom: 50px; }
     </style>
 </head>
 <body>
@@ -153,13 +169,13 @@
     <div id="toast">Saved</div>
 
     <div class="fixed-top">
-        <div class="ticker-wrap"><div class="ticker" id="ticker-text">Loading simulation...</div></div>
+        <div class="ticker-wrap"><div class="ticker" id="ticker-text">Initializing Industrial Simulation...</div></div>
         <div class="header">
             <div class="credit-box" id="credit-container">
                 <div class="credit-display" id="creditCount">0</div>
                 <span class="currency-label">CREDITS</span>
             </div>
-            <div class="production-display">AUTO: <span id="cpsCount">0</span>/sec</div>
+            <div class="production-display">AUTOMATED: <span id="cpsCount">0</span>/SEC</div>
         </div>
     </div>
 
@@ -167,7 +183,7 @@
         <div class="nav-bar">
             <button class="nav-btn" onclick="openRecords()">RECORDS</button>
             <button class="nav-btn" onclick="saveGame(true)" style="color: var(--save-color); border-color: var(--save-color);">SAVE</button>
-            <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">ADMIN</button>
+            <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">DEBUG</button>
         </div>
 
         <div class="buy-modes">
@@ -189,26 +205,26 @@
     </div>
 
     <div id="settings-overlay" class="overlay">
-        <button class="nav-btn" onclick="toggleOverlay('settings-overlay')">BACK TO GAME</button>
+        <button class="nav-btn" style="width:100%; padding: 15px; margin-bottom: 20px;" onclick="toggleOverlay('settings-overlay')">RETURN TO PRODUCTION</button>
         <h2 class="section-title">Milestones</h2>
-        <div id="ach-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%;"></div>
+        <div id="ach-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%;"></div>
         
-        <h2 class="section-title">Data Management</h2>
-        <input type="text" id="promo-code" style="padding:12px; background:#000; color:white; border:1px solid var(--dynamic-accent); width:100%; margin-bottom:10px;" placeholder="PROMO CODE">
-        <button class="nav-btn" style="width:100%" onclick="redeemCode()">REDEEM</button>
+        <h2 class="section-title">Management</h2>
+        <div style="display: flex; gap: 10px; width: 100%;">
+            <input type="text" id="promo-code" style="padding:12px; background:#000; color:white; border:1px solid var(--border); border-radius: 8px; flex-grow: 1;" placeholder="ENTER CODE">
+            <button class="nav-btn" onclick="redeemCode()" style="border-color: var(--dynamic-accent)">REDEEM</button>
+        </div>
         
-        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:40px; width: 100%;">ERASE ALL DATA</button>
+        <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:40px; width: 100%; background: rgba(255,0,0,0.05)">TERMINATE ALL DATA</button>
     </div>
 
     <div id="admin-overlay" class="overlay">
-        <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT DEBUG</button>
+        <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT CONSOLE</button>
         <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
-            <button class="nav-btn" onclick="credits *= 100; updateUI();">x100 Current Credits</button>
-            <button class="nav-btn" onclick="credits *= 1000; updateUI();">x1000 Current Credits</button>
+            <button class="nav-btn" onclick="credits *= 100; updateUI();">x100 Credits</button>
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
             <button class="nav-btn" onclick="currentTier = Math.min(currentTier + 1, tierUpgrades.length); applyTierVisuals(); updateUI();">Instant Evolve</button>
-            <button class="nav-btn" onclick="currentTier = 7; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
             <button class="nav-btn" onclick="unlockedAchievements = achievements.map(a => a.id); notify('All achievements unlocked'); updateUI();">Unlock All Achievements</button>
         </div>
     </div>
@@ -222,6 +238,7 @@
         window.currentCps = 0;
         window.currentClickValue = 1;
 
+        // Formatter with improved large number support
         function f(n) {
             if (n === undefined || isNaN(n) || n === null || n < 0) return "0";
             if (n < 1000) return Math.floor(n).toLocaleString();
@@ -231,19 +248,18 @@
             return num + (units[unitIndex - 1] || "e" + (unitIndex * 3));
         }
 
-        const eraBackgrounds = ["#1b2a1d", "#3d2b1f", "#2b2b2b", "#24243e", "#1a1a2e", "#0f0c29", "#200122", "#000428", "#000000", "#12041d"];
-        const eraAccents = ["#66cc66", "#d4a76a", "#a19d94", "#4682b4", "#c0c0c0", "#1e90ff", "#ff4444", "#00ffff", "#b300ff", "#ffffff"];
+        const eraBackgrounds = ["#0f1710", "#1e140d", "#1a1a1a", "#121a24", "#252525", "#0a1525", "#1a0510", "#051a1a", "#000000"];
+        const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#1e90ff", "#ff4444", "#00ffff", "#b300ff"];
         
         const tickerData = {
             start: ["Local entrepreneur hits rock with rocks.", "Scientists wonder if 'wheel' is a fad."],
             bronze: ["Copper found! Shiny rocks are the new meta.", "Blacksmith accidentally invents the spoon."],
-            iron: ["Iron swords now 30% pointier.", "Rock Pickers considered endangered species."],
-            steel: ["Bridges are now 80% less likely to collapse.", "Railroads connect the kitchen to the living room."],
+            iron: ["Iron tools now 30% pointier.", "Rock Pickers considered endangered species."],
+            steel: ["Bridges are now 80% less likely to collapse.", "Steel beams don't melt, but profit does."],
             factory: ["Smog is the new 'clean air'.", "Steam engines outperforming horses 10 to 1."],
             digital: ["The internet: mostly just cat pictures.", "CEO is now 40% silicon."],
             atomic: ["Nuclear energy: Glowing in the dark is a feature.", "Fusion is still 20 years away."],
             plasma: ["Neon lights are now mandatory for all citizens.", "Plasma cutters making butter knives obsolete."],
-            void: ["Void wells are 'completely safe', says CEO.", "Reality starting to look pixelated."],
             quantum: ["Reality successfully hacked.", "CEO exists in all offices simultaneously."]
         };
 
@@ -267,12 +283,9 @@
             server: { name: "Data Centre", addAuto: 35000, baseCost: 7500000 },
             cloud: { name: "Cloud Computer", addAuto: 180000, baseCost: 45000000 },
             ai: { name: "AI Assistant", addAuto: 950000, baseCost: 350000000 },
-            quantum: { name: "Quantum Computer", addAuto: 6000000, baseCost: 5000000000 },
+            quantum: { name: "Quantum Rig", addAuto: 6000000, baseCost: 5000000000 },
             swarm: { name: "Dyson Swarm", addAuto: 45000000, baseCost: 80000000000 },
-            satellite: { name: "Satellite", addAuto: 300000000, baseCost: 900000000000 },
             moon: { name: "Moon Branch", addAuto: 2500000000, baseCost: 1e13 },
-            alien: { name: "Alien Partnership", addAuto: 18000000000, baseCost: 1.5e14 },
-            sun: { name: "Sun-Powered Computer", addAuto: 150000000000, baseCost: 2e15 },
             void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e16 }
         };
 
@@ -280,28 +293,8 @@
             { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
             { id: 'a3', name: "Millionaire", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
+            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 }
         ];
-
-        tierUpgrades.forEach((t, index) => {
-            achievements.push({
-                id: `ach-tier-${index}`,
-                name: `${t.label} Age`,
-                desc: `Reach the ${t.name} era`,
-                icon: "🚀",
-                check: () => currentTier >= (index + 1)
-            });
-        });
-
-        Object.keys(machineUpgrades).forEach(id => {
-            achievements.push({
-                id: `ach-machine-${id}`,
-                name: `${machineUpgrades[id].name} Fleet`,
-                desc: `Purchase a ${machineUpgrades[id].name}`,
-                icon: "⚙️",
-                check: () => (inventory[id] || 0) > 0
-            });
-        });
 
         let inventory = {};
         Object.keys(machineUpgrades).forEach(id => inventory[id] = 0);
@@ -320,7 +313,7 @@
                     <div class="ach-card ${isUnlocked ? 'unlocked' : ''}">
                         <div style="font-size:1.5rem">${ach.icon}</div>
                         <div style="font-weight:bold; font-size:0.8rem">${ach.name}</div>
-                        <div style="font-size:0.6rem">${ach.desc}</div>
+                        <div style="font-size:0.6rem; color: #888">${ach.desc}</div>
                     </div>
                 `;
             });
@@ -347,7 +340,6 @@
                 
                 if (btn) {
                     btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)}`;
-                    // Fixed: ensures button lights up correctly when affordable
                     btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
                 }
                 if (info) {
@@ -362,19 +354,18 @@
                     <div class="upgrade-card">
                         <div>
                             <h3 style="margin:0;">${next.name}</h3>
-                            <p style="font-size:0.7rem; margin:5px 0;">Efficiency: ${f(next.clickValue)}/click</p>
+                            <p style="font-size:0.7rem; margin:5px 0; color:#aaa;">Efficiency: ${f(next.clickValue)}/click</p>
                         </div>
                         <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">
                             EVOLVE<br>${f(next.cost)}
                         </button>
                     </div>`;
             } else {
-                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; width:100%">ULTIMATE EVOLUTION REACHED</p>`;
+                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; font-weight:bold; width:100%">ULTIMATE EVOLUTION REACHED</p>`;
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
             
-            // Dynamic Color Theme Fix
             const accent = eraAccents[currentTier] || "#66cc66";
             document.documentElement.style.setProperty('--dynamic-accent', accent);
             document.body.style.backgroundColor = eraBackgrounds[currentTier] || "#000";
@@ -382,6 +373,7 @@
             checkAchievements();
         }
 
+        // Fixed Math Formula for Buy Max and Multi-Buy
         function getCostOfMany(id, amount) {
             let n = inventory[id] || 0;
             let b = machineUpgrades[id].baseCost;
@@ -390,7 +382,7 @@
             let totalCost = 0;
 
             if (amount === 'max') {
-                // Precision Fix: Add 1e-9 to avoid floor(0.9999) = 0 errors
+                // Precision Fix: Uses log base growthRate to find how many items can be bought with current credits
                 count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r) + 1e-9);
                 count = Math.max(0, count);
             } else {
@@ -400,12 +392,11 @@
             if (count > 0) {
                 totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
             } else if (amount !== 'max') {
-                // For showing cost of 1/10 even if you can't afford it
                 totalCost = b * (Math.pow(r, n) * (Math.pow(r, amount) - 1)) / (r - 1);
                 count = amount;
             }
             
-            if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e30; 
+            if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e60; 
 
             return { cost: totalCost, count: count };
         }
@@ -458,12 +449,12 @@
 
         function saveGame(manual = false) {
             const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes };
-            localStorage.setItem("IndusEvo_V1", JSON.stringify(data));
-            if(manual) notify("Progress Saved");
+            localStorage.setItem("IndusEvo_V2", JSON.stringify(data));
+            if(manual) notify("System Progress Saved");
         }
 
         function loadGame() {
-            const saved = localStorage.getItem("IndusEvo_V1");
+            const saved = localStorage.getItem("IndusEvo_V2");
             if(saved) {
                 const data = JSON.parse(saved);
                 credits = data.credits || 0; 
@@ -481,7 +472,7 @@
         }
 
         function updateTicker(force = false) {
-            const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "void", "quantum"];
+            const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "quantum"];
             const list = tickerData[keys[currentTier]] || tickerData.start;
             const tickerEl = document.getElementById('ticker-text');
             tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
@@ -491,7 +482,7 @@
             achievements.forEach(ach => {
                 if(!unlockedAchievements.includes(ach.id) && ach.check()) {
                     unlockedAchievements.push(ach.id);
-                    notify(`UNLOCKED: ${ach.name}`);
+                    notify(`MILESTONE: ${ach.name}`);
                 }
             });
         }
@@ -504,21 +495,30 @@
                 usedCodes.push(val); 
                 notify("+5,000 Credits!");
                 input.value = "";
-            } else if (val === "AA1") {
+            } else if (val === "DEBUG" || val === "AA1") {
                 adminUnlocked = true; 
-                notify("Admin Activated");
+                notify("Console Access Granted");
                 input.value = "";
             } else {
-                notify("Invalid or Used Code");
+                notify("Invalid or Expired Code");
             }
             updateUI();
         }
 
-        function resetGame() { if(confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
+        function resetGame() { if(confirm("This will permanently erase all industrial progress. Proceed?")) { localStorage.clear(); location.reload(); } }
 
         document.getElementById('circle').addEventListener('click', (e) => {
-            credits += window.currentClickValue; 
-            totalEarned += window.currentClickValue; 
+            // "Critical Click" Mechanic
+            let multiplier = 1;
+            let isCrit = false;
+            if (Math.random() < 0.05) { 
+                multiplier = 5;
+                isCrit = true;
+            }
+
+            const gain = window.currentClickValue * multiplier;
+            credits += gain; 
+            totalEarned += gain; 
             totalClicks++;
             
             const container = document.getElementById('credit-container');
@@ -527,18 +527,36 @@
 
             const text = document.createElement('div');
             text.className = 'floating-text';
-            text.innerText = `+${f(window.currentClickValue)}`;
             
-            const x = e.clientX || e.touches[0].clientX;
-            const y = e.clientY || e.touches[0].clientY;
+            if(isCrit) {
+                text.style.color = "var(--gold)";
+                text.style.fontSize = "1.8rem";
+                text.innerText = `CRIT! +${f(gain)}`;
+            } else {
+                text.innerText = `+${f(gain)}`;
+            }
+            
+            const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             
             text.style.left = (x - 20) + 'px';
             text.style.top = (y - 20) + 'px';
             
             document.body.appendChild(text);
             setTimeout(() => text.remove(), 700);
-            updateUI();
+            
+            // Only update dynamic UI elements on click for performance
+            document.getElementById('creditCount').innerText = f(credits);
+            updateButtonAvailability();
         });
+
+        function updateButtonAvailability() {
+            Object.keys(machineUpgrades).forEach(id => {
+                const buyData = getCostOfMany(id, buyMode);
+                const btn = document.getElementById(`btn-${id}`);
+                if(btn) btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
+            });
+        }
 
         // Initialize machine list
         const mBox = document.getElementById('machine-container');
@@ -548,12 +566,13 @@
                 <div class="upgrade-card">
                     <div>
                         <h3 style="margin:0; font-size:0.9rem;">${machineUpgrades[id].name}</h3>
-                        <p id="info-${id}" style="margin:5px 0; font-size:0.7rem; color:#aaa;"></p>
+                        <p id="info-${id}" style="margin:5px 0; font-size:0.7rem; color:#888;"></p>
                     </div>
                     <button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button>
                 </div>`;
         });
 
+        // Fast Idle Loop
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gainPerTick = window.currentCps / 10;
@@ -564,16 +583,12 @@
                 totalEarned += Math.floor(gainPerTick) + carry;
                 
                 fractionalCredits %= 1;
-                
                 document.getElementById('creditCount').innerText = f(credits);
-                // Important: Update buttons visibility during idle gain
-                Object.keys(machineUpgrades).forEach(id => {
-                    const buyData = getCostOfMany(id, buyMode);
-                    const btn = document.getElementById(`btn-${id}`);
-                    if(btn) btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
-                });
             } 
         }, 100);
+
+        // Slower UI Button update to save CPU
+        setInterval(updateButtonAvailability, 500);
         
         setInterval(updateTicker, 15000);
         setInterval(() => saveGame(false), 60000);
