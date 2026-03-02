@@ -35,7 +35,6 @@
             min-height: 100vh;
         }
 
-        /* Fixed Top Header & Ticker Fixes */
         .fixed-top {
             position: sticky;
             top: 0;
@@ -61,7 +60,8 @@
             display: inline-block; 
             white-space: nowrap;
             padding-left: 100%;
-            animation: ticker-scrolling 25s linear infinite; 
+            /* Faster speed for better engagement */
+            animation: ticker-scrolling 10s linear infinite; 
             color: var(--dynamic-accent); 
             font-family: var(--font-mono);
             font-size: 0.8rem;
@@ -105,7 +105,6 @@
         .mode-btn { flex: 1; background: transparent; border: none; color: #666; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: 800; transition: 0.2s; }
         .mode-btn.active { background: var(--dynamic-accent); color: #000; }
 
-        /* Click Area Improvements */
         .click-area { 
             height: 240px; display: flex; justify-content: center; align-items: center; 
             margin-bottom: 40px; position: relative; width: 100%; touch-action: manipulation; 
@@ -127,7 +126,6 @@
         }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* Tier Visuals */
         .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #332d26; }
         .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; }
         .tier-2 { border-radius: 15%; background: #9e9e9e; border: 6px solid #555; }
@@ -137,7 +135,6 @@
 
         @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
 
-        /* Shop Cards */
         .shop { width: 100%; padding-bottom: 100px; }
         .section-title { 
             color: var(--dynamic-accent); border-bottom: 1px solid var(--border); 
@@ -157,7 +154,6 @@
         }
         .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
 
-        /* Overlay & Stats */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 30px 20px; overflow-y: auto; }
         
         .stats-grid { 
@@ -167,10 +163,11 @@
         .stat-label { font-size: 0.6rem; color: #888; text-transform: uppercase; margin-bottom: 5px; display: block; }
         .stat-value { font-family: var(--font-mono); color: var(--dynamic-accent); font-weight: bold; }
 
-        .ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+        .ach-grid { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; }
         .ach-card { 
-            background: rgba(255,255,255,0.02); padding: 10px 5px; border-radius: 8px; 
-            border: 1px solid var(--border); text-align: center; opacity: 0.2; 
+            display: flex; align-items: center; gap: 15px;
+            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; 
+            border: 1px solid var(--border); text-align: left; opacity: 0.3; 
         }
         .ach-card.unlocked { opacity: 1; border-color: var(--gold); background: rgba(255,215,0,0.05); }
 
@@ -229,7 +226,7 @@
             <div class="stat-item"><span class="stat-label">Current Tier</span><div class="stat-value" id="stat-tier">0</div></div>
         </div>
 
-        <h2 class="section-title">Milestones</h2>
+        <h2 class="section-title">Milestones (How to Unlock)</h2>
         <div id="ach-container" class="ach-grid"></div>
         
         <h2 class="section-title">Management</h2>
@@ -317,14 +314,14 @@
         };
 
         const achievements = [
-            { id: 'a1', name: "Novice", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
-            { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'a3', name: "Wealthy", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Tycoon", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
-            { id: 'up1', name: "Manual", desc: "Picker", icon: "🪨", check: () => inventory.picker > 0 },
-            { id: 'up4', name: "Steam", desc: "Engine", icon: "🚂", check: () => inventory.engine > 0 },
-            { id: 'up6', name: "Boss", desc: "Plant", icon: "🏭", check: () => inventory.plant > 0 },
-            { id: 'up10', name: "Sub-At", desc: "Quantum", icon: "⚛️", check: () => inventory.quantum > 0 }
+            { id: 'a1', name: "Novice", desc: "Click the main object 1 time", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'a2', name: "Grinder", desc: "Click the main object 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
+            { id: 'a3', name: "Wealthy", desc: "Earn a total of 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
+            { id: 'a4', name: "Tycoon", desc: "Earn a total of 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 },
+            { id: 'up1', name: "Manual Labor", desc: "Purchase 1 Rock Picker", icon: "🪨", check: () => inventory.picker > 0 },
+            { id: 'up4', name: "Full Steam Ahead", desc: "Purchase 1 Steam Engine", icon: "🚂", check: () => inventory.engine > 0 },
+            { id: 'up6', name: "The Big Boss", desc: "Purchase 1 Power Plant", icon: "🏭", check: () => inventory.plant > 0 },
+            { id: 'up10', name: "Sub-Atomic", desc: "Purchase 1 Quantum Rig", icon: "⚛️", check: () => inventory.quantum > 0 }
         ];
 
         let inventory = {};
@@ -336,7 +333,6 @@
         }
 
         function openSettings() {
-            // Update Stats
             document.getElementById('stat-earned').innerText = f(totalEarned);
             document.getElementById('stat-clicks').innerText = totalClicks.toLocaleString();
             document.getElementById('stat-tier').innerText = currentTier;
@@ -353,8 +349,11 @@
                 const isUnlocked = unlockedAchievements.includes(ach.id);
                 container.innerHTML += `
                     <div class="ach-card ${isUnlocked ? 'unlocked' : ''}">
-                        <div style="font-size:1.2rem">${ach.icon}</div>
-                        <div style="font-weight:bold; font-size:0.6rem; margin-top:3px">${ach.name}</div>
+                        <div style="font-size:1.5rem">${ach.icon}</div>
+                        <div>
+                            <div style="font-weight:bold; font-size:0.8rem;">${ach.name} ${isUnlocked ? '(Unlocked)' : ''}</div>
+                            <div style="font-size:0.65rem; color:#aaa; margin-top:2px">${ach.desc}</div>
+                        </div>
                     </div>
                 `;
             });
@@ -369,8 +368,6 @@
             let totalCost = 0;
 
             if (amount === 'max') {
-                // Geometric series: credits = b * (r^n * (r^count - 1)) / (r - 1)
-                // Solving for count: count = log( (credits*(r-1))/(b*r^n) + 1 ) / log(r)
                 count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
                 count = Math.max(0, count);
             } else {
@@ -516,7 +513,8 @@
             const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "quantum", "singularity"];
             const list = tickerData[keys[currentTier]] || tickerData.start;
             const tickerEl = document.getElementById('ticker-text');
-            tickerEl.innerText = list[Math.floor(Math.random()*list.length)] + " | " + list[Math.floor(Math.random()*list.length)];
+            // Plays one at a time faster
+            tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
         }
 
         function checkAchievements() {
@@ -531,10 +529,19 @@
         function redeemCode() {
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
-            if(val === "FREEBIE" && !usedCodes.includes(val)) {
-                credits += 5000; usedCodes.push(val); notify("+5,000 Credits!");
-            } else if (val === "DEBUG") {
-                adminUnlocked = true; notify("Console Access Granted");
+            
+            if(val === "FREEBIE") {
+                if(!usedCodes.includes(val)) {
+                    credits += 5000; usedCodes.push(val); notify("+5,000 Credits!");
+                } else {
+                    notify("Already Claimed");
+                }
+            } else if (val === "AA.01") {
+                if(!adminUnlocked) {
+                   adminUnlocked = true; notify("Console Access Granted");
+                } else {
+                   notify("Already Claimed");
+                }
             } else {
                 notify("Invalid Code");
             }
@@ -566,7 +573,6 @@
             updateUI();
         });
 
-        // Initialize Shop Cards
         const mBox = document.getElementById('machine-container');
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
@@ -580,7 +586,6 @@
                 </div>`;
         });
 
-        // Game Loop
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gainPerTick = window.currentCps / 10;
@@ -594,7 +599,7 @@
         }, 100);
 
         setInterval(updateUI, 1000);
-        setInterval(updateTicker, 15000);
+        setInterval(updateTicker, 10000); // 10 second refresh for news
         setInterval(() => saveGame(false), 30000);
         
         loadGame();
