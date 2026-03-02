@@ -32,7 +32,6 @@
             min-height: 100vh;
         }
 
-        /* Improved Glassmorphism Header */
         .fixed-top {
             position: sticky;
             top: 0;
@@ -100,7 +99,6 @@
         .mode-btn { background: transparent; border: none; color: #666; padding: 8px 16px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
         .mode-btn.active { background: var(--dynamic-accent); color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 
-        /* Clicking Area */
         .click-area { 
             height: 220px; display: flex; justify-content: center; align-items: center; 
             margin-bottom: 30px; position: relative; width: 100%; touch-action: manipulation; 
@@ -133,8 +131,11 @@
         .tier-3 { border-radius: 12px; background: #4682b4; border: 6px solid #2c5272; }
         .tier-4 { border-radius: 0; background: #e0e0e0; border: 6px solid var(--gold); }
         .tier-5 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #1e90ff; }
+        .tier-6 { border-radius: 50%; background: #ff4444; border: 4px double white; }
+        .tier-7 { border-radius: 15px; background: #00ffff; box-shadow: 0 0 15px #00ffff; }
         .tier-9 { border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%; background: var(--quantum); animation: pulse 2s infinite ease-in-out; }
-        
+        .tier-10 { clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); background: white; color: black !important; }
+
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } 50% { transform: scale(1.08); box-shadow: 0 0 40px var(--quantum); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--quantum); } }
 
         .shop { width: 100%; padding-bottom: 80px; }
@@ -238,7 +239,6 @@
         window.currentCps = 0;
         window.currentClickValue = 1;
 
-        // Formatter with improved large number support
         function f(n) {
             if (n === undefined || isNaN(n) || n === null || n < 0) return "0";
             if (n < 1000) return Math.floor(n).toLocaleString();
@@ -248,8 +248,8 @@
             return num + (units[unitIndex - 1] || "e" + (unitIndex * 3));
         }
 
-        const eraBackgrounds = ["#0f1710", "#1e140d", "#1a1a1a", "#121a24", "#252525", "#0a1525", "#1a0510", "#051a1a", "#000000"];
-        const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#1e90ff", "#ff4444", "#00ffff", "#b300ff"];
+        const eraBackgrounds = ["#0f1710", "#1e140d", "#1a1a1a", "#121a24", "#252525", "#0a1525", "#1a0510", "#051a1a", "#000000", "#110022", "#000"];
+        const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#1e90ff", "#ff4444", "#00ffff", "#b300ff", "#ff00ff", "#ffffff"];
         
         const tickerData = {
             start: ["Local entrepreneur hits rock with rocks.", "Scientists wonder if 'wheel' is a fad."],
@@ -260,7 +260,8 @@
             digital: ["The internet: mostly just cat pictures.", "CEO is now 40% silicon."],
             atomic: ["Nuclear energy: Glowing in the dark is a feature.", "Fusion is still 20 years away."],
             plasma: ["Neon lights are now mandatory for all citizens.", "Plasma cutters making butter knives obsolete."],
-            quantum: ["Reality successfully hacked.", "CEO exists in all offices simultaneously."]
+            quantum: ["Reality successfully hacked.", "CEO exists in all offices simultaneously."],
+            singularity: ["Time is just a suggestion now.", "The universe is being compressed into a zip file."]
         };
 
         const tierUpgrades = [
@@ -269,8 +270,11 @@
             { id: 't3', name: "Steel Forging", cost: 75000, clickValue: 600, label: "STEEL", class: "tier-3" },
             { id: 't4', name: "Steam Power", cost: 500000, clickValue: 3500, label: "FACTORY", class: "tier-4" },
             { id: 't5', name: "Digital Logic", cost: 10000000, clickValue: 25000, label: "DIGITAL", class: "tier-5" },
-            { id: 't6', name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-5" },
-            { id: 't7', name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9" }
+            { id: 't6', name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-6" },
+            { id: 't7', name: "Plasma Fusion", cost: 5000000000, clickValue: 1200000, label: "PLASMA", class: "tier-7" },
+            { id: 't8', name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9" },
+            { id: 't9', name: "Dimensional Rift", cost: 1e14, clickValue: 2e9, label: "RIFT", class: "tier-9" },
+            { id: 't10', name: "The Singularity", cost: 1e17, clickValue: 1e12, label: "VOID", class: "tier-10" }
         ];
 
         const machineUpgrades = {
@@ -293,7 +297,21 @@
             { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
             { id: 'a3', name: "Millionaire", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 }
+            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
+            // Building Unlock Achievements
+            { id: 'up1', name: "Manual Labor", desc: "Buy a Rock Picker", icon: "🪨", check: () => inventory.picker > 0 },
+            { id: 'up2', name: "Hot Metal", desc: "Buy a Blacksmith", icon: "🔥", check: () => inventory.smith > 0 },
+            { id: 'up3', name: "Hydraulic", desc: "Buy a Water Wheel", icon: "🌊", check: () => inventory.mill > 0 },
+            { id: 'up4', name: "Full Steam", desc: "Buy a Steam Engine", icon: "🚂", check: () => inventory.engine > 0 },
+            { id: 'up5', name: "Shocking", desc: "Buy an Electric Generator", icon: "⚡", check: () => inventory.generator > 0 },
+            { id: 'up6', name: "Industrialist", desc: "Buy a Power Plant", icon: "🏭", check: () => inventory.plant > 0 },
+            { id: 'up7', name: "IT Crowd", desc: "Buy a Data Centre", icon: "🖥️", check: () => inventory.server > 0 },
+            { id: 'up8', name: "Up There", desc: "Buy a Cloud Computer", icon: "☁️", check: () => inventory.cloud > 0 },
+            { id: 'up9', name: "Robot Master", desc: "Buy an AI Assistant", icon: "🤖", check: () => inventory.ai > 0 },
+            { id: 'up10', name: "Sub-Atomic", desc: "Buy a Quantum Rig", icon: "⚛️", check: () => inventory.quantum > 0 },
+            { id: 'up11', name: "Solar King", desc: "Buy a Dyson Swarm", icon: "☀️", check: () => inventory.swarm > 0 },
+            { id: 'up12', name: "Colonizer", desc: "Buy a Moon Branch", icon: "🌙", check: () => inventory.moon > 0 },
+            { id: 'up13', name: "The Abyss", desc: "Buy a Void Well", icon: "🕳️", check: () => inventory.void > 0 }
         ];
 
         let inventory = {};
@@ -373,7 +391,6 @@
             checkAchievements();
         }
 
-        // Fixed Math Formula for Buy Max and Multi-Buy
         function getCostOfMany(id, amount) {
             let n = inventory[id] || 0;
             let b = machineUpgrades[id].baseCost;
@@ -382,7 +399,6 @@
             let totalCost = 0;
 
             if (amount === 'max') {
-                // Precision Fix: Uses log base growthRate to find how many items can be bought with current credits
                 count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r) + 1e-9);
                 count = Math.max(0, count);
             } else {
@@ -472,7 +488,7 @@
         }
 
         function updateTicker(force = false) {
-            const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "quantum"];
+            const keys = ["start", "bronze", "iron", "steel", "factory", "digital", "atomic", "plasma", "quantum", "singularity"];
             const list = tickerData[keys[currentTier]] || tickerData.start;
             const tickerEl = document.getElementById('ticker-text');
             tickerEl.innerText = list[Math.floor(Math.random()*list.length)];
@@ -508,7 +524,6 @@
         function resetGame() { if(confirm("This will permanently erase all industrial progress. Proceed?")) { localStorage.clear(); location.reload(); } }
 
         document.getElementById('circle').addEventListener('click', (e) => {
-            // "Critical Click" Mechanic
             let multiplier = 1;
             let isCrit = false;
             if (Math.random() < 0.05) { 
@@ -545,7 +560,6 @@
             document.body.appendChild(text);
             setTimeout(() => text.remove(), 700);
             
-            // Only update dynamic UI elements on click for performance
             document.getElementById('creditCount').innerText = f(credits);
             updateButtonAvailability();
         });
@@ -558,7 +572,6 @@
             });
         }
 
-        // Initialize machine list
         const mBox = document.getElementById('machine-container');
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
@@ -572,7 +585,6 @@
                 </div>`;
         });
 
-        // Fast Idle Loop
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gainPerTick = window.currentCps / 10;
@@ -587,9 +599,7 @@
             } 
         }, 100);
 
-        // Slower UI Button update to save CPU
         setInterval(updateButtonAvailability, 500);
-        
         setInterval(updateTicker, 15000);
         setInterval(() => saveGame(false), 60000);
         
