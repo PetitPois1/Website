@@ -201,8 +201,12 @@
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT DEBUG</button>
         <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
+            <button class="nav-btn" onclick="credits *= 100; updateUI();">x100 Current Credits</button>
+            <button class="nav-btn" onclick="credits *= 1000; updateUI();">x1000 Current Credits</button>
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
+            <button class="nav-btn" onclick="currentTier = Math.min(currentTier + 1, tierUpgrades.length); applyTierVisuals(); updateUI();">Instant Evolve</button>
             <button class="nav-btn" onclick="currentTier = 7; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
+            <button class="nav-btn" onclick="unlockedAchievements = achievements.map(a => a.id); notify('All achievements unlocked'); updateUI();">Unlock All Achievements</button>
         </div>
     </div>
 
@@ -210,8 +214,11 @@
         // Global Variables
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
-        const growthRate = 1.13; // Adjusted for better balance
+        const growthRate = 1.13; 
         
+        // Precision Fix: Track sub-integer credits separately to avoid loss at high numbers
+        let fractionalCredits = 0;
+
         window.currentCps = 0;
         window.currentClickValue = 1;
 
@@ -239,22 +246,14 @@
             quantum: ["Reality successfully hacked.", "CEO exists in all offices simultaneously."]
         };
 
-        const achievements = [
-            { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
-            { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'a3', name: "Wealthy", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Modern", desc: "Factory Era", icon: "🏭", check: () => currentTier >= 4 },
-            { id: 'a5', name: "Ascended", desc: "Quantum Era", icon: "🌌", check: () => currentTier >= 6 }
-        ];
-
         const tierUpgrades = [
-            { name: "Bronze Tools", cost: 300, clickValue: 10, label: "BRONZE", class: "tier-1" },
-            { name: "Iron Workings", cost: 5000, clickValue: 80, label: "IRON", class: "tier-2" },
-            { name: "Steel Forging", cost: 75000, clickValue: 600, label: "STEEL", class: "tier-3" },
-            { name: "Steam Power", cost: 500000, clickValue: 3500, label: "FACTORY", class: "tier-4" },
-            { name: "Digital Logic", cost: 10000000, clickValue: 25000, label: "DIGITAL", class: "tier-5" },
-            { name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-5" },
-            { name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9" }
+            { id: 't1', name: "Bronze Tools", cost: 300, clickValue: 10, label: "BRONZE", class: "tier-1" },
+            { id: 't2', name: "Iron Workings", cost: 5000, clickValue: 80, label: "IRON", class: "tier-2" },
+            { id: 't3', name: "Steel Forging", cost: 75000, clickValue: 600, label: "STEEL", class: "tier-3" },
+            { id: 't4', name: "Steam Power", cost: 500000, clickValue: 3500, label: "FACTORY", class: "tier-4" },
+            { id: 't5', name: "Digital Logic", cost: 10000000, clickValue: 25000, label: "DIGITAL", class: "tier-5" },
+            { id: 't6', name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-5" },
+            { id: 't7', name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9" }
         ];
 
         const machineUpgrades = {
@@ -275,6 +274,36 @@
             sun: { name: "Sun-Powered Computer", addAuto: 150000000000, baseCost: 2e15 },
             void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e16 }
         };
+
+        // Dynamically build achievement list based on upgrades and milestones
+        const achievements = [
+            { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
+            { id: 'a3', name: "Millionaire", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
+            { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
+        ];
+
+        // Add an achievement for every Tier evolution
+        tierUpgrades.forEach((t, index) => {
+            achievements.push({
+                id: `ach-tier-${index}`,
+                name: `${t.label} Age`,
+                desc: `Reach the ${t.name} era`,
+                icon: "🚀",
+                check: () => currentTier >= (index + 1)
+            });
+        });
+
+        // Add an achievement for owning at least one of every machine
+        Object.keys(machineUpgrades).forEach(id => {
+            achievements.push({
+                id: `ach-machine-${id}`,
+                name: `${machineUpgrades[id].name} Fleet`,
+                desc: `Purchase a ${machineUpgrades[id].name}`,
+                icon: "⚙️",
+                check: () => inventory[id] > 0
+            });
+        });
 
         let inventory = {};
         Object.keys(machineUpgrades).forEach(id => inventory[id] = 0);
@@ -362,8 +391,6 @@
             if (count === 0 && amount !== 'max') count = amount;
             
             let totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
-            
-            // Safety check for NaN or Infinity
             if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e30; 
 
             return { cost: totalCost, count: count };
@@ -512,12 +539,24 @@
                 </div>`;
         });
 
+        // Loop handles production every 100ms
         setInterval(() => { 
             if(window.currentCps > 0) { 
-                let gain = window.currentCps / 10;
-                credits += gain; 
-                totalEarned += gain; 
-                updateUI(); 
+                // Precision Fix: Handle increments smaller than 1 properly
+                let gainPerTick = window.currentCps / 10;
+                
+                // Add sub-integer part to a buffer
+                fractionalCredits += (gainPerTick % 1);
+                
+                // If buffer is >= 1, add it to main credits
+                let carry = Math.floor(fractionalCredits);
+                credits += Math.floor(gainPerTick) + carry;
+                totalEarned += Math.floor(gainPerTick) + carry;
+                
+                fractionalCredits %= 1;
+                
+                // Only update visual UI if credits actually changed significantly
+                document.getElementById('creditCount').innerText = f(credits);
             } 
         }, 100);
         
