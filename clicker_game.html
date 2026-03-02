@@ -202,7 +202,7 @@
         <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
-            <button class="nav-btn" onclick="currentTier = 6; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
+            <button class="nav-btn" onclick="currentTier = 7; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
         </div>
     </div>
 
@@ -210,19 +210,18 @@
         // Global Variables
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
-        const growthRate = 1.1; // Fix: Reduced cost increase for relaxing gameplay
+        const growthRate = 1.13; // Adjusted for better balance
         
-        // Internal state used to prevent NaN during calculations
         window.currentCps = 0;
         window.currentClickValue = 1;
 
         function f(n) {
-            if (n === undefined || isNaN(n)) return "0";
+            if (n === undefined || isNaN(n) || n === null) return "0";
             if (n < 1000) return Math.floor(n).toLocaleString();
-            const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+            const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd"];
             const unitIndex = Math.floor((Math.log10(n) / 3));
             const num = (n / Math.pow(10, unitIndex * 3)).toFixed(2);
-            return num + (units[unitIndex - 1] || "");
+            return num + (units[unitIndex - 1] || "e" + (unitIndex * 3));
         }
 
         const eraBackgrounds = ["#1b2a1d", "#3d2b1f", "#2b2b2b", "#24243e", "#1a1a2e", "#0f0c29", "#200122", "#000428", "#000000", "#12041d"];
@@ -250,11 +249,12 @@
 
         const tierUpgrades = [
             { name: "Bronze Tools", cost: 300, clickValue: 10, label: "BRONZE", class: "tier-1" },
-            { name: "Iron Workings", cost: 5000, clickValue: 60, label: "IRON", class: "tier-2" },
-            { name: "Steel Forging", cost: 75000, clickValue: 400, label: "STEEL", class: "tier-3" },
-            { name: "Steam Power", cost: 500000, clickValue: 2000, label: "FACTORY", class: "tier-4" },
-            { name: "Digital Logic", cost: 10000000, clickValue: 15000, label: "DIGITAL", class: "tier-5" },
-            { name: "Quantum Core", cost: 1e11, clickValue: 1e7, label: "QUANTUM", class: "tier-9" }
+            { name: "Iron Workings", cost: 5000, clickValue: 80, label: "IRON", class: "tier-2" },
+            { name: "Steel Forging", cost: 75000, clickValue: 600, label: "STEEL", class: "tier-3" },
+            { name: "Steam Power", cost: 500000, clickValue: 3500, label: "FACTORY", class: "tier-4" },
+            { name: "Digital Logic", cost: 10000000, clickValue: 25000, label: "DIGITAL", class: "tier-5" },
+            { name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-5" },
+            { name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9" }
         ];
 
         const machineUpgrades = {
@@ -265,15 +265,15 @@
             generator: { name: "Electric Generator", addAuto: 1200, baseCost: 140000 },
             plant: { name: "Power Plant", addAuto: 6500, baseCost: 950000 },
             server: { name: "Data Centre", addAuto: 35000, baseCost: 7500000 },
-            cloud: { name: "Cloud Computer", addAuto: 180000, baseCost: 60000000 },
-            ai: { name: "AI Assistant", addAuto: 950000, baseCost: 550000000 },
-            quantum: { name: "Quantum Computer", addAuto: 6000000, baseCost: 8000000000 },
-            swarm: { name: "Dyson Swarm", addAuto: 45000000, baseCost: 120000000000 },
-            satellite: { name: "Satellite", addAuto: 300000000, baseCost: 1500000000000 },
-            moon: { name: "Moon Branch", addAuto: 2500000000, baseCost: 20000000000000 },
-            alien: { name: "Alien Partnership", addAuto: 18000000000, baseCost: 350000000000000 },
-            sun: { name: "Sun-Powered Computer", addAuto: 150000000000, baseCost: 8000000000000000 },
-            void: { name: "Void Well", addAuto: 1000000000000, baseCost: 1.5e17 }
+            cloud: { name: "Cloud Computer", addAuto: 180000, baseCost: 45000000 },
+            ai: { name: "AI Assistant", addAuto: 950000, baseCost: 350000000 },
+            quantum: { name: "Quantum Computer", addAuto: 6000000, baseCost: 5000000000 },
+            swarm: { name: "Dyson Swarm", addAuto: 45000000, baseCost: 80000000000 },
+            satellite: { name: "Satellite", addAuto: 300000000, baseCost: 900000000000 },
+            moon: { name: "Moon Branch", addAuto: 2500000000, baseCost: 1e13 },
+            alien: { name: "Alien Partnership", addAuto: 18000000000, baseCost: 1.5e14 },
+            sun: { name: "Sun-Powered Computer", addAuto: 150000000000, baseCost: 2e15 },
+            void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e16 }
         };
 
         let inventory = {};
@@ -359,7 +359,13 @@
                 count = Math.max(0, affordable);
             }
             
+            if (count === 0 && amount !== 'max') count = amount;
+            
             let totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
+            
+            // Safety check for NaN or Infinity
+            if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e30; 
+
             return { cost: totalCost, count: count };
         }
 
@@ -452,7 +458,6 @@
         function redeemCode() {
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
-            // Fix: Promo code changed to "FREEBIE" and admin code changed to "AA1"
             if(val === "FREEBIE" && !usedCodes.includes(val)) {
                 credits += 5000; 
                 usedCodes.push(val); 
@@ -460,7 +465,7 @@
                 input.value = "";
             } else if (val === "AA1") {
                 adminUnlocked = true; 
-                notify("Debug Mode Active");
+                notify("Admin Activated");
                 input.value = "";
             } else {
                 notify("Invalid or Used Code");
@@ -470,7 +475,6 @@
 
         function resetGame() { if(confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
-        // Click Handler
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue; 
             totalEarned += window.currentClickValue; 
@@ -495,7 +499,6 @@
             updateUI();
         });
 
-        // Initialize Shop with machines
         const mBox = document.getElementById('machine-container');
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
@@ -509,7 +512,6 @@
                 </div>`;
         });
 
-        // Intervals
         setInterval(() => { 
             if(window.currentCps > 0) { 
                 let gain = window.currentCps / 10;
@@ -522,7 +524,6 @@
         setInterval(updateTicker, 15000);
         setInterval(() => saveGame(false), 60000);
         
-        // Initial Load
         loadGame();
     </script>
 </body>
