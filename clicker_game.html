@@ -210,7 +210,7 @@
         // Global Variables
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
-        const growthRate = 1.15;
+        const growthRate = 1.1; // Fix: Reduced cost increase for relaxing gameplay
         
         // Internal state used to prevent NaN during calculations
         window.currentCps = 0;
@@ -355,7 +355,6 @@
             let count = amount;
 
             if (amount === 'max') {
-                // Calculate max affordable: n = floor(log_r((credits * (r - 1) / (b * r^owned)) + 1))
                 let affordable = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
                 count = Math.max(0, affordable);
             }
@@ -453,12 +452,13 @@
         function redeemCode() {
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
-            if(val === "EVOLVE" && !usedCodes.includes(val)) {
+            // Fix: Promo code changed to "FREEBIE" and admin code changed to "AA1"
+            if(val === "FREEBIE" && !usedCodes.includes(val)) {
                 credits += 5000; 
                 usedCodes.push(val); 
                 notify("+5,000 Credits!");
                 input.value = "";
-            } else if (val === "BEANS") {
+            } else if (val === "AA1") {
                 adminUnlocked = true; 
                 notify("Debug Mode Active");
                 input.value = "";
@@ -497,7 +497,7 @@
 
         // Initialize Shop with machines
         const mBox = document.getElementById('machine-container');
-        mBox.innerHTML = ""; // Clear initial
+        mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `
                 <div class="upgrade-card">
