@@ -202,16 +202,22 @@
         <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
-            <button class="nav-btn" onclick="currentTier = 9; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
+            <button class="nav-btn" onclick="currentTier = 6; applyTierVisuals(); updateUI();">Unlock Max Tier</button>
         </div>
     </div>
 
     <script>
+        // Global Variables
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
         const growthRate = 1.15;
+        
+        // Internal state used to prevent NaN during calculations
+        window.currentCps = 0;
+        window.currentClickValue = 1;
 
         function f(n) {
+            if (n === undefined || isNaN(n)) return "0";
             if (n < 1000) return Math.floor(n).toLocaleString();
             const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
             const unitIndex = Math.floor((Math.log10(n) / 3));
@@ -239,7 +245,7 @@
             { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
             { id: 'a3', name: "Wealthy", desc: "1M Earned", icon: "💰", check: () => totalEarned >= 1000000 },
             { id: 'a4', name: "Modern", desc: "Factory Era", icon: "🏭", check: () => currentTier >= 4 },
-            { id: 'a5', name: "Ascended", desc: "Quantum Era", icon: "🌌", check: () => currentTier >= 9 }
+            { id: 'a5', name: "Ascended", desc: "Quantum Era", icon: "🌌", check: () => currentTier >= 6 }
         ];
 
         const tierUpgrades = [
@@ -298,7 +304,9 @@
             document.getElementById('creditCount').innerText = f(credits);
             
             let totalCps = 0;
-            Object.keys(machineUpgrades).forEach(id => totalCps += machineUpgrades[id].addAuto * inventory[id]);
+            Object.keys(machineUpgrades).forEach(id => {
+                totalCps += machineUpgrades[id].addAuto * (inventory[id] || 0);
+            });
             document.getElementById('cpsCount').innerText = f(totalCps);
             window.currentCps = totalCps;
 
@@ -308,9 +316,14 @@
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
-                btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)}`;
-                btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
-                document.getElementById(`info-${id}`).innerHTML = `+${f(machineUpgrades[id].addAuto)}/s | Fleet: ${inventory[id]}`;
+                if (btn) {
+                    btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)}`;
+                    btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
+                }
+                const info = document.getElementById(`info-${id}`);
+                if (info) {
+                    info.innerHTML = `+${f(machineUpgrades[id].addAuto)}/s | Fleet: ${inventory[id]}`;
+                }
             });
 
             const tBox = document.getElementById('tier-container');
@@ -336,13 +349,19 @@
         }
 
         function getCostOfMany(id, amount) {
-            let n = inventory[id], b = machineUpgrades[id].baseCost, r = growthRate;
+            let n = inventory[id] || 0;
+            let b = machineUpgrades[id].baseCost;
+            let r = growthRate;
+            let count = amount;
+
             if (amount === 'max') {
-                amount = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
-                amount = Math.max(0, amount);
+                // Calculate max affordable: n = floor(log_r((credits * (r - 1) / (b * r^owned)) + 1))
+                let affordable = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
+                count = Math.max(0, affordable);
             }
-            let totalCost = b * (Math.pow(r, n) * (Math.pow(r, amount) - 1)) / (r - 1);
-            return { cost: totalCost, count: amount };
+            
+            let totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
+            return { cost: totalCost, count: count };
         }
 
         function buyMachine(id) {
@@ -356,7 +375,7 @@
 
         function evolveTier() {
             const next = tierUpgrades[currentTier];
-            if(credits >= next.cost) { 
+            if(next && credits >= next.cost) { 
                 credits -= next.cost; 
                 currentTier++; 
                 applyTierVisuals(); 
@@ -398,11 +417,16 @@
         }
 
         function loadGame() {
-            const data = JSON.parse(localStorage.getItem("IndusEvo_V1"));
-            if(data) {
-                credits = data.credits; totalEarned = data.totalEarned; totalClicks = data.totalClicks;
-                inventory = data.inventory; currentTier = data.currentTier;
-                unlockedAchievements = data.unlockedAchievements; adminUnlocked = data.adminUnlocked;
+            const saved = localStorage.getItem("IndusEvo_V1");
+            if(saved) {
+                const data = JSON.parse(saved);
+                credits = data.credits || 0; 
+                totalEarned = data.totalEarned || 0; 
+                totalClicks = data.totalClicks || 0;
+                inventory = data.inventory || inventory; 
+                currentTier = data.currentTier || 0;
+                unlockedAchievements = data.unlockedAchievements || []; 
+                adminUnlocked = data.adminUnlocked || false;
                 usedCodes = data.usedCodes || [];
                 applyTierVisuals();
             }
@@ -427,34 +451,39 @@
         }
 
         function redeemCode() {
-            const val = document.getElementById('promo-code').value.toUpperCase();
+            const input = document.getElementById('promo-code');
+            const val = input.value.toUpperCase().trim();
             if(val === "EVOLVE" && !usedCodes.includes(val)) {
-                credits += 5000; usedCodes.push(val); notify("+5,000 Credits!");
+                credits += 5000; 
+                usedCodes.push(val); 
+                notify("+5,000 Credits!");
+                input.value = "";
             } else if (val === "BEANS") {
-                adminUnlocked = true; notify("Debug Mode Active");
+                adminUnlocked = true; 
+                notify("Debug Mode Active");
+                input.value = "";
+            } else {
+                notify("Invalid or Used Code");
             }
             updateUI();
         }
 
         function resetGame() { if(confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
-        // FIXED POSITIONING CLICK HANDLER
+        // Click Handler
         document.getElementById('circle').addEventListener('click', (e) => {
             credits += window.currentClickValue; 
             totalEarned += window.currentClickValue; 
             totalClicks++;
             
-            // Header scale feedback
             const container = document.getElementById('credit-container');
             container.style.transform = "scale(1.05)";
             setTimeout(() => container.style.transform = "scale(1)", 50);
 
-            // Create floating text at the exact mouse/touch coordinates
             const text = document.createElement('div');
             text.className = 'floating-text';
             text.innerText = `+${f(window.currentClickValue)}`;
             
-            // Use clientX/Y for viewport coordinates
             const x = e.clientX;
             const y = e.clientY;
             
@@ -466,8 +495,9 @@
             updateUI();
         });
 
-        // Initialize Shop with new machines
+        // Initialize Shop with machines
         const mBox = document.getElementById('machine-container');
+        mBox.innerHTML = ""; // Clear initial
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `
                 <div class="upgrade-card">
@@ -480,10 +510,19 @@
         });
 
         // Intervals
-        setInterval(() => { if(window.currentCps > 0) { credits += window.currentCps/10; totalEarned += window.currentCps/10; updateUI(); } }, 100);
-        setInterval(updateTicker, 15000);
-        setInterval(saveGame, 60000);
+        setInterval(() => { 
+            if(window.currentCps > 0) { 
+                let gain = window.currentCps / 10;
+                credits += gain; 
+                totalEarned += gain; 
+                updateUI(); 
+            } 
+        }, 100);
         
+        setInterval(updateTicker, 15000);
+        setInterval(() => saveGame(false), 60000);
+        
+        // Initial Load
         loadGame();
     </script>
 </body>
