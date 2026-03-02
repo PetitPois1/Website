@@ -6,10 +6,11 @@
     <title>Industrial Clicker: Evolution</title>
     <style>
         :root {
-            --primary: #66cc66;
+            /* Now dynamically updated via JS */
+            --dynamic-accent: #66cc66; 
             --bg-dark: #1b2a1d;
             --panel-bg: #000000; 
-            --border: #2d4a30;
+            --border: rgba(255,255,255,0.1);
             --save-color: #44aaff;
             --quantum: #b300ff;
             --gold: #ffd700;
@@ -56,7 +57,7 @@
             display: inline-block; 
             padding-left: 100%; 
             animation: ticker 25s linear infinite; 
-            color: var(--primary); 
+            color: var(--dynamic-accent); 
             font-weight: bold;
         }
         
@@ -66,28 +67,29 @@
 
         .credit-box {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--primary);
+            border: 1px solid var(--dynamic-accent);
             border-radius: 12px;
             padding: 10px 25px;
             display: inline-block;
-            transition: transform 0.1s;
+            transition: transform 0.1s, border-color 0.5s;
         }
 
         .credit-display { font-size: 2rem; font-weight: 900; color: white; margin: 0; }
-        .currency-label { font-size: 0.7rem; color: var(--primary); letter-spacing: 2px; display: block; margin-top: -5px; }
-        .production-display { color: var(--primary); font-size: 0.9rem; font-weight: bold; margin-top: 5px; }
+        .currency-label { font-size: 0.7rem; color: var(--dynamic-accent); letter-spacing: 2px; display: block; margin-top: -5px; }
+        .production-display { color: var(--dynamic-accent); font-size: 0.9rem; font-weight: bold; margin-top: 5px; }
 
         .main-content { width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
         .nav-bar { display: flex; gap: 8px; margin-bottom: 15px; }
         .nav-btn { 
-            background: #222; border: 1px solid var(--primary); color: var(--primary); 
+            background: #222; border: 1px solid var(--dynamic-accent); color: var(--dynamic-accent); 
             padding: 8px 12px; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 0.75rem;
+            transition: all 0.3s;
         }
 
         .buy-modes { display: flex; gap: 5px; margin-bottom: 20px; }
         .mode-btn { background: #111; border: 1px solid #444; color: #888; padding: 8px 15px; cursor: pointer; border-radius: 6px; }
-        .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #1b2a1d; }
+        .mode-btn.active { border-color: var(--dynamic-accent); color: var(--dynamic-accent); background: rgba(255,255,255,0.1); }
 
         .click-area { 
             height: 180px; display: flex; justify-content: center; align-items: center; 
@@ -104,7 +106,7 @@
         .floating-text { 
             position: fixed; 
             pointer-events: none; 
-            color: var(--primary); 
+            color: var(--dynamic-accent); 
             font-weight: bold; 
             animation: floatUp 0.7s ease-out forwards; 
             z-index: 2000; 
@@ -123,7 +125,7 @@
         @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--quantum); } 50% { transform: scale(1.05); box-shadow: 0 0 30px var(--quantum); } }
 
         .shop { width: 100%; padding-bottom: 50px; }
-        .section-title { color: var(--primary); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        .section-title { color: var(--dynamic-accent); border-bottom: 1px solid var(--border); margin: 20px 0 10px; padding-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
         
         .upgrade-card { 
             background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; 
@@ -131,11 +133,12 @@
         }
 
         .buy-btn { 
-            background: #0a3d0a; color: white; border: 1px solid var(--primary); 
+            background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--dynamic-accent); 
             padding: 8px; border-radius: 6px; cursor: pointer; min-width: 100px; 
             font-weight: bold; font-size: 0.8rem; text-align: center; 
         }
-        .buy-btn.disabled { opacity: 0.3; cursor: not-allowed; background: #222; border-color: #444; }
+        .buy-btn:not(.disabled) { background: rgba(255,255,255,0.15); }
+        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: #444; }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
         .ach-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; text-align: center; opacity: 0.4; }
@@ -191,7 +194,7 @@
         <div id="ach-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%;"></div>
         
         <h2 class="section-title">Data Management</h2>
-        <input type="text" id="promo-code" style="padding:12px; background:#000; color:white; border:1px solid var(--primary); width:100%; margin-bottom:10px;" placeholder="PROMO CODE">
+        <input type="text" id="promo-code" style="padding:12px; background:#000; color:white; border:1px solid var(--dynamic-accent); width:100%; margin-bottom:10px;" placeholder="PROMO CODE">
         <button class="nav-btn" style="width:100%" onclick="redeemCode()">REDEEM</button>
         
         <button class="nav-btn" onclick="resetGame()" style="border-color:#ff5555; color:#ff5555; margin-top:40px; width: 100%;">ERASE ALL DATA</button>
@@ -211,19 +214,16 @@
     </div>
 
     <script>
-        // Global Variables
         let credits = 0, totalEarned = 0, totalClicks = 0, currentTier = 0;
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
         const growthRate = 1.13; 
-        
-        // Precision Fix: Track sub-integer credits separately to avoid loss at high numbers
         let fractionalCredits = 0;
 
         window.currentCps = 0;
         window.currentClickValue = 1;
 
         function f(n) {
-            if (n === undefined || isNaN(n) || n === null) return "0";
+            if (n === undefined || isNaN(n) || n === null || n < 0) return "0";
             if (n < 1000) return Math.floor(n).toLocaleString();
             const units = ["k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd"];
             const unitIndex = Math.floor((Math.log10(n) / 3));
@@ -232,6 +232,7 @@
         }
 
         const eraBackgrounds = ["#1b2a1d", "#3d2b1f", "#2b2b2b", "#24243e", "#1a1a2e", "#0f0c29", "#200122", "#000428", "#000000", "#12041d"];
+        const eraAccents = ["#66cc66", "#d4a76a", "#a19d94", "#4682b4", "#c0c0c0", "#1e90ff", "#ff4444", "#00ffff", "#b300ff", "#ffffff"];
         
         const tickerData = {
             start: ["Local entrepreneur hits rock with rocks.", "Scientists wonder if 'wheel' is a fad."],
@@ -275,7 +276,6 @@
             void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e16 }
         };
 
-        // Dynamically build achievement list based on upgrades and milestones
         const achievements = [
             { id: 'a1', name: "Beginner", desc: "1st Click", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'a2', name: "Grinder", desc: "100 Clicks", icon: "🖱️", check: () => totalClicks >= 100 },
@@ -283,7 +283,6 @@
             { id: 'a4', name: "Billionaire", desc: "1B Earned", icon: "💎", check: () => totalEarned >= 1000000000 },
         ];
 
-        // Add an achievement for every Tier evolution
         tierUpgrades.forEach((t, index) => {
             achievements.push({
                 id: `ach-tier-${index}`,
@@ -294,14 +293,13 @@
             });
         });
 
-        // Add an achievement for owning at least one of every machine
         Object.keys(machineUpgrades).forEach(id => {
             achievements.push({
                 id: `ach-machine-${id}`,
                 name: `${machineUpgrades[id].name} Fleet`,
                 desc: `Purchase a ${machineUpgrades[id].name}`,
                 icon: "⚙️",
-                check: () => inventory[id] > 0
+                check: () => (inventory[id] || 0) > 0
             });
         });
 
@@ -345,11 +343,13 @@
             Object.keys(machineUpgrades).forEach(id => {
                 const buyData = getCostOfMany(id, buyMode);
                 const btn = document.getElementById(`btn-${id}`);
+                const info = document.getElementById(`info-${id}`);
+                
                 if (btn) {
                     btn.innerHTML = `BUY ${buyData.count}<br>${f(buyData.cost)}`;
-                    btn.className = (credits >= buyData.cost && buyData.count > 0) ? "buy-btn" : "buy-btn disabled";
+                    // Fixed: ensures button lights up correctly when affordable
+                    btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
                 }
-                const info = document.getElementById(`info-${id}`);
                 if (info) {
                     info.innerHTML = `+${f(machineUpgrades[id].addAuto)}/s | Fleet: ${inventory[id]}`;
                 }
@@ -373,7 +373,12 @@
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
+            
+            // Dynamic Color Theme Fix
+            const accent = eraAccents[currentTier] || "#66cc66";
+            document.documentElement.style.setProperty('--dynamic-accent', accent);
             document.body.style.backgroundColor = eraBackgrounds[currentTier] || "#000";
+            
             checkAchievements();
         }
 
@@ -381,16 +386,25 @@
             let n = inventory[id] || 0;
             let b = machineUpgrades[id].baseCost;
             let r = growthRate;
-            let count = amount;
+            let count = 0;
+            let totalCost = 0;
 
             if (amount === 'max') {
-                let affordable = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
-                count = Math.max(0, affordable);
+                // Precision Fix: Add 1e-9 to avoid floor(0.9999) = 0 errors
+                count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r) + 1e-9);
+                count = Math.max(0, count);
+            } else {
+                count = amount;
+            }
+
+            if (count > 0) {
+                totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
+            } else if (amount !== 'max') {
+                // For showing cost of 1/10 even if you can't afford it
+                totalCost = b * (Math.pow(r, n) * (Math.pow(r, amount) - 1)) / (r - 1);
+                count = amount;
             }
             
-            if (count === 0 && amount !== 'max') count = amount;
-            
-            let totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
             if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e30; 
 
             return { cost: totalCost, count: count };
@@ -515,8 +529,8 @@
             text.className = 'floating-text';
             text.innerText = `+${f(window.currentClickValue)}`;
             
-            const x = e.clientX;
-            const y = e.clientY;
+            const x = e.clientX || e.touches[0].clientX;
+            const y = e.clientY || e.touches[0].clientY;
             
             text.style.left = (x - 20) + 'px';
             text.style.top = (y - 20) + 'px';
@@ -526,6 +540,7 @@
             updateUI();
         });
 
+        // Initialize machine list
         const mBox = document.getElementById('machine-container');
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
@@ -539,24 +554,24 @@
                 </div>`;
         });
 
-        // Loop handles production every 100ms
         setInterval(() => { 
             if(window.currentCps > 0) { 
-                // Precision Fix: Handle increments smaller than 1 properly
                 let gainPerTick = window.currentCps / 10;
-                
-                // Add sub-integer part to a buffer
                 fractionalCredits += (gainPerTick % 1);
                 
-                // If buffer is >= 1, add it to main credits
                 let carry = Math.floor(fractionalCredits);
                 credits += Math.floor(gainPerTick) + carry;
                 totalEarned += Math.floor(gainPerTick) + carry;
                 
                 fractionalCredits %= 1;
                 
-                // Only update visual UI if credits actually changed significantly
                 document.getElementById('creditCount').innerText = f(credits);
+                // Important: Update buttons visibility during idle gain
+                Object.keys(machineUpgrades).forEach(id => {
+                    const buyData = getCostOfMany(id, buyMode);
+                    const btn = document.getElementById(`btn-${id}`);
+                    if(btn) btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
+                });
             } 
         }, 100);
         
