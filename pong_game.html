@@ -3,241 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>classroom</title>
+    <title>Pro Pong - AI Edition</title>
     <style>
+        :root {
+            --primary: #6200ea;
+            --accent: #03dac6;
+            --bg: #121212;
+        }
         body {
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #1e1e2f;
+            background-color: var(--bg);
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
             overflow: hidden;
         }
         header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             width: 100%;
-            padding: 10px 20px;
-            background-color: #6200ea;
-            color: white;
+            padding: 15px 30px;
+            background-color: #1f1f1f;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-sizing: border-box;
         }
-        header div {
+        .score-board {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .controls {
             display: flex;
+            gap: 15px;
             align-items: center;
         }
-        canvas {
-            border: 2px solid #6200ea;
-            margin-top: 10px;
-        }
-        select {
-            margin-left: 10px;
-            padding: 5px;
-            font-size: 16px;
-            background-color: #3700b3;
+        select, button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 4px;
-        }
-        select:focus {
-            outline: none;
-        }
-        button {
-            margin-left: 20px;
-            padding: 5px 15px;
-            font-size: 16px;
-            background-color: #3700b3;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        button:hover {
-            background-color: #4a00e0;
+        button:hover { background-color: #7c4dff; }
+        canvas {
+            background-color: #000;
+            border: 4px solid #333;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(98, 0, 234, 0.2);
+            cursor: none; /* Hide cursor over game area */
         }
         #startButton {
             margin-top: 20px;
-            background-color: #6200ea;
-        }
-        #startButton:hover {
-            background-color: #4a00e0;
+            padding: 12px 40px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div>
-            Player: <span id="playerScore">0</span> | AI: <span id="aiScore">0</span>
-        </div>
-        <div>
-            Difficulty:
-            <select id="difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-            </select>
-        </div>
-        <button onclick="window.location.href='index.html'">Back to Home</button>
-    </header>
-    <canvas id="pong"></canvas>
-    <button id="startButton" onclick="toggleGame()">Start Game</button>
 
-    <script>
-        const canvas = document.getElementById("pong");
-        const ctx = canvas.getContext("2d");
+<header>
+    <div class="score-board">
+        PLAYER <span id="playerScore" style="color: var(--accent)">0</span> 
+        &mdash; 
+        AI <span id="aiScore" style="color: #ff4081">0</span>
+    </div>
+    <div class="controls">
+        <select id="difficulty">
+            <option value="easy">Beginner</option>
+            <option value="medium" selected>Intermediate</option>
+            <option value="hard">Grandmaster</option>
+        </select>
+        <button onclick="location.reload()">Reset Game</button>
+    </div>
+</header>
 
-        const paddleWidth = 10, paddleHeight = 100;
-        const ballRadius = 8;
+<canvas id="pong"></canvas>
+<button id="startButton" onclick="toggleGame()">Start Match</button>
 
-        let player1Y = 0, player2Y = 0;
-        let ballX = 0, ballY = 0;
-        let ballSpeedX = 5, ballSpeedY = 5;
+<script>
+    const canvas = document.getElementById("pong");
+    const ctx = canvas.getContext("2d");
+    const startButton = document.getElementById("startButton");
 
-        let isDragging = false, lastTouchY = 0;
-        let playerScore = 0, aiScore = 0;
-        let gameRunning = false; // Track if the game is running
+    // Game Constants
+    const PADDLE_WIDTH = 12;
+    const PADDLE_HEIGHT = 90;
+    const BALL_SIZE = 8;
+    const MAX_BOUNCE_ANGLE = Math.PI / 3; // 60 degrees
 
-        const difficultySelect = document.getElementById("difficulty");
-        const playerScoreElem = document.getElementById("playerScore");
-        const aiScoreElem = document.getElementById("aiScore");
-        const startButton = document.getElementById("startButton");
+    // Game State
+    let gameState = {
+        running: false,
+        playerY: 0,
+        aiY: 0,
+        ball: { x: 0, y: 0, dx: 0, dy: 0, speed: 0 },
+        scores: { player: 0, ai: 0 }
+    };
 
-        const difficultySettings = {
-            easy: { ballSpeed: 3, aiSpeed: 2 },
-            medium: { ballSpeed: 5, aiSpeed: 4 },
-            hard: { ballSpeed: 7, aiSpeed: 6 }
-        };
+    const difficultySettings = {
+        easy:   { ballSpeed: 6, aiSpeed: 3, jitter: 0.15 }, 
+        medium: { ballSpeed: 8, aiSpeed: 6, jitter: 0.05 },
+        hard:   { ballSpeed: 11, aiSpeed: 9, jitter: 0.01 }
+    };
 
-        let difficulty = "medium";
+    function init() {
+        resize();
+        resetPositions();
+        requestAnimationFrame(gameLoop);
+    }
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth * 0.8;
-            canvas.height = window.innerHeight * 0.6;
+    function resize() {
+        canvas.width = window.innerWidth * 0.85;
+        canvas.height = window.innerHeight * 0.65;
+        resetPositions();
+    }
 
-            player1Y = (canvas.height - paddleHeight) / 2;
-            player2Y = (canvas.height - paddleHeight) / 2;
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
+    function resetPositions() {
+        gameState.playerY = canvas.height / 2 - PADDLE_HEIGHT / 2;
+        gameState.aiY = canvas.height / 2 - PADDLE_HEIGHT / 2;
+        resetBall();
+    }
+
+    function resetBall() {
+        const diff = difficultySettings[document.getElementById("difficulty").value];
+        gameState.ball.x = canvas.width / 2;
+        gameState.ball.y = canvas.height / 2;
+        gameState.ball.speed = diff.ballSpeed;
+        
+        // Random direction, but mostly horizontal
+        let angle = (Math.random() * 0.4 - 0.2); // Small initial vertical slice
+        let direction = Math.random() > 0.5 ? 1 : -1;
+        
+        gameState.ball.dx = direction * gameState.ball.speed * Math.cos(angle);
+        gameState.ball.dy = gameState.ball.speed * Math.sin(angle);
+    }
+
+    function update() {
+        if (!gameState.running) return;
+
+        const ball = gameState.ball;
+        const diff = difficultySettings[document.getElementById("difficulty").value];
+
+        // 1. Move Ball
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        // 2. Wall Collisions
+        if (ball.y - BALL_SIZE < 0 || ball.y + BALL_SIZE > canvas.height) {
+            ball.dy *= -1;
+            ball.y = ball.y < 0 ? BALL_SIZE : canvas.height - BALL_SIZE;
         }
 
-        function drawPaddles() {
-            ctx.fillStyle = "#6200ea";
-            ctx.fillRect(0, player1Y, paddleWidth, paddleHeight);
-            ctx.fillRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight);
-        }
-
-        function drawBall() {
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#6200ea";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function drawScores() {
-            playerScoreElem.textContent = playerScore;
-            aiScoreElem.textContent = aiScore;
-        }
-
-        function updateBall() {
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
-
-            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) ballSpeedY = -ballSpeedY;
-
-            if (
-                ballX - ballRadius < paddleWidth &&
-                ballY > player1Y &&
-                ballY < player1Y + paddleHeight
-            ) {
-                ballSpeedX = -ballSpeedX;
-            } else if (
-                ballX + ballRadius > canvas.width - paddleWidth &&
-                ballY > player2Y &&
-                ballY < player2Y + paddleHeight
-            ) {
-                ballSpeedX = -ballSpeedX;
+        // 3. AI Movement (Predictive tracking)
+        const aiCenter = gameState.aiY + PADDLE_HEIGHT / 2;
+        // AI only moves if ball is coming towards it
+        if (ball.dx > 0) {
+            const reactionThreshold = canvas.width * (diff === 'easy' ? 0.3 : 0.6);
+            if (ball.x > canvas.width - reactionThreshold) {
+                if (aiCenter < ball.y - 10) gameState.aiY += diff.aiSpeed;
+                else if (aiCenter > ball.y + 10) gameState.aiY -= diff.aiSpeed;
             }
+        } else {
+            // Idle back to center
+            if (aiCenter < canvas.height / 2 - 10) gameState.aiY += 2;
+            else if (aiCenter > canvas.height / 2 + 10) gameState.aiY -= 2;
+        }
+        gameState.aiY = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, gameState.aiY));
 
-            if (ballX - ballRadius < 0) {
-                aiScore++;
-                resetBall();
-            } else if (ballX + ballRadius > canvas.width) {
-                playerScore++;
-                resetBall();
-            }
+        // 4. Paddle Collisions
+        let paddle = (ball.dx < 0) ? 
+            { x: 0, y: gameState.playerY, type: 'player' } : 
+            { x: canvas.width - PADDLE_WIDTH, y: gameState.aiY, type: 'ai' };
+
+        if (checkCollision(ball, paddle)) {
+            // Calculate hit position (-1 to 1)
+            let relativeIntersectY = (paddle.y + (PADDLE_HEIGHT / 2)) - ball.y;
+            let normalizedIntersectY = (relativeIntersectY / (PADDLE_HEIGHT / 2));
+            let bounceAngle = normalizedIntersectY * MAX_BOUNCE_ANGLE;
+
+            let dir = ball.dx < 0 ? 1 : -1;
+            ball.speed += 0.2; // Increase speed on every hit
+            ball.dx = dir * ball.speed * Math.cos(bounceAngle);
+            ball.dy = ball.speed * -Math.sin(bounceAngle);
         }
 
-        function resetBall() {
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
-            ballSpeedX = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
-            ballSpeedY = difficultySettings[difficulty].ballSpeed * (Math.random() > 0.5 ? 1 : -1);
-        }
-
-        function computerAI() {
-            const aiSpeed = difficultySettings[difficulty].aiSpeed;
-
-            if (ballY < player2Y + paddleHeight / 2) player2Y -= aiSpeed;
-            if (ballY > player2Y + paddleHeight / 2) player2Y += aiSpeed;
-
-            player2Y = Math.max(0, Math.min(canvas.height - paddleHeight, player2Y));
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPaddles();
-            drawBall();
-        }
-
-        function update() {
-            if (gameRunning) {
-                updateBall();
-                computerAI();
-                draw();
-                drawScores();
-            }
-        }
-
-        function onTouchMove(e) {
-            const touchY = e.touches[0].clientY - canvas.offsetTop;
-            player1Y = Math.max(0, Math.min(canvas.height - paddleHeight, touchY - paddleHeight / 2));
-        }
-
-        function onMouseMove(e) {
-            const mouseY = e.clientY - canvas.offsetTop;
-            player1Y = Math.max(0, Math.min(canvas.height - paddleHeight, mouseY - paddleHeight / 2));
-        }
-
-        function toggleGame() {
-            gameRunning = !gameRunning;
-            if (gameRunning) {
-                startButton.textContent = "Stop Game";
-                resetBall();
-                playerScore = 0;
-                aiScore = 0;
-                drawScores();
-            } else {
-                startButton.textContent = "Start Game";
-            }
-        }
-
-        difficultySelect.addEventListener("change", (e) => {
-            difficulty = e.target.value;
+        // 5. Scoring
+        if (ball.x < 0) {
+            gameState.scores.ai++;
             resetBall();
-            playerScore = 0;
-            aiScore = 0;
-            drawScores();
-        });
+        } else if (ball.x > canvas.width) {
+            gameState.scores.player++;
+            resetBall();
+        }
 
-        canvas.addEventListener("touchmove", onTouchMove);
-        canvas.addEventListener("mousemove", onMouseMove);
+        document.getElementById("playerScore").innerText = gameState.scores.player;
+        document.getElementById("aiScore").innerText = gameState.scores.ai;
+    }
 
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
+    function checkCollision(b, p) {
+        return b.x - BALL_SIZE < p.x + PADDLE_WIDTH &&
+               b.x + BALL_SIZE > p.x &&
+               b.y - BALL_SIZE < p.y + PADDLE_HEIGHT &&
+               b.y + BALL_SIZE > p.y;
+    }
 
-        setInterval(update, 1000 / 60);
-    </script>
+    function draw() {
+        // Clear background
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw center line
+        ctx.setLineDash([10, 15]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.strokeStyle = "#333";
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw Paddles
+        ctx.fillStyle = "#6200ea";
+        ctx.fillRect(0, gameState.playerY, PADDLE_WIDTH, PADDLE_HEIGHT);
+        ctx.fillStyle = "#ff4081";
+        ctx.fillRect(canvas.width - PADDLE_WIDTH, gameState.aiY, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+        // Draw Ball
+        ctx.beginPath();
+        ctx.arc(gameState.ball.x, gameState.ball.y, BALL_SIZE, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function toggleGame() {
+        gameState.running = !gameState.running;
+        startButton.innerText = gameState.running ? "Pause Game" : "Resume Match";
+        if (gameState.running && gameState.ball.speed === 0) resetBall();
+    }
+
+    // Input Listeners
+    canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseY = e.clientY - rect.top;
+        gameState.playerY = mouseY - PADDLE_HEIGHT / 2;
+        // Clamp
+        if (gameState.playerY < 0) gameState.playerY = 0;
+        if (gameState.playerY > canvas.height - PADDLE_HEIGHT) gameState.playerY = canvas.height - PADDLE_HEIGHT;
+    });
+
+    window.addEventListener("resize", resize);
+    init();
+
+</script>
 </body>
 </html>
