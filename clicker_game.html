@@ -81,7 +81,7 @@
             padding: 15px 40px;
             display: inline-block;
             box-shadow: 0 0 20px rgba(0,0,0,0.6);
-            transition: transform 0.1s;
+            transition: transform 0.1s, border-color 0.5s;
         }
 
         .credit-display { 
@@ -138,9 +138,11 @@
         .tier-2 { border-radius: 15%; background: #9e9e9e; border: 6px solid #555; }
         .tier-3 { border-radius: 8px; background: #4682b4; border: 4px solid #fff; }
         .tier-4 { border-radius: 0; background: #333; border: 5px solid var(--gold); }
-        .tier-9 { animation: pulse 2s infinite; border-radius: 40%; background: var(--quantum); }
+        .tier-9 { animation: pulse 2s infinite; border-radius: 40%; background: var(--quantum); border: 4px solid #fff; }
+        .tier-10 { border-radius: 20%; background: #000; border: 4px double #ff00ff; animation: glitch 1s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
+        @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
 
         .shop { width: 100%; padding-bottom: 100px; }
         .section-title { 
@@ -164,8 +166,9 @@
             background: rgba(255,255,255,0.03); color: white; border: 1px solid var(--dynamic-accent); 
             padding: 12px; border-radius: 8px; cursor: pointer; min-width: 120px; 
             font-weight: 800; font-size: 0.7rem; font-family: var(--font-mono);
+            transition: all 0.2s;
         }
-        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+        .buy-btn.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); border-color: #444; }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 30px 20px; overflow-y: auto; }
         
@@ -259,6 +262,7 @@
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
             <button class="nav-btn" onclick="currentTier = Math.min(currentTier + 1, tierUpgrades.length); applyTierVisuals(); updateUI(); updateTicker();">Instant Evolve</button>
             <button class="nav-btn" onclick="unlockAllAch();">Unlock All Milestones</button>
+            <button class="nav-btn" onclick="multiplyAllBuildings(10);">Add 10 to All Buildings</button>
             <button class="nav-btn" onclick="credits = 0; updateUI();" style="border-color:#ff5555">Reset Credits to 0</button>
         </div>
     </div>
@@ -332,7 +336,11 @@
             { id: 'a1', name: "Novice", desc: "Click 1 time", icon: "🔨", check: () => totalClicks >= 1 },
             { id: 'a2', name: "Grinder", desc: "Click 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
             { id: 'a3', name: "Wealthy", desc: "Earn 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Tycoon", desc: "Earn 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 }
+            { id: 'a4', name: "Tycoon", desc: "Earn 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 },
+            { id: 'a5', name: "Click King", desc: "Click 1,000 times", icon: "👑", check: () => totalClicks >= 1000 },
+            { id: 'a6', name: "Automation", desc: "Own 50 Rock Pickers", icon: "🤖", check: () => inventory.picker >= 50 },
+            { id: 'a7', name: "Century", desc: "Reach Era 3", icon: "🏗️", check: () => currentTier >= 3 },
+            { id: 'a8', name: "Godhood", desc: "Earn 1 Quadrillion Credits", icon: "✨", check: () => totalEarned >= 1e15 }
         ];
 
         let inventory = {};
@@ -371,7 +379,6 @@
             toggleOverlay('settings-overlay');
         }
 
-        // Calculation including the 2x boost every 25 buildings
         function getBuildingPower(id) {
             let base = machineUpgrades[id].addAuto;
             let count = inventory[id];
@@ -388,7 +395,8 @@
 
             if (amount === 'max') {
                 if (credits <= 0) return { cost: 0, count: 0 };
-                count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1) / Math.log(r));
+                // Buy Max Precision Fix: We use floor on count and add a tiny epsilon to the log to handle JS math drifts
+                count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1.0000000001) / Math.log(r));
                 count = Math.max(0, count);
             } else {
                 count = amount;
@@ -398,6 +406,7 @@
                 totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
             }
             
+            // Safety check for infinity/max buy fix
             if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e60; 
 
             return { cost: totalCost, count: count };
@@ -437,6 +446,8 @@
                 if (btn) {
                     btn.innerHTML = `BUY ${buyData.count > 0 ? buyData.count : (buyMode === 'max' ? 0 : buyMode)}<br>${f(buyData.cost)}`;
                     btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
+                    // UI Visibility fix: Ensure borders are always visible even in Dark/Void eras
+                    btn.style.borderColor = varAccent();
                 }
                 if (info) {
                     let boost = Math.pow(2, Math.floor(inventory[id] / 25));
@@ -453,10 +464,11 @@
                             <h3 style="margin:0; font-size:0.9rem;">${next.name}</h3>
                             <p style="font-size:0.7rem; margin:5px 0; color:#aaa;">New Output: ${f(next.clickValue)}/click</p>
                         </div>
-                        <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()">
+                        <button class="buy-btn ${credits < next.cost ? 'disabled' : ''}" onclick="evolveTier()" id="evolve-btn-ui">
                             EVOLVE<br>${f(next.cost)}
                         </button>
                     </div>`;
+                document.getElementById('evolve-btn-ui').style.borderColor = varAccent();
             } else {
                 tBox.innerHTML = `<div class="upgrade-card" style="justify-content:center"><p style="color:var(--quantum); font-weight:900; margin:0">SINGULARITY ACHIEVED</p></div>`;
             }
@@ -468,6 +480,10 @@
             document.body.style.backgroundColor = eraBackgrounds[currentTier] || "#000";
             
             checkAchievements();
+        }
+
+        function varAccent() {
+            return eraAccents[currentTier] || "#66cc66";
         }
 
         function buyMachine(id) {
@@ -569,6 +585,14 @@
             updateUI();
         }
 
+        function multiplyAllBuildings(num) {
+            Object.keys(inventory).forEach(key => {
+                inventory[key] += num;
+            });
+            notify(`Added ${num} to all units`);
+            updateUI();
+        }
+
         function redeemCode() {
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
@@ -587,13 +611,27 @@
 
         document.getElementById('circle').addEventListener('click', (e) => {
             let multiplier = 1;
-            if (Math.random() < 0.05) multiplier = 5;
+            const isCrit = Math.random() < 0.05;
+            if (isCrit) multiplier = 5;
+            
+            // Crit Effect: Visual shake/pulse
+            const circle = document.getElementById('circle');
+            if(isCrit) {
+                circle.style.transform = 'scale(1.2) rotate(10deg)';
+                setTimeout(() => circle.style.transform = '', 100);
+                const container = document.getElementById('credit-container');
+                container.style.borderColor = "var(--gold)";
+                setTimeout(() => container.style.borderColor = "", 200);
+            }
+
             const gain = window.currentClickValue * multiplier;
             credits += gain; totalEarned += gain; totalClicks++;
+            
             const text = document.createElement('div');
             text.className = 'floating-text';
-            text.innerText = multiplier > 1 ? `CRIT! +${f(gain)}` : `+${f(gain)}`;
-            if(multiplier > 1) text.style.color = "var(--gold)";
+            text.innerText = isCrit ? `CRIT! +${f(gain)}` : `+${f(gain)}`;
+            if(isCrit) text.style.color = "var(--gold)";
+            
             const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             text.style.left = (x - 20) + 'px';
