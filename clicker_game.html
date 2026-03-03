@@ -154,6 +154,12 @@
             padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
         }
 
+        .placeholder-card {
+            background: #000; border: 1px dashed #333; border-radius: 12px;
+            padding: 16px; margin-bottom: 12px; display: flex; justify-content: center; align-items: center;
+            height: 75px; color: #333; font-size: 1.5rem; font-weight: 900;
+        }
+
         .buy-btn { 
             background: rgba(255,255,255,0.03); color: white; border: 1px solid var(--dynamic-accent); 
             padding: 12px; border-radius: 8px; cursor: pointer; min-width: 120px; 
@@ -233,7 +239,7 @@
             <div class="stat-item"><span class="stat-label">Current Tier</span><div class="stat-value" id="stat-tier">0</div></div>
         </div>
 
-        <h2 class="section-title">Milestones (How to Unlock)</h2>
+        <h2 class="section-title">Milestones</h2>
         <div id="ach-container" class="ach-grid"></div>
         
         <h2 class="section-title">Management</h2>
@@ -262,7 +268,7 @@
         let adminUnlocked = false, unlockedAchievements = [], buyMode = 1, usedCodes = [];
         let startTime = Date.now();
         let totalPlaytime = 0;
-        const growthRate = 1.13; 
+        const growthRate = 1.15; 
         let fractionalCredits = 0;
 
         window.currentCps = 0;
@@ -323,14 +329,10 @@
         };
 
         const achievements = [
-            { id: 'a1', name: "Novice", desc: "Click the main object 1 time", icon: "🔨", check: () => totalClicks >= 1 },
-            { id: 'a2', name: "Grinder", desc: "Click the main object 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'a3', name: "Wealthy", desc: "Earn a total of 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Tycoon", desc: "Earn a total of 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 },
-            { id: 'up1', name: "Manual Labor", desc: "Purchase 1 Rock Picker", icon: "🪨", check: () => inventory.picker > 0 },
-            { id: 'up4', name: "Full Steam Ahead", desc: "Purchase 1 Steam Engine", icon: "🚂", check: () => inventory.engine > 0 },
-            { id: 'up6', name: "The Big Boss", desc: "Purchase 1 Power Plant", icon: "🏭", check: () => inventory.plant > 0 },
-            { id: 'up10', name: "Sub-Atomic", desc: "Purchase 1 Quantum Rig", icon: "⚛️", check: () => inventory.quantum > 0 }
+            { id: 'a1', name: "Novice", desc: "Click 1 time", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'a2', name: "Grinder", desc: "Click 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
+            { id: 'a3', name: "Wealthy", desc: "Earn 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
+            { id: 'a4', name: "Tycoon", desc: "Earn 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 }
         ];
 
         let inventory = {};
@@ -369,6 +371,14 @@
             toggleOverlay('settings-overlay');
         }
 
+        // Calculation including the 2x boost every 25 buildings
+        function getBuildingPower(id) {
+            let base = machineUpgrades[id].addAuto;
+            let count = inventory[id];
+            let multiplier = Math.pow(2, Math.floor(count / 25));
+            return base * multiplier;
+        }
+
         function getCostOfMany(id, amount) {
             let n = inventory[id] || 0;
             let b = machineUpgrades[id].baseCost;
@@ -398,7 +408,7 @@
             
             let totalCps = 0;
             Object.keys(machineUpgrades).forEach(id => {
-                totalCps += machineUpgrades[id].addAuto * (inventory[id] || 0);
+                totalCps += getBuildingPower(id) * (inventory[id] || 0);
             });
             document.getElementById('cpsCount').innerText = f(totalCps);
             window.currentCps = totalCps;
@@ -411,13 +421,17 @@
                 const btn = document.getElementById(`btn-${id}`);
                 const info = document.getElementById(`info-${id}`);
                 const card = document.getElementById(`card-${id}`);
+                const placeholder = document.getElementById(`placeholder-${id}`);
                 
-                // Progressive Unlocking Logic
                 const firstCost = machineUpgrades[id].baseCost;
-                if (inventory[id] > 0 || credits >= (firstCost * 0.7) || totalEarned >= firstCost) {
+                const isVisible = (inventory[id] > 0 || credits >= (firstCost * 0.7) || totalEarned >= firstCost);
+
+                if (isVisible) {
                     card.style.display = 'flex';
+                    placeholder.style.display = 'none';
                 } else {
                     card.style.display = 'none';
+                    placeholder.style.display = 'flex';
                 }
 
                 if (btn) {
@@ -425,7 +439,8 @@
                     btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
                 }
                 if (info) {
-                    info.innerHTML = `+${f(machineUpgrades[id].addAuto)}/s | Fleet: ${inventory[id]}`;
+                    let boost = Math.pow(2, Math.floor(inventory[id] / 25));
+                    info.innerHTML = `+${f(machineUpgrades[id].addAuto * boost)}/s | Fleet: ${inventory[id]} <br><span style="color:var(--gold); font-size:0.55rem">${inventory[id]%25}/25 to 2x Boost</span>`;
                 }
             });
 
@@ -443,7 +458,7 @@
                         </button>
                     </div>`;
             } else {
-                tBox.innerHTML = `<p style="color:var(--quantum); text-align:center; font-weight:900; width:100%">SINGULARITY ACHIEVED</p>`;
+                tBox.innerHTML = `<div class="upgrade-card" style="justify-content:center"><p style="color:var(--quantum); font-weight:900; margin:0">SINGULARITY ACHIEVED</p></div>`;
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
@@ -531,15 +546,9 @@
         function updateTicker() {
             const tickerEl = document.getElementById('ticker-text');
             let eraKey = "start";
-            
-            if (currentTier > 0) {
-                eraKey = tierUpgrades[currentTier-1].eraKey || "start";
-            }
-            
+            if (currentTier > 0) eraKey = tierUpgrades[currentTier-1].eraKey || "start";
             const list = tickerData[eraKey] || tickerData.start;
             const randomHeadline = list[Math.floor(Math.random()*list.length)];
-            
-            // Restart animation by cloning element
             tickerEl.innerText = randomHeadline;
         }
 
@@ -563,22 +572,13 @@
         function redeemCode() {
             const input = document.getElementById('promo-code');
             const val = input.value.toUpperCase().trim();
-            
             if(val === "FREEBIE") {
                 if(!usedCodes.includes(val)) {
                     credits += 5000; usedCodes.push(val); notify("+5,000 Credits!");
-                } else {
-                    notify("Already Claimed");
-                }
+                } else notify("Already Claimed");
             } else if (val === "AA.01") {
-                if(!adminUnlocked) {
-                   adminUnlocked = true; notify("Console Access Granted");
-                } else {
-                   notify("Already Claimed");
-                }
-            } else {
-                notify("Invalid Code");
-            }
+                if(!adminUnlocked) { adminUnlocked = true; notify("Console Access Granted"); }
+            } else notify("Invalid Code");
             input.value = "";
             updateUI();
         }
@@ -588,20 +588,16 @@
         document.getElementById('circle').addEventListener('click', (e) => {
             let multiplier = 1;
             if (Math.random() < 0.05) multiplier = 5;
-
             const gain = window.currentClickValue * multiplier;
             credits += gain; totalEarned += gain; totalClicks++;
-            
             const text = document.createElement('div');
             text.className = 'floating-text';
             text.innerText = multiplier > 1 ? `CRIT! +${f(gain)}` : `+${f(gain)}`;
             if(multiplier > 1) text.style.color = "var(--gold)";
-            
             const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             text.style.left = (x - 20) + 'px';
             text.style.top = (y - 20) + 'px';
-            
             document.body.appendChild(text);
             setTimeout(() => text.remove(), 700);
             updateUI();
@@ -611,10 +607,11 @@
         mBox.innerHTML = ""; 
         Object.keys(machineUpgrades).forEach(id => {
             mBox.innerHTML += `
+                <div class="placeholder-card" id="placeholder-${id}">?</div>
                 <div class="upgrade-card" id="card-${id}" style="display:none">
                     <div>
                         <h3 style="margin:0; font-size:0.85rem;">${machineUpgrades[id].name}</h3>
-                        <p id="info-${id}" style="margin:5px 0; font-size:0.65rem; color:#888;"></p>
+                        <p id="info-${id}" style="margin:5px 0; font-size:0.65rem; color:#888; line-height:1.4"></p>
                     </div>
                     <button class="buy-btn" id="btn-${id}" onclick="buyMachine('${id}')"></button>
                 </div>`;
@@ -633,9 +630,8 @@
         }, 100);
 
         setInterval(updateUI, 1000);
-        setInterval(updateTicker, 15000); // 15s news cycle
+        setInterval(updateTicker, 15000);
         setInterval(() => saveGame(false), 30000);
-        
         loadGame();
     </script>
 </body>
