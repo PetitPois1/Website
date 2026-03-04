@@ -172,43 +172,60 @@
         #mobile-controls {
             display: none; /* Hidden by default, toggled via JS */
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 150px;
-            height: 150px;
-            pointer-events: auto;
+            bottom: 40px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
             z-index: 40;
         }
 
         #mobile-controls.active {
-            display: block;
+            display: flex;
+        }
+
+        .controls-left, .controls-right {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .controls-right {
+            flex-direction: column;
+            align-items: center;
         }
 
         .d-pad-btn {
-            position: absolute;
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 65px;
+            height: 65px;
+            background: rgba(10, 20, 30, 0.7);
+            border: 2px solid #00e5ff;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: white;
-            font-size: 1.2rem;
+            color: #00e5ff;
+            font-size: 1.8rem;
             user-select: none;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.2);
+            transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .d-pad-btn:active { background: rgba(0, 210, 255, 0.3); }
-        .d-up { top: 0; left: 50%; transform: translateX(-50%); }
-        .d-down { bottom: 0; left: 50%; transform: translateX(-50%); }
-        .d-left { top: 50%; left: 0; transform: translateY(-50%); }
-        .d-right { top: 50%; right: 0; transform: translateY(-50%); }
+        .d-pad-btn:active { 
+            background: rgba(0, 229, 255, 0.3); 
+            transform: scale(0.92);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+            color: white;
+        }
 
         @media (max-width: 768px) {
             .hud-panel { padding: 5px; font-size: 0.8rem; }
             .pixel-font { font-size: 0.7rem; }
-            #mobile-controls { display: block; }
         }
     </style>
 </head>
@@ -286,10 +303,14 @@
 
         <!-- Touch Controls (Mobile) -->
         <div id="mobile-controls">
-            <div class="d-pad-btn d-up"><i class="fas fa-arrow-up"></i></div>
-            <div class="d-pad-btn d-down"><i class="fas fa-arrow-down"></i></div>
-            <div class="d-pad-btn d-left"><i class="fas fa-arrow-left"></i></div>
-            <div class="d-pad-btn d-right"><i class="fas fa-arrow-right"></i></div>
+            <div class="controls-left">
+                <div class="d-pad-btn d-left"><i class="fas fa-arrow-left"></i></div>
+                <div class="d-pad-btn d-right"><i class="fas fa-arrow-right"></i></div>
+            </div>
+            <div class="controls-right">
+                <div class="d-pad-btn d-up"><i class="fas fa-arrow-up"></i></div>
+                <div class="d-pad-btn d-down"><i class="fas fa-arrow-down"></i></div>
+            </div>
         </div>
     </div>
 
