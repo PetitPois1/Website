@@ -69,12 +69,31 @@
                         inset -2px -2px 4px rgba(0, 0, 0, 0.3);
         }
 
+        /* Hover placement preview */
         .cell.preview {
             background-color: rgba(255, 255, 255, 0.3) !important;
             box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
             border-radius: 4px;
             transform: scale(0.9);
             transition: all 0.05s;
+        }
+
+        /* Destruction prediction preview */
+        .cell.preview-clear::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background-color: rgba(239, 68, 68, 0.4);
+            box-shadow: inset 0 0 8px rgba(239, 68, 68, 0.8);
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 5;
+            animation: pulseDanger 0.6s infinite alternate;
+        }
+
+        @keyframes pulseDanger {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
         }
 
         /* Shape Tray Styles */
@@ -129,13 +148,35 @@
         }
 
         @keyframes clearLine {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); filter: brightness(1.5); }
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            30% { transform: scale(1.15); filter: brightness(2); box-shadow: 0 0 15px rgba(255,255,255,0.8); z-index: 20; }
             100% { transform: scale(0); opacity: 0; }
         }
 
+        @keyframes longShakeBoard {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 4px) rotate(-1.5deg); }
+            20%, 40%, 60%, 80% { transform: translate(5px, -4px) rotate(1.5deg); }
+        }
+
+        @keyframes insaneShakeBoard {
+            0%, 100% { transform: translate(0, 0) rotate(0) scale(1); filter: hue-rotate(0deg); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-10px, 10px) rotate(-4deg) scale(1.05); filter: hue-rotate(45deg); }
+            20%, 40%, 60%, 80% { transform: translate(10px, -10px) rotate(4deg) scale(0.95); filter: hue-rotate(-45deg); }
+        }
+
+        @keyframes insaneClearLine {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+            40% { transform: scale(2.5) rotate(180deg); filter: brightness(3) hue-rotate(180deg); box-shadow: 0 0 30px rgba(255,255,255,1); z-index: 50; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; filter: hue-rotate(360deg); }
+        }
+
         .anim-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .anim-clear { animation: clearLine 0.3s ease-out forwards; z-index: 10; }
+        .anim-clear { animation: clearLine 0.4s ease-out forwards; z-index: 10; }
+        .anim-insane-clear { animation: insaneClearLine 0.7s cubic-bezier(0.5, 0, 0.2, 1) forwards; z-index: 20; }
+        
+        .shake-long { animation: longShakeBoard 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .shake-insane { animation: insaneShakeBoard 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
         
         @keyframes floatUp {
             0% { transform: translateY(0) scale(1); opacity: 1; }
@@ -162,12 +203,8 @@
         </h1>
         
         <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center border border-slate-700">
-            <label class="flex items-center gap-4 text-white text-2xl mb-8 cursor-pointer select-none">
-                <input type="checkbox" id="insane-mode" class="w-8 h-8 rounded accent-purple-500 cursor-pointer">
-                <span class="font-semibold text-red-400">🔥 INSANE MODE 🔥</span>
-            </label>
-            <p class="text-slate-400 text-center mb-8 max-w-xs text-sm">
-                Warning: Adds 100 bouncing balls to the screen while you try to play. Good luck.
+            <p class="text-slate-400 text-center mb-8 max-w-xs text-md">
+                Drag and drop shapes onto the board. Fill entire rows or columns to clear them and score points!
             </p>
             
             <button onclick="startGame()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-12 rounded-xl text-2xl shadow-lg transform transition active:scale-95">
@@ -222,31 +259,31 @@
         const GRID_SIZE = 8;
         const CELL_BASE_SIZE = 40; 
         
-        // Shape Library
+        // Shape Library with balancing weights (higher w = more likely to appear)
         const SHAPE_DEFS = [
-            { m: [[1]], c: '#3b82f6' },
-            { m: [[1,1]], c: '#10b981' },
-            { m: [[1],[1]], c: '#10b981' }, 
-            { m: [[1,1,1]], c: '#f59e0b' },
-            { m: [[1],[1],[1]], c: '#f59e0b' },
-            { m: [[1,1,1,1]], c: '#ef4444' },
-            { m: [[1],[1],[1],[1]], c: '#ef4444' },
-            { m: [[1,1,1,1,1]], c: '#8b5cf6' },
-            { m: [[1],[1],[1],[1],[1]], c: '#8b5cf6' },
-            { m: [[1,1],[1,1]], c: '#ec4899' },
-            { m: [[1,1,1],[1,1,1],[1,1,1]], c: '#6366f1' },
-            { m: [[1,0],[1,1]], c: '#14b8a6' },
-            { m: [[0,1],[1,1]], c: '#14b8a6' },
-            { m: [[1,1],[1,0]], c: '#14b8a6' },
-            { m: [[1,1],[0,1]], c: '#14b8a6' },
-            { m: [[1,0,0],[1,0,0],[1,1,1]], c: '#f97316' },
-            { m: [[0,0,1],[0,0,1],[1,1,1]], c: '#f97316' },
-            { m: [[1,1,1],[1,0,0],[1,0,0]], c: '#f97316' },
-            { m: [[1,1,1],[0,0,1],[0,0,1]], c: '#f97316' },
-            { m: [[1,1,1],[0,1,0]], c: '#06b6d4' },
-            { m: [[0,1,0],[1,1,1]], c: '#06b6d4' },
-            { m: [[1,0],[1,1],[1,0]], c: '#06b6d4' },
-            { m: [[0,1],[1,1],[0,1]], c: '#06b6d4' }
+            { m: [[1]], c: '#3b82f6', w: 5 }, // 1x1
+            { m: [[1,1]], c: '#10b981', w: 12 }, // 1x2
+            { m: [[1],[1]], c: '#10b981', w: 12 }, // 2x1
+            { m: [[1,1,1]], c: '#f59e0b', w: 10 }, // 1x3
+            { m: [[1],[1],[1]], c: '#f59e0b', w: 10 }, // 3x1
+            { m: [[1,1,1,1]], c: '#ef4444', w: 6 }, // 1x4
+            { m: [[1],[1],[1],[1]], c: '#ef4444', w: 6 }, // 4x1
+            { m: [[1,1,1,1,1]], c: '#8b5cf6', w: 2 }, // 1x5
+            { m: [[1],[1],[1],[1],[1]], c: '#8b5cf6', w: 2 }, // 5x1
+            { m: [[1,1],[1,1]], c: '#ec4899', w: 12 }, // 2x2
+            { m: [[1,1,1],[1,1,1],[1,1,1]], c: '#6366f1', w: 1 }, // 3x3
+            { m: [[1,0],[1,1]], c: '#14b8a6', w: 8 }, // Small L
+            { m: [[0,1],[1,1]], c: '#14b8a6', w: 8 }, // Small L
+            { m: [[1,1],[1,0]], c: '#14b8a6', w: 8 }, // Small L
+            { m: [[1,1],[0,1]], c: '#14b8a6', w: 8 }, // Small L
+            { m: [[1,0,0],[1,0,0],[1,1,1]], c: '#f97316', w: 4 }, // Large L
+            { m: [[0,0,1],[0,0,1],[1,1,1]], c: '#f97316', w: 4 }, // Large L
+            { m: [[1,1,1],[1,0,0],[1,0,0]], c: '#f97316', w: 4 }, // Large L
+            { m: [[1,1,1],[0,0,1],[0,0,1]], c: '#f97316', w: 4 }, // Large L
+            { m: [[1,1,1],[0,1,0]], c: '#06b6d4', w: 6 }, // T Shape
+            { m: [[0,1,0],[1,1,1]], c: '#06b6d4', w: 6 }, // T Shape
+            { m: [[1,0],[1,1],[1,0]], c: '#06b6d4', w: 6 }, // T Shape Side
+            { m: [[0,1],[1,1],[0,1]], c: '#06b6d4', w: 6 }  // T Shape Side
         ];
 
         // --- State Variables ---
@@ -266,6 +303,7 @@
         let isInsaneMode = false;
         let ballsArr = [];
         let animationFrameId;
+        let secretCorners = new Set();
 
         // DOM Elements
         const boardEl = document.getElementById('board');
@@ -281,22 +319,44 @@
         const modalEl = document.getElementById('game-over-modal');
         const finalScoreEl = document.getElementById('final-score');
         const startScreenEl = document.getElementById('start-screen');
-        const insaneToggleEl = document.getElementById('insane-mode');
 
         function startGame() {
             startScreenEl.style.display = 'none';
-            isInsaneMode = insaneToggleEl.checked;
-            
             initGame();
+        }
 
+        // --- Secret Insane Mode Listener ---
+        boardContainerEl.addEventListener('pointerdown', (e) => {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            
+            const corners = ['cell-0-0', 'cell-0-7', 'cell-7-0', 'cell-7-7'];
+            if (corners.includes(cell.id)) {
+                secretCorners.add(cell.id);
+                if (secretCorners.size === 4) {
+                    toggleInsaneMode();
+                    secretCorners.clear(); // Reset so it can be toggled off
+                }
+            } else {
+                secretCorners.clear(); // Break combo if clicked elsewhere
+            }
+        });
+
+        function toggleInsaneMode() {
+            isInsaneMode = !isInsaneMode;
             if (isInsaneMode) {
+                showFloatingText("🔥 INSANE MODE ACTIVATED 🔥");
                 spawnBalls();
+            } else {
+                showFloatingText("Normal Mode");
+                ballsArr.forEach(b => b.el.remove());
+                ballsArr = [];
+                cancelAnimationFrame(animationFrameId);
             }
         }
 
         // --- Insane Mode Ball Physics ---
         function spawnBalls() {
-            // Clean up old balls if any
             ballsArr.forEach(b => b.el.remove());
             ballsArr = [];
             cancelAnimationFrame(animationFrameId);
@@ -310,13 +370,12 @@
                 ball.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
                 ball.style.borderRadius = '50%';
                 ball.style.boxShadow = '0 0 10px currentColor';
-                ball.style.pointerEvents = 'none'; // Crucial so they don't block clicks
+                ball.style.pointerEvents = 'none';
                 ball.style.zIndex = '1500';
                 
                 let x = Math.random() * (window.innerWidth - size);
                 let y = Math.random() * (window.innerHeight - size);
                 
-                // REALLY fast speeds
                 let vx = (Math.random() - 0.5) * 25; 
                 let vy = (Math.random() - 0.5) * 25;
 
@@ -350,6 +409,7 @@
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
             score = 0;
             updateScoreDisplay();
+            secretCorners.clear();
             
             boardEl.innerHTML = '';
             for (let r = 0; r < GRID_SIZE; r++) {
@@ -373,10 +433,19 @@
             currentCellSize = (rect.width - (GRID_SIZE - 1) * 2) / GRID_SIZE;
         }
 
+        function getRandomShape() {
+            const totalWeight = SHAPE_DEFS.reduce((sum, shape) => sum + shape.w, 0);
+            let random = Math.random() * totalWeight;
+            for (const shape of SHAPE_DEFS) {
+                if (random < shape.w) return shape;
+                random -= shape.w;
+            }
+            return SHAPE_DEFS[0]; // fallback
+        }
+
         function generateNewShapes() {
             for (let i = 0; i < 3; i++) {
-                const randomShape = SHAPE_DEFS[Math.floor(Math.random() * SHAPE_DEFS.length)];
-                currentShapes[i] = JSON.parse(JSON.stringify(randomShape));
+                currentShapes[i] = JSON.parse(JSON.stringify(getRandomShape()));
             }
             renderTray();
             checkGameOver();
@@ -586,7 +655,50 @@
             return true;
         }
 
+        // --- Simulate clears for hover preview ---
+        function getSimulatedClears(shape, startR, startC) {
+            let rowsToClear = [];
+            let colsToClear = [];
+            let simGrid = grid.map(row => [...row]); 
+
+            for (let r = 0; r < shape.m.length; r++) {
+                for (let c = 0; c < shape.m[0].length; c++) {
+                    if (shape.m[r][c] === 1) {
+                        simGrid[startR + r][startC + c] = shape.c; // Temporary fill
+                    }
+                }
+            }
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                if (simGrid[r].every(cell => cell !== null)) rowsToClear.push(r);
+            }
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let isFull = true;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (simGrid[r][c] === null) { isFull = false; break; }
+                }
+                if (isFull) colsToClear.push(c);
+            }
+
+            return { rows: rowsToClear, cols: colsToClear };
+        }
+
         function drawPreview(shape, startR, startC) {
+            const clears = getSimulatedClears(shape, startR, startC);
+            const clearCells = new Set();
+            
+            // Register which lines are going to pop
+            clears.rows.forEach(r => { for(let c=0; c<GRID_SIZE; c++) clearCells.add(`${r},${c}`); });
+            clears.cols.forEach(c => { for(let r=0; r<GRID_SIZE; r++) clearCells.add(`${r},${c}`); });
+
+            // Apply danger pulse to blocks that will blow up
+            clearCells.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                const cell = document.getElementById(`cell-${r}-${c}`);
+                if (cell) cell.classList.add('preview-clear');
+            });
+
+            // Highlight the hovered shape
             for (let r = 0; r < shape.m.length; r++) {
                 for (let c = 0; c < shape.m[0].length; c++) {
                     if (shape.m[r][c] === 1) {
@@ -599,6 +711,7 @@
 
         function clearPreviews() {
             document.querySelectorAll('.cell.preview').forEach(el => el.classList.remove('preview'));
+            document.querySelectorAll('.cell.preview-clear').forEach(el => el.classList.remove('preview-clear'));
         }
 
         function placeShape(shape, startR, startC) {
@@ -620,15 +733,69 @@
             updateBoardVisuals();
         }
 
+        // --- Visual Effects ---
+        function spawnParticles(rect, color, isInsane) {
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const count = isInsane ? 15 : 8; 
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+                
+                // Randomize particle sizes and styling
+                const size = (Math.random() * 6 + 4) * (isInsane ? 1.5 : 1);
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = isInsane ? `hsl(${Math.random() * 360}, 100%, 60%)` : color;
+                
+                // Random shapes in insane mode
+                if (isInsane && Math.random() > 0.5) particle.style.borderRadius = '2px'; 
+                else particle.style.borderRadius = '50%';
+                
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '2000';
+                if (isInsane) particle.style.boxShadow = `0 0 10px ${particle.style.backgroundColor}`;
+                
+                document.body.appendChild(particle);
+
+                // Arc physics
+                const angle = Math.random() * Math.PI * 2;
+                const force = Math.random() * (isInsane ? 150 : 80) + 40;
+                const tx = Math.cos(angle) * force;
+                const initialTy = -Math.abs(Math.sin(angle) * force) - (isInsane ? 100 : 40); // Initial upward kick
+                const dropTy = isInsane ? 400 : 250; // Gravity pull
+
+                // Animate using Web Animations API (Simulating Gravity)
+                particle.animate([
+                    { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${initialTy}px)) rotate(${Math.random() * 180}deg)`, opacity: 1, offset: 0.3 },
+                    { transform: `translate(calc(-50% + ${tx * 1.5}px), calc(-50% + ${initialTy + dropTy}px)) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                ], {
+                    duration: 800 + Math.random() * 400,
+                    easing: 'ease-in'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
         async function processTurn() {
             const linesCleared = checkAndClearLines();
             
             if (linesCleared > 0) {
+                // Shake the board for impact!
+                const shakeClass = isInsaneMode ? 'shake-insane' : 'shake-long';
+                const shakeTime = isInsaneMode ? 800 : 600;
+                
+                boardContainerEl.classList.add(shakeClass);
+                setTimeout(() => boardContainerEl.classList.remove(shakeClass), shakeTime);
+
                 const lineScore = (linesCleared * (linesCleared + 1) / 2) * 100;
                 addScore(lineScore);
-                showFloatingText(`Combo x${linesCleared}!`);
+                showFloatingText(isInsaneMode ? `INSANE COMBO x${linesCleared}!!!` : `Combo x${linesCleared}!`);
                 
-                await new Promise(res => setTimeout(res, 300));
+                await new Promise(res => setTimeout(res, isInsaneMode ? 500 : 300));
                 updateBoardVisuals();
             }
 
@@ -672,11 +839,21 @@
 
             cellsToClear.forEach(key => {
                 const [r, c] = key.split(',').map(Number);
+                const blockColor = grid[r][c]; // Get color before clearing
                 grid[r][c] = null; 
                 
                 const cellEl = document.getElementById(`cell-${r}-${c}`);
-                cellEl.classList.add('anim-clear');
-                setTimeout(() => cellEl.classList.remove('anim-clear'), 300);
+                const rect = cellEl.getBoundingClientRect();
+                
+                if (blockColor) {
+                    spawnParticles(rect, blockColor, isInsaneMode);
+                }
+
+                const clearClass = isInsaneMode ? 'anim-insane-clear' : 'anim-clear';
+                const clearTime = isInsaneMode ? 700 : 400;
+
+                cellEl.classList.add(clearClass);
+                setTimeout(() => cellEl.classList.remove(clearClass), clearTime);
             });
 
             return totalLines;
