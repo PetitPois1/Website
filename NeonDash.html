@@ -23,11 +23,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            background: #000;
         }
 
         canvas {
             box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
-            background: linear-gradient(to bottom, #050510 0%, #1a0b2e 100%);
             position: relative;
         }
 
@@ -35,10 +35,7 @@
             content: " ";
             display: block;
             position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
+            top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 10;
             background-size: 100% 4px, 6px 100%;
@@ -47,10 +44,7 @@
 
         .ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 20;
             display: flex;
@@ -70,6 +64,7 @@
             text-shadow: 0 0 5px #00f3ff;
             box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2), 0 0 15px rgba(0, 243, 255, 0.4);
             transition: all 0.2s ease;
+            text-align: center;
         }
 
         .btn-neon:hover, .btn-neon:active, .btn-neon.active {
@@ -86,6 +81,7 @@
             text-shadow: 0 0 5px #ff003c;
             box-shadow: inset 0 0 10px rgba(255, 0, 60, 0.2), 0 0 15px rgba(255, 0, 60, 0.4);
             transition: all 0.2s ease;
+            text-align: center;
         }
 
         .btn-neon-pink:hover, .btn-neon-pink:active {
@@ -128,8 +124,13 @@
 
     <div id="ui-layer" class="ui-layer">
         
+        <!-- HUD Exit Button (Test Mode) -->
+        <button id="hud-exit-btn" onclick="exitToEditor()" class="absolute top-6 left-8 btn-neon-pink px-4 py-2 hidden text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto shadow-xl z-50">
+            Exit to Editor
+        </button>
+
         <!-- Score HUD -->
-        <div id="score-hud" class="absolute top-6 right-8 text-right hidden">
+        <div id="score-hud" class="absolute top-6 right-8 text-right hidden z-50 pointer-events-none">
             <div id="score-text-container" class="text-xl text-white opacity-80">SCORE <span id="current-score" class="font-bold text-neon-cyan text-2xl ml-2">0</span></div>
             <div id="best-score-container" class="text-sm text-white opacity-50 mt-1">BEST <span id="high-score-hud" class="font-bold ml-2">0</span></div>
         </div>
@@ -150,9 +151,7 @@
             <h2 class="text-4xl font-black text-neon-cyan mb-2">SELECT LEVEL</h2>
             <p id="level-status-text" class="text-gray-400 text-xs mb-6 uppercase tracking-widest">Loading levels from server...</p>
             
-            <div id="dynamic-levels-container" class="level-grid mb-6">
-                <!-- Level buttons injected here via JS -->
-            </div>
+            <div id="dynamic-levels-container" class="level-grid mb-6"></div>
             
             <div class="w-full border-t border-gray-700 pt-6 flex flex-col md:flex-row gap-4">
                 <div class="flex-1">
@@ -168,26 +167,53 @@
         </div>
 
         <!-- LEVEL EDITOR UI -->
-        <div id="editor-ui" class="hidden absolute top-0 left-0 w-full pointer-events-auto">
-            <div id="editor-toolbar" class="w-full p-4 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex gap-2 items-center">
-                    <span class="text-white text-sm opacity-70 mr-2 uppercase tracking-widest hidden md:block">Tools:</span>
-                    <button id="tool-block" onclick="setEditorTool('block')" class="btn-neon active px-4 py-2 text-sm font-bold uppercase cursor-pointer">Block</button>
-                    <button id="tool-spike" onclick="setEditorTool('spike')" class="btn-neon px-4 py-2 text-sm font-bold uppercase cursor-pointer">Spike</button>
-                    <button id="tool-erase" onclick="setEditorTool('erase')" class="btn-neon-pink px-4 py-2 text-sm font-bold uppercase cursor-pointer">Eraser</button>
+        <div id="editor-ui" class="hidden absolute top-0 left-0 w-full pointer-events-auto flex flex-col">
+            <div id="editor-toolbar" class="w-full p-4 flex flex-col gap-3">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <span class="text-white text-sm opacity-70 mr-1 uppercase tracking-widest hidden lg:block">Tools:</span>
+                        <button id="tool-block" onclick="setEditorTool('block')" class="btn-neon active px-3 py-2 text-xs font-bold uppercase cursor-pointer">Block</button>
+                        <button id="tool-halfblock" onclick="setEditorTool('halfblock')" class="btn-neon px-3 py-2 text-xs font-bold uppercase cursor-pointer">Half</button>
+                        <button id="tool-spike" onclick="setEditorTool('spike')" class="btn-neon px-3 py-2 text-xs font-bold uppercase cursor-pointer">Spike</button>
+                        <button id="tool-sawblade" onclick="setEditorTool('sawblade')" class="btn-neon px-3 py-2 text-xs font-bold uppercase cursor-pointer text-red-400 border-red-500 shadow-red-500">Saw</button>
+                        <button id="tool-bouncepad" onclick="setEditorTool('bouncepad')" class="btn-neon px-3 py-2 text-xs font-bold uppercase cursor-pointer text-green-300 border-green-400">Pad</button>
+                        <button id="tool-orb" onclick="setEditorTool('orb')" class="btn-neon px-3 py-2 text-xs font-bold uppercase cursor-pointer text-fuchsia-400 border-fuchsia-500">Orb</button>
+                        <button id="tool-erase" onclick="setEditorTool('erase')" class="btn-neon-pink px-3 py-2 text-xs font-bold uppercase cursor-pointer ml-2">Erase</button>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <button id="pan-left" class="bg-gray-800 text-white px-4 py-2 rounded text-xl cursor-pointer hover:bg-gray-700">&lt;</button>
+                        <span class="text-white text-xs font-mono w-24 text-center">CAM: <span id="cam-pos">0</span></span>
+                        <button id="pan-right" class="bg-gray-800 text-white px-4 py-2 rounded text-xl cursor-pointer hover:bg-gray-700">&gt;</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="testLevel()" class="btn-neon px-4 py-2 text-sm font-bold uppercase cursor-pointer bg-green-900 bg-opacity-30">Test</button>
+                        <button onclick="openExportModal()" class="btn-neon px-4 py-2 text-sm font-bold uppercase cursor-pointer">Export</button>
+                        <button onclick="quitEditor()" class="text-gray-400 hover:text-white px-2 text-xs uppercase cursor-pointer">Quit</button>
+                    </div>
                 </div>
-                <div class="flex gap-4 items-center">
-                    <button id="pan-left" class="bg-gray-800 text-white px-4 py-2 rounded text-xl cursor-pointer hover:bg-gray-700">&lt;</button>
-                    <span class="text-white text-xs font-mono w-24 text-center">CAM: <span id="cam-pos">0</span></span>
-                    <button id="pan-right" class="bg-gray-800 text-white px-4 py-2 rounded text-xl cursor-pointer hover:bg-gray-700">&gt;</button>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="testLevel()" class="btn-neon px-4 py-2 text-sm font-bold uppercase cursor-pointer bg-green-900 bg-opacity-30">Test</button>
-                    <button onclick="openExportModal()" class="btn-neon px-4 py-2 text-sm font-bold uppercase cursor-pointer">Export</button>
-                    <button onclick="quitEditor()" class="text-gray-400 hover:text-white px-2 text-xs uppercase cursor-pointer">Quit</button>
+                <!-- Custom Colors Row -->
+                <div class="flex gap-4 items-center border-t border-gray-800 pt-2 flex-wrap">
+                    <span class="text-white text-xs opacity-70 uppercase tracking-widest">Colors:</span>
+                    <div class="flex items-center gap-1">
+                        <label class="text-gray-400 text-[10px] uppercase">Sky Top</label>
+                        <input type="color" id="col-bg1" value="#050510" class="w-6 h-6 border-none cursor-pointer bg-transparent" onchange="updateColors()">
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <label class="text-gray-400 text-[10px] uppercase">Sky Bot</label>
+                        <input type="color" id="col-bg2" value="#1a0b2e" class="w-6 h-6 border-none cursor-pointer bg-transparent" onchange="updateColors()">
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <label class="text-gray-400 text-[10px] uppercase">Floor</label>
+                        <input type="color" id="col-floor" value="#1f2833" class="w-6 h-6 border-none cursor-pointer bg-transparent" onchange="updateColors()">
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <label class="text-gray-400 text-[10px] uppercase">Outline</label>
+                        <input type="color" id="col-outline" value="#00f3ff" class="w-6 h-6 border-none cursor-pointer bg-transparent" onchange="updateColors()">
+                    </div>
                 </div>
             </div>
-            <div class="absolute top-[80px] left-4 text-white opacity-50 text-xs max-w-xs pointer-events-none hidden md:block">
+            
+            <div class="absolute top-[140px] left-4 text-white opacity-50 text-xs max-w-xs pointer-events-none hidden md:block">
                 Click grid to place. <br>Use A/D or arrows to pan camera.
             </div>
         </div>
@@ -196,20 +222,20 @@
         <div id="export-modal" class="hidden absolute inset-0 bg-black bg-opacity-80 flex justify-center items-center pointer-events-auto z-50">
             <div class="menu-box p-8 rounded-xl w-[90%] max-w-[500px] flex flex-col items-center">
                 <h3 class="text-2xl text-neon-cyan font-bold mb-2">EXPORT LEVEL</h3>
-                <p class="text-gray-400 text-xs text-center mb-4">Name your level, then copy the string to your NeonDashLevels.txt file in your repository.</p>
+                <p class="text-gray-400 text-xs text-center mb-4">Name your level, then copy the string to your repository.</p>
                 
                 <input type="text" id="export-level-name" class="w-full bg-gray-900 text-white p-3 rounded border border-gray-700 focus:border-cyan-400 outline-none mb-4 font-bold" placeholder="Level Name" value="My Custom Level" oninput="updateExportString()">
                 
                 <textarea id="export-textarea" class="w-full bg-gray-900 text-green-400 p-4 rounded border border-gray-700 h-32 mb-6 font-mono text-xs outline-none" readonly></textarea>
                 <div class="flex gap-4 w-full">
-                    <button onclick="copyExportCode()" class="btn-neon flex-1 py-3 font-bold uppercase cursor-pointer">Copy to Clipboard</button>
+                    <button onclick="copyExportCode()" class="btn-neon flex-1 py-3 font-bold uppercase cursor-pointer">Copy String</button>
                     <button onclick="closeExportModal()" class="text-gray-400 hover:text-white px-4 uppercase cursor-pointer">Close</button>
                 </div>
             </div>
         </div>
 
         <!-- GAME OVER / WIN SCREEN -->
-        <div id="game-over-screen" class="hidden flex-col items-center pointer-events-auto opacity-0 transition-opacity duration-300">
+        <div id="game-over-screen" class="hidden absolute inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center pointer-events-auto opacity-0 transition-opacity duration-300 z-40">
             <h2 id="end-title" class="text-5xl md:text-7xl font-black text-neon-pink mb-4">CRASHED</h2>
             <div class="menu-box p-8 rounded-lg mb-8 text-center min-w-[300px] shadow-2xl">
                 <div id="end-score-label" class="text-gray-400 text-lg mb-1">SCORE</div>
@@ -217,11 +243,11 @@
                 <div id="end-high-label" class="text-gray-400 text-lg mb-1">HIGH SCORE</div>
                 <div id="high-score" class="text-3xl text-white font-bold">0</div>
             </div>
-            <div class="flex flex-col gap-4 w-full max-w-[300px]">
-                <button id="restart-btn" onclick="retryGame()" class="btn-neon px-10 py-4 text-xl font-bold rounded-sm uppercase tracking-widest cursor-pointer w-full">
+            <div class="flex flex-col gap-4 w-full max-w-[300px] items-center">
+                <button id="restart-btn" onclick="retryGame()" class="btn-neon px-10 py-4 text-xl font-bold rounded-sm uppercase tracking-widest cursor-pointer w-full text-center">
                     Try Again
                 </button>
-                <button onclick="quitToMenu()" class="text-gray-400 hover:text-white uppercase tracking-widest text-sm py-2 cursor-pointer w-full">
+                <button id="go-menu-btn" onclick="quitToMenu()" class="text-gray-400 hover:text-white uppercase tracking-widest text-sm py-2 cursor-pointer w-full text-center">
                     Main Menu
                 </button>
             </div>
@@ -236,7 +262,7 @@
      */
     const GAME_WIDTH = 1200;
     const GAME_HEIGHT = 600;
-    const FLOOR_Y = 500;
+    const FLOOR_Y = 520; 
     const GRAVITY = 5500; 
     const JUMP_VELOCITY = -1300; 
     const BASE_SPEED = 500; 
@@ -244,13 +270,18 @@
     const MAX_SPEED = 1200;
     const GRID_SIZE = 40;
     
-    const COLOR_BG = '#0b0c10';
-    const COLOR_FLOOR = '#1f2833';
-    const COLOR_LINE = '#66fcf1';
+    // Dynamic Level Colors
+    let levelColors = {
+        bgTop: '#050510',
+        bgBot: '#1a0b2e',
+        floor: '#1f2833',
+        outline: '#00f3ff'
+    };
+    
     const COLOR_PLAYER = '#00f3ff';
     const COLOR_SPIKE = '#ff003c';
 
-    // Levels Object - Populated automatically via fetch()
+    // Levels Object
     let BUILT_IN_LEVELS = {};
 
     /**
@@ -273,6 +304,7 @@
     let state = 'MAIN_MENU'; 
     let gameMode = 'ENDLESS'; 
     let currentLevelCode = "";
+    let isTesting = false; 
     
     // Physics & World
     let cameraX = 0;
@@ -294,6 +326,7 @@
     };
 
     let obstacles = [];
+    let editorBackupObstacles = []; 
     let particles = [];
     
     // Editor State
@@ -305,14 +338,12 @@
     const EDITOR_PAN_SPEED = 800;
 
     /**
-     * Background Level Fetching
+     * Level Loading
      */
     async function loadBackgroundLevels() {
         const statusText = document.getElementById('level-status-text');
         try {
-            // Attempt to fetch the file from the same directory (e.g., GitHub Pages root)
             const response = await fetch('NeonDashLevels.txt');
-            
             if (response.ok) {
                 const text = await response.text();
                 parseFetchedLevels(text);
@@ -322,11 +353,10 @@
                 throw new Error("File not found");
             }
         } catch (error) {
-            console.warn("Could not fetch NeonDashLevels.txt. Falling back to default levels.", error);
-            // Fallback levels just in case you run this offline/locally where fetch is blocked
+            console.warn("Could not fetch levels. Using fallback.", error);
             BUILT_IN_LEVELS = {
-                "Offline Level 1": "S,800,500,40,40;S,840,500,40,40;S,1200,500,40,40;B,1560,460,120,40;S,1760,500,40,40;S,2160,500,40,40;B,2560,420,80,80;S,2800,500,40,40",
-                "Offline Level 2": "B,600,460,40,40;B,760,420,40,40;B,920,380,40,40;S,1120,500,40,40;S,1160,500,40,40;B,1320,460,80,40"
+                "Offline Level 1": "C,#050510,#1a0b2e,#1f2833,#00f3ff;S,800,480,40,40;S,840,480,40,40;S,1200,480,40,40;B,1560,440,120,40;S,1760,480,40,40;S,2160,480,40,40;B,2560,400,80,80;P,2800,490,40,10",
+                "Offline Level 2": "C,#1a0000,#330000,#4d0000,#ffaa00;H,600,500,40,20;B,760,440,40,40;H,920,420,40,20;S,1120,480,40,40;S,1160,480,40,40;B,1320,440,80,40;P,1480,490,40,10;W,1700,480,40,40;O,1950,400,40,40"
             };
             statusText.innerText = "Offline Mode: Using fallback levels.";
             statusText.className = "text-neon-pink text-xs mb-6 uppercase tracking-widest";
@@ -337,18 +367,14 @@
     function parseFetchedLevels(text) {
         const lines = text.split('\n');
         BUILT_IN_LEVELS = {}; 
-
         for(let line of lines) {
             line = line.trim();
             if(!line || line.startsWith('#')) continue; 
-            
             const separatorIndex = line.indexOf('|');
             if(separatorIndex > 0) {
                 const name = line.substring(0, separatorIndex).trim();
                 const data = line.substring(separatorIndex + 1).trim();
-                if(name && data) {
-                    BUILT_IN_LEVELS[name] = data;
-                }
+                if(name && data) BUILT_IN_LEVELS[name] = data;
             }
         }
         renderLevelGrid();
@@ -357,7 +383,6 @@
     function renderLevelGrid() {
         const container = document.getElementById('dynamic-levels-container');
         container.innerHTML = '';
-        
         Object.keys(BUILT_IN_LEVELS).forEach(name => {
             const btn = document.createElement('button');
             btn.className = 'btn-neon py-3 px-2 text-sm font-bold uppercase cursor-pointer rounded truncate';
@@ -388,28 +413,106 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
     document.getElementById('high-score-hud').innerText = highScore;
-    
-    // Auto-load background levels right away
     loadBackgroundLevels();
+
+    /**
+     * Decoding / Encoding Level Strings
+     */
+    function updateColors() {
+        levelColors.bgTop = document.getElementById('col-bg1').value;
+        levelColors.bgBot = document.getElementById('col-bg2').value;
+        levelColors.floor = document.getElementById('col-floor').value;
+        levelColors.outline = document.getElementById('col-outline').value;
+    }
+
+    function syncColorPickers() {
+        document.getElementById('col-bg1').value = levelColors.bgTop;
+        document.getElementById('col-bg2').value = levelColors.bgBot;
+        document.getElementById('col-floor').value = levelColors.floor;
+        document.getElementById('col-outline').value = levelColors.outline;
+    }
+
+    const typeMap = { 'spike': 'S', 'block': 'B', 'halfblock': 'H', 'bouncepad': 'P', 'sawblade': 'W', 'orb': 'O' };
+    const invMap = { 'S': 'spike', 'B': 'block', 'H': 'halfblock', 'P': 'bouncepad', 'W': 'sawblade', 'O': 'orb' };
+
+    function decodeLevel(codeStr) {
+        let obs = [];
+        if(!codeStr) return obs;
+        
+        levelColors = { bgTop: '#050510', bgBot: '#1a0b2e', floor: '#1f2833', outline: '#00f3ff' };
+        
+        const parts = codeStr.split(';');
+        for(let p of parts) {
+            if(!p) continue;
+            const d = p.split(',');
+            if (d[0] === 'C' && d.length >= 5) {
+                levelColors.bgTop = d[1];
+                levelColors.bgBot = d[2];
+                levelColors.floor = d[3];
+                levelColors.outline = d[4];
+            } else if(d.length === 5 && invMap[d[0]]) {
+                obs.push({
+                    type: invMap[d[0]],
+                    x: parseFloat(d[1]),
+                    y: parseFloat(d[2]),
+                    width: parseFloat(d[3]),
+                    height: parseFloat(d[4]),
+                    passed: false
+                });
+            }
+        }
+        syncColorPickers();
+        return obs;
+    }
+
+    function encodeLevel(obsList) {
+        let colorStr = `C,${levelColors.bgTop},${levelColors.bgBot},${levelColors.floor},${levelColors.outline}`;
+        let piecesStr = obsList.map(o => `${typeMap[o.type]},${o.x},${o.y},${o.width},${o.height}`).join(';');
+        return piecesStr ? colorStr + ';' + piecesStr : colorStr;
+    }
 
     /**
      * Menu & Navigation Handling
      */
     function showMenu(menuId) {
-        Object.values(menus).forEach(m => m.classList.add('hidden'));
+        Object.values(menus).forEach(m => {
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        });
+        
         if(menus[menuId]) {
             menus[menuId].classList.remove('hidden');
             menus[menuId].classList.remove('opacity-0');
-            menus[menuId].classList.add('opacity-100');
+            if (menuId === 'game-over') {
+                menus[menuId].classList.add('flex'); 
+            }
         }
         scoreHud.classList.add('hidden');
+        document.getElementById('hud-exit-btn').classList.add('hidden');
     }
 
     function quitToMenu() {
         state = 'MAIN_MENU';
+        isTesting = false;
+        
+        // Reset player out of view so background isn't obstructed
+        player.y = FLOOR_Y - player.size;
+        
         if(animationId) cancelAnimationFrame(animationId);
         showMenu('main');
-        draw(); 
+        // Resume gameLoop for background scrolling
+        lastTime = performance.now();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function exitToEditor() {
+        state = 'EDITOR';
+        isTesting = false;
+        obstacles = JSON.parse(JSON.stringify(editorBackupObstacles)); 
+        player.y = FLOOR_Y - player.size;
+        player.vy = 0;
+        showMenu('editor');
+        draw();
     }
 
     function playSingleCode() {
@@ -421,50 +524,26 @@
     }
 
     /**
-     * Decoding / Encoding Level Strings
-     */
-    function decodeLevel(codeStr) {
-        let obs = [];
-        if(!codeStr) return obs;
-        const parts = codeStr.split(';');
-        for(let p of parts) {
-            if(!p) continue;
-            const d = p.split(',');
-            if(d.length === 5) {
-                obs.push({
-                    type: d[0] === 'S' ? 'spike' : 'block',
-                    x: parseFloat(d[1]),
-                    y: parseFloat(d[2]),
-                    width: parseFloat(d[3]),
-                    height: parseFloat(d[4]),
-                    passed: false
-                });
-            }
-        }
-        return obs;
-    }
-
-    function encodeLevel(obsList) {
-        return obsList.map(o => `${o.type === 'spike' ? 'S' : 'B'},${o.x},${o.y},${o.width},${o.height}`).join(';');
-    }
-
-    /**
      * Core Mechanics: Starting Games
      */
     function startGame(mode, codeStr = "") {
         gameMode = mode;
         currentLevelCode = codeStr;
-        
         state = 'PLAYING';
         showMenu(''); 
         
+        scoreHud.classList.remove('hidden');
+        if (isTesting) {
+            document.getElementById('hud-exit-btn').classList.remove('hidden');
+        }
+
         if(mode === 'ENDLESS') {
-            scoreHud.classList.remove('hidden');
             document.getElementById('score-text-container').classList.remove('hidden');
             document.getElementById('best-score-container').classList.remove('hidden');
             document.getElementById('current-score').innerText = '0';
+            levelColors = { bgTop: '#050510', bgBot: '#1a0b2e', floor: '#1f2833', outline: '#00f3ff' };
+            syncColorPickers();
         } else {
-            scoreHud.classList.remove('hidden');
             document.getElementById('score-text-container').classList.remove('hidden');
             document.getElementById('best-score-container').classList.add('hidden');
             document.getElementById('current-score').innerText = '0%';
@@ -495,12 +574,12 @@
         }
         
         lastTime = performance.now();
-        if (animationId) cancelAnimationFrame(animationId);
-        animationId = requestAnimationFrame(gameLoop);
+        if (!animationId) animationId = requestAnimationFrame(gameLoop);
     }
 
     function retryGame() {
-        if(state === 'EDITOR') quitToMenu(); 
+        if(isTesting) startGame('LEVEL', currentLevelCode);
+        else if(state === 'EDITOR') quitToMenu(); 
         else startGame(gameMode, currentLevelCode);
     }
 
@@ -515,7 +594,16 @@
         const endHighLabel = document.getElementById('end-high-label');
         const finalScoreEl = document.getElementById('final-score');
         const highScoreEl = document.getElementById('high-score');
+        const goMenuBtn = document.getElementById('go-menu-btn');
         
+        if (isTesting) {
+            goMenuBtn.innerText = "RETURN TO EDITOR";
+            goMenuBtn.onclick = exitToEditor;
+        } else {
+            goMenuBtn.innerText = "MAIN MENU";
+            goMenuBtn.onclick = quitToMenu;
+        }
+
         if (won) {
             titleEl.innerText = "LEVEL CLEAR";
             titleEl.className = "text-5xl md:text-7xl font-black text-neon-cyan mb-4";
@@ -529,7 +617,7 @@
             
             for (let i = 0; i < 30; i++) {
                 particles.push({
-                    x: player.screenX + player.size / 2,
+                    x: player.screenX + cameraX + player.size / 2, // Spawns in WORLD coords
                     y: player.y + player.size / 2,
                     vx: (Math.random() - 0.5) * 800,
                     vy: (Math.random() - 0.5) * 800,
@@ -569,12 +657,12 @@
     const obstaclePatterns = [
         (x) => {
             const count = Math.floor(Math.random() * 4) + 1;
-            for(let i=0; i<count; i++) obstacles.push({ type: 'spike', x: x + (i*GRID_SIZE), y: FLOOR_Y, width: GRID_SIZE, height: GRID_SIZE, passed: false });
+            for(let i=0; i<count; i++) obstacles.push({ type: 'spike', x: x + (i*GRID_SIZE), y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
             return count * GRID_SIZE;
         },
         (x) => {
             obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 90, width: 250, height: 20, passed: false });
-            for(let i=1; i<=4; i++) obstacles.push({ type: 'spike', x: x + (i*GRID_SIZE), y: FLOOR_Y, width: GRID_SIZE, height: GRID_SIZE, passed: false });
+            for(let i=1; i<=4; i++) obstacles.push({ type: 'spike', x: x + (i*GRID_SIZE), y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
             return 250;
         },
         (x) => {
@@ -585,9 +673,39 @@
         },
         (x) => {
             obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 20, width: 250, height: 20, passed: false }); 
-            obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 140, width: 250, height: 40, passed: false });
-            obstacles.push({ type: 'spike', x: x + 400, y: FLOOR_Y, width: GRID_SIZE, height: GRID_SIZE, passed: false }); 
+            obstacles.push({ type: 'bouncepad', x: x + 100, y: FLOOR_Y - 30, width: 40, height: 10, passed: false });
+            obstacles.push({ type: 'spike', x: x + 400, y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false }); 
             return 440;
+        },
+        (x) => {
+            obstacles.push({ type: 'sawblade', x: x, y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
+            obstacles.push({ type: 'sawblade', x: x + 80, y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
+            return 120;
+        },
+        (x) => {
+            obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 40, width: 80, height: 40, passed: false });
+            obstacles.push({ type: 'orb', x: x + 200, y: FLOOR_Y - 120, width: 40, height: 40, passed: false });
+            obstacles.push({ type: 'block', x: x + 400, y: FLOOR_Y - 40, width: 80, height: 40, passed: false });
+            return 480;
+        },
+        (x) => {
+            obstacles.push({ type: 'halfblock', x: x, y: FLOOR_Y - 80, width: 80, height: 20, passed: false });
+            obstacles.push({ type: 'sawblade', x: x + 120, y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
+            obstacles.push({ type: 'halfblock', x: x + 200, y: FLOOR_Y - 80, width: 80, height: 20, passed: false });
+            return 280;
+        },
+        (x) => {
+            obstacles.push({ type: 'bouncepad', x: x, y: FLOOR_Y - 10, width: 40, height: 10, passed: false });
+            obstacles.push({ type: 'block', x: x + 300, y: FLOOR_Y - 200, width: 120, height: 40, passed: false });
+            obstacles.push({ type: 'spike', x: x + 340, y: FLOOR_Y - 240, width: 40, height: 40, passed: false });
+            return 420;
+        },
+        (x) => {
+            obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 40, width: 80, height: 40, passed: false });
+            obstacles.push({ type: 'orb', x: x + 180, y: FLOOR_Y - 120, width: 40, height: 40, passed: false });
+            obstacles.push({ type: 'orb', x: x + 360, y: FLOOR_Y - 160, width: 40, height: 40, passed: false });
+            obstacles.push({ type: 'block', x: x + 540, y: FLOOR_Y - 40, width: 120, height: 40, passed: false });
+            return 660;
         }
     ];
 
@@ -617,31 +735,36 @@
      */
     function startEditor() {
         state = 'EDITOR';
+        isTesting = false;
         showMenu('editor');
         cameraX = 0;
         obstacles = [];
         player.y = FLOOR_Y - player.size;
         setEditorTool('block');
+        syncColorPickers();
         
         lastTime = performance.now();
-        if (animationId) cancelAnimationFrame(animationId);
-        animationId = requestAnimationFrame(gameLoop);
+        if (!animationId) animationId = requestAnimationFrame(gameLoop);
     }
 
     function setEditorTool(tool) {
         editorTool = tool;
         document.getElementById('tool-block').classList.remove('active');
+        document.getElementById('tool-halfblock').classList.remove('active');
         document.getElementById('tool-spike').classList.remove('active');
+        document.getElementById('tool-bouncepad').classList.remove('active');
+        document.getElementById('tool-sawblade').classList.remove('active');
+        document.getElementById('tool-orb').classList.remove('active');
         document.getElementById('tool-erase').classList.remove('active');
         document.getElementById(`tool-${tool}`).classList.add('active');
     }
 
-    function quitEditor() {
-        quitToMenu();
-    }
+    function quitEditor() { quitToMenu(); }
 
     function testLevel() {
         if(obstacles.length === 0) return;
+        isTesting = true;
+        editorBackupObstacles = JSON.parse(JSON.stringify(obstacles)); 
         const code = encodeLevel(obstacles);
         startGame('LEVEL', code);
     }
@@ -651,6 +774,7 @@
         lastExportedCode = encodeLevel(obstacles);
         updateExportString();
         document.getElementById('export-modal').classList.remove('hidden');
+        document.getElementById('export-modal').classList.add('flex');
     }
 
     function updateExportString() {
@@ -661,6 +785,7 @@
 
     function closeExportModal() {
         document.getElementById('export-modal').classList.add('hidden');
+        document.getElementById('export-modal').classList.remove('flex');
     }
 
     function copyExportCode() {
@@ -676,29 +801,35 @@
 
     function handleEditorClick(ex, ey) {
         if(state !== 'EDITOR') return;
-        if(ey < 100) return; 
+        if(ey < 140) return; 
 
         const worldX = Math.floor((ex + cameraX) / GRID_SIZE) * GRID_SIZE;
-        let worldY = Math.floor(ey / GRID_SIZE) * GRID_SIZE;
+        let snapY = Math.floor(ey / GRID_SIZE) * GRID_SIZE;
         
-        if(worldY >= FLOOR_Y) worldY = FLOOR_Y;
-        if(editorTool === 'spike' && worldY === FLOOR_Y) worldY = FLOOR_Y; 
-        else if(editorTool === 'spike' && worldY < FLOOR_Y) worldY += GRID_SIZE;
+        // Define sizes and offsets
+        let objH = GRID_SIZE;
+        let yOffset = 0;
+        if (editorTool === 'halfblock') { objH = 20; yOffset = 20; }
+        if (editorTool === 'bouncepad') { objH = 10; yOffset = 30; }
+        
+        let worldY = snapY + yOffset;
+        if (worldY + objH > FLOOR_Y) {
+            worldY = FLOOR_Y - objH;
+        }
 
         if (editorTool === 'erase') {
+            const eraseBox = { x: worldX, y: snapY, w: GRID_SIZE, h: GRID_SIZE };
             for(let i=obstacles.length-1; i>=0; i--) {
                 let obs = obstacles[i];
-                let hitY = obs.type === 'spike' ? obs.y - obs.height : obs.y;
-                if(worldX < obs.x + obs.width && worldX + GRID_SIZE > obs.x &&
-                   worldY - GRID_SIZE < hitY + obs.height && worldY > hitY) {
+                if(eraseBox.x < obs.x + obs.width && eraseBox.x + eraseBox.w > obs.x &&
+                   eraseBox.y < obs.y + obs.height && eraseBox.y + eraseBox.h > obs.y) {
                     obstacles.splice(i, 1);
                 }
             }
         } else {
             let occupied = false;
             for(let obs of obstacles) {
-                let hitY = obs.type === 'spike' ? obs.y - obs.height : obs.y;
-                if(obs.x === worldX && hitY === (editorTool === 'spike' ? worldY - GRID_SIZE : worldY)) {
+                if(obs.x === worldX && obs.y === worldY) {
                     occupied = true; break;
                 }
             }
@@ -709,19 +840,51 @@
                     x: worldX,
                     y: worldY,
                     width: GRID_SIZE,
-                    height: GRID_SIZE,
+                    height: objH,
                     passed: false
                 });
             }
         }
     }
 
-
     /**
      * Input Handling
      */
     function jump() {
-        if (state === 'PLAYING' && (player.isGrounded || player.coyoteTimer > 0)) {
+        if (state !== 'PLAYING') return;
+
+        let pWorldX = player.screenX + cameraX;
+        let pRect = { x: pWorldX, y: player.y, w: player.size, h: player.size };
+        let hitOrb = false;
+
+        // Check for Orb Trigger
+        for (let obs of obstacles) {
+            if (obs.type === 'orb') {
+                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+                if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x &&
+                    pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
+                    
+                    player.vy = JUMP_VELOCITY;
+                    player.isGrounded = false;
+                    player.coyoteTimer = 0;
+                    hitOrb = true;
+                    
+                    // Consume orb effect (particles)
+                    for(let k=0; k<15; k++) {
+                        particles.push({
+                            x: obs.x + obs.width/2, // World coords
+                            y: obs.y + obs.height/2,
+                            vx: (Math.random()-0.5)*400,
+                            vy: (Math.random()-0.5)*400,
+                            life: 1.0, color: '#e879f9', size: 4
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!hitOrb && (player.isGrounded || player.coyoteTimer > 0)) {
             player.vy = JUMP_VELOCITY;
             player.isGrounded = false;
             player.coyoteTimer = 0;
@@ -750,6 +913,8 @@
     });
 
     canvas.addEventListener('touchstart', (e) => {
+        if(e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
+        
         if(state === 'EDITOR' && e.touches.length > 0) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -797,6 +962,11 @@
      * Game Loop & Rendering
      */
     function update(dt) {
+        if (state === 'MAIN_MENU' || state === 'LEVEL_SELECT') {
+            cameraX += (BASE_SPEED * 0.3) * dt; // Nice scrolling background in menus
+            return;
+        }
+
         if (state === 'EDITOR') {
             if (isPanningLeft) cameraX -= EDITOR_PAN_SPEED * dt;
             if (isPanningRight) cameraX += EDITOR_PAN_SPEED * dt;
@@ -855,7 +1025,7 @@
                 const hitHeight = obs.height * 0.6;
                 oRect = {
                     x: obs.x + (obs.width / 2) - (hitWidth / 2),
-                    y: obs.y - hitHeight,
+                    y: obs.y + (obs.height - hitHeight),
                     w: hitWidth,
                     h: hitHeight
                 };
@@ -864,13 +1034,13 @@
                     pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     triggerGameOver();
                 }
-            } else if (obs.type === 'block') {
+            } else if (obs.type === 'block' || obs.type === 'halfblock') {
                 oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
                 
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x &&
                     pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     
-                    const wasAbove = player.lastY + player.size <= obs.y + 30; 
+                    const wasAbove = player.lastY + player.size <= obs.y + 20; 
                     
                     if (wasAbove && player.vy >= 0) {
                         player.y = obs.y - player.size;
@@ -883,6 +1053,36 @@
                     } else {
                         triggerGameOver();
                     }
+                }
+            } else if (obs.type === 'bouncepad') {
+                oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+                if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x &&
+                    pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
+                    player.vy = -1800;
+                    player.isGrounded = false;
+                    player.y = obs.y - player.size;
+                    
+                    for(let k=0; k<12; k++) {
+                        particles.push({
+                            x: obs.x + Math.random()*obs.width, // World coords
+                            y: obs.y,
+                            vx: (Math.random()-0.5)*300,
+                            vy: -Math.random()*600,
+                            life: 0.8, color: '#ccff00', size: 4
+                        });
+                    }
+                }
+            } else if (obs.type === 'sawblade') {
+                const cx = obs.x + obs.width / 2;
+                const cy = obs.y + obs.height / 2;
+                const r = (obs.width / 2) * 0.8;
+                const px = pRect.x + pRect.w / 2;
+                const py = pRect.y + pRect.h / 2;
+                const pr = (pRect.w / 2) * 0.8; 
+                
+                const dist = Math.sqrt(Math.pow(cx - px, 2) + Math.pow(cy - py, 2));
+                if (dist < r + pr) {
+                    triggerGameOver();
                 }
             }
 
@@ -910,31 +1110,37 @@
     }
 
     function draw() {
-        ctx.fillStyle = COLOR_BG;
+        // Dynamic Gradient Background
+        let grd = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+        grd.addColorStop(0, levelColors.bgTop);
+        grd.addColorStop(1, levelColors.bgBot);
+        ctx.fillStyle = grd;
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+        // Editor / Menu Grid Lines
         ctx.strokeStyle = 'rgba(102, 252, 241, 0.05)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        const gridOffset = cameraX % 100;
-        
-        for(let x = -gridOffset; x < GAME_WIDTH; x += 100) {
+        const gridOffset = cameraX % GRID_SIZE;
+        for(let x = -gridOffset; x < GAME_WIDTH; x += GRID_SIZE) {
             ctx.moveTo(x, 0); ctx.lineTo(x, FLOOR_Y);
         }
-        for(let y = 0; y < FLOOR_Y; y += 100) {
+        for(let y = 0; y <= FLOOR_Y; y += GRID_SIZE) {
             ctx.moveTo(0, y); ctx.lineTo(GAME_WIDTH, y);
         }
         ctx.stroke();
 
-        ctx.fillStyle = COLOR_FLOOR;
+        // Floor
+        ctx.fillStyle = levelColors.floor;
         ctx.fillRect(0, FLOOR_Y, GAME_WIDTH, GAME_HEIGHT - FLOOR_Y);
         
         ctx.shadowBlur = 15;
-        ctx.shadowColor = COLOR_LINE;
-        ctx.fillStyle = COLOR_LINE;
+        ctx.shadowColor = levelColors.outline;
+        ctx.fillStyle = levelColors.outline;
         ctx.fillRect(0, FLOOR_Y, GAME_WIDTH, 4);
         ctx.shadowBlur = 0;
 
+        // Render Obstacles
         for (let obs of obstacles) {
             let screenX = obs.x - cameraX;
             if (screenX + obs.width < -100 || screenX > GAME_WIDTH + 100) continue;
@@ -944,44 +1150,96 @@
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = COLOR_SPIKE;
                 ctx.beginPath();
-                ctx.moveTo(screenX, obs.y);
-                ctx.lineTo(screenX + obs.width / 2, obs.y - obs.height);
-                ctx.lineTo(screenX + obs.width, obs.y);
+                ctx.moveTo(screenX, obs.y + obs.height);
+                ctx.lineTo(screenX + obs.width / 2, obs.y);
+                ctx.lineTo(screenX + obs.width, obs.y + obs.height);
                 ctx.closePath();
                 ctx.fill();
                 
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.moveTo(screenX + 10, obs.y - 5);
-                ctx.lineTo(screenX + obs.width / 2, obs.y - obs.height + 15);
-                ctx.lineTo(screenX + obs.width - 10, obs.y - 5);
+                ctx.moveTo(screenX + 10, obs.y + obs.height - 5);
+                ctx.lineTo(screenX + obs.width / 2, obs.y + 15);
+                ctx.lineTo(screenX + obs.width - 10, obs.y + obs.height - 5);
                 ctx.fill();
                 ctx.shadowBlur = 0;
-            } else if (obs.type === 'block') {
+            } else if (obs.type === 'block' || obs.type === 'halfblock') {
                 ctx.fillStyle = '#050a0f';
                 ctx.fillRect(screenX, obs.y, obs.width, obs.height);
-                ctx.strokeStyle = COLOR_PLAYER;
+                ctx.strokeStyle = levelColors.outline;
                 ctx.lineWidth = 2;
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = COLOR_PLAYER;
+                ctx.shadowColor = levelColors.outline;
                 ctx.strokeRect(screenX, obs.y, obs.width, obs.height);
                 ctx.shadowBlur = 0;
                 
-                ctx.strokeStyle = 'rgba(0, 243, 255, 0.15)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 for(let i = 15; i < obs.width; i += 20) {
-                    ctx.moveTo(screenX + i, obs.y);
-                    ctx.lineTo(screenX + i, obs.y + obs.height);
+                    ctx.moveTo(screenX + i, obs.y); ctx.lineTo(screenX + i, obs.y + obs.height);
                 }
                 for(let i = 15; i < obs.height; i += 20) {
-                    ctx.moveTo(screenX, obs.y + i);
-                    ctx.lineTo(screenX + obs.width, obs.y + i);
+                    ctx.moveTo(screenX, obs.y + i); ctx.lineTo(screenX + obs.width, obs.y + i);
                 }
                 ctx.stroke();
+            } else if (obs.type === 'bouncepad') {
+                ctx.fillStyle = '#ccff00';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ccff00';
+                ctx.beginPath();
+                ctx.roundRect(screenX, obs.y, obs.width, obs.height, [5, 5, 0, 0]);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            } else if (obs.type === 'sawblade') {
+                ctx.save();
+                ctx.translate(screenX + obs.width/2, obs.y + obs.height/2);
+                ctx.rotate(cameraX * 0.01);
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(0, 0, obs.width/2 * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ff003c';
+                for(let i=0; i<8; i++) {
+                    ctx.rotate(Math.PI / 4);
+                    ctx.beginPath();
+                    ctx.moveTo(-5, -obs.width/2 * 0.6);
+                    ctx.lineTo(5, -obs.width/2 * 0.6);
+                    ctx.lineTo(0, -obs.width/2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            } else if (obs.type === 'orb') {
+                ctx.save();
+                ctx.translate(screenX + obs.width/2, obs.y + obs.height/2);
+                const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+                ctx.scale(pulse, pulse);
+                
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#e879f9';
+                ctx.strokeStyle = '#e879f9';
+                ctx.lineWidth = 4;
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, obs.width/2 * 0.6, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(232, 121, 249, 0.5)';
+                ctx.fill();
+                
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(0, 0, obs.width/2 * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
             }
         }
 
+        // Editor Preview
         if (state === 'EDITOR') {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.fillRect(200 - cameraX, 0, 2, FLOOR_Y);
@@ -989,13 +1247,16 @@
             ctx.fillStyle = 'rgba(0, 243, 255, 0.3)';
             ctx.fillRect(200 - cameraX, FLOOR_Y - player.size, player.size, player.size);
 
-            if (editorMouseY > 100) {
+            if (editorMouseY > 140) {
                 let snapX = Math.floor((editorMouseX + cameraX) / GRID_SIZE) * GRID_SIZE;
                 let snapY = Math.floor(editorMouseY / GRID_SIZE) * GRID_SIZE;
-                if(snapY >= FLOOR_Y) snapY = FLOOR_Y;
                 
-                let drawY = snapY;
-                if(editorTool === 'spike' && snapY < FLOOR_Y) drawY += GRID_SIZE;
+                let objH = GRID_SIZE; let yOffset = 0;
+                if (editorTool === 'halfblock') { objH = 20; yOffset = 20; }
+                if (editorTool === 'bouncepad') { objH = 10; yOffset = 30; }
+                
+                let drawY = snapY + yOffset;
+                if (drawY + objH > FLOOR_Y) drawY = FLOOR_Y - objH;
                 
                 ctx.strokeStyle = editorTool === 'erase' ? 'rgba(255,0,60,0.8)' : 'rgba(255,255,255,0.8)';
                 ctx.lineWidth = 2;
@@ -1003,18 +1264,27 @@
                 
                 if (editorTool === 'spike') {
                     ctx.beginPath();
-                    ctx.moveTo(snapX - cameraX, drawY);
-                    ctx.lineTo(snapX - cameraX + GRID_SIZE / 2, drawY - GRID_SIZE);
-                    ctx.lineTo(snapX - cameraX + GRID_SIZE, drawY);
+                    ctx.moveTo(snapX - cameraX, drawY + objH);
+                    ctx.lineTo(snapX - cameraX + GRID_SIZE / 2, drawY);
+                    ctx.lineTo(snapX - cameraX + GRID_SIZE, drawY + objH);
                     ctx.closePath();
                     ctx.stroke();
+                } else if(editorTool !== 'erase') {
+                    if (editorTool === 'sawblade' || editorTool === 'orb') {
+                         ctx.beginPath();
+                         ctx.arc(snapX - cameraX + GRID_SIZE/2, drawY + GRID_SIZE/2, GRID_SIZE/2, 0, Math.PI * 2);
+                         ctx.stroke();
+                    } else {
+                        ctx.strokeRect(snapX - cameraX, drawY, GRID_SIZE, objH);
+                    }
                 } else {
-                    ctx.strokeRect(snapX - cameraX, drawY, GRID_SIZE, GRID_SIZE);
+                    ctx.strokeRect(snapX - cameraX, snapY, GRID_SIZE, GRID_SIZE); 
                 }
                 ctx.setLineDash([]);
             }
         }
 
+        // Player Rendering
         if (state === 'PLAYING') {
             for (let i = 0; i < player.trail.length; i++) {
                 let t = player.trail[i];
@@ -1027,9 +1297,7 @@
                 ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
                 ctx.restore();
             }
-        }
 
-        if (state === 'PLAYING') {
             ctx.save();
             ctx.translate(player.screenX + player.size / 2, player.y + player.size / 2);
             ctx.rotate(player.rotation);
@@ -1037,7 +1305,7 @@
             ctx.shadowColor = COLOR_PLAYER;
             ctx.fillStyle = COLOR_PLAYER;
             ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
-            ctx.fillStyle = COLOR_BG;
+            ctx.fillStyle = levelColors.bgTop; 
             ctx.shadowBlur = 0;
             ctx.fillRect(-player.size / 2 + 8, -player.size / 2 + 8, player.size - 16, player.size - 16);
             ctx.fillStyle = '#ffffff';
@@ -1045,13 +1313,14 @@
             ctx.restore();
         }
 
+        // Fix: Render Particles in World Coordinates (subtract cameraX)
         if (particles.length > 0) {
             for (let p of particles) {
                 ctx.globalAlpha = Math.max(0, p.life);
                 ctx.fillStyle = p.color;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = p.color;
-                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.fillRect(p.x - cameraX, p.y, p.size, p.size); // Subtracted cameraX here!
             }
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
