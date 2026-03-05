@@ -1275,15 +1275,33 @@
                 const hW = obs.width * 0.4, hH = obs.height * 0.6;
                 let oRect = { x: obs.x + (obs.width / 2) - (hW / 2), y: obs.y + (obs.height - hH), w: hW, h: hH };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) triggerGameOver();
-            } else if (obs.type === 'block' || obs.type === 'halfblock') {
-                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
-                if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
-                    const wasAbove = player.lastY + player.size <= obs.y + 20; 
-                    if (wasAbove && player.vy >= 0) {
-                        player.y = obs.y - player.size; player.vy = 0; player.isGrounded = true; player.coyoteTimer = 0.15;
-                        player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2); pRect.y = player.y; 
-                    } else triggerGameOver();
+            } else if (obs.type === 'block' || obs.type === 'halfblock' || obs.type === 'fakeblock') {
+                ctx.fillStyle = '#050a0f'; ctx.fillRect(screenX, screenY, obs.width, obs.height);
+                
+                let isFake = obs.type === 'fakeblock';
+                ctx.strokeStyle = levelColors.outline; ctx.lineWidth = 2; 
+                
+                if (isFake) {
+                    if (state === 'EDITOR') ctx.setLineDash([5,5]); 
+                    else ctx.globalAlpha = 0.6; // Slightly dimmer outline in gameplay
                 }
+                
+                ctx.shadowBlur = isFake ? 0 : 10; // No neon glow on fake blocks
+                ctx.shadowColor = levelColors.outline; 
+                ctx.strokeRect(screenX, screenY, obs.width, obs.height); 
+                
+                ctx.shadowBlur = 0; ctx.setLineDash([]); ctx.globalAlpha = 1.0;
+                
+                // Inner texture (dashed and dimmer for fake blocks)
+                ctx.strokeStyle = isFake ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)'; 
+                ctx.lineWidth = 1; 
+                if (isFake) ctx.setLineDash([4, 4]);
+                
+                ctx.beginPath();
+                for(let i = 15; i < obs.width; i += 20) { ctx.moveTo(screenX + i, screenY); ctx.lineTo(screenX + i, screenY + obs.height); }
+                for(let i = 15; i < obs.height; i += 20) { ctx.moveTo(screenX, screenY + i); ctx.lineTo(screenX + obs.width, screenY + i); }
+                ctx.stroke();
+                ctx.setLineDash([]);
             } else if (obs.type === 'bouncepad') {
                 let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
