@@ -183,12 +183,12 @@
                     </div>
                 </div>
 
-                <!-- Pad Settings -->
+                <!-- Pad & Orb Settings -->
                 <div id="ctx-pad-settings" class="hidden flex gap-4 items-center flex-wrap w-full">
-                    <span class="text-green-400 text-xs font-bold uppercase tracking-widest mr-4">Pad Settings:</span>
+                    <span id="jump-tool-label" class="text-green-400 text-xs font-bold uppercase tracking-widest mr-4">Jump Settings:</span>
                     <div class="flex items-center gap-2">
                         <label class="text-gray-400 text-[10px] uppercase">Boost Power</label>
-                        <input type="range" id="pad-boost" min="1000" max="3500" step="100" value="1800" class="w-32" oninput="applyPropertyChange()">
+                        <input type="range" id="pad-boost" min="800" max="3500" step="50" value="1800" class="w-32" oninput="applyPropertyChange()">
                         <span id="pad-boost-val" class="text-white text-xs font-mono w-12 text-right">1800</span>
                     </div>
                 </div>
@@ -311,9 +311,9 @@
     let score = 0;
     let highScore = localStorage.getItem('neondash_highscore') || 0;
     let levelEndX = 0;
-    let screenShake = 0; // NEW: Screen shake amount
+    let screenShake = 0; 
     
-    let coinsCollected = 0; // NEW: Coin trackers
+    let coinsCollected = 0; 
     let levelTotalCoins = 0;
 
     const player = { screenX: 200, y: FLOOR_Y - 40, lastY: FLOOR_Y - 40, size: 40, vy: 0, rotation: 0, isGrounded: true, coyoteTimer: 0, trail: [] };
@@ -326,7 +326,7 @@
     let selectedObstacle = null;
     let editorMouseX = 0;
     let editorMouseY = 0;
-    let isEditorMouseDown = false; // NEW: Drag to draw support
+    let isEditorMouseDown = false; 
     let isPanningLeft = false;
     let isPanningRight = false;
     let isPanningUp = false;
@@ -386,7 +386,6 @@
 
         Object.keys(BUILT_IN_LEVELS).forEach(name => {
             const btn = document.createElement('button');
-            // Added min-w-[140px] and flex-shrink-0 for horizontal scrolling support
             btn.className = 'btn-neon py-2 px-2 text-sm font-bold uppercase cursor-pointer rounded flex flex-col items-center justify-center gap-1 h-24 min-w-[140px] flex-shrink-0';
             
             let s = stats[name];
@@ -474,6 +473,8 @@
                     item.speedMulti = spd;
                 } else if (type === 'bouncepad') {
                     item.boost = -Math.abs(parseFloat(d[5]) || 1800);
+                } else if (type === 'orb') {
+                    item.boost = -Math.abs(parseFloat(d[5]) || 1300);
                 }
                 obs.push(item);
             }
@@ -488,7 +489,7 @@
             let base = `${typeMap[o.type]},${o.x},${o.y},${o.width},${o.height}`;
             if (o.type === 'trigger_color') return `${base},${o.duration},${o.colors.bgTop},${o.colors.bgBot},${o.colors.floor},${o.colors.outline}`;
             if (o.type === 'portal') return `${base},${o.speedMulti}`;
-            if (o.type === 'bouncepad') return `${base},${Math.abs(o.boost)}`;
+            if (o.type === 'bouncepad' || o.type === 'orb') return `${base},${Math.abs(o.boost || (o.type === 'orb' ? 1300 : 1800))}`;
             return base;
         }).join(';');
         return piecesStr ? colorStr + ';' + piecesStr : colorStr;
@@ -520,10 +521,10 @@
 
     function exitToEditor() {
         state = 'EDITOR'; isTesting = false; selectedObstacle = null;
-        obstacles = JSON.parse(JSON.stringify(editorBackupObstacles)); // Restore original
-        player.screenX = 200; // Reset screen position
+        obstacles = JSON.parse(JSON.stringify(editorBackupObstacles)); 
+        player.screenX = 200; 
         player.y = FLOOR_Y - player.size; player.vy = 0; screenShake = 0;
-        levelColors = { ...editorBackupColors }; // Restore colors before triggers altered them
+        levelColors = { ...editorBackupColors }; 
         transition.active = false;
         showMenu('editor');
         updateContextPanel();
@@ -561,7 +562,7 @@
         if (isTesting) document.getElementById('hud-exit-btn').classList.remove('hidden');
 
         cameraX = 0; cameraY = 0; screenShake = 0;
-        player.screenX = 200; // Reset screen position
+        player.screenX = 200; 
         player.y = FLOOR_Y - player.size; player.lastY = player.y;
         player.vy = 0; player.rotation = 0; player.isGrounded = true; player.coyoteTimer = 0; player.trail = [];
         particles = []; score = 0; currentSpeed = BASE_SPEED;
@@ -624,9 +625,8 @@
         const titleEl = document.getElementById('end-title');
         const goMenuBtn = document.getElementById('go-menu-btn');
         const endMenuBox = document.getElementById('end-menu-box');
-        screenShake = 0.6; // Trigger juice screen shake
+        screenShake = 0.6; 
         
-        // Reset classes for the pop animation
         titleEl.classList.remove('animate-pop', 'text-white', 'drop-shadow-[0_0_30px_#00f3ff]', 'text-neon-cyan', 'text-neon-pink');
         endMenuBox.classList.remove('animate-pop');
 
@@ -640,7 +640,7 @@
             
             document.getElementById('end-score-label').classList.add('hidden'); document.getElementById('end-high-label').classList.add('hidden');
             document.getElementById('final-score').innerText = "100%"; document.getElementById('high-score').innerText = "";
-            screenShake = 0; // No shake on win
+            screenShake = 0; 
         } else {
             titleEl.innerText = "CRASHED"; 
             titleEl.className = "text-5xl md:text-7xl font-black text-neon-pink mb-4";
@@ -668,7 +668,7 @@
                     totalCoins: levelTotalCoins
                 };
                 localStorage.setItem('neonDashStats', JSON.stringify(stats));
-                renderLevelGrid(); // Refresh grid data
+                renderLevelGrid(); 
             }
             
             document.getElementById('end-score-label').classList.remove('hidden'); document.getElementById('end-high-label').classList.add('hidden');
@@ -715,14 +715,14 @@
         },
         (x) => {
             obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 90, width: 250, height: 20, passed: false });
-            obstacles.push({ type: 'coin', x: x + 105, y: FLOOR_Y - 140, width: 40, height: 40, passed: false }); // Add coin on top
+            obstacles.push({ type: 'coin', x: x + 105, y: FLOOR_Y - 140, width: 40, height: 40, passed: false }); 
             for(let i=1; i<=4; i++) obstacles.push({ type: 'spike', x: x + (i*GRID_SIZE), y: FLOOR_Y - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, passed: false });
             return 250;
         },
         (x) => {
             obstacles.push({ type: 'block', x: x, y: FLOOR_Y - 40, width: 80, height: 40, passed: false });
             obstacles.push({ type: 'fakeblock', x: x + 80, y: FLOOR_Y - 80, width: 80, height: 80, passed: false });
-            obstacles.push({ type: 'coin', x: x + 100, y: FLOOR_Y - 40, width: 40, height: 40, passed: false }); // Secret coin in fake block
+            obstacles.push({ type: 'coin', x: x + 100, y: FLOOR_Y - 40, width: 40, height: 40, passed: false }); 
             obstacles.push({ type: 'block', x: x + 160, y: FLOOR_Y - 120, width: 80, height: 120, passed: false });
             return 240;
         },
@@ -751,11 +751,11 @@
         },
         (x) => {
             obstacles.push({ type: 'bouncepad', x: x, y: FLOOR_Y - 10, width: 40, height: 10, boost: -1800, passed: false });
-            obstacles.push({ type: 'coin', x: x + 150, y: FLOOR_Y - 250, width: 40, height: 40, passed: false }); // High coin
+            obstacles.push({ type: 'coin', x: x + 150, y: FLOOR_Y - 250, width: 40, height: 40, passed: false }); 
             obstacles.push({ type: 'block', x: x + 300, y: FLOOR_Y - 200, width: 120, height: 40, passed: false });
             return 420;
         },
-        (x) => { // Vertical climb test
+        (x) => { 
             obstacles.push({ type: 'bouncepad', x: x, y: FLOOR_Y - 10, width: 40, height: 10, boost: -2000, passed: false });
             obstacles.push({ type: 'bouncepad', x: x + 250, y: FLOOR_Y - 300, width: 40, height: 10, boost: -2200, passed: false });
             obstacles.push({ type: 'block', x: x + 500, y: FLOOR_Y - 600, width: 120, height: 40, passed: false });
@@ -822,9 +822,10 @@
                 document.getElementById('trig-dur').value = selectedObstacle.duration;
             }
             document.getElementById('trig-dur-val').innerText = document.getElementById('trig-dur').value + 's';
-        } else if (activeType === 'bouncepad') {
+        } else if (activeType === 'bouncepad' || activeType === 'orb') {
             document.getElementById('ctx-pad-settings').classList.remove('hidden');
-            if (selectedObstacle) document.getElementById('pad-boost').value = Math.abs(selectedObstacle.boost || 1800);
+            document.getElementById('jump-tool-label').innerText = (activeType === 'orb' ? "Orb Settings:" : "Pad Settings:");
+            if (selectedObstacle) document.getElementById('pad-boost').value = Math.abs(selectedObstacle.boost || (activeType === 'orb' ? 1300 : 1800));
             document.getElementById('pad-boost-val').innerText = document.getElementById('pad-boost').value;
         } else if (activeType === 'portal') {
             document.getElementById('ctx-portal-settings').classList.remove('hidden');
@@ -836,12 +837,10 @@
     }
 
     function applyPropertyChange() {
-        // UI Updates
         document.getElementById('trig-dur-val').innerText = document.getElementById('trig-dur').value + 's';
         document.getElementById('pad-boost-val').innerText = document.getElementById('pad-boost').value;
         document.getElementById('portal-speed-val').innerText = document.getElementById('portal-speed').value + 'x';
 
-        // Apply to Selected Item
         if (!selectedObstacle) return;
 
         if (selectedObstacle.type === 'trigger_color') {
@@ -850,7 +849,7 @@
             selectedObstacle.colors.floor = document.getElementById('trig-f').value;
             selectedObstacle.colors.outline = document.getElementById('trig-o').value;
             selectedObstacle.duration = parseFloat(document.getElementById('trig-dur').value);
-        } else if (selectedObstacle.type === 'bouncepad') {
+        } else if (selectedObstacle.type === 'bouncepad' || selectedObstacle.type === 'orb') {
             selectedObstacle.boost = -parseFloat(document.getElementById('pad-boost').value);
         } else if (selectedObstacle.type === 'portal') {
             selectedObstacle.speedMulti = parseFloat(document.getElementById('portal-speed').value);
@@ -868,7 +867,6 @@
         startGame('LEVEL', code, "Test Run");
     }
 
-    // Modal Operations
     function openDataModal() {
         document.getElementById('export-textarea').value = encodeLevel(obstacles);
         document.getElementById('data-modal').classList.remove('hidden');
@@ -907,7 +905,7 @@
         if(editorMouseY < 64 || editorMouseY > GAME_HEIGHT - 64) return; 
 
         let mouseX = editorMouseX + cameraX;
-        let mouseY = editorMouseY + cameraY; // OFFSET Y IN EDITOR
+        let mouseY = editorMouseY + cameraY; 
 
         if (editorTool === 'select') {
             selectedObstacle = null;
@@ -933,7 +931,6 @@
         if (editorTool === 'portal') { objH = 120; yOffset = -120 + GRID_SIZE; } 
         
         let worldY = snapY + yOffset;
-        // Don't cap to floor unless it's a structural item, and allow building slightly below floor line if panned down
         if (editorTool !== 'trigger_color' && editorTool !== 'orb' && editorTool !== 'portal' && editorTool !== 'startpos' && editorTool !== 'coin' && worldY + objH > FLOOR_Y) {
             worldY = FLOOR_Y - objH;
         }
@@ -949,7 +946,6 @@
             }
         } else {
             let item = { type: editorTool, x: worldX, y: worldY, width: GRID_SIZE, height: objH, passed: false };
-            
             if (editorTool === 'trigger_color') {
                 item.width = 40; 
                 item.duration = parseFloat(document.getElementById('trig-dur').value) || 1.0;
@@ -959,15 +955,10 @@
                 };
             } else if (editorTool === 'portal') { 
                 item.speedMulti = parseFloat(document.getElementById('portal-speed').value) || 1.0; 
-            } else if (editorTool === 'bouncepad') { 
-                item.boost = -parseFloat(document.getElementById('pad-boost').value) || -1800; 
+            } else if (editorTool === 'bouncepad' || editorTool === 'orb') { 
+                item.boost = -parseFloat(document.getElementById('pad-boost').value) || (editorTool === 'orb' ? -1300 : -1800); 
             }
-
-            // Remove any existing start positions before placing a new one
-            if (editorTool === 'startpos') {
-                obstacles = obstacles.filter(o => o.type !== 'startpos');
-            }
-
+            if (editorTool === 'startpos') obstacles = obstacles.filter(o => o.type !== 'startpos');
             let occupied = obstacles.some(o => o.x === worldX && o.y === worldY && o.type === editorTool);
             if(!occupied) obstacles.push(item);
         }
@@ -983,11 +974,15 @@
         let pRect = { x: pWorldX, y: player.y, w: player.size, h: player.size };
         let hitOrb = false;
 
+        const ORB_BUFFER = 30; // More forgiving mid-air orb hitbox
         for (let obs of obstacles) {
             if (obs.type === 'orb') {
-                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+                let oRect = { x: obs.x - ORB_BUFFER, y: obs.y - ORB_BUFFER, w: obs.width + ORB_BUFFER*2, h: obs.height + ORB_BUFFER*2 };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
-                    player.vy = JUMP_VELOCITY; player.isGrounded = false; player.coyoteTimer = 0; hitOrb = true;
+                    player.vy = obs.boost || JUMP_VELOCITY; // Now uses custom boost if set!
+                    player.isGrounded = false; 
+                    player.coyoteTimer = 0; 
+                    hitOrb = true;
                     for(let k=0; k<15; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*400, vy: (Math.random()-0.5)*400, life: 1.0, color: '#e879f9', size: 4 });
                     break;
                 }
@@ -1011,15 +1006,11 @@
         if(state === 'EDITOR') {
             const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
             editorMouseX = (e.clientX - rect.left) * scaleX; editorMouseY = (e.clientY - rect.top) * scaleY;
-            // Support drag-to-draw
-            if (isEditorMouseDown && editorTool !== 'select' && editorTool !== 'startpos') {
-                handleEditorClick();
-            }
+            if (isEditorMouseDown && editorTool !== 'select' && editorTool !== 'startpos') handleEditorClick();
         }
     });
 
     window.addEventListener('mouseup', () => { isEditorMouseDown = false; });
-
     canvas.addEventListener('touchstart', (e) => {
         if(e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
         if(state === 'EDITOR' && e.touches.length > 0) {
@@ -1029,17 +1020,13 @@
             handleEditorClick();
         } else if(state === 'PLAYING') { e.preventDefault(); jump(); }
     }, {passive: false});
-
     canvas.addEventListener('touchmove', (e) => {
         if(state === 'EDITOR' && e.touches.length > 0) {
             const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
             editorMouseX = (e.touches[0].clientX - rect.left) * scaleX; editorMouseY = (e.touches[0].clientY - rect.top) * scaleY;
-            if (isEditorMouseDown && editorTool !== 'select' && editorTool !== 'startpos') {
-                handleEditorClick();
-            }
+            if (isEditorMouseDown && editorTool !== 'select' && editorTool !== 'startpos') handleEditorClick();
         }
     }, {passive: false});
-    
     window.addEventListener('touchend', () => { isEditorMouseDown = false; });
 
     window.addEventListener('keydown', (e) => {
@@ -1083,7 +1070,6 @@
      */
     function update(dt) {
         if (state === 'MAIN_MENU' || state === 'LEVEL_SELECT') { cameraX += (BASE_SPEED * 0.3) * dt; return; }
-        
         if (screenShake > 0) screenShake -= dt * 1.5;
 
         if (state === 'EDITOR') {
@@ -1091,10 +1077,8 @@
             if (isPanningRight) cameraX += EDITOR_PAN_SPEED * dt;
             if (isPanningUp) cameraY -= EDITOR_PAN_SPEED * dt;
             if (isPanningDown) cameraY += EDITOR_PAN_SPEED * dt;
-            
             if (cameraX < 0) cameraX = 0;
-            if (cameraY > 0) cameraY = 0; // Prevent looking "underground" too far
-            
+            if (cameraY > 0) cameraY = 0; 
             document.getElementById('cam-pos-x').innerText = Math.floor(cameraX);
             document.getElementById('cam-pos-y').innerText = Math.floor(cameraY);
             return;
@@ -1102,28 +1086,16 @@
         
         if (state !== 'PLAYING' && state !== 'WIN_ANIMATION') return;
 
-        // Satisfying Level Clear Animation
         if (state === 'WIN_ANIMATION') {
             player.winTimer += dt;
-            
-            // Screen shake intensifies as beam overloads!
-            if (player.winTimer > 0.8) {
-                screenShake = (player.winTimer - 0.8) * 2;
-            }
-            
-            // Snap to beam center
+            if (player.winTimer > 0.8) screenShake = (player.winTimer - 0.8) * 2;
             let targetScreenX = levelEndX - cameraX;
             player.screenX += (targetScreenX - player.screenX) * 15 * dt; 
-            
-            // Blast upwards into the sky with accelerating velocity
             player.vy -= 4000 * dt; 
             player.y += player.vy * dt;
             player.rotation += 25 * dt; 
-
             player.trail.push({ x: player.screenX + cameraX, y: player.y, rotation: player.rotation });
             if (player.trail.length > 10) player.trail.shift();
-
-            // Downward blasting particle effects
             for(let k=0; k<8; k++) {
                 particles.push({ 
                     x: player.screenX + cameraX + player.size/2 + (Math.random()-0.5)*40, 
@@ -1133,25 +1105,18 @@
                     life: 0.6 + Math.random()*0.4, color: '#ffffff', size: Math.random()*6+2 
                 });
             }
-
-            // Track camera up with the player
             let targetCameraY = player.y - (GAME_HEIGHT * 0.5);
             if (targetCameraY > 0) targetCameraY = 0; 
             cameraY += (targetCameraY - cameraY) * 5 * dt;
-
-            // Trigger white flash div at 1.15s (after the canvas laser has consumed the screen)
             if (player.winTimer > 1.15 && !player.flashTriggered) {
                 player.flashTriggered = true;
                 const flash = document.getElementById('white-flash');
                 flash.classList.remove('hidden');
-                void flash.offsetWidth; // Force reflow
+                void flash.offsetWidth; 
                 flash.classList.replace('opacity-0', 'opacity-100');
             }
-
-            // End animation and show win screen after 1.5s
             if (player.winTimer > 1.5) {
                 triggerGameOver(true);
-                // Fade out the flash revealing the "BAM" UI popping out of the light
                 const flash = document.getElementById('white-flash');
                 flash.classList.replace('opacity-100', 'opacity-0');
                 setTimeout(() => flash.classList.add('hidden'), 300);
@@ -1175,8 +1140,6 @@
 
         player.trail.push({ x: player.screenX + cameraX, y: player.y, rotation: player.rotation });
         if (player.trail.length > 10) player.trail.shift();
-
-        // Speed Trails when going fast!
         if (currentSpeedMulti > 1.2 && Math.random() > 0.5) {
             particles.push({ 
                 x: player.screenX + cameraX, y: player.y + player.size/2 + (Math.random()-0.5)*player.size, 
@@ -1184,10 +1147,9 @@
             });
         }
 
-        // CAMERA TRACKING Y-AXIS
         let targetCameraY = player.y - (GAME_HEIGHT * 0.5);
-        if (targetCameraY > 0) targetCameraY = 0; // Don't track below floor level
-        cameraY += (targetCameraY - cameraY) * 5 * dt; // Smooth interpolation
+        if (targetCameraY > 0) targetCameraY = 0; 
+        cameraY += (targetCameraY - cameraY) * 5 * dt;
 
         if (transition.active) {
             transition.time += dt; let t = transition.time / transition.duration;
@@ -1198,7 +1160,6 @@
             levelColors.outline = lerpColor(transition.start.outline, transition.target.outline, t);
         }
 
-        // Record Trajectory Trail
         if (isTesting && state === 'PLAYING') {
             let pWorldX = player.screenX + cameraX;
             if (pWorldX - lastRecordX >= RECORD_INTERVAL) {
@@ -1213,14 +1174,12 @@
         } else if (gameMode === 'LEVEL') {
             let percent = Math.min(100, Math.floor(((cameraX + player.screenX) / levelEndX) * 100));
             document.getElementById('current-score').innerText = percent + "%";
-            
-            // Trigger Win Animation when crossing the beam
             if (cameraX + player.screenX > levelEndX) { 
                 state = 'WIN_ANIMATION';
                 player.winTimer = 0;
-                player.flashTriggered = false; // Initialize flash flag
-                player.vy = -1000; // Start with a strong upward pop
-                screenShake = 0.4; // Satisfying impact bump
+                player.flashTriggered = false;
+                player.vy = -1000;
+                screenShake = 0.4;
                 return; 
             }
         }
@@ -1231,46 +1190,36 @@
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
             if (obs.x > pWorldX + GAME_WIDTH) continue;
-
-            if (obs.type === 'startpos') continue; // Skip collision logic for startpos
+            if (obs.type === 'startpos') continue;
 
             if (obs.type === 'trigger_color' && !obs.passed && pWorldX > obs.x) {
                 obs.passed = true;
                 startColorTransition(obs.colors, obs.duration);
             }
-            
             if (obs.type === 'portal' && !obs.passed) {
-                // Expanded hitbox massively on Y axis so you don't have to hit perfectly
                 let oRect = { x: obs.x, y: obs.y - 120, w: obs.width, h: obs.height + 240 };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     obs.passed = true;
                     targetSpeedMulti = obs.speedMulti;
-                    
-                    // Satisfying portal particle explosion instead of a white square
                     let pCol = obs.speedMulti > 1.2 ? '#f472b6' : (obs.speedMulti < 0.9 ? '#93c5fd' : '#86efac'); 
                     for(let k=0; k<20; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*800, vy: (Math.random()-0.5)*800, life: 0.6, color: pCol, size: Math.random()*8+4 });
                 }
             }
-            
             if (obs.type === 'coin' && !obs.passed) {
                 let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     obs.passed = true;
-                    obs.collectedTime = Date.now(); // Record time for satisfying animation
+                    obs.collectedTime = Date.now();
                     coinsCollected++;
-                    
                     if(gameMode === 'ENDLESS') {
                         score += 50; 
                         document.getElementById('coin-count').innerText = coinsCollected;
                     } else {
                         document.getElementById('coin-count').innerText = `${coinsCollected}/${levelTotalCoins}`;
                     }
-
-                    // Mario-style Sparkles instead of blocky particles
                     for(let k=0; k<12; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*200, vy: -150 - Math.random()*150, life: 0.7, color: '#fff', size: Math.random()*4+1 });
                 }
             }
-
             if (obs.type === 'spike') {
                 const hW = obs.width * 0.4, hH = obs.height * 0.6;
                 let oRect = { x: obs.x + (obs.width / 2) - (hW / 2), y: obs.y + (obs.height - hH), w: hW, h: hH };
@@ -1299,7 +1248,7 @@
                 if (dist < (obs.width / 2) * 0.8 + (pRect.w / 2) * 0.8) triggerGameOver();
             }
 
-            if (gameMode === 'ENDLESS' && !obs.passed && obs.x + obs.width < pWorldX && obs.type !== 'trigger_color' && obs.type !== 'portal' && obs.type !== 'coin') {
+            if (gameMode === 'ENDLESS' && !obs.passed && obs.x + obs.width < pWorldX && obs.type !== 'trigger_color' && obs.type !== 'portal' && obs.type !== 'coin' && obs.type !== 'orb') {
                 obs.passed = true; score += 1; document.getElementById('current-score').innerText = Math.floor(score);
             }
             if (obs.x + obs.width < cameraX - 100) obstacles.splice(i, 1);
@@ -1315,7 +1264,6 @@
 
     function draw() {
         ctx.save();
-        // Screen Shake juice
         if (screenShake > 0) {
             let shakeX = (Math.random() - 0.5) * 25 * screenShake;
             let shakeY = (Math.random() - 0.5) * 25 * screenShake;
@@ -1326,7 +1274,6 @@
         grd.addColorStop(0, levelColors.bgTop); grd.addColorStop(1, levelColors.bgBot);
         ctx.fillStyle = grd; ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-        // Parallax Starfield / Dust
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         for(let i=0; i<60; i++) {
             let sx = ((i * 137) - cameraX * 0.15) % GAME_WIDTH;
@@ -1336,11 +1283,9 @@
             ctx.fillRect(sx, sy, i%3===0? 2: 1, i%3===0? 2: 1);
         }
 
-        // Render Grid Lines correctly offset by both X and Y
         ctx.strokeStyle = 'rgba(102, 252, 241, 0.05)'; ctx.lineWidth = 2; ctx.beginPath();
         const gridOffsetX = ((cameraX % GRID_SIZE) + GRID_SIZE) % GRID_SIZE;
         const gridOffsetY = ((cameraY % GRID_SIZE) + GRID_SIZE) % GRID_SIZE;
-        
         for(let x = -gridOffsetX; x < GAME_WIDTH; x += GRID_SIZE) { 
             ctx.moveTo(x, 0); ctx.lineTo(x, Math.max(GAME_HEIGHT, FLOOR_Y - cameraY)); 
         }
@@ -1350,10 +1295,8 @@
         }
         ctx.stroke();
 
-        // Floor rendering (Extended deep down so panning up looks natural)
         ctx.fillStyle = levelColors.floor; 
         ctx.fillRect(0, FLOOR_Y - cameraY, GAME_WIDTH, GAME_HEIGHT * 2);
-        
         ctx.shadowBlur = 15; ctx.shadowColor = levelColors.outline; ctx.fillStyle = levelColors.outline; 
         ctx.fillRect(0, FLOOR_Y - cameraY, GAME_WIDTH, 4); ctx.shadowBlur = 0;
 
@@ -1369,13 +1312,24 @@
                 ctx.shadowBlur = 0;
             } else if (obs.type === 'block' || obs.type === 'halfblock' || obs.type === 'fakeblock') {
                 ctx.fillStyle = '#050a0f'; ctx.fillRect(screenX, screenY, obs.width, obs.height);
+                let isFake = obs.type === 'fakeblock';
                 ctx.strokeStyle = levelColors.outline; ctx.lineWidth = 2; 
-                if (state === 'EDITOR' && obs.type === 'fakeblock') ctx.setLineDash([5,5]); 
-                ctx.shadowBlur = 10; ctx.shadowColor = levelColors.outline; ctx.strokeRect(screenX, screenY, obs.width, obs.height); ctx.shadowBlur = 0; ctx.setLineDash([]);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; ctx.lineWidth = 1; ctx.beginPath();
+                if (isFake) {
+                    if (state === 'EDITOR') ctx.setLineDash([5,5]); 
+                    else ctx.globalAlpha = 0.6; 
+                }
+                ctx.shadowBlur = isFake ? 0 : 10; 
+                ctx.shadowColor = levelColors.outline; 
+                ctx.strokeRect(screenX, screenY, obs.width, obs.height); 
+                ctx.shadowBlur = 0; ctx.setLineDash([]); ctx.globalAlpha = 1.0;
+                ctx.strokeStyle = isFake ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)'; 
+                ctx.lineWidth = 1; 
+                if (isFake) ctx.setLineDash([4, 4]);
+                ctx.beginPath();
                 for(let i = 15; i < obs.width; i += 20) { ctx.moveTo(screenX + i, screenY); ctx.lineTo(screenX + i, screenY + obs.height); }
                 for(let i = 15; i < obs.height; i += 20) { ctx.moveTo(screenX, screenY + i); ctx.lineTo(screenX + obs.width, screenY + i); }
                 ctx.stroke();
+                ctx.setLineDash([]);
             } else if (obs.type === 'bouncepad') {
                 ctx.fillStyle = '#ccff00'; ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
                 ctx.beginPath(); ctx.roundRect(screenX, screenY, obs.width, obs.height, [5, 5, 0, 0]); ctx.fill(); ctx.shadowBlur = 0;
@@ -1411,7 +1365,7 @@
             } else if (obs.type === 'coin') {
                 if (!obs.passed) {
                     ctx.save(); ctx.translate(screenX + obs.width/2, screenY + obs.height/2);
-                    ctx.scale(Math.max(0.1, Math.abs(Math.sin(Date.now() * 0.003))), 1); // Regular spin
+                    ctx.scale(Math.max(0.1, Math.abs(Math.sin(Date.now() * 0.003))), 1); 
                     ctx.shadowBlur = 15; ctx.shadowColor = '#fbbf24'; ctx.fillStyle = '#fbbf24';
                     ctx.beginPath(); ctx.arc(0, 0, obs.width/2 * 0.6, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, obs.width/2 * 0.3, 0, Math.PI * 2); ctx.fill();
@@ -1420,11 +1374,10 @@
                     let elapsed = (Date.now() - obs.collectedTime) / 1000;
                     if (elapsed < 0.4) {
                         ctx.save(); 
-                        // Mario style fast pop up arc (goes up and starts falling)
                         let popY = screenY + obs.height/2 - (Math.sin((elapsed / 0.4) * Math.PI) * 80);
                         ctx.translate(screenX + obs.width/2, popY); 
                         ctx.globalAlpha = 1.0 - (elapsed / 0.4); 
-                        ctx.scale(Math.max(0.1, Math.abs(Math.sin(Date.now() * 0.015))), 1); // Nice fast spin
+                        ctx.scale(Math.max(0.1, Math.abs(Math.sin(Date.now() * 0.015))), 1); 
                         ctx.shadowBlur = 25; ctx.shadowColor = '#fbbf24'; ctx.fillStyle = '#fbbf24';
                         ctx.beginPath(); ctx.arc(0, 0, obs.width/2 * 0.6, 0, Math.PI * 2); ctx.fill();
                         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, obs.width/2 * 0.3, 0, Math.PI * 2); ctx.fill();
@@ -1432,8 +1385,6 @@
                     }
                 }
             }
-            
-            // Highlight selected obstacle in Editor
             if (state === 'EDITOR' && selectedObstacle === obs) {
                 let oRect = getObsRect(obs);
                 ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 3; ctx.setLineDash([8, 4]);
@@ -1442,61 +1393,38 @@
             }
         }
 
-        // Draw Finish Line Indicator
         if (gameMode === 'LEVEL' || state === 'EDITOR') {
             let activeEndX = state === 'EDITOR' ? (obstacles.length > 0 ? Math.max(...obstacles.map(o => o.x)) + 800 : 1000) : levelEndX;
             let endScreenX = activeEndX - cameraX;
-            
             if (endScreenX > -200 && endScreenX < GAME_WIDTH + 200) {
                 ctx.save();
-                let pulse = (Math.sin(Date.now() * 0.005) + 1) / 2; // 0 to 1
-                if (state === 'WIN_ANIMATION') pulse += player.winTimer * 3; // Flare beam outward during win!
-
-                let centerX = endScreenX + player.size / 2; // Center on player contact point
-                
-                // Floor gateway glow
+                let pulse = (Math.sin(Date.now() * 0.005) + 1) / 2; 
+                if (state === 'WIN_ANIMATION') pulse += player.winTimer * 3; 
+                let centerX = endScreenX + player.size / 2; 
                 ctx.fillStyle = `rgba(0, 243, 255, ${Math.min(1, 0.3 + pulse * 0.2)})`;
                 ctx.beginPath();
                 ctx.ellipse(centerX, FLOOR_Y - cameraY, 120 + (state === 'WIN_ANIMATION' ? player.winTimer*200 : 0), 20 + (state === 'WIN_ANIMATION' ? player.winTimer*50 : 0), 0, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Towering Laser Beam
                 let beamTop = FLOOR_Y - cameraY - 2000;
                 let beamGradient = ctx.createLinearGradient(0, FLOOR_Y - cameraY, 0, beamTop);
                 beamGradient.addColorStop(0, `rgba(0, 243, 255, ${Math.min(1, 0.8 + pulse * 0.2)})`);
                 beamGradient.addColorStop(1, 'rgba(0, 243, 255, 0)');
-                
                 ctx.fillStyle = beamGradient;
                 let beamWidth = 80 + (state === 'WIN_ANIMATION' ? player.winTimer * 150 : 0);
-                if (state === 'WIN_ANIMATION' && player.winTimer > 0.8) {
-                    beamWidth += Math.pow((player.winTimer - 0.8) * 12, 4); // Explode outwards!
-                }
+                if (state === 'WIN_ANIMATION' && player.winTimer > 0.8) beamWidth += Math.pow((player.winTimer - 0.8) * 12, 4);
                 ctx.fillRect(centerX - beamWidth/2, beamTop, beamWidth, 2000);
-
-                // Core of the beam
                 ctx.shadowBlur = 30 + (state === 'WIN_ANIMATION' ? player.winTimer * 50 : 0);
                 ctx.shadowColor = '#00f3ff';
                 ctx.fillStyle = '#ffffff';
                 let coreWidth = 10 + (state === 'WIN_ANIMATION' ? player.winTimer * 50 : 0);
-                if (state === 'WIN_ANIMATION' && player.winTimer > 0.8) {
-                    coreWidth += Math.pow((player.winTimer - 0.8) * 12, 4); // Core consumes the screen!
-                }
+                if (state === 'WIN_ANIMATION' && player.winTimer > 0.8) coreWidth += Math.pow((player.winTimer - 0.8) * 12, 4);
                 ctx.fillRect(centerX - coreWidth/2, beamTop, coreWidth, 2000);
-
-                // Intense spherical supernova bloom from the base of the laser
                 if (state === 'WIN_ANIMATION' && player.winTimer > 0.6) {
                     let bloomSize = Math.pow((player.winTimer - 0.6) * 10, 4);
                     let bloomGrd = ctx.createRadialGradient(centerX, FLOOR_Y - cameraY, 0, centerX, FLOOR_Y - cameraY, bloomSize);
-                    bloomGrd.addColorStop(0, '#ffffff');
-                    bloomGrd.addColorStop(0.4, 'rgba(0, 243, 255, 0.9)');
-                    bloomGrd.addColorStop(1, 'rgba(0, 243, 255, 0)');
-                    ctx.fillStyle = bloomGrd;
-                    ctx.beginPath();
-                    ctx.arc(centerX, FLOOR_Y - cameraY, bloomSize, 0, Math.PI * 2);
-                    ctx.fill();
+                    bloomGrd.addColorStop(0, '#ffffff'); bloomGrd.addColorStop(0.4, 'rgba(0, 243, 255, 0.9)'); bloomGrd.addColorStop(1, 'rgba(0, 243, 255, 0)');
+                    ctx.fillStyle = bloomGrd; ctx.beginPath(); ctx.arc(centerX, FLOOR_Y - cameraY, bloomSize, 0, Math.PI * 2); ctx.fill();
                 }
-
-                // Particles rising in the beam
                 ctx.fillStyle = '#ffffff';
                 for(let i = 0; i < 30; i++) {
                     let py = (FLOOR_Y - cameraY) - ((Date.now() * 0.2 + i * 50) % 2000);
@@ -1504,90 +1432,62 @@
                     ctx.globalAlpha = Math.max(0, 1 - ((FLOOR_Y - cameraY - py) / 2000));
                     ctx.fillRect(px, py, 4, 4);
                 }
-                
-                // Holographic Text
-                ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.4);
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowBlur = 15;
-                ctx.font = '900 28px Orbitron';
-                ctx.textAlign = 'center';
+                ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.4); ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 15; ctx.font = '900 28px Orbitron'; ctx.textAlign = 'center';
                 ctx.fillText("LEVEL CLEAR", centerX, FLOOR_Y - cameraY - 150 + (Math.sin(Date.now() * 0.003) * 15));
-                
                 ctx.restore();
             }
         }
 
         if (state === 'EDITOR') {
-            // Start vertical line and player preview ghost
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fillRect(200 - cameraX, 0, 2, FLOOR_Y - cameraY);
             ctx.fillStyle = 'rgba(0, 243, 255, 0.3)'; ctx.fillRect(200 - cameraX, FLOOR_Y - player.size - cameraY, player.size, player.size);
-
             if (editorMouseY > 64 && editorMouseY < GAME_HEIGHT - 64) {
                 let snapX = Math.floor((editorMouseX + cameraX) / GRID_SIZE) * GRID_SIZE;
                 let snapY = Math.floor((editorMouseY + cameraY) / GRID_SIZE) * GRID_SIZE;
-                
                 let objH = GRID_SIZE; let yOffset = 0;
                 if (editorTool === 'halfblock') { objH = 20; yOffset = 20; }
                 if (editorTool === 'bouncepad') { objH = 10; yOffset = 30; }
                 if (editorTool === 'trigger_color') { objH = 200; yOffset = -200 + GRID_SIZE; }
                 if (editorTool === 'portal') { objH = 120; yOffset = -120 + GRID_SIZE; } 
-                
                 let drawY = snapY + yOffset;
                 if (editorTool !== 'trigger_color' && editorTool !== 'orb' && editorTool !== 'portal' && editorTool !== 'select' && editorTool !== 'startpos' && editorTool !== 'coin' && drawY + objH > FLOOR_Y) drawY = FLOOR_Y - objH;
-                
-                ctx.strokeStyle = editorTool === 'erase' ? 'rgba(255,0,60,0.8)' : 'rgba(255,255,255,0.8)';
-                ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
-                
+                ctx.strokeStyle = editorTool === 'erase' ? 'rgba(255,0,60,0.8)' : 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
                 if (editorTool === 'spike') {
                     ctx.beginPath(); ctx.moveTo(snapX - cameraX, drawY - cameraY + objH); ctx.lineTo(snapX - cameraX + GRID_SIZE / 2, drawY - cameraY); ctx.lineTo(snapX - cameraX + GRID_SIZE, drawY - cameraY + objH); ctx.closePath(); ctx.stroke();
                 } else if(editorTool !== 'erase' && editorTool !== 'select') {
                     if (editorTool === 'sawblade' || editorTool === 'orb' || editorTool === 'coin') { ctx.beginPath(); ctx.arc(snapX - cameraX + GRID_SIZE/2, drawY - cameraY + GRID_SIZE/2, GRID_SIZE/2, 0, Math.PI * 2); ctx.stroke(); } 
                     else if (editorTool === 'portal') { 
-                        let previewSpeed = parseFloat(document.getElementById('portal-speed').value) || 1.0;
-                        let pCol = previewSpeed > 1.2 ? '#f472b6' : (previewSpeed < 0.9 ? '#93c5fd' : '#86efac');
-                        ctx.strokeStyle = pCol;
-                        ctx.beginPath(); ctx.ellipse(snapX - cameraX + GRID_SIZE/2, drawY - cameraY + objH/2, GRID_SIZE/2, objH/2, 0, 0, Math.PI*2); ctx.stroke(); 
+                        let spd = parseFloat(document.getElementById('portal-speed').value) || 1.0;
+                        let pCol = spd > 1.2 ? '#f472b6' : (spd < 0.9 ? '#93c5fd' : '#86efac');
+                        ctx.strokeStyle = pCol; ctx.beginPath(); ctx.ellipse(snapX - cameraX + GRID_SIZE/2, drawY - cameraY + objH/2, GRID_SIZE/2, objH/2, 0, 0, Math.PI*2); ctx.stroke(); 
                     }
-                    else { ctx.strokeRect(snapX - cameraX, drawY - cameraY, GRID_SIZE, objH); }
-                } else if (editorTool === 'erase') { 
-                    ctx.strokeRect(snapX - cameraX, snapY - cameraY, GRID_SIZE, GRID_SIZE); 
-                }
+                    else ctx.strokeRect(snapX - cameraX, drawY - cameraY, GRID_SIZE, objH);
+                } else if (editorTool === 'erase') ctx.strokeRect(snapX - cameraX, snapY - cameraY, GRID_SIZE, GRID_SIZE); 
                 ctx.setLineDash([]);
             }
-
-            // Draw Ghost Trail
             if (showTestTrail && testRunTrail.length > 0) {
                 for (let t of testRunTrail) {
-                    let screenX = t.x - cameraX;
-                    let screenY = t.y - cameraY;
-                    if (screenX > -50 && screenX < GAME_WIDTH + 50) {
-                        ctx.save();
-                        ctx.translate(screenX + player.size / 2, screenY + player.size / 2);
-                        ctx.rotate(t.rotation);
-                        ctx.fillStyle = 'rgba(0, 243, 255, 0.15)';
-                        ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
-                        ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(-player.size / 2, -player.size / 2, player.size, player.size);
+                    let sx = t.x - cameraX; let sy = t.y - cameraY;
+                    if (sx > -50 && sx < GAME_WIDTH + 50) {
+                        ctx.save(); ctx.translate(sx + player.size/2, sy + player.size/2); ctx.rotate(t.rotation);
+                        ctx.fillStyle = 'rgba(0, 243, 255, 0.15)'; ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+                        ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)'; ctx.lineWidth = 1; ctx.strokeRect(-player.size/2, -player.size/2, player.size, player.size);
                         ctx.restore();
                     }
                 }
             }
         }
 
-        // Draw Player Ship (Make sure it still draws during the win animation)
         if (state === 'PLAYING' || state === 'WIN_ANIMATION') {
             for (let i = 0; i < player.trail.length; i++) {
-                let t = player.trail[i]; let screenX = t.x - cameraX; let screenY = t.y - cameraY;
-                ctx.save(); ctx.translate(screenX + player.size / 2, screenY + player.size / 2); ctx.rotate(t.rotation);
-                ctx.fillStyle = `rgba(0, 243, 255, ${(i / player.trail.length) * 0.3})`;
-                ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size); ctx.restore();
+                let t = player.trail[i]; let sx = t.x - cameraX; let sy = t.y - cameraY;
+                ctx.save(); ctx.translate(sx + player.size/2, sy + player.size/2); ctx.rotate(t.rotation);
+                ctx.fillStyle = `rgba(0, 243, 255, ${(i / player.trail.length) * 0.3})`; ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size); ctx.restore();
             }
-            ctx.save(); ctx.translate(player.screenX + player.size / 2, player.y - cameraY + player.size / 2); ctx.rotate(player.rotation);
-            ctx.shadowBlur = 20; ctx.shadowColor = COLOR_PLAYER; ctx.fillStyle = COLOR_PLAYER; ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
-            ctx.fillStyle = levelColors.bgTop; ctx.shadowBlur = 0; ctx.fillRect(-player.size / 2 + 8, -player.size / 2 + 8, player.size - 16, player.size - 16);
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(-player.size / 2 + 12, -player.size / 2 + 12, player.size - 24, player.size - 24);
-            ctx.restore();
+            ctx.save(); ctx.translate(player.screenX + player.size/2, player.y - cameraY + player.size/2); ctx.rotate(player.rotation);
+            ctx.shadowBlur = 20; ctx.shadowColor = COLOR_PLAYER; ctx.fillStyle = COLOR_PLAYER; ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+            ctx.fillStyle = levelColors.bgTop; ctx.shadowBlur = 0; ctx.fillRect(-player.size/2+8, -player.size/2+8, player.size-16, player.size-16);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(-player.size/2+12, -player.size/2+12, player.size-24, player.size-24); ctx.restore();
         }
 
         if (particles.length > 0) {
@@ -1598,8 +1498,7 @@
             }
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         }
-
-        ctx.restore(); // End screen shake restore
+        ctx.restore(); 
     }
 
     function gameLoop(timestamp) {
