@@ -12,19 +12,19 @@
         }
         canvas {
             display: block; width: 100vw; height: 100vh;
-            image-rendering: pixelated;
+            image-rendering: pixelated; 
         }
         
-        /* UI Elements */
+        /* UI Elements - De-saturated & Subtle */
         #ui-layer { position: absolute; bottom: 0; width: 100%; height: 40%; pointer-events: none; display: none; }
         .btn {
-            position: absolute; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
-            color: white; font-weight: bold; font-size: 20px;
+            position: absolute; background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2); 
+            color: rgba(255, 255, 255, 0.5); font-weight: bold; font-size: 20px;
             display: flex; justify-content: center; align-items: center;
-            pointer-events: auto; backdrop-filter: blur(4px);
+            pointer-events: auto; text-shadow: 1px 1px 0 #000;
         }
-        .btn:active { background: rgba(255, 255, 255, 0.4); }
+        .btn:active { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.8); color: #FFF; }
         
         #btn-up { bottom: 120px; left: 80px; width: 60px; height: 60px; }
         #btn-down { bottom: 40px; left: 80px; width: 60px; height: 60px; }
@@ -33,76 +33,94 @@
         
         #btn-fire { 
             bottom: 60px; right: 30px; width: 80px; height: 80px; 
-            background: rgba(255, 100, 50, 0.2); border-color: rgba(255, 100, 50, 0.6); 
         }
-        #btn-fire:active { background: rgba(255, 100, 50, 0.6); }
 
         #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
-            background: rgba(0, 255, 255, 0.6); border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+            background: rgba(0, 255, 0, 0.6);
             transform: translate(-50%, -50%); pointer-events: none; display: none;
+            box-shadow: 2px 2px 0px rgba(0, 100, 0, 0.8);
         }
 
         #score-board {
-            position: absolute; top: 10px; right: 20px; color: #0FF; 
-            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000;
+            position: absolute; top: 10px; right: 20px; color: #0F0; 
+            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #030;
             display: none; pointer-events: none;
         }
 
-        /* Main Menu & Game Over */
+        /* Analog Green CRT Menu */
         #menu {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 20, 0.95); display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; color: white; text-align: center; padding: 20px;
-            box-sizing: border-box;
+            background-color: #030503;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px), 
+                radial-gradient(circle at center, #0a110a 0%, #000 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; color: #0F0; text-align: center; padding: 20px; box-sizing: border-box;
+            border: 4px solid #020;
         }
-        h1 { color: #55F; font-size: 40px; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px #00F; margin-bottom: 5px;}
         
-        #description { font-size: 16px; color: #CCC; max-width: 400px; margin-bottom: 20px; line-height: 1.4;}
-        #instructions { 
-            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; font-size: 14px;
-            max-width: 400px; text-align: left; line-height: 1.6;
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 0 #0F0, -2px 0 0 #050; }
+            50% { text-shadow: -2px 0 0 #0F0, 2px 0 0 #050; }
+            100% { text-shadow: 2px 0 0 #0F0, -2px 0 0 #050; }
         }
-        #instructions span { color: #55F; font-weight: bold; }
+
+        h1 { 
+            color: #EFFFDF; font-size: 56px; text-transform: uppercase; letter-spacing: 4px; 
+            margin-bottom: 5px; animation: glitch 0.5s infinite steps(2);
+        }
+        
+        #description { font-size: 16px; color: #6A6; max-width: 400px; margin-bottom: 25px; line-height: 1.5; text-shadow: 1px 1px 0 #000;}
+        
+        #instructions { 
+            background: rgba(0, 20, 0, 0.8); padding: 20px;
+            border: 2px solid #040; margin-bottom: 25px; font-size: 14px;
+            max-width: 400px; text-align: left; line-height: 1.6; color: #8C8;
+            border-left: 4px solid #0F0; border-right: 4px solid #050;
+        }
+        #instructions span { color: #0F0; font-weight: bold; background: #020; padding: 0 4px; border-radius: 2px; }
 
         #fatality-msg {
-            color: #F00; font-size: 32px; font-weight: bold; text-shadow: 0 0 15px #F00;
-            display: none; text-align: center; margin-bottom: 20px;
+            color: #0F0; font-size: 40px; font-weight: bold; 
+            text-shadow: 3px 3px 0 #050, -2px -2px 0 #020;
+            display: none; text-align: center; margin-bottom: 20px; letter-spacing: 2px;
         }
         
+        /* Analog Buttons */
         .menu-btn {
-            background: #55F; color: #FFF; border: none; padding: 15px 40px;
-            font-size: 20px; font-weight: bold; font-family: inherit;
-            cursor: pointer; border-radius: 5px; box-shadow: 0 0 15px #55F;
-            transition: transform 0.1s; margin: 10px; width: 300px;
+            background: #000; color: #0F0; border: 2px solid #0F0; 
+            padding: 15px 40px; font-size: 20px; font-weight: bold; font-family: inherit;
+            cursor: pointer; box-shadow: 4px 4px 0px #040;
+            transition: all 0.1s; margin: 10px; width: 300px; text-transform: uppercase;
         }
-        .menu-btn:active { transform: scale(0.95); }
+        .menu-btn:hover { background: #0F0; color: #000; box-shadow: 6px 6px 0px #040; transform: translate(-2px, -2px); }
+        .menu-btn:active { background: #050; color: #0F0; border-color: #050; box-shadow: 0px 0px 0px #0F0; transform: translate(4px, 4px); }
         
-        #mode-btn { background: #555; box-shadow: 0 0 10px #555; font-size: 16px; padding: 10px 20px;}
+        #mode-btn { border-color: #6A6; color: #6A6; box-shadow: 4px 4px 0px #020; font-size: 16px; padding: 12px 20px;}
+        #mode-btn:hover { background: #6A6; color: #000; box-shadow: 6px 6px 0px #020;}
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1 id="game-title">Xeno<br>Survival</h1>
-        <div id="description">You are trapped in a metallic labyrinth. An endless horde is hunting you down. Survive as long as you can.</div>
+        <h1 id="game-title">SYS_PURGE</h1>
+        <div id="description">Target entities detected in Sub-Level 4. Clear the sector. Survive.</div>
         
         <div id="instructions">
-            <strong>🎮 DESKTOP CONTROLS:</strong><br>
-            Use <span>W A S D</span> to move and strafe.<br>
-            Click and <span>DRAG MOUSE</span> to look around.<br>
-            Press <span>SPACEBAR</span> to fire.<br><br>
-            <strong>📱 MOBILE CONTROLS:</strong><br>
-            Use <span>ON-SCREEN BUTTONS</span> to move.<br>
-            <span>SWIPE/DRAG</span> anywhere to look around.<br>
-            Tap the <span>FIRE</span> button to shoot.
+            <strong>[ DESKTOP I/O ]</strong><br>
+            Movement: <span>W A S D</span><br>
+            Aiming: <span>CLICK & DRAG</span><br>
+            Weapon: <span>SPACEBAR</span><br><br>
+            <strong>[ MOBILE I/O ]</strong><br>
+            Movement: <span>TOUCH PAD</span><br>
+            Aiming: <span>SWIPE / DRAG</span><br>
+            Weapon: <span>FIRE BTN</span>
         </div>
 
-        <div id="fatality-msg">FATALITY<br><span style="font-size: 20px; color: #FFF; text-shadow: none;">Final Score: <span id="final-score">0</span></span></div>
-        <button id="mode-btn" class="menu-btn">ENEMY: CYCLOPS</button>
-        <button id="start-btn" class="menu-btn">START SURVIVAL</button>
+        <div id="fatality-msg">CONNECTION LOST<br><span style="font-size: 20px; text-shadow: none;">SCORE: <span id="final-score">0</span></span></div>
+        <button id="mode-btn" class="menu-btn">LOAD: CYCLOPS</button>
+        <button id="start-btn" class="menu-btn">EXECUTE</button>
     </div>
 
     <div id="score-board">SCORE: <span id="score-val">0</span></div>
@@ -129,7 +147,7 @@
         let spawnInterval = 180; let minSpawnInterval = 30;
         const MAX_ENEMIES = 15;
 
-        // Map (Fixed: Added the missing 12th row to prevent crashes)
+        // Map
         const mapWidth = 12; const mapHeight = 12;
         const worldMap = [
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -148,34 +166,36 @@
 
         const player = { x: 5.5, y: 9.5, dirX: 0.0, dirY: -1.0, planeX: 0.66, planeY: 0.0, moveSpeed: 0.08 };
         let enemies = [];
+        let particles = [];
         let zBuffer = new Array(screenWidth);
+        let moveBob = 0; 
 
-        // --- Procedural Textures ---
-        const texWidth = 64; const texHeight = 64;
+        // --- High-Resolution Procedural Textures ---
+        const texWidth = 256; const texHeight = 256;
         
-        // 1. Cyclops Texture
+        // 1. Cyclops
         const texCyclops = document.createElement('canvas');
         texCyclops.width = texWidth; texCyclops.height = texHeight;
         const cCtx = texCyclops.getContext('2d');
-        cCtx.fillStyle = '#AA2222'; cCtx.beginPath(); cCtx.arc(32, 32, 28, 0, Math.PI*2); cCtx.fill();
-        cCtx.fillStyle = '#00FF00'; cCtx.beginPath(); cCtx.arc(32, 24, 14, 0, Math.PI*2); cCtx.fill();
-        cCtx.fillStyle = '#000000'; cCtx.beginPath(); cCtx.arc(32, 24, 5, 0, Math.PI*2); cCtx.fill();
-        cCtx.fillStyle = '#000'; cCtx.fillRect(18, 44, 28, 10);
+        cCtx.fillStyle = '#AA2222'; cCtx.beginPath(); cCtx.arc(128, 128, 112, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#00FF00'; cCtx.beginPath(); cCtx.arc(128, 96, 56, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000000'; cCtx.beginPath(); cCtx.arc(128, 96, 20, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000'; cCtx.fillRect(72, 176, 112, 40);
         cCtx.fillStyle = '#FFF';
-        [20, 28, 36, 40].forEach(x => cCtx.fillRect(x, 44, 4, 4));
-        [24, 32].forEach(x => cCtx.fillRect(x, 50, 4, 4));
+        [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
+        [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-        // 2. Zombie Texture
+        // 2. Zombie
         const texZombie = document.createElement('canvas');
         texZombie.width = texWidth; texZombie.height = texHeight;
         const mCtx = texZombie.getContext('2d');
-        mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(16, 16, 32, 40); // Face/Skin
-        mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(12, 10, 40, 16); // Top Hair
-        mCtx.fillRect(12, 26, 8, 16); mCtx.fillRect(44, 26, 8, 16); // Side Hair
-        mCtx.fillStyle = '#000000'; mCtx.fillRect(22, 28, 6, 6); mCtx.fillRect(36, 28, 6, 6); // Eyes
-        mCtx.fillRect(26, 44, 12, 4); // Mouth
+        mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(64, 64, 128, 160);
+        mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(48, 40, 160, 64);
+        mCtx.fillRect(48, 104, 32, 64); mCtx.fillRect(176, 104, 32, 64);
+        mCtx.fillStyle = '#000000'; mCtx.fillRect(88, 112, 24, 24); mCtx.fillRect(144, 112, 24, 24);
+        mCtx.fillRect(104, 176, 48, 16);
 
-        let currentEnemyTex = texCyclops; // Start with Cyclops
+        let currentEnemyTex = texCyclops; 
         
         // --- Mode Toggle Logic ---
         const modeBtn = document.getElementById('mode-btn');
@@ -183,17 +203,17 @@
         modeBtn.addEventListener('click', () => {
             isZombieMode = !isZombieMode;
             if (isZombieMode) {
-                modeBtn.innerText = 'ENEMY: ZOMBIE';
+                modeBtn.innerText = 'LOAD: ZOMBIE';
                 currentEnemyTex = texZombie;
             } else {
-                modeBtn.innerText = 'ENEMY: CYCLOPS';
+                modeBtn.innerText = 'LOAD: CYCLOPS';
                 currentEnemyTex = texCyclops;
             }
         });
 
         // Input Setup
         const input = { up: false, down: false, left: false, right: false };
-        let isShooting = false; let flashTimer = 0;
+        let isShooting = false; let screenFlash = 0;
 
         window.addEventListener('keydown', (e) => {
             if(!gameActive) return;
@@ -246,12 +266,29 @@
         window.addEventListener('mousemove', e => moveLook(e.clientX));
         window.addEventListener('mouseup', endLook);
 
-        // Firing Logic
+        // Firing Logic & Particle Spawner
         const fireBtn = document.getElementById('btn-fire');
         const fire = (e) => {
             if(e) e.preventDefault();
             if(!gameActive || isShooting) return;
-            isShooting = true; flashTimer = 4;
+            isShooting = true; 
+            screenFlash = 4;
+
+            // Spawn Pixelated Particles
+            const gunTipX = screenWidth / 2;
+            const gunTipY = screenHeight - 90 + (moveBob * 0.5);
+            for(let i = 0; i < 25; i++) {
+                particles.push({
+                    x: gunTipX + (Math.random() - 0.5) * 16,
+                    y: gunTipY + (Math.random() - 0.5) * 10,
+                    vx: (Math.random() - 0.5) * 16,
+                    vy: -(Math.random() * 12 + 6),
+                    life: 1.0,
+                    decay: Math.random() * 0.1 + 0.05,
+                    size: Math.floor(Math.random() * 6) + 3,
+                    color: Math.random() > 0.4 ? '255, 150, 0' : '255, 255, 50' 
+                });
+            }
 
             for(let i = enemies.length - 1; i >= 0; i--) {
                 let enemy = enemies[i];
@@ -305,9 +342,9 @@
             
             document.getElementById('fatality-msg').style.display = 'block'; 
             document.getElementById('final-score').innerText = score;
-            document.getElementById('start-btn').innerText = 'TRY AGAIN';
-            document.getElementById('start-btn').style.background = '#F00';
-            document.getElementById('start-btn').style.boxShadow = '0 0 15px #F00';
+            document.getElementById('start-btn').innerText = 'REBOOT SYSTEM';
+            document.getElementById('start-btn').style.borderColor = '#0F0';
+            document.getElementById('start-btn').style.color = '#0F0';
         }
 
         function startGame() {
@@ -317,7 +354,7 @@
             document.getElementById('score-board').style.display = 'block';
             
             score = 0; document.getElementById('score-val').innerText = score;
-            enemies = []; spawnInterval = 180; frames = 0;
+            enemies = []; particles = []; spawnInterval = 180; frames = 0; moveBob = 0;
             
             player.x = 5.5; player.y = 9.5;
             player.dirX = 0.0; player.dirY = -1.0;
@@ -336,22 +373,30 @@
                 if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
             }
 
+            let moving = false;
             if (input.up) {
                 if (worldMap[Math.floor(player.x + player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.dirX * player.moveSpeed;
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * player.moveSpeed)] === 0) player.y += player.dirY * player.moveSpeed;
+                moving = true;
             }
             if (input.down) {
                 if (worldMap[Math.floor(player.x - player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.dirX * player.moveSpeed;
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * player.moveSpeed)] === 0) player.y -= player.dirY * player.moveSpeed;
+                moving = true;
             }
             if (input.right) {
                 if (worldMap[Math.floor(player.x + player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.planeX * player.moveSpeed;
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.planeY * player.moveSpeed)] === 0) player.y += player.planeY * player.moveSpeed;
+                moving = true;
             }
             if (input.left) {
                 if (worldMap[Math.floor(player.x - player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.planeX * player.moveSpeed;
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.planeY * player.moveSpeed)] === 0) player.y -= player.planeY * player.moveSpeed;
+                moving = true;
             }
+
+            if (moving) moveBob = Math.sin(frames * 0.2) * 8; 
+            else moveBob = moveBob * 0.8; 
 
             enemies.forEach(enemy => {
                 let dx = player.x - enemy.x;
@@ -367,22 +412,83 @@
             });
         }
 
-        function drawWeapon() {
+        function drawWeaponAndParticles() {
             const cX = screenWidth / 2; const bot = screenHeight;
-            ctx.fillStyle = '#222'; ctx.fillRect(cX - 12, bot - 80, 24, 80);
-            ctx.fillStyle = '#444'; ctx.fillRect(cX - 6, bot - 80, 12, 80);
+            const wBob = moveBob * 0.5;
+
+            // Draw Blocky Weapon
+            ctx.fillStyle = '#0a0a0a'; ctx.fillRect(cX - 16, bot - 90 + wBob, 32, 90);
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(cX - 8, bot - 90 + wBob, 16, 90);
+            ctx.fillStyle = '#333333'; ctx.fillRect(cX - 4, bot - 85 + wBob, 8, 85);
             
-            if (flashTimer > 0) {
-                ctx.fillStyle = 'rgba(255, 200, 50, 0.8)';
-                ctx.beginPath();
-                ctx.moveTo(cX, bot - 85); ctx.lineTo(cX - 30, bot - 110); ctx.lineTo(cX + 30, bot - 110);
-                ctx.fill(); flashTimer--;
+            // Angular Muzzle Flash
+            if (screenFlash > 0) {
+                ctx.fillStyle = `rgba(255, 255, 200, ${screenFlash * 0.15})`;
+                ctx.fillRect(0, 0, screenWidth, screenHeight);
+                screenFlash--;
+            }
+
+            // Draw Pixelated/Angular Particles
+            for(let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.5; // Gravity
+                p.size += 0.2; // Expand slightly
+                p.life -= p.decay;
+                
+                if(p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                
+                ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
+                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
             }
         }
 
+        function drawMiniMap() {
+            const mmScale = 4; 
+            const mmX = 10;
+            const mmY = 10;
+            
+            ctx.fillStyle = 'rgba(0, 20, 0, 0.7)';
+            ctx.fillRect(mmX, mmY, mapWidth * mmScale, mapHeight * mmScale);
+            
+            ctx.fillStyle = '#040';
+            for(let y = 0; y < mapHeight; y++) {
+                for(let x = 0; x < mapWidth; x++) {
+                    if(worldMap[x][y] > 0) {
+                        ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale);
+                    }
+                }
+            }
+            
+            ctx.fillStyle = '#F00'; // Analog red enemies
+            enemies.forEach(e => {
+                ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2);
+            });
+            
+            ctx.fillStyle = '#0F0'; // Analog green player
+            ctx.fillRect(mmX + player.x * mmScale - 1, mmY + player.y * mmScale - 1, 2, 2);
+            
+            ctx.strokeStyle = '#0F0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(mmX + player.x * mmScale, mmY + player.y * mmScale);
+            ctx.lineTo(mmX + player.x * mmScale + player.dirX * 6, mmY + player.y * mmScale + player.dirY * 6);
+            ctx.stroke();
+        }
+
         function draw() {
-            ctx.fillStyle = '#111'; ctx.fillRect(0, 0, screenWidth, screenHeight / 2); 
-            ctx.fillStyle = '#222'; ctx.fillRect(0, screenHeight / 2, screenWidth, screenHeight / 2); 
+            // Darker, dungeon-appropriate gradients
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, screenHeight / 2 + moveBob);
+            skyGrad.addColorStop(0, '#020302'); skyGrad.addColorStop(1, '#0a100a');
+            ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, screenWidth, screenHeight); 
+
+            let floorGrad = ctx.createLinearGradient(0, screenHeight / 2 + moveBob, 0, screenHeight);
+            floorGrad.addColorStop(0, '#0a0a0a'); floorGrad.addColorStop(1, '#141814');
+            ctx.fillStyle = floorGrad; ctx.fillRect(0, screenHeight / 2 + moveBob, screenWidth, screenHeight); 
 
             if(!gameActive) return; 
 
@@ -401,7 +507,7 @@
 
                 while (hit === 0) {
                     if (sDX < sDY) { sDX += dDX; mX += stepX; side = 0; } else { sDY += dDY; mY += stepY; side = 1; }
-                    if (mX < 0 || mX >= mapWidth || mY < 0 || mY >= mapHeight) { hit = 1; break; } // Safety wall
+                    if (mX < 0 || mX >= mapWidth || mY < 0 || mY >= mapHeight) { hit = 1; break; } 
                     if (worldMap[mX][mY] > 0) hit = worldMap[mX][mY];
                 }
 
@@ -411,10 +517,11 @@
                 zBuffer[x] = pWallDist;
 
                 const lineH = Math.floor(screenHeight / pWallDist);
-                let drawS = -lineH / 2 + screenHeight / 2; if (drawS < 0) drawS = 0;
-                let drawE = lineH / 2 + screenHeight / 2; if (drawE >= screenHeight) drawE = screenHeight - 1;
+                let drawS = Math.floor(-lineH / 2 + screenHeight / 2 + moveBob); if (drawS < 0) drawS = 0;
+                let drawE = Math.floor(lineH / 2 + screenHeight / 2 + moveBob); if (drawE >= screenHeight) drawE = screenHeight - 1;
 
-                let col = hit === 1 ? [50, 70, 90] : [30, 40, 50];
+                // Grimy green-gray walls
+                let col = hit === 1 ? [40, 60, 40] : [30, 45, 30]; 
                 if (side === 1) { col[0] *= 0.6; col[1] *= 0.6; col[2] *= 0.6; }
                 let shade = 1 / (1 + pWallDist * 0.3);
                 
@@ -438,7 +545,7 @@
                     let spriteH = Math.abs(Math.floor(screenHeight / tY));
                     let spriteW = Math.abs(Math.floor(screenHeight / tY));
                     
-                    let drawSY = -spriteH / 2 + screenHeight / 2;
+                    let drawSY = -spriteH / 2 + screenHeight / 2 + moveBob;
                     let drawSX = -spriteW / 2 + spriteScX;
 
                     let startStripe = Math.max(0, drawSX);
@@ -448,7 +555,6 @@
                         if (tY < zBuffer[stripe]) {
                             let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
                             
-                            // Safety Check for Mobile rendering crashes
                             if (spriteH > 0 && spriteW > 0) {
                                 ctx.drawImage(currentEnemyTex, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
                             }
@@ -460,7 +566,8 @@
                 }
             }
 
-            drawWeapon();
+            drawWeaponAndParticles();
+            drawMiniMap();
         }
 
         function gameLoop() {
