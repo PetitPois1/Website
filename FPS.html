@@ -129,7 +129,7 @@
         let spawnInterval = 180; let minSpawnInterval = 30;
         const MAX_ENEMIES = 15;
 
-        // Map
+        // Map (Fixed: Added the missing 12th row to prevent crashes)
         const mapWidth = 12; const mapHeight = 12;
         const worldMap = [
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -142,6 +142,7 @@
             [1, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 1],
             [1, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 1],
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
         ];
 
@@ -164,10 +165,10 @@
         [20, 28, 36, 40].forEach(x => cCtx.fillRect(x, 44, 4, 4));
         [24, 32].forEach(x => cCtx.fillRect(x, 50, 4, 4));
 
-        // 2. fiddler Texture
-        const texMan = document.createElement('canvas');
-        texMan.width = texWidth; texMan.height = texHeight;
-        const mCtx = texMan.getContext('2d');
+        // 2. Zombie Texture
+        const texZombie = document.createElement('canvas');
+        texZombie.width = texWidth; texZombie.height = texHeight;
+        const mCtx = texZombie.getContext('2d');
         mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(16, 16, 32, 40); // Face/Skin
         mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(12, 10, 40, 16); // Top Hair
         mCtx.fillRect(12, 26, 8, 16); mCtx.fillRect(44, 26, 8, 16); // Side Hair
@@ -178,294 +179,5 @@
         
         // --- Mode Toggle Logic ---
         const modeBtn = document.getElementById('mode-btn');
-        let isManMode = false;
-        modeBtn.addEventListener('click', () => {
-            isManMode = !isManMode;
-            if (isManMode) {
-                modeBtn.innerText = 'ENEMY: fiddler';
-                currentEnemyTex = texMan;
-            } else {
-                modeBtn.innerText = 'ENEMY: CYCLOPS';
-                currentEnemyTex = texCyclops;
-            }
-        });
-
-        // Input Setup
-        const input = { up: false, down: false, left: false, right: false };
-        let isShooting = false; let flashTimer = 0;
-
-        window.addEventListener('keydown', (e) => {
-            if(!gameActive) return;
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') input.up = true;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') input.down = true;
-            if(e.code === 'KeyA') input.left = true;
-            if(e.code === 'KeyD') input.right = true;
-            if(e.code === 'Space') fire();
-        });
-        window.addEventListener('keyup', (e) => {
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') input.up = false;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') input.down = false;
-            if(e.code === 'KeyA') input.left = false;
-            if(e.code === 'KeyD') input.right = false;
-        });
-
-        function bindButton(id, key) {
-            const btn = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); if(gameActive) input[key] = true; };
-            const end = (e) => { e.preventDefault(); input[key] = false; };
-            btn.addEventListener('touchstart', start, {passive: false});
-            btn.addEventListener('touchend', end, {passive: false});
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-            btn.addEventListener('mouseleave', end);
-        }
-        bindButton('btn-up', 'up'); bindButton('btn-down', 'down'); bindButton('btn-left', 'left'); bindButton('btn-right', 'right');
-
-        // Look logic
-        let isDragging = false; let lastPointerX = 0;
-        function rotatePlayer(amount) {
-            const oldDirX = player.dirX;
-            player.dirX = player.dirX * Math.cos(amount) - player.dirY * Math.sin(amount);
-            player.dirY = oldDirX * Math.sin(amount) + player.dirY * Math.cos(amount);
-            const oldPlaneX = player.planeX;
-            player.planeX = player.planeX * Math.cos(amount) - player.planeY * Math.sin(amount);
-            player.planeY = oldPlaneX * Math.sin(amount) + player.planeY * Math.cos(amount);
-        }
-        const startLook = (x) => { if(gameActive) { isDragging = true; lastPointerX = x; }};
-        const moveLook = (x) => {
-            if (!isDragging || !gameActive) return;
-            rotatePlayer((x - lastPointerX) * 0.015); lastPointerX = x;
-        };
-        const endLook = () => { isDragging = false; };
-
-        canvas.addEventListener('touchstart', e => startLook(e.touches[0].clientX), {passive: false});
-        canvas.addEventListener('touchmove', e => { e.preventDefault(); moveLook(e.touches[0].clientX); }, {passive: false});
-        canvas.addEventListener('touchend', endLook);
-        canvas.addEventListener('mousedown', e => startLook(e.clientX));
-        window.addEventListener('mousemove', e => moveLook(e.clientX));
-        window.addEventListener('mouseup', endLook);
-
-        // Firing Logic
-        const fireBtn = document.getElementById('btn-fire');
-        const fire = (e) => {
-            if(e) e.preventDefault();
-            if(!gameActive || isShooting) return;
-            isShooting = true; flashTimer = 4;
-
-            for(let i = enemies.length - 1; i >= 0; i--) {
-                let enemy = enemies[i];
-                let dx = enemy.x - player.x; let dy = enemy.y - player.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
-                
-                if(dot > 0.96) { 
-                    enemies.splice(i, 1);
-                    score += 100;
-                    document.getElementById('score-val').innerText = score;
-                    break; 
-                }
-            }
-            setTimeout(() => isShooting = false, 250);
-        };
-        fireBtn.addEventListener('touchstart', fire, {passive: false});
-        fireBtn.addEventListener('mousedown', fire);
-
-        // Core Systems
-        function spawnEnemy() {
-            if (enemies.length >= MAX_ENEMIES) return; 
-            
-            let spawned = false; let attempts = 0;
-            while(!spawned && attempts < 50) {
-                let rx = Math.floor(Math.random() * mapWidth);
-                let ry = Math.floor(Math.random() * mapHeight);
-                if(worldMap[rx][ry] === 0) {
-                    let dx = rx - player.x; let dy = ry - player.y;
-                    if(Math.sqrt(dx*dx + dy*dy) > 4) { 
-                        enemies.push({ x: rx + 0.5, y: ry + 0.5 });
-                        spawned = true;
-                    }
-                }
-                attempts++;
-            }
-        }
-
-        function gameOver() {
-            gameActive = false;
-            input.up = false; input.down = false; input.left = false; input.right = false;
-            
-            document.getElementById('ui-layer').style.display = 'none';
-            document.getElementById('crosshair').style.display = 'none';
-            document.getElementById('score-board').style.display = 'none';
-            
-            document.getElementById('menu').style.display = 'flex';
-            document.getElementById('game-title').style.display = 'none';
-            document.getElementById('description').style.display = 'none';
-            document.getElementById('instructions').style.display = 'none';
-            
-            document.getElementById('fatality-msg').style.display = 'block'; 
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('start-btn').innerText = 'TRY AGAIN';
-            document.getElementById('start-btn').style.background = '#F00';
-            document.getElementById('start-btn').style.boxShadow = '0 0 15px #F00';
-        }
-
-        function startGame() {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('ui-layer').style.display = 'block';
-            document.getElementById('crosshair').style.display = 'block';
-            document.getElementById('score-board').style.display = 'block';
-            
-            score = 0; document.getElementById('score-val').innerText = score;
-            enemies = []; spawnInterval = 180; frames = 0;
-            
-            player.x = 5.5; player.y = 9.5;
-            player.dirX = 0.0; player.dirY = -1.0;
-            player.planeX = 0.66; player.planeY = 0.0;
-            
-            gameActive = true;
-        }
-        document.getElementById('start-btn').addEventListener('click', startGame);
-
-        function update() {
-            if(!gameActive) return;
-
-            frames++;
-            if(frames % spawnInterval === 0) {
-                spawnEnemy();
-                if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
-            }
-
-            if (input.up) {
-                if (worldMap[Math.floor(player.x + player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.dirX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * player.moveSpeed)] === 0) player.y += player.dirY * player.moveSpeed;
-            }
-            if (input.down) {
-                if (worldMap[Math.floor(player.x - player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.dirX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * player.moveSpeed)] === 0) player.y -= player.dirY * player.moveSpeed;
-            }
-            if (input.right) {
-                if (worldMap[Math.floor(player.x + player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.planeX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.planeY * player.moveSpeed)] === 0) player.y += player.planeY * player.moveSpeed;
-            }
-            if (input.left) {
-                if (worldMap[Math.floor(player.x - player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.planeX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.planeY * player.moveSpeed)] === 0) player.y -= player.planeY * player.moveSpeed;
-            }
-
-            enemies.forEach(enemy => {
-                let dx = player.x - enemy.x;
-                let dy = player.y - enemy.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                
-                if(dist < 0.4) {
-                    gameOver();
-                } else if(dist > 0.4) { 
-                    enemy.x += (dx / dist) * 0.02; 
-                    enemy.y += (dy / dist) * 0.02;
-                }
-            });
-        }
-
-        function drawWeapon() {
-            const cX = screenWidth / 2; const bot = screenHeight;
-            ctx.fillStyle = '#222'; ctx.fillRect(cX - 12, bot - 80, 24, 80);
-            ctx.fillStyle = '#444'; ctx.fillRect(cX - 6, bot - 80, 12, 80);
-            
-            if (flashTimer > 0) {
-                ctx.fillStyle = 'rgba(255, 200, 50, 0.8)';
-                ctx.beginPath();
-                ctx.moveTo(cX, bot - 85); ctx.lineTo(cX - 30, bot - 110); ctx.lineTo(cX + 30, bot - 110);
-                ctx.fill(); flashTimer--;
-            }
-        }
-
-        function draw() {
-            ctx.fillStyle = '#111'; ctx.fillRect(0, 0, screenWidth, screenHeight / 2); 
-            ctx.fillStyle = '#222'; ctx.fillRect(0, screenHeight / 2, screenWidth, screenHeight / 2); 
-
-            if(!gameActive) return; 
-
-            for (let x = 0; x < screenWidth; x++) {
-                const cameraX = 2 * x / screenWidth - 1;
-                const rDX = player.dirX + player.planeX * cameraX;
-                const rDY = player.dirY + player.planeY * cameraX;
-
-                let mX = Math.floor(player.x); let mY = Math.floor(player.y);
-                let sDX, sDY;
-                const dDX = Math.abs(1 / rDX); const dDY = Math.abs(1 / rDY);
-                let pWallDist, hit = 0, side, stepX, stepY;
-
-                if (rDX < 0) { stepX = -1; sDX = (player.x - mX) * dDX; } else { stepX = 1; sDX = (mX + 1.0 - player.x) * dDX; }
-                if (rDY < 0) { stepY = -1; sDY = (player.y - mY) * dDY; } else { stepY = 1; sDY = (mY + 1.0 - player.y) * dDY; }
-
-                // THE FIX: Bounds checking to prevent infinite freezing loops!
-                while (hit === 0) {
-                    if (sDX < sDY) { sDX += dDX; mX += stepX; side = 0; } else { sDY += dDY; mY += stepY; side = 1; }
-                    if (mX < 0 || mX >= mapWidth || mY < 0 || mY >= mapHeight) { hit = 1; break; } // Safety wall
-                    if (worldMap[mX][mY] > 0) hit = worldMap[mX][mY];
-                }
-
-                if (side === 0) pWallDist = (mX - player.x + (1 - stepX) / 2) / rDX;
-                else pWallDist = (mY - player.y + (1 - stepY) / 2) / rDY;
-
-                zBuffer[x] = pWallDist;
-
-                const lineH = Math.floor(screenHeight / pWallDist);
-                let drawS = -lineH / 2 + screenHeight / 2; if (drawS < 0) drawS = 0;
-                let drawE = lineH / 2 + screenHeight / 2; if (drawE >= screenHeight) drawE = screenHeight - 1;
-
-                let col = hit === 1 ? [50, 70, 90] : [30, 40, 50];
-                if (side === 1) { col[0] *= 0.6; col[1] *= 0.6; col[2] *= 0.6; }
-                let shade = 1 / (1 + pWallDist * 0.3);
-                
-                ctx.fillStyle = `rgb(${col[0]*shade}, ${col[1]*shade}, ${col[2]*shade})`;
-                ctx.fillRect(x, drawS, 1, drawE - drawS);
-            }
-
-            let sortedEnemies = enemies.map(e => ({ ...e, dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) }))
-                                       .sort((a, b) => b.dist - a.dist);
-
-            for (let i = 0; i < sortedEnemies.length; i++) {
-                let sprite = sortedEnemies[i];
-                let sX = sprite.x - player.x; let sY = sprite.y - player.y;
-
-                let invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
-                let tX = invDet * (player.dirY * sX - player.dirX * sY);
-                let tY = invDet * (-player.planeY * sX + player.planeX * sY);
-
-                if (tY > 0) {
-                    let spriteScX = Math.floor((screenWidth / 2) * (1 + tX / tY));
-                    let spriteH = Math.abs(Math.floor(screenHeight / tY));
-                    let spriteW = Math.abs(Math.floor(screenHeight / tY));
-                    
-                    let drawSY = -spriteH / 2 + screenHeight / 2;
-                    let drawSX = -spriteW / 2 + spriteScX;
-
-                    let startStripe = Math.max(0, drawSX);
-                    let endStripe = Math.min(screenWidth, drawSX + spriteW);
-
-                    for(let stripe = startStripe; stripe < endStripe; stripe++) {
-                        if (tY < zBuffer[stripe]) {
-                            let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
-                            
-                            // Uses currentEnemyTex, which swaps when you click the Mode button
-                            ctx.drawImage(currentEnemyTex, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
-                            
-                            ctx.fillStyle = `rgba(17, 17, 17, ${1 - (1 / (1 + tY * 0.3))})`;
-                            ctx.fillRect(stripe, drawSY, 1, spriteH);
-                        }
-                    }
-                }
-            }
-
-            drawWeapon();
-        }
-
-        function gameLoop() {
-            update(); draw(); requestAnimationFrame(gameLoop);
-        }
-        
-        gameLoop(); 
-    </script>
-</body>
-</html>
+        let isZombieMode = false;
+        modeBtn.addEventListener('click',
