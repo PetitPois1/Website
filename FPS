@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Web FPS</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            touch-action: none; /* Crucial for custom touch controls */
+            font-family: sans-serif;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+        }
+        /* Mobile UI Overlay */
+        #ui-layer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40%;
+            pointer-events: none; /* Let touches pass through where there are no buttons */
+        }
+        .btn {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+        .btn:active { background: rgba(255, 255, 255, 0.5); }
+        
+        /* D-Pad positioning */
+        #btn-up { bottom: 120px; left: 80px; width: 60px; height: 60px; }
+        #btn-down { bottom: 40px; left: 80px; width: 60px; height: 60px; }
+        #btn-left { bottom: 80px; left: 10px; width: 60px; height: 60px; }
+        #btn-right { bottom: 80px; left: 150px; width: 60px; height: 60px; }
+        
+        /* Action buttons */
+        #btn-fire { bottom: 60px; right: 30px; width: 80px; height: 80px; background: rgba(255, 50, 50, 0.3); border-color: rgba(255, 50, 50, 0.7); }
+        #btn-fire:active { background: rgba(255, 50, 50, 0.6); }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: rgba(0, 255, 0, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="crosshair"></div>
+
+    <div id="ui-layer">
+        <div class="btn" id="btn-up">W</div>
+        <div class="btn" id="btn-left">A</div>
+        <div class="btn" id="btn-down">S</div>
+        <div class="btn" id="btn-right">D</div>
+        <div class="btn" id="btn-fire">FIRE</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Internal resolution
+        const screenWidth = 320; 
+        const screenHeight = 240;
+        canvas.width = screenWidth;
+        canvas.height = screenHeight;
+
+        // Map: 1=Red Wall, 2=Green Wall, 3=Destructible Blue Target
+        const mapWidth = 10;
+        const mapHeight = 10;
+        const worldMap = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 3, 0, 0, 0, 1],
+            [1, 0, 2, 2, 0, 0, 0, 3, 0, 1],
+            [1, 0, 2, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1, 1, 0, 1],
+            [1, 3, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 0, 0, 2, 2, 0, 1],
+            [1, 0, 0, 3, 0, 0, 0, 2, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        const player = {
+            x: 8.5, y: 8.5,
+            dirX: -1.0, dirY: 0.0,
+            planeX: 0.0, planeY: 0.66,
+            moveSpeed: 0.06, rotSpeed: 0.05
+        };
+
+        let isShooting = false;
+        let flashTimer = 0;
+
+        // Input state
+        const input = { up: false, down: false, left: false, right: false };
+
+        // Touch & Mouse wiring for UI buttons
+        function bindButton(id, key) {
+            const btn = document.getElementById(id);
+            const start = (e) => { e.preventDefault(); input[key] = true; };
+            const end = (e) => { e.preventDefault(); input[key] = false; };
+            btn.addEventListener('touchstart', start, {passive: false});
+            btn.addEventListener('touchend', end, {passive: false});
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        }
+
+        bindButton('btn-up', 'up');
+        bindButton('btn-down', 'down');
+        bindButton('btn-left', 'left');
+        bindButton('btn-right', 'right');
+
+        // Fire button logic
+        const fireBtn = document.getElementById('btn-fire');
+        const fire = (e) => {
+            e.preventDefault();
+            if(isShooting) return;
+            isShooting = true;
+            flashTimer = 5; // Frames to show muzzle flash
+
+            // Hitscan logic: check exactly what is in the center of the screen
+            const rayDirX = player.dirX; 
+            const rayDirY = player.dirY;
+            let mapX = Math.floor(player.x);
+            let mapY = Math.floor(player.y);
+            let hit = 0;
+            let stepX, stepY, sideDistX, sideDistY;
+            const deltaDistX = Math.abs(1 / rayDirX);
+            const deltaDistY = Math.abs(1 / rayDirY);
+
+            if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; } 
+            else { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
+            if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; } 
+            else { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
+
+            // Trace forward until we hit something
+            while (hit === 0) {
+                if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; } 
+                else { sideDistY += deltaDistY; mapY += stepY; }
+                if (worldMap[mapX][mapY] > 0) hit = worldMap[mapX][mapY];
+            }
+
+            // If we hit a target (3), destroy it!
+            if (hit === 3) {
+                worldMap[mapX][mapY] = 0;
+            }
+
+            setTimeout(() => isShooting = false, 250); // Fire rate cooldown
+        };
+        fireBtn.addEventListener('touchstart', fire, {passive: false});
+        fireBtn.addEventListener('mousedown', fire);
+
+        function update() {
+            if (input.up) {
+                if (worldMap[Math.floor(player.x + player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.dirX * player.moveSpeed;
+                if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * player.moveSpeed)] === 0) player.y += player.dirY * player.moveSpeed;
+            }
+            if (input.down) {
+                if (worldMap[Math.floor(player.x - player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.dirX * player.moveSpeed;
+                if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * player.moveSpeed)] === 0) player.y -= player.dirY * player.moveSpeed;
+            }
+            if (input.right) {
+                const oldDirX = player.dirX;
+                player.dirX = player.dirX * Math.cos(-player.rotSpeed) - player.dirY * Math.sin(-player.rotSpeed);
+                player.dirY = oldDirX * Math.sin(-player.rotSpeed) + player.dirY * Math.cos(-player.rotSpeed);
+                const oldPlaneX = player.planeX;
+                player.planeX = player.planeX * Math.cos(-player.rotSpeed) - player.planeY * Math.sin(-player.rotSpeed);
+                player.planeY = oldPlaneX * Math.sin(-player.rotSpeed) + player.planeY * Math.cos(-player.rotSpeed);
+            }
+            if (input.left) {
+                const oldDirX = player.dirX;
+                player.dirX = player.dirX * Math.cos(player.rotSpeed) - player.dirY * Math.sin(player.rotSpeed);
+                player.dirY = oldDirX * Math.sin(player.rotSpeed) + player.dirY * Math.cos(player.rotSpeed);
+                const oldPlaneX = player.planeX;
+                player.planeX = player.planeX * Math.cos(player.rotSpeed) - player.planeY * Math.sin(player.rotSpeed);
+                player.planeY = oldPlaneX * Math.sin(player.rotSpeed) + player.planeY * Math.cos(player.rotSpeed);
+            }
+        }
+
+        function drawWeapon() {
+            const centerX = screenWidth / 2;
+            const bottom = screenHeight;
+            
+            // Draw simple gun barrel
+            ctx.fillStyle = '#555';
+            ctx.fillRect(centerX - 15, bottom - 60, 30, 60);
+            ctx.fillStyle = '#333';
+            ctx.fillRect(centerX - 5, bottom - 60, 10, 60);
+
+            // Draw muzzle flash if shooting
+            if (flashTimer > 0) {
+                ctx.fillStyle = 'yellow';
+                ctx.beginPath();
+                ctx.moveTo(centerX, bottom - 80);
+                ctx.lineTo(centerX - 20, bottom - 60);
+                ctx.lineTo(centerX + 20, bottom - 60);
+                ctx.fill();
+                flashTimer--;
+            }
+        }
+
+        function draw() {
+            // Background
+            ctx.fillStyle = '#222'; ctx.fillRect(0, 0, screenWidth, screenHeight / 2);
+            ctx.fillStyle = '#444'; ctx.fillRect(0, screenHeight / 2, screenWidth, screenHeight / 2);
+
+            for (let x = 0; x < screenWidth; x++) {
+                const cameraX = 2 * x / screenWidth - 1;
+                const rayDirX = player.dirX + player.planeX * cameraX;
+                const rayDirY = player.dirY + player.planeY * cameraX;
+
+                let mapX = Math.floor(player.x);
+                let mapY = Math.floor(player.y);
+                let sideDistX, sideDistY;
+                const deltaDistX = Math.abs(1 / rayDirX);
+                const deltaDistY = Math.abs(1 / rayDirY);
+                let perpWallDist, hit = 0, side;
+                let stepX, stepY;
+
+                if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; } 
+                else { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
+                if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; } 
+                else { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
+
+                while (hit === 0) {
+                    if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; } 
+                    else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+                    if (worldMap[mapX][mapY] > 0) hit = worldMap[mapX][mapY];
+                }
+
+                if (side === 0) perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
+                else perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
+
+                const lineHeight = Math.floor(screenHeight / perpWallDist);
+                let drawStart = -lineHeight / 2 + screenHeight / 2;
+                if (drawStart < 0) drawStart = 0;
+                let drawEnd = lineHeight / 2 + screenHeight / 2;
+                if (drawEnd >= screenHeight) drawEnd = screenHeight - 1;
+
+                let color;
+                if (hit === 1) color = [150, 40, 40];      // Red wall
+                else if (hit === 2) color = [40, 150, 40]; // Green wall
+                else if (hit === 3) color = [50, 100, 255]; // BLUE TARGET!
+
+                if (side === 1) { color[0] *= 0.7; color[1] *= 0.7; color[2] *= 0.7; }
+
+                ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+            }
+
+            drawWeapon();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
