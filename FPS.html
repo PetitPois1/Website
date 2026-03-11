@@ -52,30 +52,57 @@
         /* Main Menu & Game Over */
         #menu {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 20, 0.9); display: flex;
+            background: rgba(10, 10, 20, 0.95); display: flex;
             flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100;
+            z-index: 100; color: white; text-align: center; padding: 20px;
+            box-sizing: border-box;
         }
-        h1 { color: #55F; font-size: 40px; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px #00F; text-align: center; margin-bottom: 10px;}
+        h1 { color: #55F; font-size: 40px; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px #00F; margin-bottom: 5px;}
+        
+        #description { font-size: 16px; color: #CCC; max-width: 400px; margin-bottom: 20px; line-height: 1.4;}
+        #instructions { 
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; font-size: 14px;
+            max-width: 400px; text-align: left; line-height: 1.6;
+        }
+        #instructions span { color: #55F; font-weight: bold; }
+
         #fatality-msg {
             color: #F00; font-size: 32px; font-weight: bold; text-shadow: 0 0 15px #F00;
             display: none; text-align: center; margin-bottom: 20px;
         }
-        #start-btn {
+        
+        .menu-btn {
             background: #55F; color: #FFF; border: none; padding: 15px 40px;
-            font-size: 24px; font-weight: bold; font-family: inherit;
+            font-size: 20px; font-weight: bold; font-family: inherit;
             cursor: pointer; border-radius: 5px; box-shadow: 0 0 15px #55F;
-            transition: transform 0.1s; margin-top: 20px;
+            transition: transform 0.1s; margin: 10px; width: 300px;
         }
-        #start-btn:active { transform: scale(0.95); }
+        .menu-btn:active { transform: scale(0.95); }
+        
+        #mode-btn { background: #555; box-shadow: 0 0 10px #555; font-size: 16px; padding: 10px 20px;}
     </style>
 </head>
 <body>
 
     <div id="menu">
         <h1 id="game-title">Xeno<br>Survival</h1>
+        <div id="description">You are trapped in a metallic labyrinth. An endless horde is hunting you down. Survive as long as you can.</div>
+        
+        <div id="instructions">
+            <strong>🎮 DESKTOP CONTROLS:</strong><br>
+            Use <span>W A S D</span> to move and strafe.<br>
+            Click and <span>DRAG MOUSE</span> to look around.<br>
+            Press <span>SPACEBAR</span> to fire.<br><br>
+            <strong>📱 MOBILE CONTROLS:</strong><br>
+            Use <span>ON-SCREEN BUTTONS</span> to move.<br>
+            <span>SWIPE/DRAG</span> anywhere to look around.<br>
+            Tap the <span>FIRE</span> button to shoot.
+        </div>
+
         <div id="fatality-msg">FATALITY<br><span style="font-size: 20px; color: #FFF; text-shadow: none;">Final Score: <span id="final-score">0</span></span></div>
-        <button id="start-btn">START SURVIVAL</button>
+        <button id="mode-btn" class="menu-btn">ENEMY: CYCLOPS</button>
+        <button id="start-btn" class="menu-btn">START SURVIVAL</button>
     </div>
 
     <div id="score-board">SCORE: <span id="score-val">0</span></div>
@@ -98,10 +125,9 @@
 
         // Game State
         let gameActive = false;
-        let score = 0;
-        let frames = 0;
-        let spawnInterval = 180;
-        let minSpawnInterval = 30;
+        let score = 0; let frames = 0;
+        let spawnInterval = 180; let minSpawnInterval = 30;
+        const MAX_ENEMIES = 15;
 
         // Map
         const mapWidth = 12; const mapHeight = 12;
@@ -123,18 +149,46 @@
         let enemies = [];
         let zBuffer = new Array(screenWidth);
 
-        // Procedural Texture
+        // --- Procedural Textures ---
         const texWidth = 64; const texHeight = 64;
-        const enemyTex = document.createElement('canvas');
-        enemyTex.width = texWidth; enemyTex.height = texHeight;
-        const eCtx = enemyTex.getContext('2d');
-        eCtx.fillStyle = '#AA2222'; eCtx.beginPath(); eCtx.arc(32, 32, 28, 0, Math.PI*2); eCtx.fill();
-        eCtx.fillStyle = '#00FF00'; eCtx.beginPath(); eCtx.arc(32, 24, 14, 0, Math.PI*2); eCtx.fill();
-        eCtx.fillStyle = '#000000'; eCtx.beginPath(); eCtx.arc(32, 24, 5, 0, Math.PI*2); eCtx.fill();
-        eCtx.fillStyle = '#000'; eCtx.fillRect(18, 44, 28, 10);
-        eCtx.fillStyle = '#FFF';
-        [20, 28, 36, 40].forEach(x => eCtx.fillRect(x, 44, 4, 4));
-        [24, 32].forEach(x => eCtx.fillRect(x, 50, 4, 4));
+        
+        // 1. Cyclops Texture
+        const texCyclops = document.createElement('canvas');
+        texCyclops.width = texWidth; texCyclops.height = texHeight;
+        const cCtx = texCyclops.getContext('2d');
+        cCtx.fillStyle = '#AA2222'; cCtx.beginPath(); cCtx.arc(32, 32, 28, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#00FF00'; cCtx.beginPath(); cCtx.arc(32, 24, 14, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000000'; cCtx.beginPath(); cCtx.arc(32, 24, 5, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000'; cCtx.fillRect(18, 44, 28, 10);
+        cCtx.fillStyle = '#FFF';
+        [20, 28, 36, 40].forEach(x => cCtx.fillRect(x, 44, 4, 4));
+        [24, 32].forEach(x => cCtx.fillRect(x, 50, 4, 4));
+
+        // 2. White Haired Man Texture
+        const texMan = document.createElement('canvas');
+        texMan.width = texWidth; texMan.height = texHeight;
+        const mCtx = texMan.getContext('2d');
+        mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(16, 16, 32, 40); // Face/Skin
+        mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(12, 10, 40, 16); // Top Hair
+        mCtx.fillRect(12, 26, 8, 16); mCtx.fillRect(44, 26, 8, 16); // Side Hair
+        mCtx.fillStyle = '#000000'; mCtx.fillRect(22, 28, 6, 6); mCtx.fillRect(36, 28, 6, 6); // Eyes
+        mCtx.fillRect(26, 44, 12, 4); // Mouth
+
+        let currentEnemyTex = texCyclops; // Start with Cyclops
+        
+        // --- Mode Toggle Logic ---
+        const modeBtn = document.getElementById('mode-btn');
+        let isManMode = false;
+        modeBtn.addEventListener('click', () => {
+            isManMode = !isManMode;
+            if (isManMode) {
+                modeBtn.innerText = 'ENEMY: WHITE HAIR MAN';
+                currentEnemyTex = texMan;
+            } else {
+                modeBtn.innerText = 'ENEMY: CYCLOPS';
+                currentEnemyTex = texCyclops;
+            }
+        });
 
         // Input Setup
         const input = { up: false, down: false, left: false, right: false };
@@ -218,6 +272,8 @@
 
         // Core Systems
         function spawnEnemy() {
+            if (enemies.length >= MAX_ENEMIES) return; 
+            
             let spawned = false; let attempts = 0;
             while(!spawned && attempts < 50) {
                 let rx = Math.floor(Math.random() * mapWidth);
@@ -235,18 +291,18 @@
 
         function gameOver() {
             gameActive = false;
-            
-            // Turn off inputs
             input.up = false; input.down = false; input.left = false; input.right = false;
             
-            // Update UI
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('crosshair').style.display = 'none';
             document.getElementById('score-board').style.display = 'none';
             
             document.getElementById('menu').style.display = 'flex';
-            document.getElementById('game-title').style.display = 'none'; // Hide title
-            document.getElementById('fatality-msg').style.display = 'block'; // Show fatality
+            document.getElementById('game-title').style.display = 'none';
+            document.getElementById('description').style.display = 'none';
+            document.getElementById('instructions').style.display = 'none';
+            
+            document.getElementById('fatality-msg').style.display = 'block'; 
             document.getElementById('final-score').innerText = score;
             document.getElementById('start-btn').innerText = 'TRY AGAIN';
             document.getElementById('start-btn').style.background = '#F00';
@@ -260,11 +316,8 @@
             document.getElementById('score-board').style.display = 'block';
             
             score = 0; document.getElementById('score-val').innerText = score;
-            enemies = [];
-            spawnInterval = 180;
-            frames = 0;
+            enemies = []; spawnInterval = 180; frames = 0;
             
-            // Reset player position and direction
             player.x = 5.5; player.y = 9.5;
             player.dirX = 0.0; player.dirY = -1.0;
             player.planeX = 0.66; player.planeY = 0.0;
@@ -282,7 +335,6 @@
                 if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
             }
 
-            // Movement
             if (input.up) {
                 if (worldMap[Math.floor(player.x + player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.dirX * player.moveSpeed;
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * player.moveSpeed)] === 0) player.y += player.dirY * player.moveSpeed;
@@ -300,17 +352,15 @@
                 if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.planeY * player.moveSpeed)] === 0) player.y -= player.planeY * player.moveSpeed;
             }
 
-            // Enemy AI & Collision
             enemies.forEach(enemy => {
                 let dx = player.x - enemy.x;
                 let dy = player.y - enemy.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 
-                // --- COLLISION DETECTION ---
                 if(dist < 0.4) {
                     gameOver();
                 } else if(dist > 0.4) { 
-                    enemy.x += (dx / dist) * 0.02; // Speed up enemies slightly
+                    enemy.x += (dx / dist) * 0.02; 
                     enemy.y += (dy / dist) * 0.02;
                 }
             });
@@ -335,7 +385,6 @@
 
             if(!gameActive) return; 
 
-            // 1. Draw Walls
             for (let x = 0; x < screenWidth; x++) {
                 const cameraX = 2 * x / screenWidth - 1;
                 const rDX = player.dirX + player.planeX * cameraX;
@@ -349,8 +398,10 @@
                 if (rDX < 0) { stepX = -1; sDX = (player.x - mX) * dDX; } else { stepX = 1; sDX = (mX + 1.0 - player.x) * dDX; }
                 if (rDY < 0) { stepY = -1; sDY = (player.y - mY) * dDY; } else { stepY = 1; sDY = (mY + 1.0 - player.y) * dDY; }
 
+                // THE FIX: Bounds checking to prevent infinite freezing loops!
                 while (hit === 0) {
                     if (sDX < sDY) { sDX += dDX; mX += stepX; side = 0; } else { sDY += dDY; mY += stepY; side = 1; }
+                    if (mX < 0 || mX >= mapWidth || mY < 0 || mY >= mapHeight) { hit = 1; break; } // Safety wall
                     if (worldMap[mX][mY] > 0) hit = worldMap[mX][mY];
                 }
 
@@ -371,7 +422,6 @@
                 ctx.fillRect(x, drawS, 1, drawE - drawS);
             }
 
-            // 2. Draw Textured Sprites (Enemies)
             let sortedEnemies = enemies.map(e => ({ ...e, dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) }))
                                        .sort((a, b) => b.dist - a.dist);
 
@@ -397,7 +447,10 @@
                     for(let stripe = startStripe; stripe < endStripe; stripe++) {
                         if (tY < zBuffer[stripe]) {
                             let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
-                            ctx.drawImage(enemyTex, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
+                            
+                            // Uses currentEnemyTex, which swaps when you click the Mode button
+                            ctx.drawImage(currentEnemyTex, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
+                            
                             ctx.fillStyle = `rgba(17, 17, 17, ${1 - (1 / (1 + tY * 0.3))})`;
                             ctx.fillRect(stripe, drawSY, 1, spriteH);
                         }
