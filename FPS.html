@@ -164,7 +164,7 @@
         [20, 28, 36, 40].forEach(x => cCtx.fillRect(x, 44, 4, 4));
         [24, 32].forEach(x => cCtx.fillRect(x, 50, 4, 4));
 
-        // 2. White Haired Man Texture
+        // 2. fiddler Texture
         const texMan = document.createElement('canvas');
         texMan.width = texWidth; texMan.height = texHeight;
         const mCtx = texMan.getContext('2d');
@@ -182,7 +182,7 @@
         modeBtn.addEventListener('click', () => {
             isManMode = !isManMode;
             if (isManMode) {
-                modeBtn.innerText = 'ENEMY: 'Epstein';
+                modeBtn.innerText = 'ENEMY: fiddler';
                 currentEnemyTex = texMan;
             } else {
                 modeBtn.innerText = 'ENEMY: CYCLOPS';
