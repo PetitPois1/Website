@@ -185,15 +185,9 @@
         [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-        // 2. Fiddler
-        const texFiddler = document.createElement('canvas');
-        texFiddler.width = texWidth; texFiddler.height = texHeight;
-        const mCtx = texFiddler.getContext('2d');
-        mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(64, 64, 128, 160);
-        mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(48, 40, 160, 64);
-        mCtx.fillRect(48, 104, 32, 64); mCtx.fillRect(176, 104, 32, 64);
-        mCtx.fillStyle = '#000000'; mCtx.fillRect(88, 112, 24, 24); mCtx.fillRect(144, 112, 24, 24);
-        mCtx.fillRect(104, 176, 48, 16);
+  // 2. Fiddler
+const texFiddler = new Image();
+texFiddler.src = "Fiddler.png";
 
         let currentEnemyTex = texCyclops; 
         
