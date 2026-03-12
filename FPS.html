@@ -104,8 +104,8 @@
 <body>
 
     <div id="menu">
-        <h1 id="game-title">SYS_PURGE</h1>
-        <div id="description">Target entities detected in Sub-Level 4. Clear the sector. Survive.</div>
+        <h1 id="game-title"> escape from little st James island </h1>
+        <div id="description">escape the fiddlers dungeon.</div>
         
         <div id="instructions">
             <strong>[ DESKTOP I/O ]</strong><br>
@@ -185,10 +185,10 @@
         [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-        // 2. Zombie
-        const texZombie = document.createElement('canvas');
-        texZombie.width = texWidth; texZombie.height = texHeight;
-        const mCtx = texZombie.getContext('2d');
+        // 2. Fiddler
+        const texFiddler = document.createElement('canvas');
+        texFiddler.width = texWidth; texFiddler.height = texHeight;
+        const mCtx = texFiddler.getContext('2d');
         mCtx.fillStyle = '#FFCBA4'; mCtx.fillRect(64, 64, 128, 160);
         mCtx.fillStyle = '#FFFFFF'; mCtx.fillRect(48, 40, 160, 64);
         mCtx.fillRect(48, 104, 32, 64); mCtx.fillRect(176, 104, 32, 64);
@@ -199,12 +199,12 @@
         
         // --- Mode Toggle Logic ---
         const modeBtn = document.getElementById('mode-btn');
-        let isZombieMode = false;
+        let isFiddlerMode = false;
         modeBtn.addEventListener('click', () => {
-            isZombieMode = !isZombieMode;
-            if (isZombieMode) {
-                modeBtn.innerText = 'LOAD: ZOMBIE';
-                currentEnemyTex = texZombie;
+            isFiddlerMode = !isFiddlerMode;
+            if (isFiddlerMode) {
+                modeBtn.innerText = 'LOAD: FIDDLER';
+                currentEnemyTex = texFiddler;
             } else {
                 modeBtn.innerText = 'LOAD: CYCLOPS';
                 currentEnemyTex = texCyclops;
