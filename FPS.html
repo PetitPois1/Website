@@ -98,20 +98,20 @@
             background: #000; color: #0F0; border: 2px solid #0F0; 
             padding: 15px 40px; font-size: 20px; font-weight: bold; font-family: inherit;
             cursor: pointer; box-shadow: 4px 4px 0px #040;
-            transition: all 0.1s; margin: 10px; width: 300px; text-transform: uppercase;
+            transition: all 0.1s; margin: 10px; width: 320px; text-transform: uppercase;
         }
         .menu-btn:hover { background: #0F0; color: #000; box-shadow: 6px 6px 0px #040; transform: translate(-2px, -2px); }
         .menu-btn:active { background: #050; color: #0F0; border-color: #050; box-shadow: 0px 0px 0px #0F0; transform: translate(4px, 4px); }
         
-        #mode-btn { border-color: #6A6; color: #6A6; box-shadow: 4px 4px 0px #020; font-size: 16px; padding: 12px 20px;}
+        #mode-btn { border-color: #6A6; color: #6A6; box-shadow: 4px 4px 0px #020; font-size: 16px; padding: 12px 20px; width: 250px;}
         #mode-btn:hover { background: #6A6; color: #000; box-shadow: 6px 6px 0px #020;}
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1 id="game-title"> Escape from Little Saint James Island </h1>
-        <div id="description"> survive his dungeon.</div>
+        <h1 id="game-title"> HI! </h1>
+        <div id="description">escape the dungeon.</div>
         
         <div id="instructions">
             <strong>[ DESKTOP I/O ]</strong><br>
@@ -126,7 +126,8 @@
 
         <div id="fatality-msg">CONNECTION LOST<br><span style="font-size: 20px; text-shadow: none;">SCORE: <span id="final-score">0</span></span></div>
         <button id="mode-btn" class="menu-btn">LOAD: CYCLOPS</button>
-        <button id="start-btn" class="menu-btn">EXECUTE</button>
+        <button id="start-btn" class="menu-btn">ENDLESS MODE</button>
+        <button id="levels-btn" class="menu-btn">LEVELS (COMING SOON)</button>
     </div>
 
     <div id="score-board">SCORE: <span id="score-val">0</span></div>
@@ -196,19 +197,19 @@
 
         // 2. Fiddler
         const texFiddler = new Image();
-        texFiddler.src = "Fiddler.png"; // Kept as original
+        texFiddler.src = "Fiddler.png"; 
 
         // 3. Ammo Box (Procedural)
         const texAmmo = document.createElement('canvas');
         texAmmo.width = texWidth; texAmmo.height = texHeight;
         const aCtx = texAmmo.getContext('2d');
-        aCtx.fillStyle = '#888800'; aCtx.fillRect(48, 100, 160, 120); // Outer box
-        aCtx.fillStyle = '#FFFF00'; aCtx.fillRect(56, 108, 144, 104); // Inner bright box
+        aCtx.fillStyle = '#888800'; aCtx.fillRect(48, 100, 160, 120); 
+        aCtx.fillStyle = '#FFFF00'; aCtx.fillRect(56, 108, 144, 104); 
         aCtx.fillStyle = '#000000'; aCtx.font = "bold 40px Courier"; aCtx.fillText("AMMO", 70, 170);
 
         let currentEnemyTex = texCyclops; 
         
-        // --- Mode Toggle Logic ---
+        // --- UI Logic ---
         const modeBtn = document.getElementById('mode-btn');
         let isFiddlerMode = false;
         modeBtn.addEventListener('click', () => {
@@ -222,17 +223,31 @@
             }
         });
 
-        // Line of Sight Helper Function
+        // Levels Button Logic
+        const levelsBtn = document.getElementById('levels-btn');
+        levelsBtn.addEventListener('click', function() {
+            this.innerText = "[ ACCESS DENIED - COMING SOON ]";
+            this.style.color = '#F00';
+            this.style.borderColor = '#F00';
+            this.style.boxShadow = 'none';
+            setTimeout(() => {
+                this.innerText = "LEVELS (COMING SOON)";
+                this.style.color = '#0F0';
+                this.style.borderColor = '#0F0';
+                this.style.boxShadow = '4px 4px 0px #040';
+            }, 1500);
+        });
+
+        // Line of Sight Helper
         function checkLineOfSight(x1, y1, x2, y2) {
             let dx = x2 - x1;
             let dy = y2 - y1;
             let distance = Math.sqrt(dx * dx + dy * dy);
-            let steps = Math.ceil(distance * 5); // Check 5 points per grid unit
+            let steps = Math.ceil(distance * 5); 
 
             for (let i = 0; i <= steps; i++) {
                 let checkX = Math.floor(x1 + dx * (i / steps));
                 let checkY = Math.floor(y1 + dy * (i / steps));
-                
                 if (worldMap[checkX][checkY] > 0) return false; 
             }
             return true;
@@ -293,19 +308,18 @@
         window.addEventListener('mousemove', e => moveLook(e.clientX));
         window.addEventListener('mouseup', endLook);
 
-        // Firing Logic & Particle Spawner
+        // Firing Logic
         const fireBtn = document.getElementById('btn-fire');
         const fire = (e) => {
             if(e) e.preventDefault();
-            if(!gameActive || isShooting || ammo <= 0) return; // Prevent firing if out of ammo
+            if(!gameActive || isShooting || ammo <= 0) return; 
             
-            ammo--; // Decrease ammo
+            ammo--;
             document.getElementById('ammo-val').innerText = ammo;
             
             isShooting = true; 
             screenFlash = 4;
 
-            // Spawn Pixelated Particles
             const gunTipX = screenWidth / 2;
             const gunTipY = screenHeight - 90 + (moveBob * 0.5);
             for(let i = 0; i < 25; i++) {
@@ -327,10 +341,8 @@
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
                 
-                // Added Line Of Sight check here
                 if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
-                    ammoPickups.push({ x: enemy.x, y: enemy.y }); // Drop ammo where enemy died
-                    
+                    ammoPickups.push({ x: enemy.x, y: enemy.y }); 
                     enemies.splice(i, 1);
                     score += 100;
                     document.getElementById('score-val').innerText = score;
@@ -411,12 +423,11 @@
                 if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
             }
 
-            // Check for ammo collection
             for (let i = ammoPickups.length - 1; i >= 0; i--) {
                 let dx = player.x - ammoPickups[i].x;
                 let dy = player.y - ammoPickups[i].y;
-                if (Math.sqrt(dx*dx + dy*dy) < 0.5) { // Collection radius
-                    ammo += 5; // Give 5 bullets
+                if (Math.sqrt(dx*dx + dy*dy) < 0.5) { 
+                    ammo += 5; 
                     document.getElementById('ammo-val').innerText = ammo;
                     ammoPickups.splice(i, 1);
                 }
@@ -465,25 +476,22 @@
             const cX = screenWidth / 2; const bot = screenHeight;
             const wBob = moveBob * 0.5;
 
-            // Draw Blocky Weapon
             ctx.fillStyle = '#0a0a0a'; ctx.fillRect(cX - 16, bot - 90 + wBob, 32, 90);
             ctx.fillStyle = '#1a1a1a'; ctx.fillRect(cX - 8, bot - 90 + wBob, 16, 90);
             ctx.fillStyle = '#333333'; ctx.fillRect(cX - 4, bot - 85 + wBob, 8, 85);
             
-            // Angular Muzzle Flash
             if (screenFlash > 0) {
                 ctx.fillStyle = `rgba(255, 255, 200, ${screenFlash * 0.15})`;
                 ctx.fillRect(0, 0, screenWidth, screenHeight);
                 screenFlash--;
             }
 
-            // Draw Pixelated/Angular Particles
             for(let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.5; // Gravity
-                p.size += 0.2; // Expand slightly
+                p.vy += 0.5; 
+                p.size += 0.2; 
                 p.life -= p.decay;
                 
                 if(p.life <= 0) {
@@ -513,17 +521,17 @@
                 }
             }
             
-            ctx.fillStyle = '#FF0'; // Analog yellow ammo
+            ctx.fillStyle = '#FF0';
             ammoPickups.forEach(a => {
                 ctx.fillRect(mmX + a.x * mmScale - 1, mmY + a.y * mmScale - 1, 2, 2);
             });
 
-            ctx.fillStyle = '#F00'; // Analog red enemies
+            ctx.fillStyle = '#F00';
             enemies.forEach(e => {
                 ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2);
             });
             
-            ctx.fillStyle = '#0F0'; // Analog green player
+            ctx.fillStyle = '#0F0'; 
             ctx.fillRect(mmX + player.x * mmScale - 1, mmY + player.y * mmScale - 1, 2, 2);
             
             ctx.strokeStyle = '#0F0';
@@ -535,7 +543,6 @@
         }
 
         function draw() {
-            // Darker, dungeon-appropriate gradients
             let skyGrad = ctx.createLinearGradient(0, 0, 0, screenHeight / 2 + moveBob);
             skyGrad.addColorStop(0, '#020302'); skyGrad.addColorStop(1, '#0a100a');
             ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, screenWidth, screenHeight); 
@@ -574,7 +581,6 @@
                 let drawS = Math.floor(-lineH / 2 + screenHeight / 2 + moveBob); if (drawS < 0) drawS = 0;
                 let drawE = Math.floor(lineH / 2 + screenHeight / 2 + moveBob); if (drawE >= screenHeight) drawE = screenHeight - 1;
 
-                // Grimy green-gray walls
                 let col = hit === 1 ? [40, 60, 40] : [30, 45, 30]; 
                 if (side === 1) { col[0] *= 0.6; col[1] *= 0.6; col[2] *= 0.6; }
                 let shade = 1 / (1 + pWallDist * 0.3);
@@ -583,7 +589,6 @@
                 ctx.fillRect(x, drawS, 1, drawE - drawS);
             }
 
-            // Combine both arrays so we can sort them together by distance
             let allSprites = [
                 ...enemies.map(e => ({ ...e, type: 'enemy', dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) })),
                 ...ammoPickups.map(a => ({ ...a, type: 'ammo', dist: Math.pow(player.x - a.x, 2) + Math.pow(player.y - a.y, 2) }))
@@ -599,16 +604,23 @@
 
                 if (tY > 0) {
                     let spriteScX = Math.floor((screenWidth / 2) * (1 + tX / tY));
-                    let spriteH = Math.abs(Math.floor(screenHeight / tY));
-                    let spriteW = Math.abs(Math.floor(screenHeight / tY));
                     
-                    let drawSY = -spriteH / 2 + screenHeight / 2 + moveBob;
+                    // --- Sprite Scaling Logic ---
+                    let scale = sprite.type === 'ammo' ? 0.35 : 1.0; 
+                    let baseSize = Math.abs(Math.floor(screenHeight / tY));
+                    
+                    let spriteH = baseSize * scale;
+                    let spriteW = baseSize * scale;
+                    
+                    // Push the smaller sprite down so it anchors to the floor
+                    let vMove = (baseSize - spriteH) / 2; 
+                    
+                    let drawSY = -spriteH / 2 + screenHeight / 2 + moveBob + vMove;
                     let drawSX = -spriteW / 2 + spriteScX;
 
                     let startStripe = Math.max(0, drawSX);
                     let endStripe = Math.min(screenWidth, drawSX + spriteW);
 
-                    // Pick the correct texture based on what the sprite is
                     let textureToDraw = sprite.type === 'enemy' ? currentEnemyTex : texAmmo;
 
                     for(let stripe = startStripe; stripe < endStripe; stripe++) {
