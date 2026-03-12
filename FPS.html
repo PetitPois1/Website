@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Endless Web FPS</title>
+    <title>Web FPS Campaign</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -15,7 +15,7 @@
             image-rendering: pixelated; 
         }
         
-        /* UI Elements - De-saturated & Subtle */
+        /* UI Elements */
         #ui-layer { position: absolute; bottom: 0; width: 100%; height: 40%; pointer-events: none; display: none; }
         .btn {
             position: absolute; background: rgba(0, 0, 0, 0.3);
@@ -30,10 +30,7 @@
         #btn-down { bottom: 40px; left: 80px; width: 60px; height: 60px; }
         #btn-left { bottom: 80px; left: 10px; width: 60px; height: 60px; }
         #btn-right { bottom: 80px; left: 150px; width: 60px; height: 60px; }
-        
-        #btn-fire { 
-            bottom: 60px; right: 30px; width: 80px; height: 80px; 
-        }
+        #btn-fire { bottom: 60px; right: 30px; width: 80px; height: 80px; }
 
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
@@ -42,17 +39,13 @@
             box-shadow: 2px 2px 0px rgba(0, 100, 0, 0.8);
         }
 
-        #score-board {
-            position: absolute; top: 10px; right: 20px; color: #0F0; 
-            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #030;
-            display: none; pointer-events: none;
+        .hud-text {
+            position: absolute; font-size: 24px; font-weight: bold; 
+            display: none; pointer-events: none; z-index: 50;
         }
-
-        #ammo-board {
-            position: absolute; top: 40px; right: 20px; color: #FF0; 
-            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #330;
-            display: none; pointer-events: none;
-        }
+        #score-board { top: 10px; right: 20px; color: #0F0; text-shadow: 2px 2px 0 #030; }
+        #ammo-board { top: 40px; right: 20px; color: #FF0; text-shadow: 2px 2px 0 #330; }
+        #level-board { top: 10px; left: 20px; color: #0FF; text-shadow: 2px 2px 0 #003; }
 
         /* Analog Green CRT Menu */
         #menu {
@@ -103,8 +96,11 @@
         .menu-btn:hover { background: #0F0; color: #000; box-shadow: 6px 6px 0px #040; transform: translate(-2px, -2px); }
         .menu-btn:active { background: #050; color: #0F0; border-color: #050; box-shadow: 0px 0px 0px #0F0; transform: translate(4px, 4px); }
         
-        #mode-btn { border-color: #6A6; color: #6A6; box-shadow: 4px 4px 0px #020; font-size: 16px; padding: 12px 20px; width: 250px;}
-        #mode-btn:hover { background: #6A6; color: #000; box-shadow: 6px 6px 0px #020;}
+        #overlay-msg {
+            position: absolute; top: 30%; width: 100%; text-align: center;
+            color: #0FF; font-size: 40px; font-weight: bold; text-shadow: 3px 3px 0 #005;
+            display: none; pointer-events: none; z-index: 200;
+        }
     </style>
 </head>
 <body>
@@ -121,17 +117,20 @@
             <strong>[ MOBILE I/O ]</strong><br>
             Movement: <span>TOUCH PAD</span><br>
             Aiming: <span>SWIPE / DRAG</span><br>
-            Weapon: <span>FIRE BTN</span>
+            Weapon: <span>FIRE BTN</span><br><br>
+            Find the <span style="color: #0FF; background: #005;">BLUE PORTAL</span> to escape.
         </div>
 
         <div id="fatality-msg">CONNECTION LOST<br><span style="font-size: 20px; text-shadow: none;">SCORE: <span id="final-score">0</span></span></div>
-        <button id="mode-btn" class="menu-btn">LOAD: CYCLOPS</button>
-        <button id="start-btn" class="menu-btn">ENDLESS MODE</button>
-        <button id="levels-btn" class="menu-btn">LEVELS (COMING SOON)</button>
+        <button id="campaign-btn" class="menu-btn" style="border-color: #0FF; color: #0FF; box-shadow: 4px 4px 0px #004;">START CAMPAIGN</button>
+        <button id="endless-btn" class="menu-btn" style="border-color: #6A6; color: #6A6; font-size: 16px; padding: 10px;">ENDLESS MODE</button>
     </div>
 
-    <div id="score-board">SCORE: <span id="score-val">0</span></div>
-    <div id="ammo-board">AMMO: <span id="ammo-val">10</span></div>
+    <div id="level-board" class="hud-text">LEVEL: <span id="level-val">1</span></div>
+    <div id="score-board" class="hud-text">SCORE: <span id="score-val">0</span></div>
+    <div id="ammo-board" class="hud-text">AMMO: <span id="ammo-val">10</span></div>
+    <div id="overlay-msg">LEVEL COMPLETE</div>
+    
     <canvas id="gameCanvas"></canvas>
     <div id="crosshair"></div>
 
@@ -149,37 +148,6 @@
         const screenWidth = 320; const screenHeight = 240;
         canvas.width = screenWidth; canvas.height = screenHeight;
 
-        // Game State
-        let gameActive = false;
-        let score = 0; let frames = 0;
-        let ammo = 10;
-        let ammoPickups = [];
-        let spawnInterval = 180; let minSpawnInterval = 30;
-        const MAX_ENEMIES = 15;
-
-        // Map
-        const mapWidth = 12; const mapHeight = 12;
-        const worldMap = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 1],
-            [1, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 1],
-            [1, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        ];
-
-        const player = { x: 5.5, y: 9.5, dirX: 0.0, dirY: -1.0, planeX: 0.66, planeY: 0.0, moveSpeed: 0.08 };
-        let enemies = [];
-        let particles = [];
-        let zBuffer = new Array(screenWidth);
-        let moveBob = 0; 
-
         // --- High-Resolution Procedural Textures ---
         const texWidth = 256; const texHeight = 256;
         
@@ -191,15 +159,18 @@
         cCtx.fillStyle = '#00FF00'; cCtx.beginPath(); cCtx.arc(128, 96, 56, 0, Math.PI*2); cCtx.fill();
         cCtx.fillStyle = '#000000'; cCtx.beginPath(); cCtx.arc(128, 96, 20, 0, Math.PI*2); cCtx.fill();
         cCtx.fillStyle = '#000'; cCtx.fillRect(72, 176, 112, 40);
-        cCtx.fillStyle = '#FFF';
-        [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
+        cCtx.fillStyle = '#FFF'; [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-        // 2. Fiddler
-        const texFiddler = new Image();
-        texFiddler.src = "Fiddler.png"; 
+        // 2. Fiddler (Procedural replacement since Image() won't load without a server reliably)
+        const texFiddler = document.createElement('canvas');
+        texFiddler.width = texWidth; texFiddler.height = texHeight;
+        const fCtx = texFiddler.getContext('2d');
+        fCtx.fillStyle = '#884400'; fCtx.fillRect(64, 64, 128, 128); // Body
+        fCtx.fillStyle = '#FF4444'; fCtx.fillRect(80, 80, 32, 32); fCtx.fillRect(144, 80, 32, 32); // Eyes
+        fCtx.fillStyle = '#AAAAAA'; fCtx.fillRect(32, 128, 32, 16); fCtx.fillRect(192, 128, 32, 16); // Arms
 
-        // 3. Ammo Box (Procedural)
+        // 3. Ammo Box 
         const texAmmo = document.createElement('canvas');
         texAmmo.width = texWidth; texAmmo.height = texHeight;
         const aCtx = texAmmo.getContext('2d');
@@ -207,53 +178,157 @@
         aCtx.fillStyle = '#FFFF00'; aCtx.fillRect(56, 108, 144, 104); 
         aCtx.fillStyle = '#000000'; aCtx.font = "bold 40px Courier"; aCtx.fillText("AMMO", 70, 170);
 
-        let currentEnemyTex = texCyclops; 
+        // --- Game State & Map Dynamics ---
+        let gameActive = false; let isCampaign = false;
+        let score = 0; let frames = 0; let ammo = 10;
+        let ammoPickups = []; let enemies = []; let particles = [];
+        let spawnInterval = 180; let minSpawnInterval = 30;
         
-        // --- UI Logic ---
-        const modeBtn = document.getElementById('mode-btn');
-        let isFiddlerMode = false;
-        modeBtn.addEventListener('click', () => {
-            isFiddlerMode = !isFiddlerMode;
-            if (isFiddlerMode) {
-                modeBtn.innerText = 'LOAD: FIDDLER';
-                currentEnemyTex = texFiddler;
-            } else {
-                modeBtn.innerText = 'LOAD: CYCLOPS';
-                currentEnemyTex = texCyclops;
-            }
-        });
+        let mapWidth = 0; let mapHeight = 0;
+        let worldMap = [];
+        let currentLevelIdx = 0;
+        let currentColors = { sky0: '#000', sky1: '#000', floor0: '#000', floor1: '#000', wallN: [50,50,50], wallE: [30,30,30] };
+        let currentEnemyTex = texCyclops;
+        const player = { x: 0, y: 0, dirX: 0.0, dirY: -1.0, planeX: 0.66, planeY: 0.0, moveSpeed: 0.08 };
+        let zBuffer = new Array(screenWidth); let moveBob = 0; 
 
-        // Levels Button Logic
-        const levelsBtn = document.getElementById('levels-btn');
-        levelsBtn.addEventListener('click', function() {
-            this.innerText = "[ ACCESS DENIED - COMING SOON ]";
-            this.style.color = '#F00';
-            this.style.borderColor = '#F00';
-            this.style.boxShadow = 'none';
+        // --- Campaign Levels Data ---
+        // Note: 1 = Wall, 0 = Floor, 3 = Exit Portal
+        const levels = [
+            {
+                name: "The Holding Cells",
+                width: 10, height: 10,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,1,0,0,0,0,0,1],
+                    [1,0,0,1,0,1,1,1,0,1],
+                    [1,1,0,1,0,1,3,1,0,1],
+                    [1,0,0,0,0,1,0,0,0,1],
+                    [1,0,1,1,1,1,0,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,0,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 1.5, spawnY: 8.5, enemyTex: texCyclops,
+                colors: { sky0: '#020302', sky1: '#0a100a', floor0: '#0a0a0a', floor1: '#141814', wallN: [40,60,40], wallE: [25,40,25] }
+            },
+            {
+                name: "Maintenance Shafts",
+                width: 14, height: 14,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,0,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,1,0,1,0,0,0,0,1,0,1,0,1],
+                    [1,0,1,0,1,0,3,1,0,1,0,1,0,1],
+                    [1,0,1,0,1,1,0,1,0,1,0,1,0,1],
+                    [1,0,1,0,0,0,0,1,0,1,0,1,0,1],
+                    [1,0,1,1,1,1,1,1,0,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,1,0,1,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 1.5, spawnY: 1.5, enemyTex: texFiddler,
+                colors: { sky0: '#050200', sky1: '#150a00', floor0: '#0f0a05', floor1: '#1a1005', wallN: [80,50,30], wallE: [55,35,20] }
+            },
+            {
+                name: "The Overseer's Core",
+                width: 15, height: 15,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1,3,1,0,0,0,0,0,1],
+                    [1,1,1,0,0,0,1,0,1,0,0,0,1,1,1],
+                    [1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+                    [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 7.5, spawnY: 13.5, enemyTex: texCyclops,
+                colors: { sky0: '#000205', sky1: '#000a15', floor0: '#000a0f', floor1: '#05101a', wallN: [30,50,70], wallE: [20,35,50] }
+            }
+        ];
+
+        const endlessMapTemplate = {
+            width: 12, height: 12,
+            map: [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            spawnX: 5.5, spawnY: 9.5, enemyTex: texCyclops,
+            colors: { sky0: '#020302', sky1: '#0a100a', floor0: '#0a0a0a', floor1: '#141814', wallN: [40,60,40], wallE: [25,40,25] }
+        };
+
+        function loadLevelData(data) {
+            mapWidth = data.width; mapHeight = data.height;
+            worldMap = JSON.parse(JSON.stringify(data.map)); // Deep copy map
+            player.x = data.spawnX; player.y = data.spawnY;
+            currentEnemyTex = data.enemyTex;
+            currentColors = data.colors;
+            
+            player.dirX = 0.0; player.dirY = -1.0; player.planeX = 0.66; player.planeY = 0.0;
+            enemies = []; ammoPickups = []; particles = []; frames = 0; moveBob = 0;
+            spawnInterval = isCampaign ? 200 : 180; // Slower spawn in campaign
+            
+            // Pre-spawn some enemies based on level size
+            if(isCampaign) {
+                for(let i=0; i<3 + currentLevelIdx*2; i++) spawnEnemy();
+            }
+        }
+
+        function advanceCampaign() {
+            currentLevelIdx++;
+            if(currentLevelIdx >= levels.length) {
+                // Game Beaten
+                gameOver("CAMPAIGN COMPLETE!");
+                return;
+            }
+            // Show Overlay briefly
+            gameActive = false;
+            document.getElementById('level-val').innerText = currentLevelIdx + 1;
+            document.getElementById('overlay-msg').innerText = "ENTERING: " + levels[currentLevelIdx].name;
+            document.getElementById('overlay-msg').style.display = 'block';
+            
             setTimeout(() => {
-                this.innerText = "LEVELS (COMING SOON)";
-                this.style.color = '#0F0';
-                this.style.borderColor = '#0F0';
-                this.style.boxShadow = '4px 4px 0px #040';
-            }, 1500);
-        });
+                document.getElementById('overlay-msg').style.display = 'none';
+                loadLevelData(levels[currentLevelIdx]);
+                gameActive = true;
+            }, 2000);
+        }
 
         // Line of Sight Helper
         function checkLineOfSight(x1, y1, x2, y2) {
-            let dx = x2 - x1;
-            let dy = y2 - y1;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            let steps = Math.ceil(distance * 5); 
-
+            let dx = x2 - x1; let dy = y2 - y1;
+            let distance = Math.sqrt(dx * dx + dy * dy); let steps = Math.ceil(distance * 5); 
             for (let i = 0; i <= steps; i++) {
-                let checkX = Math.floor(x1 + dx * (i / steps));
-                let checkY = Math.floor(y1 + dy * (i / steps));
-                if (worldMap[checkX][checkY] > 0) return false; 
+                let checkX = Math.floor(x1 + dx * (i / steps)); let checkY = Math.floor(y1 + dy * (i / steps));
+                if (worldMap[checkX][checkY] === 1) return false; // Walls block LOS (not exits)
             }
             return true;
         }
 
-        // Input Setup
+        // --- Inputs ---
         const input = { up: false, down: false, left: false, right: false };
         let isShooting = false; let screenFlash = 0;
 
@@ -276,11 +351,8 @@
             const btn = document.getElementById(id);
             const start = (e) => { e.preventDefault(); if(gameActive) input[key] = true; };
             const end = (e) => { e.preventDefault(); input[key] = false; };
-            btn.addEventListener('touchstart', start, {passive: false});
-            btn.addEventListener('touchend', end, {passive: false});
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-            btn.addEventListener('mouseleave', end);
+            btn.addEventListener('touchstart', start, {passive: false}); btn.addEventListener('touchend', end, {passive: false});
+            btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end); btn.addEventListener('mouseleave', end);
         }
         bindButton('btn-up', 'up'); bindButton('btn-down', 'down'); bindButton('btn-left', 'left'); bindButton('btn-right', 'right');
 
@@ -295,10 +367,7 @@
             player.planeY = oldPlaneX * Math.sin(amount) + player.planeY * Math.cos(amount);
         }
         const startLook = (x) => { if(gameActive) { isDragging = true; lastPointerX = x; }};
-        const moveLook = (x) => {
-            if (!isDragging || !gameActive) return;
-            rotatePlayer((x - lastPointerX) * 0.015); lastPointerX = x;
-        };
+        const moveLook = (x) => { if (!isDragging || !gameActive) return; rotatePlayer((x - lastPointerX) * 0.015); lastPointerX = x; };
         const endLook = () => { isDragging = false; };
 
         canvas.addEventListener('touchstart', e => startLook(e.touches[0].clientX), {passive: false});
@@ -314,105 +383,92 @@
             if(e) e.preventDefault();
             if(!gameActive || isShooting || ammo <= 0) return; 
             
-            ammo--;
-            document.getElementById('ammo-val').innerText = ammo;
-            
-            isShooting = true; 
-            screenFlash = 4;
+            ammo--; document.getElementById('ammo-val').innerText = ammo;
+            isShooting = true; screenFlash = 4;
 
-            const gunTipX = screenWidth / 2;
-            const gunTipY = screenHeight - 90 + (moveBob * 0.5);
+            const gunTipX = screenWidth / 2; const gunTipY = screenHeight - 90 + (moveBob * 0.5);
             for(let i = 0; i < 25; i++) {
                 particles.push({
-                    x: gunTipX + (Math.random() - 0.5) * 16,
-                    y: gunTipY + (Math.random() - 0.5) * 10,
-                    vx: (Math.random() - 0.5) * 16,
-                    vy: -(Math.random() * 12 + 6),
-                    life: 1.0,
-                    decay: Math.random() * 0.1 + 0.05,
-                    size: Math.floor(Math.random() * 6) + 3,
+                    x: gunTipX + (Math.random() - 0.5) * 16, y: gunTipY + (Math.random() - 0.5) * 10,
+                    vx: (Math.random() - 0.5) * 16, vy: -(Math.random() * 12 + 6),
+                    life: 1.0, decay: Math.random() * 0.1 + 0.05, size: Math.floor(Math.random() * 6) + 3,
                     color: Math.random() > 0.4 ? '255, 150, 0' : '255, 255, 50' 
                 });
             }
 
             for(let i = enemies.length - 1; i >= 0; i--) {
                 let enemy = enemies[i];
-                let dx = enemy.x - player.x; let dy = enemy.y - player.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
+                let dx = enemy.x - player.x; let dy = enemy.y - player.y; let dist = Math.sqrt(dx*dx + dy*dy);
                 let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
                 
                 if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
                     ammoPickups.push({ x: enemy.x, y: enemy.y }); 
                     enemies.splice(i, 1);
-                    score += 100;
-                    document.getElementById('score-val').innerText = score;
+                    score += 100; document.getElementById('score-val').innerText = score;
                     break; 
                 }
             }
             setTimeout(() => isShooting = false, 250);
         };
-        fireBtn.addEventListener('touchstart', fire, {passive: false});
-        fireBtn.addEventListener('mousedown', fire);
+        fireBtn.addEventListener('touchstart', fire, {passive: false}); fireBtn.addEventListener('mousedown', fire);
 
-        // Core Systems
+        // System Core
         function spawnEnemy() {
-            if (enemies.length >= MAX_ENEMIES) return; 
-            
+            if (enemies.length >= 20) return; 
             let spawned = false; let attempts = 0;
             while(!spawned && attempts < 50) {
-                let rx = Math.floor(Math.random() * mapWidth);
-                let ry = Math.floor(Math.random() * mapHeight);
+                let rx = Math.floor(Math.random() * mapWidth); let ry = Math.floor(Math.random() * mapHeight);
                 if(worldMap[rx][ry] === 0) {
                     let dx = rx - player.x; let dy = ry - player.y;
-                    if(Math.sqrt(dx*dx + dy*dy) > 4) { 
-                        enemies.push({ x: rx + 0.5, y: ry + 0.5 });
-                        spawned = true;
-                    }
+                    if(Math.sqrt(dx*dx + dy*dy) > 4) { enemies.push({ x: rx + 0.5, y: ry + 0.5 }); spawned = true; }
                 }
                 attempts++;
             }
         }
 
-        function gameOver() {
+        function gameOver(customMsg) {
             gameActive = false;
             input.up = false; input.down = false; input.left = false; input.right = false;
             
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('crosshair').style.display = 'none';
-            document.getElementById('score-board').style.display = 'none';
-            document.getElementById('ammo-board').style.display = 'none';
+            document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'none');
             
             document.getElementById('menu').style.display = 'flex';
             document.getElementById('game-title').style.display = 'none';
             document.getElementById('description').style.display = 'none';
             document.getElementById('instructions').style.display = 'none';
             
-            document.getElementById('fatality-msg').style.display = 'block'; 
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('start-btn').innerText = 'REBOOT SYSTEM';
-            document.getElementById('start-btn').style.borderColor = '#0F0';
-            document.getElementById('start-btn').style.color = '#0F0';
+            let msgEl = document.getElementById('fatality-msg');
+            msgEl.innerHTML = (customMsg || "CONNECTION LOST") + `<br><span style="font-size: 20px; text-shadow: none;">SCORE: <span id="final-score">${score}</span></span>`;
+            msgEl.style.display = 'block'; 
+            msgEl.style.color = customMsg ? '#0FF' : '#0F0';
         }
 
-        function startGame() {
+        function startGame(mode) {
             document.getElementById('menu').style.display = 'none';
             document.getElementById('ui-layer').style.display = 'block';
             document.getElementById('crosshair').style.display = 'block';
-            document.getElementById('score-board').style.display = 'block';
-            document.getElementById('ammo-board').style.display = 'block';
+            document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'block');
             
             score = 0; document.getElementById('score-val').innerText = score;
             ammo = 10; document.getElementById('ammo-val').innerText = ammo;
             
-            enemies = []; ammoPickups = []; particles = []; spawnInterval = 180; frames = 0; moveBob = 0;
-            
-            player.x = 5.5; player.y = 9.5;
-            player.dirX = 0.0; player.dirY = -1.0;
-            player.planeX = 0.66; player.planeY = 0.0;
-            
+            if (mode === 'campaign') {
+                isCampaign = true;
+                currentLevelIdx = 0;
+                document.getElementById('level-board').style.display = 'block';
+                document.getElementById('level-val').innerText = "1";
+                loadLevelData(levels[0]);
+            } else {
+                isCampaign = false;
+                document.getElementById('level-board').style.display = 'none';
+                loadLevelData(endlessMapTemplate);
+            }
             gameActive = true;
         }
-        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('campaign-btn').addEventListener('click', () => startGame('campaign'));
+        document.getElementById('endless-btn').addEventListener('click', () => startGame('endless'));
 
         function update() {
             if(!gameActive) return;
@@ -424,131 +480,84 @@
             }
 
             for (let i = ammoPickups.length - 1; i >= 0; i--) {
-                let dx = player.x - ammoPickups[i].x;
-                let dy = player.y - ammoPickups[i].y;
+                let dx = player.x - ammoPickups[i].x; let dy = player.y - ammoPickups[i].y;
                 if (Math.sqrt(dx*dx + dy*dy) < 0.5) { 
-                    ammo += 5; 
-                    document.getElementById('ammo-val').innerText = ammo;
-                    ammoPickups.splice(i, 1);
+                    ammo += 5; document.getElementById('ammo-val').innerText = ammo; ammoPickups.splice(i, 1);
                 }
             }
 
             let moving = false;
-            if (input.up) {
-                if (worldMap[Math.floor(player.x + player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.dirX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * player.moveSpeed)] === 0) player.y += player.dirY * player.moveSpeed;
-                moving = true;
-            }
-            if (input.down) {
-                if (worldMap[Math.floor(player.x - player.dirX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.dirX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * player.moveSpeed)] === 0) player.y -= player.dirY * player.moveSpeed;
-                moving = true;
-            }
-            if (input.right) {
-                if (worldMap[Math.floor(player.x + player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x += player.planeX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y + player.planeY * player.moveSpeed)] === 0) player.y += player.planeY * player.moveSpeed;
-                moving = true;
-            }
-            if (input.left) {
-                if (worldMap[Math.floor(player.x - player.planeX * player.moveSpeed)][Math.floor(player.y)] === 0) player.x -= player.planeX * player.moveSpeed;
-                if (worldMap[Math.floor(player.x)][Math.floor(player.y - player.planeY * player.moveSpeed)] === 0) player.y -= player.planeY * player.moveSpeed;
-                moving = true;
+            let nX = player.x; let nY = player.y;
+
+            if (input.up) { nX += player.dirX * player.moveSpeed; nY += player.dirY * player.moveSpeed; moving = true; }
+            if (input.down) { nX -= player.dirX * player.moveSpeed; nY -= player.dirY * player.moveSpeed; moving = true; }
+            if (input.right) { nX += player.planeX * player.moveSpeed; nY += player.planeY * player.moveSpeed; moving = true; }
+            if (input.left) { nX -= player.planeX * player.moveSpeed; nY -= player.planeY * player.moveSpeed; moving = true; }
+
+            // Collision Check (Exits have value 3)
+            let checkX = Math.floor(nX); let checkY = Math.floor(nY);
+            if (worldMap[checkX] && worldMap[checkX][checkY] !== undefined) {
+                if (worldMap[checkX][checkY] === 3) {
+                    if(isCampaign) advanceCampaign();
+                } else if (worldMap[checkX][checkY] === 0) {
+                    player.x = nX; player.y = nY;
+                }
             }
 
-            if (moving) moveBob = Math.sin(frames * 0.2) * 8; 
-            else moveBob = moveBob * 0.8; 
+            if (moving) moveBob = Math.sin(frames * 0.2) * 8; else moveBob = moveBob * 0.8; 
 
             enemies.forEach(enemy => {
-                let dx = player.x - enemy.x;
-                let dy = player.y - enemy.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                
-                if(dist < 0.4) {
-                    gameOver();
-                } else if(dist > 0.4) { 
-                    enemy.x += (dx / dist) * 0.02; 
-                    enemy.y += (dy / dist) * 0.02;
-                }
+                let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 0.4) gameOver();
+                else if(dist > 0.4) { enemy.x += (dx / dist) * 0.02; enemy.y += (dy / dist) * 0.02; }
             });
         }
 
         function drawWeaponAndParticles() {
-            const cX = screenWidth / 2; const bot = screenHeight;
-            const wBob = moveBob * 0.5;
+            const cX = screenWidth / 2; const bot = screenHeight; const wBob = moveBob * 0.5;
 
             ctx.fillStyle = '#0a0a0a'; ctx.fillRect(cX - 16, bot - 90 + wBob, 32, 90);
             ctx.fillStyle = '#1a1a1a'; ctx.fillRect(cX - 8, bot - 90 + wBob, 16, 90);
             ctx.fillStyle = '#333333'; ctx.fillRect(cX - 4, bot - 85 + wBob, 8, 85);
             
-            if (screenFlash > 0) {
-                ctx.fillStyle = `rgba(255, 255, 200, ${screenFlash * 0.15})`;
-                ctx.fillRect(0, 0, screenWidth, screenHeight);
-                screenFlash--;
-            }
+            if (screenFlash > 0) { ctx.fillStyle = `rgba(255, 255, 200, ${screenFlash * 0.15})`; ctx.fillRect(0, 0, screenWidth, screenHeight); screenFlash--; }
 
             for(let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.5; 
-                p.size += 0.2; 
-                p.life -= p.decay;
-                
-                if(p.life <= 0) {
-                    particles.splice(i, 1);
-                    continue;
-                }
-                
-                ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
-                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+                p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.size += 0.2; p.life -= p.decay;
+                if(p.life <= 0) { particles.splice(i, 1); continue; }
+                ctx.fillStyle = `rgba(${p.color}, ${p.life})`; ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
             }
         }
 
         function drawMiniMap() {
-            const mmScale = 4; 
-            const mmX = 10;
-            const mmY = 10;
+            const mmScale = 4; const mmX = 10; const mmY = 80; // Moved down to avoid score overlap
             
-            ctx.fillStyle = 'rgba(0, 20, 0, 0.7)';
-            ctx.fillRect(mmX, mmY, mapWidth * mmScale, mapHeight * mmScale);
+            ctx.fillStyle = 'rgba(0, 20, 0, 0.7)'; ctx.fillRect(mmX, mmY, mapWidth * mmScale, mapHeight * mmScale);
             
-            ctx.fillStyle = '#040';
             for(let y = 0; y < mapHeight; y++) {
                 for(let x = 0; x < mapWidth; x++) {
-                    if(worldMap[x][y] > 0) {
-                        ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale);
-                    }
+                    if(worldMap[x][y] === 1) { ctx.fillStyle = '#040'; ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale); }
+                    if(worldMap[x][y] === 3) { ctx.fillStyle = '#0FF'; ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale); }
                 }
             }
             
-            ctx.fillStyle = '#FF0';
-            ammoPickups.forEach(a => {
-                ctx.fillRect(mmX + a.x * mmScale - 1, mmY + a.y * mmScale - 1, 2, 2);
-            });
-
-            ctx.fillStyle = '#F00';
-            enemies.forEach(e => {
-                ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2);
-            });
+            ctx.fillStyle = '#FF0'; ammoPickups.forEach(a => { ctx.fillRect(mmX + a.x * mmScale - 1, mmY + a.y * mmScale - 1, 2, 2); });
+            ctx.fillStyle = '#F00'; enemies.forEach(e => { ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2); });
+            ctx.fillStyle = '#0F0'; ctx.fillRect(mmX + player.x * mmScale - 1, mmY + player.y * mmScale - 1, 2, 2);
             
-            ctx.fillStyle = '#0F0'; 
-            ctx.fillRect(mmX + player.x * mmScale - 1, mmY + player.y * mmScale - 1, 2, 2);
-            
-            ctx.strokeStyle = '#0F0';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
+            ctx.strokeStyle = '#0F0'; ctx.lineWidth = 1; ctx.beginPath();
             ctx.moveTo(mmX + player.x * mmScale, mmY + player.y * mmScale);
-            ctx.lineTo(mmX + player.x * mmScale + player.dirX * 6, mmY + player.y * mmScale + player.dirY * 6);
-            ctx.stroke();
+            ctx.lineTo(mmX + player.x * mmScale + player.dirX * 6, mmY + player.y * mmScale + player.dirY * 6); ctx.stroke();
         }
 
         function draw() {
             let skyGrad = ctx.createLinearGradient(0, 0, 0, screenHeight / 2 + moveBob);
-            skyGrad.addColorStop(0, '#020302'); skyGrad.addColorStop(1, '#0a100a');
+            skyGrad.addColorStop(0, currentColors.sky0); skyGrad.addColorStop(1, currentColors.sky1);
             ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, screenWidth, screenHeight); 
 
             let floorGrad = ctx.createLinearGradient(0, screenHeight / 2 + moveBob, 0, screenHeight);
-            floorGrad.addColorStop(0, '#0a0a0a'); floorGrad.addColorStop(1, '#141814');
+            floorGrad.addColorStop(0, currentColors.floor0); floorGrad.addColorStop(1, currentColors.floor1);
             ctx.fillStyle = floorGrad; ctx.fillRect(0, screenHeight / 2 + moveBob, screenWidth, screenHeight); 
 
             if(!gameActive) return; 
@@ -559,8 +568,7 @@
                 const rDY = player.dirY + player.planeY * cameraX;
 
                 let mX = Math.floor(player.x); let mY = Math.floor(player.y);
-                let sDX, sDY;
-                const dDX = Math.abs(1 / rDX); const dDY = Math.abs(1 / rDY);
+                let sDX, sDY; const dDX = Math.abs(1 / rDX); const dDY = Math.abs(1 / rDY);
                 let pWallDist, hit = 0, side, stepX, stepY;
 
                 if (rDX < 0) { stepX = -1; sDX = (player.x - mX) * dDX; } else { stepX = 1; sDX = (mX + 1.0 - player.x) * dDX; }
@@ -581,10 +589,16 @@
                 let drawS = Math.floor(-lineH / 2 + screenHeight / 2 + moveBob); if (drawS < 0) drawS = 0;
                 let drawE = Math.floor(lineH / 2 + screenHeight / 2 + moveBob); if (drawE >= screenHeight) drawE = screenHeight - 1;
 
-                let col = hit === 1 ? [40, 60, 40] : [30, 45, 30]; 
-                if (side === 1) { col[0] *= 0.6; col[1] *= 0.6; col[2] *= 0.6; }
+                let col;
+                if (hit === 1) {
+                    col = side === 1 ? currentColors.wallE.slice() : currentColors.wallN.slice();
+                } else if (hit === 3) {
+                    // Pulsing blue exit portal
+                    let pulse = Math.abs(Math.sin(frames * 0.1)) * 100;
+                    col = [0, 155 + pulse, 255];
+                }
+
                 let shade = 1 / (1 + pWallDist * 0.3);
-                
                 ctx.fillStyle = `rgb(${col[0]*shade}, ${col[1]*shade}, ${col[2]*shade})`;
                 ctx.fillRect(x, drawS, 1, drawE - drawS);
             }
@@ -604,48 +618,30 @@
 
                 if (tY > 0) {
                     let spriteScX = Math.floor((screenWidth / 2) * (1 + tX / tY));
-                    
-                    // --- Sprite Scaling Logic ---
                     let scale = sprite.type === 'ammo' ? 0.35 : 1.0; 
                     let baseSize = Math.abs(Math.floor(screenHeight / tY));
-                    
-                    let spriteH = baseSize * scale;
-                    let spriteW = baseSize * scale;
-                    
-                    // Push the smaller sprite down so it anchors to the floor
+                    let spriteH = baseSize * scale; let spriteW = baseSize * scale;
                     let vMove = (baseSize - spriteH) / 2; 
                     
                     let drawSY = -spriteH / 2 + screenHeight / 2 + moveBob + vMove;
                     let drawSX = -spriteW / 2 + spriteScX;
 
-                    let startStripe = Math.max(0, drawSX);
-                    let endStripe = Math.min(screenWidth, drawSX + spriteW);
-
+                    let startStripe = Math.max(0, drawSX); let endStripe = Math.min(screenWidth, drawSX + spriteW);
                     let textureToDraw = sprite.type === 'enemy' ? currentEnemyTex : texAmmo;
 
                     for(let stripe = startStripe; stripe < endStripe; stripe++) {
                         if (tY < zBuffer[stripe]) {
                             let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
-                            
-                            if (spriteH > 0 && spriteW > 0) {
-                                ctx.drawImage(textureToDraw, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
-                            }
-                            
+                            if (spriteH > 0 && spriteW > 0) ctx.drawImage(textureToDraw, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
                             ctx.fillStyle = `rgba(17, 17, 17, ${1 - (1 / (1 + tY * 0.3))})`;
                             ctx.fillRect(stripe, drawSY, 1, spriteH);
                         }
                     }
                 }
             }
-
-            drawWeaponAndParticles();
-            drawMiniMap();
+            drawWeaponAndParticles(); drawMiniMap();
         }
-
-        function gameLoop() {
-            update(); draw(); requestAnimationFrame(gameLoop);
-        }
-        
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
         gameLoop(); 
     </script>
 </body>
