@@ -48,6 +48,12 @@
             display: none; pointer-events: none;
         }
 
+        #ammo-board {
+            position: absolute; top: 40px; right: 20px; color: #FF0; 
+            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #330;
+            display: none; pointer-events: none;
+        }
+
         /* Analog Green CRT Menu */
         #menu {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -104,8 +110,8 @@
 <body>
 
     <div id="menu">
-        <h1 id="game-title"> escape from little st James island </h1>
-        <div id="description">escape the fiddlers dungeon.</div>
+        <h1 id="game-title"> Escape from Little Saint James Island </h1>
+        <div id="description"> survive his dungeon.</div>
         
         <div id="instructions">
             <strong>[ DESKTOP I/O ]</strong><br>
@@ -124,6 +130,7 @@
     </div>
 
     <div id="score-board">SCORE: <span id="score-val">0</span></div>
+    <div id="ammo-board">AMMO: <span id="ammo-val">10</span></div>
     <canvas id="gameCanvas"></canvas>
     <div id="crosshair"></div>
 
@@ -144,6 +151,8 @@
         // Game State
         let gameActive = false;
         let score = 0; let frames = 0;
+        let ammo = 10;
+        let ammoPickups = [];
         let spawnInterval = 180; let minSpawnInterval = 30;
         const MAX_ENEMIES = 15;
 
@@ -185,9 +194,17 @@
         [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-  // 2. Fiddler
-const texFiddler = new Image();
-texFiddler.src = "Fiddler.png";
+        // 2. Fiddler
+        const texFiddler = new Image();
+        texFiddler.src = "Fiddler.png"; // Kept as original
+
+        // 3. Ammo Box (Procedural)
+        const texAmmo = document.createElement('canvas');
+        texAmmo.width = texWidth; texAmmo.height = texHeight;
+        const aCtx = texAmmo.getContext('2d');
+        aCtx.fillStyle = '#888800'; aCtx.fillRect(48, 100, 160, 120); // Outer box
+        aCtx.fillStyle = '#FFFF00'; aCtx.fillRect(56, 108, 144, 104); // Inner bright box
+        aCtx.fillStyle = '#000000'; aCtx.font = "bold 40px Courier"; aCtx.fillText("AMMO", 70, 170);
 
         let currentEnemyTex = texCyclops; 
         
@@ -204,6 +221,22 @@ texFiddler.src = "Fiddler.png";
                 currentEnemyTex = texCyclops;
             }
         });
+
+        // Line of Sight Helper Function
+        function checkLineOfSight(x1, y1, x2, y2) {
+            let dx = x2 - x1;
+            let dy = y2 - y1;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            let steps = Math.ceil(distance * 5); // Check 5 points per grid unit
+
+            for (let i = 0; i <= steps; i++) {
+                let checkX = Math.floor(x1 + dx * (i / steps));
+                let checkY = Math.floor(y1 + dy * (i / steps));
+                
+                if (worldMap[checkX][checkY] > 0) return false; 
+            }
+            return true;
+        }
 
         // Input Setup
         const input = { up: false, down: false, left: false, right: false };
@@ -264,7 +297,11 @@ texFiddler.src = "Fiddler.png";
         const fireBtn = document.getElementById('btn-fire');
         const fire = (e) => {
             if(e) e.preventDefault();
-            if(!gameActive || isShooting) return;
+            if(!gameActive || isShooting || ammo <= 0) return; // Prevent firing if out of ammo
+            
+            ammo--; // Decrease ammo
+            document.getElementById('ammo-val').innerText = ammo;
+            
             isShooting = true; 
             screenFlash = 4;
 
@@ -290,7 +327,10 @@ texFiddler.src = "Fiddler.png";
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
                 
-                if(dot > 0.96) { 
+                // Added Line Of Sight check here
+                if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
+                    ammoPickups.push({ x: enemy.x, y: enemy.y }); // Drop ammo where enemy died
+                    
                     enemies.splice(i, 1);
                     score += 100;
                     document.getElementById('score-val').innerText = score;
@@ -328,6 +368,7 @@ texFiddler.src = "Fiddler.png";
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('crosshair').style.display = 'none';
             document.getElementById('score-board').style.display = 'none';
+            document.getElementById('ammo-board').style.display = 'none';
             
             document.getElementById('menu').style.display = 'flex';
             document.getElementById('game-title').style.display = 'none';
@@ -346,9 +387,12 @@ texFiddler.src = "Fiddler.png";
             document.getElementById('ui-layer').style.display = 'block';
             document.getElementById('crosshair').style.display = 'block';
             document.getElementById('score-board').style.display = 'block';
+            document.getElementById('ammo-board').style.display = 'block';
             
             score = 0; document.getElementById('score-val').innerText = score;
-            enemies = []; particles = []; spawnInterval = 180; frames = 0; moveBob = 0;
+            ammo = 10; document.getElementById('ammo-val').innerText = ammo;
+            
+            enemies = []; ammoPickups = []; particles = []; spawnInterval = 180; frames = 0; moveBob = 0;
             
             player.x = 5.5; player.y = 9.5;
             player.dirX = 0.0; player.dirY = -1.0;
@@ -365,6 +409,17 @@ texFiddler.src = "Fiddler.png";
             if(frames % spawnInterval === 0) {
                 spawnEnemy();
                 if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
+            }
+
+            // Check for ammo collection
+            for (let i = ammoPickups.length - 1; i >= 0; i--) {
+                let dx = player.x - ammoPickups[i].x;
+                let dy = player.y - ammoPickups[i].y;
+                if (Math.sqrt(dx*dx + dy*dy) < 0.5) { // Collection radius
+                    ammo += 5; // Give 5 bullets
+                    document.getElementById('ammo-val').innerText = ammo;
+                    ammoPickups.splice(i, 1);
+                }
             }
 
             let moving = false;
@@ -458,6 +513,11 @@ texFiddler.src = "Fiddler.png";
                 }
             }
             
+            ctx.fillStyle = '#FF0'; // Analog yellow ammo
+            ammoPickups.forEach(a => {
+                ctx.fillRect(mmX + a.x * mmScale - 1, mmY + a.y * mmScale - 1, 2, 2);
+            });
+
             ctx.fillStyle = '#F00'; // Analog red enemies
             enemies.forEach(e => {
                 ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2);
@@ -523,11 +583,14 @@ texFiddler.src = "Fiddler.png";
                 ctx.fillRect(x, drawS, 1, drawE - drawS);
             }
 
-            let sortedEnemies = enemies.map(e => ({ ...e, dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) }))
-                                       .sort((a, b) => b.dist - a.dist);
+            // Combine both arrays so we can sort them together by distance
+            let allSprites = [
+                ...enemies.map(e => ({ ...e, type: 'enemy', dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) })),
+                ...ammoPickups.map(a => ({ ...a, type: 'ammo', dist: Math.pow(player.x - a.x, 2) + Math.pow(player.y - a.y, 2) }))
+            ].sort((a, b) => b.dist - a.dist);
 
-            for (let i = 0; i < sortedEnemies.length; i++) {
-                let sprite = sortedEnemies[i];
+            for (let i = 0; i < allSprites.length; i++) {
+                let sprite = allSprites[i];
                 let sX = sprite.x - player.x; let sY = sprite.y - player.y;
 
                 let invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
@@ -545,12 +608,15 @@ texFiddler.src = "Fiddler.png";
                     let startStripe = Math.max(0, drawSX);
                     let endStripe = Math.min(screenWidth, drawSX + spriteW);
 
+                    // Pick the correct texture based on what the sprite is
+                    let textureToDraw = sprite.type === 'enemy' ? currentEnemyTex : texAmmo;
+
                     for(let stripe = startStripe; stripe < endStripe; stripe++) {
                         if (tY < zBuffer[stripe]) {
                             let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
                             
                             if (spriteH > 0 && spriteW > 0) {
-                                ctx.drawImage(currentEnemyTex, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
+                                ctx.drawImage(textureToDraw, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
                             }
                             
                             ctx.fillStyle = `rgba(17, 17, 17, ${1 - (1 / (1 + tY * 0.3))})`;
