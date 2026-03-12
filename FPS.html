@@ -163,12 +163,9 @@
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
         // 2. Fiddler (Procedural replacement since Image() won't load without a server reliably)
-        const texFiddler = document.createElement('canvas');
-        texFiddler.width = texWidth; texFiddler.height = texHeight;
-        const fCtx = texFiddler.getContext('2d');
-        fCtx.fillStyle = '#884400'; fCtx.fillRect(64, 64, 128, 128); // Body
-        fCtx.fillStyle = '#FF4444'; fCtx.fillRect(80, 80, 32, 32); fCtx.fillRect(144, 80, 32, 32); // Eyes
-        fCtx.fillStyle = '#AAAAAA'; fCtx.fillRect(32, 128, 32, 16); fCtx.fillRect(192, 128, 32, 16); // Arms
+        const texFiddler = new Image();
+        texFiddler.src = "Fiddler.png";
+
 
         // 3. Ammo Box 
         const texAmmo = document.createElement('canvas');
