@@ -30,7 +30,7 @@
         .slot:hover { background: #999; }
         .slot.active { border: 2px solid #ffff00; box-shadow: 0 0 5px #ffff00; z-index: 2; }
         .slot-count { position: absolute; bottom: 0px; right: 2px; font-size: 14px; text-shadow: 1px 1px 0 #000;}
-        .slot-icon { width: 32px; height: 32px; display: inline-block; background-size: cover; background-position: center; image-rendering: pixelated; }
+        .slot-icon { width: 32px; height: 32px; display: inline-block; object-fit: contain; image-rendering: pixelated; }
         
         /* Inventory Window */
         #inventory-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #c6c6c6; border: 4px solid #000; border-radius: 4px; padding: 10px; display: none; pointer-events: auto; flex-direction: row; box-shadow: inset -2px -2px 0 #555, inset 2px 2px 0 #fff; z-index: 100; color: black; max-height: 90%; max-width: 95%; overflow-y: auto;}
@@ -40,7 +40,7 @@
         .recipe-btn { background: #a6a6a6; border: 2px solid; border-color: #fff #555 #555 #fff; padding: 5px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold; font-size: 12px; }
         .recipe-btn:hover { background: #b6b6b6; }
         .recipe-btn:active { border-color: #555 #fff #fff #555; }
-        .recipe-icon { width: 24px; height: 24px; background-size: cover; image-rendering: pixelated; }
+        .recipe-icon { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; }
 
         .inv-main-area { display: flex; flex-direction: column; }
         .inv-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; text-align: center; }
@@ -207,7 +207,7 @@
 const TEXTURES_CONFIG = {
     // Set this to your GitHub textures folder (e.g., 'textures/') to automatically load 
     // grass.png, dirt.png, wooden_pickaxe.png, etc. Set to null to generate procedural visuals.
-    folder: 'VoxelcraftTextures/'
+    folder: null 
 };
 
 /** Simplex Noise */
@@ -397,38 +397,39 @@ const FUEL_TIMES = {
 // --- TEXTURES (ICONS & BLOCKS) ---
 let materialArray = []; // Indexed array of materials corresponding directly to BLOCKS ID
 
+function getProceduralBlockTexture(id) {
+    const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s; const ctx = canvas.getContext('2d');
+    let baseCol = BLOCK_COLORS[id] || [1,1,1];
+    for(let i=0; i<s; i++) for(let j=0; j<s; j++) { 
+        let v = 0.7 + Math.random()*0.3; 
+        ctx.fillStyle = `rgb(${baseCol[0]*255*v},${baseCol[1]*255*v},${baseCol[2]*255*v})`; ctx.fillRect(i,j,1,1); 
+    }
+    let tex = new THREE.CanvasTexture(canvas); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+    return tex;
+}
+
 function initMaterials() {
     materialArray = new Array(MAX_BLOCK_ID + 1).fill(null);
     for(let id = 1; id <= MAX_BLOCK_ID; id++) {
+        let procTex = getProceduralBlockTexture(id);
         if (TEXTURES_CONFIG.folder && ASSET_NAMES[id]) {
-            // Load individual user-provided image
-            let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${ASSET_NAMES[id]}.png`);
+            // Load individual user-provided image with fallback to procedural on error
+            let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${ASSET_NAMES[id]}.png`, undefined, undefined, () => {
+                tex.image = procTex.image;
+                tex.needsUpdate = true;
+            });
             tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-            // Provide vertexColors true to still allow shading on different block faces
             materialArray[id] = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, transparent: isTrans(id), alphaTest: 0.5 });
         } else {
-            // Generates procedural texture block specific
-            const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s; const ctx = canvas.getContext('2d');
-            let baseCol = BLOCK_COLORS[id] || [1,1,1];
-            for(let i=0; i<s; i++) for(let j=0; j<s; j++) { 
-                let v = 0.7 + Math.random()*0.3; 
-                ctx.fillStyle = `rgb(${baseCol[0]*255*v},${baseCol[1]*255*v},${baseCol[2]*255*v})`; ctx.fillRect(i,j,1,1); 
-            }
-            let tex = new THREE.CanvasTexture(canvas); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-            materialArray[id] = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, transparent: isTrans(id), alphaTest: 0.5 });
+            materialArray[id] = new THREE.MeshStandardMaterial({ map: procTex, vertexColors: true, roughness: 0.9, transparent: isTrans(id), alphaTest: 0.5 });
         }
     }
 }
 
 const textureCache = {};
-function generateIconDataURI(id) {
+function getProceduralIcon(id) {
     if(textureCache[id]) return textureCache[id];
     
-    // Check for explicit folder config first!
-    if (TEXTURES_CONFIG.folder && ASSET_NAMES[id]) {
-        return `${TEXTURES_CONFIG.folder}${ASSET_NAMES[id]}.png`;
-    }
-
     const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
     const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
@@ -483,14 +484,19 @@ function generateIconDataURI(id) {
 }
 
 function generateMobTexture(type) {
-    if (TEXTURES_CONFIG.folder && ASSET_NAMES[type]) {
-        let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${ASSET_NAMES[type]}.png`);
-        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; return tex;
-    }
     const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s; const ctx = canvas.getContext('2d');
     if (type === 'pig') { ctx.fillStyle = '#ffaacc'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#ff88aa'; ctx.fillRect(6,8,4,3); ctx.fillStyle = '#000'; ctx.fillRect(4,6,2,2); ctx.fillRect(10,6,2,2); } 
     else if (type === 'cow') { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#222'; ctx.fillRect(2,2,4,4); ctx.fillRect(10,8,4,5); ctx.fillStyle = '#8b5a2b'; ctx.fillRect(5,10,6,4); ctx.fillStyle = '#000'; ctx.fillRect(3,6,2,2); ctx.fillRect(11,6,2,2); }
-    let tex = new THREE.CanvasTexture(canvas); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; return tex;
+    let procTex = new THREE.CanvasTexture(canvas); procTex.magFilter = THREE.NearestFilter; procTex.minFilter = THREE.NearestFilter; 
+    
+    if (TEXTURES_CONFIG.folder) {
+        let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${type}.png`, undefined, undefined, () => {
+            tex.image = procTex.image;
+            tex.needsUpdate = true;
+        });
+        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; return tex;
+    }
+    return procTex;
 }
 let texPig, texCow;
 
@@ -1016,14 +1022,16 @@ function doRaycast(screenX, screenY) {
 function getSlotHTML(item) {
     if (!item) return '';
     let c = item.count > 1 ? `<div class='slot-count'>${item.count}</div>` : '';
-    let dataUri = generateIconDataURI(item.id);
+    let procUri = getProceduralIcon(item.id);
+    let srcUri = (TEXTURES_CONFIG.folder && ASSET_NAMES[item.id]) ? `${TEXTURES_CONFIG.folder}${ASSET_NAMES[item.id]}.png` : procUri;
+    
     let durHTML = '';
     if (item.durability !== undefined) {
         let max = MAX_DURABILITY[item.id]; let pct = item.durability / max;
         let col = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#ff0' : '#f00');
         durHTML = `<div style="position:absolute;bottom:0;left:2px;right:2px;height:4px;background:#000;"><div style="height:100%;width:${pct*100}%;background:${col};"></div></div>`;
     }
-    return `<div class='slot-icon' style='background-image:url("${dataUri}");'></div><br><span style="margin-top:-5px;">${ITEM_NAMES[item.id].substring(0, 4)}</span>${c}${durHTML}`;
+    return `<img src="${srcUri}" onerror="this.onerror=null; this.src='${procUri}';" class='slot-icon'><br><span style="margin-top:-5px;">${ITEM_NAMES[item.id].substring(0, 4)}</span>${c}${durHTML}`;
 }
 
 function updateHUD() {
@@ -1054,7 +1062,14 @@ function updateHeldItemMesh() {
         let mesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), mat);
         mesh.renderOrder = 999; handGroup.add(mesh);
     } else { 
-        let tex = new THREE.TextureLoader().load(generateIconDataURI(item.id)); tex.magFilter = THREE.NearestFilter;
+        let procUri = getProceduralIcon(item.id);
+        let srcUri = (TEXTURES_CONFIG.folder && ASSET_NAMES[item.id]) ? `${TEXTURES_CONFIG.folder}${ASSET_NAMES[item.id]}.png` : procUri;
+        
+        let tex = new THREE.TextureLoader().load(srcUri, undefined, undefined, () => {
+            let img = new Image(); img.src = procUri;
+            img.onload = () => { tex.image = img; tex.needsUpdate = true; };
+        });
+        tex.magFilter = THREE.NearestFilter;
         let mat = new THREE.SpriteMaterial({ map: tex, depthTest: false }); let sprite = new THREE.Sprite(mat);
         sprite.scale.set(0.4, 0.4, 0.4); sprite.renderOrder = 999; handGroup.add(sprite);
     }
@@ -1067,8 +1082,9 @@ function buildRecipeBook(mode) {
         if (mode !== 'crafting_table' && (w > 2 || h > 2)) return;
 
         let btn = document.createElement('div'); btn.className = 'recipe-btn';
-        let iconUrl = generateIconDataURI(r.res);
-        btn.innerHTML = `<div class="recipe-icon" style="background-image:url('${iconUrl}')"></div> <span>${r.name}</span>`;
+        let procUri = getProceduralIcon(r.res);
+        let srcUri = (TEXTURES_CONFIG.folder && ASSET_NAMES[r.res]) ? `${TEXTURES_CONFIG.folder}${ASSET_NAMES[r.res]}.png` : procUri;
+        btn.innerHTML = `<img class="recipe-icon" src="${srcUri}" onerror="this.onerror=null; this.src='${procUri}';"> <span>${r.name}</span>`;
         btn.onclick = () => tryAutoCraft(r); container.appendChild(btn);
     });
 }
