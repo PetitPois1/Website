@@ -162,12 +162,15 @@
         cCtx.fillStyle = '#FFF'; [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16));
         [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
 
-        // 2. Fiddler (Procedural replacement since Image() won't load without a server reliably)
+        // 2. Fiddler (Image Load)
         const texFiddler = new Image();
         texFiddler.src = "Fiddler.png";
 
+        // 3. The Big Yahoo (Boss Image Load)
+        const texBoss = new Image();
+        texBoss.src = "BigYahoo.png"; // Make sure you put your boss image in your folder!
 
-        // 3. Ammo Box 
+        // 4. Ammo Box 
         const texAmmo = document.createElement('canvas');
         texAmmo.width = texWidth; texAmmo.height = texHeight;
         const aCtx = texAmmo.getContext('2d');
@@ -255,8 +258,7 @@
                 spawnX: 7.5, spawnY: 13.5, enemyTex: texCyclops,
                 colors: { sky0: '#000205', sky1: '#000a15', floor0: '#000a0f', floor1: '#05101a', wallN: [30,50,70], wallE: [20,35,50] }
             },
-            
-        {
+            {
                 name: "The Temple",
                 width: 15, height: 15,
                 map: [
@@ -277,7 +279,7 @@
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
                 ],
                 spawnX: 7.5, spawnY: 13.5, 
-                enemyTex: texCyclops, // Ensure minions have a texture to use
+                enemyTex: texCyclops, 
                 colors: { 
                     sky0: '#FFD700', sky1: '#B8860B', 
                     floor0: '#EEEEEE', floor1: '#CCCCCC', 
@@ -286,11 +288,9 @@
                 },
                 hasBoss: true
             }
-        ]; // <-- This bracket cleanly closes the whole levels array!
+        ]; 
 
-
-        
-            const endlessMapTemplate = {
+        const endlessMapTemplate = {
             name: "Endless Arena",
             width: 20, height: 20,
             map: [
@@ -302,7 +302,7 @@
                 [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
                 [1,1,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1],
                 [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
-                [1,0,1,1,1,0,1,0,0.0,0,0,0,1,0,1,1,1,0,1],
+                [1,0,1,1,1,0,1,0,0,0,0,0,1,0,1,1,1,0,1],
                 [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
                 [1,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,0,1,0,1],
                 [1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1],
@@ -334,18 +334,7 @@
                 for(let i=0; i<3 + currentLevelIdx*2; i++) spawnEnemy();
             }
 
-            // NEW: This is where the boss spawner actually belongs!
-            if (data.hasBoss) {
-                enemies.push({ 
-                    x: 7.5, y: 3.5, 
-                    hp: 150, maxHp: 150, 
-                    isBoss: true, spawnTimer: 0, 
-                    name: "The Big Yahoo" 
-                });
-            }
-        }
-
-            // NEW: Check if the level has a boss, and spawn him!
+            // The boss spawner correctly lives inside Level Load!
             if (data.hasBoss) {
                 enemies.push({ 
                     x: 7.5, y: 3.5, 
@@ -359,11 +348,9 @@
         function advanceCampaign() {
             currentLevelIdx++;
             if(currentLevelIdx >= levels.length) {
-                // Game Beaten
                 gameOver("CAMPAIGN COMPLETE!");
                 return;
             }
-            // Show Overlay briefly
             gameActive = false;
             document.getElementById('level-val').innerText = currentLevelIdx + 1;
             document.getElementById('overlay-msg').innerText = "ENTERING: " + levels[currentLevelIdx].name;
@@ -376,18 +363,16 @@
             }, 2000);
         }
 
-        // Line of Sight Helper
         function checkLineOfSight(x1, y1, x2, y2) {
             let dx = x2 - x1; let dy = y2 - y1;
             let distance = Math.sqrt(dx * dx + dy * dy); let steps = Math.ceil(distance * 5); 
             for (let i = 0; i <= steps; i++) {
                 let checkX = Math.floor(x1 + dx * (i / steps)); let checkY = Math.floor(y1 + dy * (i / steps));
-                if (worldMap[checkX][checkY] === 1) return false; // Walls block LOS (not exits)
+                if (worldMap[checkX][checkY] === 1) return false; 
             }
             return true;
         }
 
-        // --- Inputs ---
         const input = { up: false, down: false, left: false, right: false };
         let isShooting = false; let screenFlash = 0;
 
@@ -415,7 +400,6 @@
         }
         bindButton('btn-up', 'up'); bindButton('btn-down', 'down'); bindButton('btn-left', 'left'); bindButton('btn-right', 'right');
 
-        // Look logic
         let isDragging = false; let lastPointerX = 0;
         function rotatePlayer(amount) {
             const oldDirX = player.dirX;
@@ -436,7 +420,6 @@
         window.addEventListener('mousemove', e => moveLook(e.clientX));
         window.addEventListener('mouseup', endLook);
 
-        // Firing Logic
         const fireBtn = document.getElementById('btn-fire');
         const fire = (e) => {
             if(e) e.preventDefault();
@@ -461,9 +444,43 @@
                 let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
                 
                 if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
-                    ammoPickups.push({ x: enemy.x, y: enemy.y }); 
-                    enemies.splice(i, 1);
-                    score += 100; document.getElementById('score-val').innerText = score;
+                    
+                    // NEW: Boss Damage Logic
+                    if (enemy.isBoss) {
+                        enemy.hp -= 15; // Takes 10 hits to kill the 150HP Boss
+                    } else {
+                        enemy.hp = 0; // Instant kill for normal minions
+                    }
+
+                    if (enemy.hp <= 0) {
+                        ammoPickups.push({ x: enemy.x, y: enemy.y }); 
+                        enemies.splice(i, 1);
+                        score += enemy.isBoss ? 1000 : 100; // Big points for Boss
+                        document.getElementById('score-val').innerText = score;
+                        
+                        // NEW: Death Explosion Particles!
+                        for(let p = 0; p < 30; p++) {
+                            particles.push({
+                                x: (screenWidth / 2) + (Math.random() - 0.5) * 50, 
+                                y: (screenHeight / 2) + (Math.random() - 0.5) * 50,
+                                vx: (Math.random() - 0.5) * 15, 
+                                vy: (Math.random() - 0.5) * 15 - 2, 
+                                life: 1.0, decay: Math.random() * 0.05 + 0.02, 
+                                size: Math.floor(Math.random() * 8) + 4,
+                                color: enemy.isBoss ? '0, 255, 255' : '200, 0, 0' 
+                            });
+                        }
+                    } else {
+                        // NEW: Small spark effect if the boss survives the hit
+                        for(let p = 0; p < 10; p++) {
+                            particles.push({
+                                x: (screenWidth / 2) + (Math.random() - 0.5) * 20, 
+                                y: (screenHeight / 2) + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, 
+                                life: 1.0, decay: 0.1, size: 3, color: '0, 255, 255'
+                            });
+                        }
+                    }
                     break; 
                 }
             }
@@ -471,7 +488,6 @@
         };
         fireBtn.addEventListener('touchstart', fire, {passive: false}); fireBtn.addEventListener('mousedown', fire);
 
-        // System Core
         function spawnEnemy() {
             if (enemies.length >= 20) return; 
             let spawned = false; let attempts = 0;
@@ -553,7 +569,6 @@
             if (input.right) { nX += player.planeX * player.moveSpeed; nY += player.planeY * player.moveSpeed; moving = true; }
             if (input.left) { nX -= player.planeX * player.moveSpeed; nY -= player.planeY * player.moveSpeed; moving = true; }
 
-            // Collision Check (Exits have value 3)
             let checkX = Math.floor(nX); let checkY = Math.floor(nY);
             if (worldMap[checkX] && worldMap[checkX][checkY] !== undefined) {
                 if (worldMap[checkX][checkY] === 3) {
@@ -566,27 +581,24 @@
             if (moving) moveBob = Math.sin(frames * 0.2) * 8; else moveBob = moveBob * 0.8; 
 
             enemies.forEach(enemy => {
-    let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
-    
-    // Regular enemy movement and collision
-    if(dist < 0.4) gameOver();
-    else if(dist > 0.4) { enemy.x += (dx / dist) * 0.02; enemy.y += (dy / dist) * 0.02; }
+                let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < 0.4) gameOver();
+                else if(dist > 0.4) { enemy.x += (dx / dist) * 0.02; enemy.y += (dy / dist) * 0.02; }
 
-    // NEW: Boss spawning logic
-    if (enemy.isBoss) {
-        enemy.spawnTimer = (enemy.spawnTimer || 0) + 1;
-        if (enemy.spawnTimer > 120) { 
-            enemy.spawnTimer = 0;
-            let minionType = Math.random() > 0.5 ? 'cyclops' : 'fiddler';
-            enemies.push({ 
-                x: enemy.x + (Math.random() - 0.5) * 2, // Spawn slightly away from the boss
-                y: enemy.y + (Math.random() - 0.5) * 2, 
-                hp: 3, 
-                type: minionType 
+                if (enemy.isBoss) {
+                    enemy.spawnTimer = (enemy.spawnTimer || 0) + 1;
+                    if (enemy.spawnTimer > 120) { 
+                        enemy.spawnTimer = 0;
+                        let minionType = Math.random() > 0.5 ? 'cyclops' : 'fiddler';
+                        enemies.push({ 
+                            x: enemy.x + (Math.random() - 0.5) * 2, 
+                            y: enemy.y + (Math.random() - 0.5) * 2, 
+                            type: minionType 
+                        });
+                    }
+                }
             });
-        }
-    }
-});
         }
 
         function drawWeaponAndParticles() {
@@ -607,7 +619,7 @@
         }
 
         function drawMiniMap() {
-            const mmScale = 4; const mmX = 10; const mmY = 80; // Moved down to avoid score overlap
+            const mmScale = 4; const mmX = 10; const mmY = 80;
             
             ctx.fillStyle = 'rgba(0, 20, 0, 0.7)'; ctx.fillRect(mmX, mmY, mapWidth * mmScale, mapHeight * mmScale);
             
@@ -669,7 +681,6 @@
                 if (hit === 1) {
                     col = side === 1 ? currentColors.wallE.slice() : currentColors.wallN.slice();
                 } else if (hit === 3) {
-                    // Pulsing blue exit portal
                     let pulse = Math.abs(Math.sin(frames * 0.1)) * 100;
                     col = [0, 155 + pulse, 255];
                 }
@@ -703,7 +714,16 @@
                     let drawSX = -spriteW / 2 + spriteScX;
 
                     let startStripe = Math.max(0, drawSX); let endStripe = Math.min(screenWidth, drawSX + spriteW);
-                    let textureToDraw = sprite.type === 'enemy' ? currentEnemyTex : texAmmo;
+                    
+                    // NEW: Custom Texture logic injected here!
+                    let textureToDraw;
+                    if (sprite.isBoss) {
+                        textureToDraw = texBoss;
+                    } else if (sprite.type === 'enemy') {
+                        textureToDraw = currentEnemyTex;
+                    } else {
+                        textureToDraw = texAmmo;
+                    }
 
                     for(let stripe = startStripe; stripe < endStripe; stripe++) {
                         if (tY < zBuffer[stripe]) {
@@ -715,7 +735,7 @@
                     }
                 }
             }
-            // NEW: Boss UI
+            
             let boss = enemies.find(e => e.isBoss);
             if (boss) {
                 ctx.fillStyle = '#000'; ctx.fillRect(screenWidth / 2 - 152, 18, 304, 24);
@@ -724,7 +744,6 @@
                 ctx.fillText(boss.name, screenWidth / 2, 36);
             }
 
-            drawWeaponAndParticles(); drawMiniMap();
             drawWeaponAndParticles(); drawMiniMap();
         }
         function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
