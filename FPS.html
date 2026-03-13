@@ -463,13 +463,8 @@
         bCtx.fillStyle = '#000'; bCtx.strokeRect(30, 90, 196, 50); bCtx.strokeRect(30, 140, 196, 116);
 
         // 3. Generate Mansion Enemy (Marble Statue)
-        const texStatue = document.createElement('canvas'); 
-        texStatue.width = texWidth; 
-        texStatue.height = texHeight;
-        const sCtx = texStatue.getContext('2d');
-        sCtx.fillStyle = '#CCC'; sCtx.fillRect(64, 30, 128, 226); // Body
-        sCtx.fillStyle = '#999'; sCtx.fillRect(80, 80, 96, 20); // Eyes
-        sCtx.fillStyle = '#FFF'; sCtx.fillRect(100, 80, 20, 20); sCtx.fillRect(140, 80, 20, 20); // Glowing eyes
+       const texStatue = new Image(); 
+        texStatue.src = "MyStatue.png"; // Put your image file name here!
 
         // External Images
         const texFiddler = new Image(); texFiddler.src = "Fiddler.png";
