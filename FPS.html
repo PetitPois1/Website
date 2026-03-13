@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Web FPS Campaign</title>
+    <title>Escape His Island</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -18,19 +18,21 @@
         /* UI Elements */
         #ui-layer { position: absolute; bottom: 0; width: 100%; height: 40%; pointer-events: none; display: none; }
         .btn {
-            position: absolute; background: rgba(0, 0, 0, 0.3);
+            position: absolute; background: rgba(0, 0, 0, 0.4);
             border: 2px solid rgba(255, 255, 255, 0.2); 
-            color: rgba(255, 255, 255, 0.5); font-weight: bold; font-size: 20px;
+            color: rgba(255, 255, 255, 0.6); font-weight: bold; font-size: 24px;
             display: flex; justify-content: center; align-items: center;
             pointer-events: auto; text-shadow: 1px 1px 0 #000;
+            border-radius: 8px; /* Slightly rounded for modern mobile feel */
         }
-        .btn:active { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.8); color: #FFF; }
+        .btn:active { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.9); color: #FFF; }
         
-        #btn-up { bottom: 120px; left: 80px; width: 60px; height: 60px; }
-        #btn-down { bottom: 40px; left: 80px; width: 60px; height: 60px; }
-        #btn-left { bottom: 80px; left: 10px; width: 60px; height: 60px; }
-        #btn-right { bottom: 80px; left: 150px; width: 60px; height: 60px; }
-        #btn-fire { bottom: 60px; right: 30px; width: 80px; height: 80px; }
+        /* BIGGER BUTTONS */
+        #btn-up { bottom: 135px; left: 95px; width: 70px; height: 70px; }
+        #btn-down { bottom: 45px; left: 95px; width: 70px; height: 70px; }
+        #btn-left { bottom: 90px; left: 15px; width: 70px; height: 70px; }
+        #btn-right { bottom: 90px; left: 175px; width: 70px; height: 70px; }
+        #btn-fire { bottom: 65px; right: 25px; width: 90px; height: 90px; border-radius: 50%; border-color: #C00; color: #F55; }
 
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
@@ -67,7 +69,7 @@
 
         h1 { 
             color: #EFFFDF; font-size: 56px; text-transform: uppercase; letter-spacing: 4px; 
-            margin-bottom: 5px; animation: glitch 0.5s infinite steps(2);
+            margin-bottom: 5px; animation: glitch 0.5s infinite steps(2); text-shadow: 2px 0 0 #0F0, -2px 0 0 #050;
         }
         
         #description { font-size: 16px; color: #6A6; max-width: 400px; margin-bottom: 25px; line-height: 1.5; text-shadow: 1px 1px 0 #000;}
@@ -98,8 +100,12 @@
         
         #overlay-msg {
             position: absolute; top: 30%; width: 100%; text-align: center;
-            color: #0FF; font-size: 40px; font-weight: bold; text-shadow: 3px 3px 0 #005;
+            color: #0FF; font-size: 30px; font-weight: bold; text-shadow: 3px 3px 0 #005;
             display: none; pointer-events: none; z-index: 200;
+        }
+        #overlay-subtitle {
+            font-size: 18px; color: #FFF; margin-top: 15px; font-weight: normal;
+            text-shadow: 2px 2px 0 #000; line-height: 1.5;
         }
     </style>
 </head>
@@ -129,7 +135,11 @@
     <div id="level-board" class="hud-text">LEVEL: <span id="level-val">1</span></div>
     <div id="score-board" class="hud-text">SCORE: <span id="score-val">0</span></div>
     <div id="ammo-board" class="hud-text">AMMO: <span id="ammo-val">10</span></div>
-    <div id="overlay-msg">LEVEL COMPLETE</div>
+    
+    <div id="overlay-msg">
+        <span id="overlay-title">LEVEL COMPLETE</span>
+        <div id="overlay-subtitle"></div>
+    </div>
     
     <canvas id="gameCanvas"></canvas>
     <div id="crosshair"></div>
@@ -168,7 +178,7 @@
 
         // 3. The Big Yahoo (Boss Image Load)
         const texBoss = new Image();
-        texBoss.src = "BigYahoo.png"; // Make sure you put your boss image in your folder!
+        texBoss.src = "BigYahoo.png";
 
         // 4. Ammo Box 
         const texAmmo = document.createElement('canvas');
@@ -193,10 +203,10 @@
         let zBuffer = new Array(screenWidth); let moveBob = 0; 
 
         // --- Campaign Levels Data ---
-        // Note: 1 = Wall, 0 = Floor, 3 = Exit Portal
         const levels = [
             {
                 name: "The Holding Cells",
+                storyText: "Holding cell.<br>i wake up and all I can remember is his face",
                 width: 10, height: 10,
                 map: [
                     [1,1,1,1,1,1,1,1,1,1],
@@ -334,7 +344,6 @@
                 for(let i=0; i<3 + currentLevelIdx*2; i++) spawnEnemy();
             }
 
-            // The boss spawner correctly lives inside Level Load!
             if (data.hasBoss) {
                 enemies.push({ 
                     x: 7.5, y: 3.5, 
@@ -345,6 +354,19 @@
             }
         }
 
+        // --- NEW: Cinematic Overlay ---
+        function showOverlay(title, subtitle, callback) {
+            let overlay = document.getElementById('overlay-msg');
+            document.getElementById('overlay-title').innerText = title;
+            document.getElementById('overlay-subtitle').innerHTML = subtitle || "";
+            overlay.style.display = 'block';
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                if(callback) callback();
+            }, 3500); // Overlay stays for 3.5 seconds
+        }
+
         function advanceCampaign() {
             currentLevelIdx++;
             if(currentLevelIdx >= levels.length) {
@@ -353,14 +375,12 @@
             }
             gameActive = false;
             document.getElementById('level-val').innerText = currentLevelIdx + 1;
-            document.getElementById('overlay-msg').innerText = "ENTERING: " + levels[currentLevelIdx].name;
-            document.getElementById('overlay-msg').style.display = 'block';
             
-            setTimeout(() => {
-                document.getElementById('overlay-msg').style.display = 'none';
+            let story = levels[currentLevelIdx].storyText || "";
+            showOverlay("ENTERING: " + levels[currentLevelIdx].name, story, () => {
                 loadLevelData(levels[currentLevelIdx]);
                 gameActive = true;
-            }, 2000);
+            });
         }
 
         function checkLineOfSight(x1, y1, x2, y2) {
@@ -445,20 +465,18 @@
                 
                 if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
                     
-                    // NEW: Boss Damage Logic
                     if (enemy.isBoss) {
-                        enemy.hp -= 15; // Takes 10 hits to kill the 150HP Boss
+                        enemy.hp -= 15;
                     } else {
-                        enemy.hp = 0; // Instant kill for normal minions
+                        enemy.hp = 0;
                     }
 
                     if (enemy.hp <= 0) {
                         ammoPickups.push({ x: enemy.x, y: enemy.y }); 
                         enemies.splice(i, 1);
-                        score += enemy.isBoss ? 1000 : 100; // Big points for Boss
+                        score += enemy.isBoss ? 1000 : 100;
                         document.getElementById('score-val').innerText = score;
                         
-                        // NEW: Death Explosion Particles!
                         for(let p = 0; p < 30; p++) {
                             particles.push({
                                 x: (screenWidth / 2) + (Math.random() - 0.5) * 50, 
@@ -470,8 +488,15 @@
                                 color: enemy.isBoss ? '0, 255, 255' : '200, 0, 0' 
                             });
                         }
+
+                        // NEW: Victory Screen trigger!
+                        if (enemy.isBoss) {
+                            setTimeout(() => {
+                                gameOver("VICTORY! YOU ESCAPED HIS ISLAND!");
+                            }, 2000); 
+                        }
+
                     } else {
-                        // NEW: Small spark effect if the boss survives the hit
                         for(let p = 0; p < 10; p++) {
                             particles.push({
                                 x: (screenWidth / 2) + (Math.random() - 0.5) * 20, 
@@ -522,10 +547,6 @@
 
         function startGame(mode) {
             document.getElementById('menu').style.display = 'none';
-            document.getElementById('ui-layer').style.display = 'block';
-            document.getElementById('crosshair').style.display = 'block';
-            document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'block');
-            
             score = 0; document.getElementById('score-val').innerText = score;
             ammo = 10; document.getElementById('ammo-val').innerText = ammo;
             
@@ -534,13 +555,23 @@
                 currentLevelIdx = 0;
                 document.getElementById('level-board').style.display = 'block';
                 document.getElementById('level-val').innerText = "1";
-                loadLevelData(levels[0]);
+                
+                showOverlay("ENTERING: " + levels[0].name, levels[0].storyText, () => {
+                    document.getElementById('ui-layer').style.display = 'block';
+                    document.getElementById('crosshair').style.display = 'block';
+                    document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'block');
+                    loadLevelData(levels[0]);
+                    gameActive = true;
+                });
             } else {
                 isCampaign = false;
                 document.getElementById('level-board').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                document.getElementById('crosshair').style.display = 'block';
+                document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'block');
                 loadLevelData(endlessMapTemplate);
+                gameActive = true;
             }
-            gameActive = true;
         }
         document.getElementById('campaign-btn').addEventListener('click', () => startGame('campaign'));
         document.getElementById('endless-btn').addEventListener('click', () => startGame('endless'));
@@ -562,20 +593,29 @@
             }
 
             let moving = false;
-            let nX = player.x; let nY = player.y;
+            let moveX = 0; let moveY = 0;
 
-            if (input.up) { nX += player.dirX * player.moveSpeed; nY += player.dirY * player.moveSpeed; moving = true; }
-            if (input.down) { nX -= player.dirX * player.moveSpeed; nY -= player.dirY * player.moveSpeed; moving = true; }
-            if (input.right) { nX += player.planeX * player.moveSpeed; nY += player.planeY * player.moveSpeed; moving = true; }
-            if (input.left) { nX -= player.planeX * player.moveSpeed; nY -= player.planeY * player.moveSpeed; moving = true; }
+            if (input.up) { moveX += player.dirX * player.moveSpeed; moveY += player.dirY * player.moveSpeed; moving = true; }
+            if (input.down) { moveX -= player.dirX * player.moveSpeed; moveY -= player.dirY * player.moveSpeed; moving = true; }
+            if (input.right) { moveX += player.planeX * player.moveSpeed; moveY += player.planeY * player.moveSpeed; moving = true; }
+            if (input.left) { moveX -= player.planeX * player.moveSpeed; moveY -= player.planeY * player.moveSpeed; moving = true; }
 
-            let checkX = Math.floor(nX); let checkY = Math.floor(nY);
-            if (worldMap[checkX] && worldMap[checkX][checkY] !== undefined) {
-                if (worldMap[checkX][checkY] === 3) {
-                    if(isCampaign) advanceCampaign();
-                } else if (worldMap[checkX][checkY] === 0) {
-                    player.x = nX; player.y = nY;
-                }
+            // NEW: Smooth Wall Sliding Collision
+            let nX = player.x + moveX;
+            let nY = player.y + moveY;
+
+            // X-Axis collision check
+            if (worldMap[Math.floor(nX)] && (worldMap[Math.floor(nX)][Math.floor(player.y)] === 0 || worldMap[Math.floor(nX)][Math.floor(player.y)] === 3)) {
+                player.x = nX;
+            }
+            // Y-Axis collision check
+            if (worldMap[Math.floor(player.x)] && (worldMap[Math.floor(player.x)][Math.floor(nY)] === 0 || worldMap[Math.floor(player.x)][Math.floor(nY)] === 3)) {
+                player.y = nY;
+            }
+
+            // Check if player stepped into the exit portal
+            if (worldMap[Math.floor(player.x)][Math.floor(player.y)] === 3) {
+                if(isCampaign) advanceCampaign();
             }
 
             if (moving) moveBob = Math.sin(frames * 0.2) * 8; else moveBob = moveBob * 0.8; 
@@ -715,7 +755,6 @@
 
                     let startStripe = Math.max(0, drawSX); let endStripe = Math.min(screenWidth, drawSX + spriteW);
                     
-                    // NEW: Custom Texture logic injected here!
                     let textureToDraw;
                     if (sprite.isBoss) {
                         textureToDraw = texBoss;
