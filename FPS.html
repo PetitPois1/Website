@@ -287,16 +287,7 @@
                 hasBoss: true
             }
         ]; // <-- This bracket cleanly closes the whole levels array!
-};
-        if (currentLevel.hasBoss) {
-    enemies.push({ 
-        x: 7.5, y: 3.5, 
-        hp: 150, maxHp: 150, 
-        isBoss: true, spawnTimer: 0, 
-        name: "The Big Yahoo" 
-    });
-}
-        ];
+
 
         
             const endlessMapTemplate = {
@@ -342,6 +333,17 @@
             if(isCampaign) {
                 for(let i=0; i<3 + currentLevelIdx*2; i++) spawnEnemy();
             }
+
+            // NEW: This is where the boss spawner actually belongs!
+            if (data.hasBoss) {
+                enemies.push({ 
+                    x: 7.5, y: 3.5, 
+                    hp: 150, maxHp: 150, 
+                    isBoss: true, spawnTimer: 0, 
+                    name: "The Big Yahoo" 
+                });
+            }
+        }
 
             // NEW: Check if the level has a boss, and spawn him!
             if (data.hasBoss) {
