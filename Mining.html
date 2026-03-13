@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Core: Deep Dive</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap');
@@ -296,6 +302,9 @@
             <button onclick="game.manualRespawn()" class="bg-red-900/80 border border-red-500 text-red-100 text-[10px] p-2 rounded hover:bg-red-700 transition-colors">
                 <i class="fas fa-ambulance"></i> STUCK?
             </button>
+            <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('mining')" class="bg-purple-900/80 border border-purple-500 text-purple-100 text-[10px] p-2 rounded hover:bg-purple-700 transition-colors">
+                <i class="fas fa-trophy"></i> ACHIEVEMENTS
+            </button>
         </div>
 
         <!-- Center Notification Area -->
@@ -547,7 +556,9 @@
                     drillPower: 2,
                     speed: 0.5,
                     hull: 100,
-                    hullMax: 100
+                    hullMax: 100,
+                    totalOresMined: 0,
+                    maxDepth: 0
                 },
                 upgrades: {
                     drill: 1, fuel: 1, cargo: 1, engine: 1, hull: 1
@@ -586,7 +597,7 @@
             document.getElementById('mobile-controls').classList.toggle('active');
         }
 
-        saveGame(manual = false) {
+        async saveGame(manual = false) {
             try {
                 // Find all blocks the player has mined so they don't regenerate
                 const minedBlocks = Object.keys(this.map).filter(k => this.map[k].id === 0);
@@ -602,6 +613,11 @@
                     minedBlocks: minedBlocks
                 };
                 localStorage.setItem('neon_miner_save', JSON.stringify(saveData));
+                
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    await window.gameHubProgress.saveGameProgress("mining", saveData);
+                }
+
                 if (manual) {
                     this.showFloatingText("GAME SAVED", this.player.x, this.player.y, '#0f0');
                     this.audio.playCollect();
@@ -612,12 +628,26 @@
             }
         }
 
-        loadGame() {
-            const saveStr = localStorage.getItem('neon_miner_save');
-            if (saveStr) {
+        async loadGame() {
+            let saveData = null;
+            
+            // Try cloud first
+            if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
                 try {
-                    const saveData = JSON.parse(saveStr);
-                    
+                    saveData = await window.gameHubProgress.loadGameProgress("mining");
+                } catch (e) {
+                    console.warn("[Mining] Cloud load failed", e);
+                }
+            }
+            
+            // Fallback to local
+            if (!saveData) {
+                const saveStr = localStorage.getItem('neon_miner_save');
+                if (saveStr) saveData = JSON.parse(saveStr);
+            }
+
+            if (saveData) {
+                try {
                     // Restore Player State Safely
                     this.player.x = saveData.player.x;
                     this.player.y = saveData.player.y;
@@ -1009,6 +1039,7 @@
                  this.collectBlock(block, x, y);
                  this.removeBlock(x, y);
                  this.audio.playCollect();
+                 this.checkAchievements();
              }
         }
 
@@ -1016,11 +1047,27 @@
             if (block.value > 0) {
                 if (this.player.cargo.length < this.player.stats.cargoMax) {
                     this.player.cargo.push(block);
+                    this.player.stats.totalOresMined++;
                     this.showFloatingText(`+${block.name}`, x * TILE_SIZE, y * TILE_SIZE, '#fff');
                 } else {
                     this.showFloatingText(`FULL!`, x * TILE_SIZE, y * TILE_SIZE, '#f00');
                     this.audio.playError();
                 }
+            }
+        }
+
+        checkAchievements() {
+            if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                const p = this.player;
+                const depth = Math.max(0, Math.floor(p.y / TILE_SIZE));
+                
+                if (depth >= 100) window.gameHubProgress.unlockAchievement("mining", "mining_depth_100");
+                if (depth >= 500) window.gameHubProgress.unlockAchievement("mining", "mining_depth_500");
+                if (depth >= 1000) window.gameHubProgress.unlockAchievement("mining", "mining_depth_1000");
+                
+                if (p.stats.totalOresMined >= 100) window.gameHubProgress.unlockAchievement("mining", "mining_total_100");
+                if (p.stats.totalOresMined >= 1000) window.gameHubProgress.unlockAchievement("mining", "mining_total_1000");
+                if (p.stats.totalOresMined >= 5000) window.gameHubProgress.unlockAchievement("mining", "mining_total_5000");
             }
         }
 

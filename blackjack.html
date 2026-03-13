@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blackjack</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/achievements.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -120,6 +126,7 @@
     let playerHand = [];
     let dealerHand = [];
     let gameOver = false;
+    let totalWins = 0;
 
     const playerMoneyEl = document.getElementById("player-money");
     const betInputEl = document.getElementById("bet-amount");
@@ -209,7 +216,7 @@
       }
     }
 
-    function endGame(playerWon) {
+    async function endGame(playerWon) {
       if (playerWon === true) {
         playerMoney += betAmount * 2; // Return bet and win amount
       } else if (playerWon === false) {
@@ -226,13 +233,16 @@
         resultEl.textContent += " You are out of money!";
         placeBetBtn.disabled = true;
       }
+
+      await saveProgress();
+      await trackAchievements(playerWon);
     }
 
     function updateMoney() {
       playerMoneyEl.textContent = playerMoney;
     }
 
-    function startGame() {
+    async function startGame() {
       playerHand = [dealCard(), dealCard()];
       dealerHand = [dealCard(), dealCard()];
 
@@ -244,7 +254,7 @@
       restartBtn.disabled = true;
     }
 
-    placeBetBtn.addEventListener("click", () => {
+    placeBetBtn.addEventListener("click", async () => {
       betAmount = parseInt(betInputEl.value);
       if (betAmount > playerMoney || betAmount <= 0) {
         alert("Invalid bet amount!");
@@ -286,10 +296,64 @@
       restartBtn.disabled = true;
     });
 
-    createDeck();
+    async function loadProgress() {
+      if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+        try {
+          const progress = await window.gameHubProgress.loadGameProgress("blackjack");
+          if (progress) {
+            if (typeof progress.bestMoney === "number") {
+              playerMoney = Math.max(playerMoney, progress.bestMoney);
+              updateMoney();
+            }
+            if (typeof progress.totalWins === "number") {
+              totalWins = progress.totalWins;
+            }
+          }
+        } catch (e) {
+          console.warn("[Blackjack] Failed to load synced progress", e);
+        }
+      }
+    }
+
+    async function saveProgress() {
+      if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+        try {
+          await window.gameHubProgress.saveGameProgress("blackjack", {
+            bestMoney: playerMoney,
+            totalWins
+          });
+        } catch (e) {
+          console.warn("[Blackjack] Failed to save progress", e);
+        }
+      }
+    }
+
+    async function trackAchievements(playerWon) {
+      if (!window.gameHubProgress || !window.gameHubProgress.unlockAchievement) return;
+      try {
+        if (playerWon === true) {
+          totalWins += 1;
+          await window.gameHubProgress.unlockAchievement("blackjack", "blackjack_first_win");
+          if (totalWins >= 5) {
+            await window.gameHubProgress.unlockAchievement("blackjack", "blackjack_5_wins");
+          }
+        }
+        if (playerMoney >= 2000) {
+          await window.gameHubProgress.unlockAchievement("blackjack", "blackjack_2000_money");
+        }
+      } catch (e) {
+        console.warn("[Blackjack] Failed to unlock achievement", e);
+      }
+    }
+
+    (async () => {
+      await loadProgress();
+      createDeck();
+    })();
   </script>
   <div>
     <button onclick="window.location.href='index.html'">Home</button>
+    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blackjack')">Achievements</button>
   </div>
 </body>
 </html>

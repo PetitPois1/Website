@@ -2,12 +2,13 @@
   // Replace these placeholder values with your real Firebase config.
   // You can find them in your Firebase console under Project Settings.
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyC06oaHGipI9lNfFnCcgLPnOqMKZTPl-wI",
+    authDomain: "game-hub-6b4ec.firebaseapp.com",
+    projectId: "game-hub-6b4ec",
+    storageBucket: "game-hub-6b4ec.firebasestorage.app",
+    messagingSenderId: "562667815247",
+    appId: "1:562667815247:web:f9ba3d431bc8dc2c7e853a",
+    measurementId: "G-VT7F73XYWV"
   };
 
   if (!window.firebase) {

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Block Blast</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
 
@@ -213,7 +219,7 @@
         </div>
     </div>
 
-    <div class="w-full max-w-[400px] px-4 flex justify-between items-end mb-4 pt-6">
+    <div class="w-full max-w-[400px] px-4 flex justify-between items-end mb-2 pt-6">
         <div>
             <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                 Block Blast
@@ -224,6 +230,15 @@
             <div id="score-display" class="text-4xl font-bold text-white leading-none">0</div>
             <div class="text-xs text-slate-500 mt-1">Best: <span id="high-score-display">0</span></div>
         </div>
+    </div>
+
+    <div class="w-full max-w-[400px] px-4 flex justify-between items-center mb-2">
+        <button onclick="window.location.href='index.html'" class="text-xs text-slate-300 border border-slate-600/70 px-3 py-1 rounded-lg hover:border-blue-400 hover:text-blue-200 transition">
+            Main Menu
+        </button>
+        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blockblast')" class="text-xs text-slate-300 border border-slate-600/70 px-3 py-1 rounded-lg hover:border-purple-400 hover:text-purple-200 transition">
+            Achievements
+        </button>
     </div>
 
     <div id="board-container" class="relative">
@@ -347,6 +362,9 @@
             if (isInsaneMode) {
                 showFloatingText("🔥 INSANE MODE ACTIVATED 🔥");
                 spawnBalls();
+                if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                    window.gameHubProgress.unlockAchievement("blockblast", "blockblast_insane_mode");
+                }
             } else {
                 showFloatingText("Normal Mode");
                 ballsArr.forEach(b => b.el.remove());
@@ -405,9 +423,20 @@
             highScoreEl.innerText = highScore;
         }
 
-        function initGame() {
+        async function initGame() {
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
             score = 0;
+            // Load synced best score if available
+            if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+                try {
+                    const progress = await window.gameHubProgress.loadGameProgress("blockblast");
+                    if (progress && typeof progress.highScore === "number") {
+                        highScore = Math.max(highScore, progress.highScore);
+                    }
+                } catch (e) {
+                    console.warn("[BlockBlast] Failed to load synced progress", e);
+                }
+            }
             updateScoreDisplay();
             secretCorners.clear();
             
@@ -878,7 +907,33 @@
             if (score > highScore) {
                 highScore = score;
                 highScoreEl.innerText = highScore;
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    window.gameHubProgress.saveGameProgress("blockblast", { highScore });
+                }
             }
+
+            if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                try {
+                    if (score > 0) {
+                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_first_clear");
+                    }
+                    if (score >= 500) {
+                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_500_score");
+                    }
+                    if (score >= 1000) {
+                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_1000_score");
+                    }
+                    if (score >= 2500) {
+                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_2500_score");
+                    }
+                    if (score >= 5000) {
+                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_5000_score");
+                    }
+                } catch (e) {
+                    console.warn("[BlockBlast] Failed to unlock achievement", e);
+                }
+            }
+
             modalEl.classList.remove('hidden');
         }
 

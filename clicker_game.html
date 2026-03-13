@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Industrial Clicker: Evolution</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <style>
         :root {
             --dynamic-accent: #66cc66; 
@@ -333,14 +339,14 @@
         };
 
         const achievements = [
-            { id: 'a1', name: "Novice", desc: "Click 1 time", icon: "🔨", check: () => totalClicks >= 1 },
-            { id: 'a2', name: "Grinder", desc: "Click 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
-            { id: 'a3', name: "Wealthy", desc: "Earn 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
-            { id: 'a4', name: "Tycoon", desc: "Earn 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 },
-            { id: 'a5', name: "Click King", desc: "Click 1,000 times", icon: "👑", check: () => totalClicks >= 1000 },
-            { id: 'a6', name: "Automation", desc: "Own 50 Rock Pickers", icon: "🤖", check: () => inventory.picker >= 50 },
-            { id: 'a7', name: "Century", desc: "Reach Era 3", icon: "🏗️", check: () => currentTier >= 3 },
-            { id: 'a8', name: "Godhood", desc: "Earn 1 Quadrillion Credits", icon: "✨", check: () => totalEarned >= 1e15 }
+            { id: 'clicker_1_click', name: "Novice", desc: "Click 1 time", icon: "🔨", check: () => totalClicks >= 1 },
+            { id: 'clicker_100_clicks', name: "Grinder", desc: "Click 100 times", icon: "🖱️", check: () => totalClicks >= 100 },
+            { id: 'clicker_1m_credits', name: "Wealthy", desc: "Earn 1 Million Credits", icon: "💰", check: () => totalEarned >= 1000000 },
+            { id: 'clicker_1b_credits', name: "Tycoon", desc: "Earn 1 Billion Credits", icon: "💎", check: () => totalEarned >= 1000000000 },
+            { id: 'clicker_1000_clicks', name: "Click King", desc: "Click 1,000 times", icon: "👑", check: () => totalClicks >= 1000 },
+            { id: 'clicker_50_pickers', name: "Automation", desc: "Own 50 Rock Pickers", icon: "🤖", check: () => inventory.picker >= 50 },
+            { id: 'clicker_era_3', name: "Century", desc: "Reach Era 3", icon: "🏗️", check: () => currentTier >= 3 },
+            { id: 'clicker_1q_credits', name: "Godhood", desc: "Earn 1 Quadrillion Credits", icon: "✨", check: () => totalEarned >= 1e15 }
         ];
 
         let inventory = {};
@@ -532,18 +538,38 @@
             updateUI(); 
         }
 
-        function saveGame(manual = false) {
+        async function saveGame(manual = false) {
             totalPlaytime += (Date.now() - startTime) / 1000;
             startTime = Date.now();
             const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes, totalPlaytime };
             localStorage.setItem("IndusEvo_V2", JSON.stringify(data));
+            
+            if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                await window.gameHubProgress.saveGameProgress("clicker", data);
+            }
+            
             if(manual) notify("System Progress Saved");
         }
 
-        function loadGame() {
-            const saved = localStorage.getItem("IndusEvo_V2");
-            if(saved) {
-                const data = JSON.parse(saved);
+        async function loadGame() {
+            let data = null;
+            
+            // Try cloud first
+            if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+                try {
+                    data = await window.gameHubProgress.loadGameProgress("clicker");
+                } catch (e) {
+                    console.warn("[Clicker] Cloud load failed", e);
+                }
+            }
+            
+            // Fallback to local
+            if (!data) {
+                const saved = localStorage.getItem("IndusEvo_V2");
+                if (saved) data = JSON.parse(saved);
+            }
+
+            if(data) {
                 credits = data.credits || 0; 
                 totalEarned = data.totalEarned || 0; 
                 totalClicks = data.totalClicks || 0;
@@ -573,13 +599,21 @@
                 if(!unlockedAchievements.includes(ach.id) && ach.check()) {
                     unlockedAchievements.push(ach.id);
                     notify(`MILESTONE: ${ach.name}`);
+                    if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                        window.gameHubProgress.unlockAchievement("clicker", ach.id);
+                    }
                 }
             });
         }
 
         function unlockAllAch() {
             achievements.forEach(ach => {
-                if(!unlockedAchievements.includes(ach.id)) unlockedAchievements.push(ach.id);
+                if(!unlockedAchievements.includes(ach.id)) {
+                    unlockedAchievements.push(ach.id);
+                    if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                        window.gameHubProgress.unlockAchievement("clicker", ach.id);
+                    }
+                }
             });
             notify("All Milestones Unlocked");
             updateUI();

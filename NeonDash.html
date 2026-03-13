@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Dash</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background-color: #050510; font-family: 'Orbitron', sans-serif; touch-action: none; user-select: none; }
@@ -81,6 +87,10 @@
         <!-- LEVEL SELECT MENU -->
         <div id="level-select-menu" class="hidden flex-col items-center pointer-events-auto transition-opacity duration-300 menu-box p-8 rounded-xl w-[90%] max-w-[800px]">
             <h2 class="text-4xl font-black text-neon-cyan mb-2">SELECT LEVEL</h2>
+            <div class="flex gap-4 mb-4">
+                <button onclick="renderLevelGrid()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">Built-in Levels</button>
+                <button onclick="loadMyLevels()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">My Levels</button>
+            </div>
             <p id="level-status-text" class="text-gray-400 text-xs mb-6 uppercase tracking-widest">Loading levels from server...</p>
             <div id="dynamic-levels-container" class="level-grid mb-6"></div>
             <div class="w-full border-t border-gray-700 pt-6 flex flex-col md:flex-row gap-4">
@@ -222,6 +232,7 @@
                 
                 <div class="flex flex-wrap gap-4 w-full">
                     <button onclick="copyExportCode()" class="btn-neon flex-1 py-3 text-sm font-bold uppercase cursor-pointer">Copy String</button>
+                    <button onclick="saveLevelToAccount()" class="btn-neon flex-1 py-3 text-sm font-bold uppercase cursor-pointer">Save to Account</button>
                     <button onclick="loadEditorCode()" class="btn-neon-pink flex-1 py-3 text-sm font-bold uppercase cursor-pointer">Load String</button>
                     <button onclick="closeDataModal()" class="bg-gray-800 text-white hover:bg-gray-700 flex-1 py-3 text-sm font-bold uppercase cursor-pointer rounded">Close</button>
                 </div>
@@ -379,10 +390,24 @@
         renderLevelGrid();
     }
 
-    function renderLevelGrid() {
+    async function renderLevelGrid() {
         const container = document.getElementById('dynamic-levels-container');
         container.innerHTML = '';
+        
         let stats = JSON.parse(localStorage.getItem('neonDashStats') || '{}');
+        
+        // Try to load cloud stats
+        if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+            try {
+                const cloudStats = await window.gameHubProgress.loadGameProgress("neondash_stats");
+                if (cloudStats) {
+                    stats = { ...stats, ...cloudStats };
+                    localStorage.setItem('neonDashStats', JSON.stringify(stats));
+                }
+            } catch (e) {
+                console.warn("[NeonDash] Failed to load cloud stats", e);
+            }
+        }
 
         Object.keys(BUILT_IN_LEVELS).forEach(name => {
             const btn = document.createElement('button');
@@ -651,7 +676,14 @@
 
         if (gameMode === 'ENDLESS') {
             document.getElementById('end-score-label').classList.remove('hidden'); document.getElementById('end-high-label').classList.remove('hidden');
-            if (score > highScore) { highScore = score; localStorage.setItem('neondash_highscore', highScore); document.getElementById('high-score-hud').innerText = highScore; }
+            if (score > highScore) { 
+                highScore = score; 
+                localStorage.setItem('neondash_highscore', highScore); 
+                document.getElementById('high-score-hud').innerText = highScore;
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    window.gameHubProgress.saveGameProgress("neondash", { highScore });
+                }
+            }
             document.getElementById('final-score').innerText = Math.floor(score); document.getElementById('high-score').innerText = Math.floor(highScore);
             
             document.getElementById('end-coin-container').classList.remove('hidden');
@@ -668,6 +700,11 @@
                     totalCoins: levelTotalCoins
                 };
                 localStorage.setItem('neonDashStats', JSON.stringify(stats));
+                
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    window.gameHubProgress.saveGameProgress("neondash_stats", stats);
+                }
+                
                 renderLevelGrid(); 
             }
             
@@ -882,17 +919,67 @@
         const ta = document.getElementById('export-textarea'); ta.select(); document.execCommand('copy');
         event.target.innerText = "COPIED!"; setTimeout(() => event.target.innerText = "Copy String", 2000);
     }
-    function loadEditorCode() {
-        let code = document.getElementById('export-textarea').value.trim();
-        if(!code) return;
-        if (code.includes('|')) {
-            let parts = code.split('|');
-            document.getElementById('export-level-name').value = parts[0];
-            code = parts[1];
+    async function saveLevelToAccount() {
+        const name = document.getElementById('export-level-name').value.trim() || "Unnamed Level";
+        const code = encodeLevel(obstacles);
+        if (!code) return;
+
+        if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+            try {
+                const currentMyLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels") || {};
+                currentMyLevels[name] = code;
+                await window.gameHubProgress.saveGameProgress("neondash_mylevels", currentMyLevels);
+                alert("Level saved to your account!");
+            } catch (e) {
+                console.warn("[NeonDash] Failed to save level to account", e);
+                alert("Failed to save level. Are you signed in?");
+            }
+        } else {
+            alert("Account system not available.");
         }
-        obstacles = decodeLevel(code); cameraX = 0; cameraY = 0; selectedObstacle = null;
-        updateContextPanel(); closeDataModal();
     }
+
+    async function loadMyLevels() {
+         const container = document.getElementById('dynamic-levels-container');
+         const statusText = document.getElementById('level-status-text');
+         
+         statusText.innerText = "Loading your levels...";
+         container.innerHTML = '';
+
+         if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+             try {
+                 const myLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels");
+                 if (myLevels && Object.keys(myLevels).length > 0) {
+                     statusText.innerText = `Found ${Object.keys(myLevels).length} levels on your account.`;
+                     
+                     Object.keys(myLevels).forEach(name => {
+                         const btn = document.createElement('button');
+                         btn.className = 'btn-neon py-2 px-2 text-sm font-bold uppercase cursor-pointer rounded flex flex-col items-center justify-center gap-1 h-24 min-w-[140px] flex-shrink-0';
+                         btn.innerHTML = `<span class="truncate w-full">${name}</span><span class="text-[10px] text-gray-400 mt-1">My Level</span>`;
+                         btn.onclick = () => startGame('LEVEL', myLevels[name], name);
+                         container.appendChild(btn);
+                     });
+                 } else {
+                     statusText.innerText = "No levels found on your account.";
+                 }
+             } catch (e) {
+                 console.warn("[NeonDash] Failed to load my levels", e);
+                 statusText.innerText = "Error loading your levels.";
+             }
+         }
+     }
+
+     function loadEditorCode() {
+         let code = document.getElementById('export-textarea').value.trim();
+         if(!code) return;
+         if (code.includes('|')) {
+             let parts = code.split('|');
+             document.getElementById('export-level-name').value = parts[0];
+             code = parts[1];
+         }
+         obstacles = decodeLevel(code); cameraX = 0; cameraY = 0; selectedObstacle = null;
+         updateContextPanel(); closeDataModal();
+     }
 
     function getObsRect(obs) {
         if (obs.type === 'trigger_color') return {x: obs.x, y: obs.y, w: 40, h: 200}; 

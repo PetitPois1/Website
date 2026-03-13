@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Arcade - GitHub Edition</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <style>
         :root {
             --primary: #6200ea;
@@ -91,6 +97,7 @@
     <div class="controls">
         <button onclick="resetGame()">Reset Game</button>
         <button onclick="window.location.href='index.html'">Main Menu</button>
+        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('snake')">Achievements</button>
     </div>
 
     <script>
@@ -105,11 +112,12 @@
         let snake, food, direction, nextDirection, currentScore, speed, gameTimeout;
         let waitingForStart = true;
         let highScore = localStorage.getItem('snakeHighScore') || 0;
+        let totalFruitEaten = parseInt(localStorage.getItem('snakeTotalFruit')) || 0;
 
         // Initialize game
         init();
 
-        function init() {
+        async function init() {
             snake = [{ x: 9 * box, y: 10 * box }];
             food = generateFood();
             direction = 'RIGHT';
@@ -117,6 +125,26 @@
             currentScore = 0;
             speed = 150; 
             waitingForStart = true;
+
+            // Load cloud progress if available
+            if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+                try {
+                    const progress = await window.gameHubProgress.loadGameProgress("snake");
+                    if (progress) {
+                        if (typeof progress.highScore === "number") {
+                            highScore = Math.max(highScore, progress.highScore);
+                            localStorage.setItem('snakeHighScore', highScore);
+                        }
+                        if (typeof progress.totalFruit === "number") {
+                            totalFruitEaten = Math.max(totalFruitEaten, progress.totalFruit);
+                            localStorage.setItem('snakeTotalFruit', totalFruitEaten);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("[Snake] Failed to load synced progress", e);
+                }
+            }
+
             updateUI();
             drawWaitingScreen();
         }
@@ -179,13 +207,67 @@
             // Food Check
             if (headX === food.x && headY === food.y) {
                 currentScore++;
+                totalFruitEaten++;
+                localStorage.setItem('snakeTotalFruit', totalFruitEaten);
+
+                let progressUpdate = { totalFruit: totalFruitEaten };
                 if (currentScore > highScore) {
                     highScore = currentScore;
                     localStorage.setItem('snakeHighScore', highScore);
+                    progressUpdate.highScore = highScore;
                 }
+
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    window.gameHubProgress.saveGameProgress("snake", progressUpdate);
+                }
+
                 food = generateFood();
                 speed = Math.max(60, speed - 2); // Gradually get faster
                 updateUI();
+
+                // Check for board completion
+                const totalCells = (canvasSize / box) * (canvasSize / box);
+                if (snake.length >= totalCells) {
+                    if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                        window.gameHubProgress.unlockAchievement("snake", "snake_complete");
+                    }
+                    gameOver(true); // Win condition
+                    return;
+                }
+
+                // Achievements for score milestones
+                if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                    try {
+                        if (currentScore === 1) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_first_apple");
+                        }
+                        if (currentScore >= 10) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_score_10");
+                        }
+                        if (currentScore >= 25) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_score_25");
+                        }
+                        if (currentScore >= 50) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_score_50");
+                        }
+                        if (currentScore >= 100) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_score_100");
+                        }
+
+                        // Total fruit achievements
+                        if (totalFruitEaten >= 100) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_total_100");
+                        }
+                        if (totalFruitEaten >= 500) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_total_500");
+                        }
+                        if (totalFruitEaten >= 1000) {
+                            window.gameHubProgress.unlockAchievement("snake", "snake_total_1000");
+                        }
+                    } catch (e) {
+                        console.warn("[Snake] Failed to unlock achievement", e);
+                    }
+                }
             } else {
                 snake.pop();
             }
@@ -232,8 +314,12 @@
             return newFood;
         }
 
-        function gameOver() {
-            alert(`GAME OVER\nFinal Score: ${currentScore}`);
+        function gameOver(win = false) {
+            if (win) {
+                alert("CONGRATULATIONS!\nYou filled the whole board!");
+            } else {
+                alert(`GAME OVER\nFinal Score: ${currentScore}`);
+            }
             init();
         }
 

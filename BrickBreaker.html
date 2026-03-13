@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Core: Rogue Breaker</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <style>
         :root {
             --bg-color: #050505;
@@ -409,6 +415,10 @@ window.triggerEasterEgg = function() {
         
         AudioEngine.playDestroy(); // Explosion sound
         AudioEngine.playLaunch();
+
+        if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+            window.gameHubProgress.unlockAchievement("brick", "brick_insane_mode");
+        }
     }
 };
 
@@ -648,7 +658,9 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-function initGame() {
+let highScore = parseInt(localStorage.getItem("brickHighScore")) || 0;
+
+async function initGame() {
     AudioEngine.init();
     resize();
     
@@ -656,6 +668,19 @@ function initGame() {
     gameState.wave = 1;
     gameState.lives = 5;
     gameState.gameOver = false;
+
+    // Load cloud progress
+    if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+        try {
+            const progress = await window.gameHubProgress.loadGameProgress("brick");
+            if (progress && typeof progress.highScore === "number") {
+                highScore = Math.max(highScore, progress.highScore);
+                localStorage.setItem("brickHighScore", highScore);
+            }
+        } catch (e) {
+            console.warn("[Brick] Cloud load failed", e);
+        }
+    }
     
     upgrades.forEach(u => u.level = 1);
     upgrades.find(u => u.id === 'multiball').level = 0;
@@ -842,6 +867,26 @@ function checkBrickCollisions(ball) {
 
                 gameState.money += reward;
                 updateHUD();
+
+                if (gameState.money > highScore) {
+                    highScore = gameState.money;
+                    localStorage.setItem("brickHighScore", highScore);
+                    if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                        window.gameHubProgress.saveGameProgress("brick", { highScore });
+                    }
+                }
+
+                // Unlock achievements
+                if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                    try {
+                        if (gameState.money >= 1) window.gameHubProgress.unlockAchievement("brick", "brick_first_break");
+                        if (gameState.money >= 1000) window.gameHubProgress.unlockAchievement("brick", "brick_1000_score");
+                        if (gameState.money >= 5000) window.gameHubProgress.unlockAchievement("brick", "brick_5000_score");
+                        if (gameState.money >= 10000) window.gameHubProgress.unlockAchievement("brick", "brick_10000_score");
+                    } catch (e) {
+                        console.warn("[Brick] Failed to unlock achievement", e);
+                    }
+                }
                 
                 showFloatingText(`+$${reward}`, b.x, b.y, color);
                 createParticles(b.x + b.w/2, b.y + b.h/2, gameState.insaneMode ? 2 : 10, color); // Less particles in insane mode

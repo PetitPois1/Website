@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Game Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --bg-dark: #0f172a;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.14) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: #e5e7eb;
+            min-height: 100vh;
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="pt-24 pb-12">
+    <!-- Navbar (simplified reuse of index) -->
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                    <span class="text-xl">👾</span>
+                </div>
+                <a href="index.html" class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    GAME HUB
+                </a>
+            </div>
+            <button id="profile-button" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-white/10 hover:border-violet-500 hover:bg-slate-900 text-sm transition-colors">
+                <div id="profile-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold">
+                    ?
+                </div>
+                <span id="profile-label" class="text-slate-200 font-medium">
+                    Profile
+                </span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-6xl mx-auto px-6">
+        <section class="mt-4 mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div id="profile-page-avatar" class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-2xl font-extrabold shadow-lg shadow-violet-500/30">
+                    ?
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.18em] text-slate-400 mb-1">Signed in as</p>
+                    <p id="profile-page-name" class="text-lg font-semibold text-slate-50">Guest</p>
+                    <p id="profile-page-email" class="text-xs text-slate-400">Not signed in</p>
+                </div>
+            </div>
+            <div class="flex flex-col md:items-end gap-3">
+                <div class="flex gap-3">
+                    <div class="px-4 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70">
+                        <p class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 mb-1">Games Linked</p>
+                        <p id="profile-games-count" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                    <div class="px-4 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70">
+                        <p class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 mb-1">Achievements</p>
+                        <p id="profile-achievements-count" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="profile-signout-btn" class="px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-600/80 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:border-rose-500 hover:text-rose-100 transition-colors">
+                        Sign Out
+                    </button>
+                    <button onclick="window.location.href='index.html'" class="px-3 py-1.5 rounded-lg bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500 transition-colors">
+                        Back to Games
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Per-game tiles -->
+        <section id="game-stats-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
+            <!-- Snake -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-600/80 flex items-center justify-center text-lg">🐍</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Snake Game</h3>
+                            <p class="text-[0.7rem] text-slate-400">Classic arcade snake</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High score</p>
+                        <p id="profile-snake-highscore" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-snake-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 9 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('snake')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Block Blast -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-600/80 flex items-center justify-center text-lg">🧱</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Block Blast</h3>
+                            <p class="text-[0.7rem] text-slate-400">Chill puzzle board</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Best score</p>
+                        <p id="profile-blockblast-highscore" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-blockblast-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 6 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blockblast')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Industrial Clicker -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-orange-600/80 flex items-center justify-center text-lg">⚙️</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Industrial Clicker</h3>
+                            <p class="text-[0.7rem] text-slate-400">Empire builder</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Total Earned</p>
+                        <p id="profile-clicker-earned" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-clicker-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 8 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('clicker')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Flappy Bird -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-yellow-500/80 flex items-center justify-center text-lg">🐦</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Flappy Bird</h3>
+                            <p class="text-[0.7rem] text-slate-400">Don't hit the pipes</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High Score</p>
+                        <p id="profile-flappy-highscore" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-flappy-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 5 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('flappy')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Mining -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-blue-600/80 flex items-center justify-center text-lg">⛏️</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Mining</h3>
+                            <p class="text-[0.7rem] text-slate-400">Deep core explorer</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Max Depth</p>
+                        <p id="profile-mining-depth" class="text-base font-semibold text-slate-50">0m</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-mining-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 6 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('mining')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Brick Breaker -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-pink-600/80 flex items-center justify-center text-lg">🎾</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Brick Breaker</h3>
+                            <p class="text-[0.7rem] text-slate-400">Neon core rogue</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High Score</p>
+                        <p id="profile-brick-highscore" class="text-base font-semibold text-slate-50">0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-brick-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 5 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('brick')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Blackjack -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/80 flex items-center justify-center text-lg">🃏</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">Blackjack</h3>
+                            <p class="text-[0.7rem] text-slate-400">Casino-lite card game</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Best bankroll</p>
+                        <p id="profile-blackjack-money" class="text-base font-semibold text-slate-50">$0</p>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-blackjack-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 3 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blackjack')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+        </section>
+
+        <!-- Friends Section -->
+        <section class="mb-12">
+            <header class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-slate-50 flex items-center gap-3">
+                    <span class="text-2xl">👥</span> Friends
+                </h2>
+                <div class="flex gap-2">
+                    <input type="text" id="friend-search-input" placeholder="Search by email..." class="bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-1.5 text-sm focus:outline-none focus:border-violet-500 transition-colors">
+                    <button id="add-friend-btn" class="px-4 py-1.5 rounded-lg bg-violet-600 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
+                        Add Friend
+                    </button>
+                </div>
+            </header>
+            <div id="friends-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center py-10 bg-slate-900/30 border border-slate-800/50 rounded-2xl">
+                <p class="col-span-full text-slate-500">No friends added yet. Add friends to see their achievements!</p>
+            </div>
+        </section>
+     </main>
+
+    <footer class="mt-16 border-t border-slate-900 pt-8 text-center text-slate-500 text-xs">
+        <p>Progress and achievements are stored locally when signed out, and synced to your account when signed in.</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const nameEl = document.getElementById("profile-page-name");
+            const emailEl = document.getElementById("profile-page-email");
+            const avatarEl = document.getElementById("profile-page-avatar");
+            const gamesCountEl = document.getElementById("profile-games-count");
+            const achievementsCountEl = document.getElementById("profile-achievements-count");
+
+            const snakeHighEl = document.getElementById("profile-snake-highscore");
+            const snakeAchEl = document.getElementById("profile-snake-achievements");
+            const blockHighEl = document.getElementById("profile-blockblast-highscore");
+            const blockAchEl = document.getElementById("profile-blockblast-achievements");
+            const clickerEarnedEl = document.getElementById("profile-clicker-earned");
+            const clickerAchEl = document.getElementById("profile-clicker-achievements");
+            const flappyHighEl = document.getElementById("profile-flappy-highscore");
+            const flappyAchEl = document.getElementById("profile-flappy-achievements");
+            const miningDepthEl = document.getElementById("profile-mining-depth");
+            const miningAchEl = document.getElementById("profile-mining-achievements");
+            const brickHighEl = document.getElementById("profile-brick-highscore");
+            const brickAchEl = document.getElementById("profile-brick-achievements");
+            const bjMoneyEl = document.getElementById("profile-blackjack-money");
+            const bjAchEl = document.getElementById("profile-blackjack-achievements");
+
+            const friendsListEl = document.getElementById("friends-list");
+            const friendSearchInput = document.getElementById("friend-search-input");
+            const addFriendBtn = document.getElementById("add-friend-btn");
+
+            let currentUid = null;
+
+            function applyUser(user) {
+                if (!user) {
+                    nameEl.textContent = "Guest";
+                    emailEl.textContent = "Not signed in";
+                    avatarEl.textContent = "?";
+                    currentUid = null;
+                    return;
+                }
+                const email = user.email || "Signed in";
+                const display = user.displayName || email.split("@")[0];
+                nameEl.textContent = display;
+                emailEl.textContent = email;
+                avatarEl.textContent = (display[0] || "?").toUpperCase();
+                currentUid = user.uid;
+                loadFriends();
+            }
+
+            if (window.gameHubAuth && window.gameHubAuth.onAuthStateChanged) {
+                window.gameHubAuth.onAuthStateChanged((user) => {
+                    applyUser(user);
+                });
+            }
+
+            if (!window.gameHubProgress || !window.gameHubAchievements) {
+                return;
+            }
+
+            // Load Game Stats
+            const loadStats = async () => {
+                const snakeProgress = await window.gameHubProgress.loadGameProgress("snake");
+                const blockProgress = await window.gameHubProgress.loadGameProgress("blockblast");
+                const clickerProgress = await window.gameHubProgress.loadGameProgress("clicker");
+                const flappyProgress = await window.gameHubProgress.loadGameProgress("flappy");
+                const miningProgress = await window.gameHubProgress.loadGameProgress("mining");
+                const brickProgress = await window.gameHubProgress.loadGameProgress("brick");
+                const blackjackProgress = await window.gameHubProgress.loadGameProgress("blackjack");
+
+                snakeHighEl.textContent = snakeProgress?.highScore || 0;
+                blockHighEl.textContent = blockProgress?.highScore || 0;
+                clickerEarnedEl.textContent = clickerProgress?.totalEarned ? Math.floor(clickerProgress.totalEarned).toLocaleString() : 0;
+                flappyHighEl.textContent = flappyProgress?.highScore || 0;
+                miningDepthEl.textContent = miningProgress?.player?.stats?.maxDepth ? Math.floor(miningProgress.player.stats.maxDepth) + "m" : "0m";
+                brickHighEl.textContent = brickProgress?.highScore || 0;
+                bjMoneyEl.textContent = "$" + (blackjackProgress?.bestMoney || 0);
+
+                const snakeUnlocked = await window.gameHubProgress.getUserAchievements("snake");
+                const blockUnlocked = await window.gameHubProgress.getUserAchievements("blockblast");
+                const clickerUnlocked = await window.gameHubProgress.getUserAchievements("clicker");
+                const flappyUnlocked = await window.gameHubProgress.getUserAchievements("flappy");
+                const miningUnlocked = await window.gameHubProgress.getUserAchievements("mining");
+                const brickUnlocked = await window.gameHubProgress.getUserAchievements("brick");
+                const bjUnlocked = await window.gameHubProgress.getUserAchievements("blackjack");
+
+                snakeAchEl.textContent = snakeUnlocked.length;
+                blockAchEl.textContent = blockUnlocked.length;
+                clickerAchEl.textContent = clickerUnlocked.length;
+                flappyAchEl.textContent = flappyUnlocked.length;
+                miningAchEl.textContent = miningUnlocked.length;
+                brickAchEl.textContent = brickUnlocked.length;
+                bjAchEl.textContent = bjUnlocked.length;
+
+                const games = [snakeProgress, blockProgress, clickerProgress, flappyProgress, miningProgress, brickProgress, blackjackProgress];
+                const gamesLinked = games.filter(g => g && Object.keys(g).length > 0).length;
+                gamesCountEl.textContent = gamesLinked;
+
+                const totalAchievements = snakeUnlocked.length + blockUnlocked.length + clickerUnlocked.length + flappyUnlocked.length + miningUnlocked.length + brickUnlocked.length + bjUnlocked.length;
+                achievementsCountEl.textContent = totalAchievements;
+            };
+
+            await loadStats();
+
+            // Friends System
+            async function loadFriends() {
+                if (!currentUid) return;
+                const db = window.gameHubFirebase.db;
+                const friendsRef = db.collection("users").doc(currentUid).collection("friends");
+                const snapshot = await friendsRef.get();
+                
+                if (snapshot.empty) {
+                    friendsListEl.innerHTML = '<p class="col-span-full text-slate-500">No friends added yet.</p>';
+                    return;
+                }
+
+                friendsListEl.innerHTML = '';
+                snapshot.forEach(async doc => {
+                    const friendUid = doc.id;
+                    const friendDoc = await db.collection("users").doc(friendUid).get();
+                    if (friendDoc.exists) {
+                        const friendData = friendDoc.data();
+                        renderFriendCard(friendUid, friendData);
+                    }
+                });
+            }
+
+            function renderFriendCard(uid, data) {
+                const card = document.createElement("div");
+                card.className = "bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4 text-left";
+                const initial = (data.displayName || data.email || "?")[0].toUpperCase();
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-lg">${initial}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-slate-100 truncate">${data.displayName || data.email.split('@')[0]}</p>
+                        <p class="text-xs text-slate-400 truncate">${data.email}</p>
+                    </div>
+                    <button onclick="viewFriendAchievements('${uid}')" class="text-xs px-3 py-1 rounded-lg border border-slate-600 hover:border-violet-500 transition-colors">View</button>
+                `;
+                friendsListEl.appendChild(card);
+            }
+
+            window.viewFriendAchievements = async (friendUid) => {
+                // For simplicity, we'll just show a basic alert or we could reuse the achievements modal logic
+                // For now, let's just log it or show a simple summary
+                const db = window.gameHubFirebase.db;
+                const snakeAch = await db.collection("users").doc(friendUid).collection("achievements").doc("snake").get();
+                const unlocked = snakeAch.exists ? snakeAch.data().unlocked || [] : [];
+                alert(`Friend has ${unlocked.length} achievements in Snake!`);
+            };
+
+            addFriendBtn.onclick = async () => {
+                const email = friendSearchInput.value.trim();
+                if (!email) return;
+                if (!currentUid) {
+                    alert("Please sign in to add friends.");
+                    return;
+                }
+
+                const db = window.gameHubFirebase.db;
+                const usersRef = db.collection("users");
+                const snapshot = await usersRef.where("email", "==", email).get();
+
+                if (snapshot.empty) {
+                    alert("User not found.");
+                    return;
+                }
+
+                const friendUid = snapshot.docs[0].id;
+                if (friendUid === currentUid) {
+                    alert("You cannot add yourself as a friend.");
+                    return;
+                }
+
+                await db.collection("users").doc(currentUid).collection("friends").doc(friendUid).set({
+                    addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                friendSearchInput.value = "";
+                loadFriends();
+                alert("Friend added!");
+            };
+        });
+    </script>
+</body>
+</html>
+

@@ -123,6 +123,8 @@
     const titleEl = document.getElementById("auth-title");
     const submitBtn = document.getElementById("auth-submit-btn");
     const errorEl = document.getElementById("auth-error");
+    const confirmWrapper = document.getElementById("auth-password-confirm-wrapper");
+    const confirmInput = document.getElementById("auth-password-confirm");
 
     let mode = "login"; // or "signup"
 
@@ -132,10 +134,12 @@
         titleEl.textContent = "Sign In";
         submitBtn.textContent = "Sign In";
         toggleModeBtn.textContent = "Need an account? Sign up";
+        if (confirmWrapper) confirmWrapper.classList.add("hidden");
       } else {
         titleEl.textContent = "Create Account";
         submitBtn.textContent = "Sign Up";
         toggleModeBtn.textContent = "Have an account? Sign in";
+        if (confirmWrapper) confirmWrapper.classList.remove("hidden");
       }
       if (errorEl) errorEl.textContent = "";
     }
@@ -176,9 +180,14 @@
 
         const email = emailInput.value.trim();
         const password = passwordInput.value;
+        const confirmPassword = confirmInput ? confirmInput.value : "";
 
         if (!email || !password) {
           if (errorEl) errorEl.textContent = "Please enter email and password.";
+          return;
+        }
+        if (mode === "signup" && password !== confirmPassword) {
+          if (errorEl) errorEl.textContent = "Passwords do not match.";
           return;
         }
 

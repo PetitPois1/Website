@@ -6,6 +6,15 @@
     <title>Game Hub | Premium Gaming Portal</title>
     <!-- Tailwind CSS for utility-first styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs (loaded before shared Game Hub scripts) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Shared Game Hub scripts -->
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -176,6 +185,16 @@
                 <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
             </div>
 
+            <!-- Profile / Auth -->
+            <button id="profile-button" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-white/10 hover:border-violet-500 hover:bg-slate-900 text-sm transition-colors">
+                <div id="profile-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold">
+                    ?
+                </div>
+                <span id="profile-label" class="text-slate-200 font-medium">
+                    Sign In
+                </span>
+            </button>
+
             <!-- Hamburger Button -->
             <button id="menu-toggle" class="md:hidden text-white focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,8 +209,48 @@
             <a href="about.html" class="text-slate-400 hover:text-white transition-colors px-2">About</a>
             <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors px-2">Feedback</a>
             <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors px-2">Bugs</a>
+            <button id="mobile-profile-link" class="text-slate-200 text-left px-2 py-1 rounded-lg bg-slate-900/60 border border-white/5 mt-1">
+                Sign In
+            </button>
         </div>
     </nav>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div id="auth-modal-overlay-close" class="absolute inset-0"></div>
+        <div class="relative bg-slate-900/95 border border-slate-700/60 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="auth-title" class="text-xl font-bold text-white">Sign In</h2>
+                <button id="auth-close-btn" class="text-slate-400 hover:text-white text-sm px-2 py-1 rounded-full bg-slate-800/80">
+                    ✕
+                </button>
+            </div>
+            <p class="text-slate-400 text-sm mb-4">
+                Sign in to sync your progress and achievements across devices.
+            </p>
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label for="auth-email" class="block text-xs font-semibold text-slate-400 mb-1">Email</label>
+                    <input id="auth-email" type="email" autocomplete="email" class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label for="auth-password" class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                    <input id="auth-password" type="password" autocomplete="current-password" class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" placeholder="••••••••">
+                </div>
+                <div id="auth-password-confirm-wrapper" class="hidden">
+                    <label for="auth-password-confirm" class="block text-xs font-semibold text-slate-400 mb-1">Confirm Password</label>
+                    <input id="auth-password-confirm" type="password" autocomplete="new-password" class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" placeholder="Repeat your password">
+                </div>
+                <div id="auth-error" class="text-xs text-rose-400 min-h-[1.2rem]"></div>
+                <button id="auth-submit-btn" type="submit" class="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-sm font-semibold text-white transition-colors">
+                    Sign In
+                </button>
+            </form>
+            <button id="auth-toggle-mode" class="mt-4 w-full text-center text-xs text-slate-400 hover:text-slate-200">
+                Need an account? Sign up
+            </button>
+        </div>
+    </div>
 
     <!-- Hero Section -->
     <header class="max-w-6xl mx-auto px-6 text-center mb-12">

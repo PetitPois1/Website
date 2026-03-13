@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Flappy Bird Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements.js"></script>
     <style>
         body {
             margin: 0;
@@ -33,6 +39,10 @@
 <body>
 
     <div id="ui">0</div>
+    <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; display: flex; justify-content: center; gap: 10px;">
+        <button onclick="window.location.href='index.html'" style="padding: 10px 20px; background: rgba(0,0,0,0.5); color: white; border: 1px solid white; border-radius: 5px; cursor: pointer;">Menu</button>
+        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('flappy')" style="padding: 10px 20px; background: rgba(0,0,0,0.5); color: white; border: 1px solid white; border-radius: 5px; cursor: pointer;">Achievements</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -53,9 +63,9 @@
         
         // Game States: 'START', 'PLAYING', 'GAMEOVER'
         gameState = 'START';
-        highScore = localStorage.getItem("flappyHighScore") || 0;
+        highScore = parseInt(localStorage.getItem("flappyHighScore")) || 0;
 
-        function init() {
+        async function init() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
@@ -74,6 +84,19 @@
             frame = 0;
             score = 0;
             ui.innerText = score;
+
+            // Load cloud progress if available
+            if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+                try {
+                    const progress = await window.gameHubProgress.loadGameProgress("flappy");
+                    if (progress && typeof progress.highScore === "number") {
+                        highScore = Math.max(highScore, progress.highScore);
+                        localStorage.setItem("flappyHighScore", highScore);
+                    }
+                } catch (e) {
+                    console.warn("[Flappy] Failed to load synced progress", e);
+                }
+            }
         }
 
         function spawnPipe() {
@@ -219,7 +242,26 @@
 
         function endGame() {
             gameState = 'GAMEOVER';
-            localStorage.setItem("flappyHighScore", highScore);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("flappyHighScore", highScore);
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    window.gameHubProgress.saveGameProgress("flappy", { highScore });
+                }
+            }
+
+            // Unlock achievements
+            if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                try {
+                    if (score >= 1) window.gameHubProgress.unlockAchievement("flappy", "flappy_first_pipe");
+                    if (score >= 10) window.gameHubProgress.unlockAchievement("flappy", "flappy_10_score");
+                    if (score >= 25) window.gameHubProgress.unlockAchievement("flappy", "flappy_25_score");
+                    if (score >= 50) window.gameHubProgress.unlockAchievement("flappy", "flappy_50_score");
+                    if (score >= 100) window.gameHubProgress.unlockAchievement("flappy", "flappy_100_score");
+                } catch (e) {
+                    console.warn("[Flappy] Failed to unlock achievement", e);
+                }
+            }
         }
 
         function handleInput() {
