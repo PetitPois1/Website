@@ -254,7 +254,45 @@
                 ],
                 spawnX: 7.5, spawnY: 13.5, enemyTex: texCyclops,
                 colors: { sky0: '#000205', sky1: '#000a15', floor0: '#000a0f', floor1: '#05101a', wallN: [30,50,70], wallE: [20,35,50] }
-            }
+            },
+            
+        const templeLevel = {
+    name: "The Temple",
+    width: 15, height: 15,
+    map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ],
+    spawnX: 7.5, spawnY: 13.5, 
+    colors: { 
+        sky0: '#FFD700', sky1: '#B8860B', // Gold roof
+        floor0: '#EEEEEE', floor1: '#CCCCCC', // Clean temple floor
+        wallN: [0, 102, 204], // Temple Blue
+        wallE: [240, 240, 255]  // Temple White
+    },
+    hasBoss: true
+};
+        if (currentLevel.hasBoss) {
+    enemies.push({ 
+        x: 7.5, y: 3.5, 
+        hp: 150, maxHp: 150, 
+        isBoss: true, spawnTimer: 0, 
+        name: "The Big Yahoo" 
+    });
+}
         ];
 
         
@@ -514,10 +552,27 @@
             if (moving) moveBob = Math.sin(frames * 0.2) * 8; else moveBob = moveBob * 0.8; 
 
             enemies.forEach(enemy => {
-                let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                if(dist < 0.4) gameOver();
-                else if(dist > 0.4) { enemy.x += (dx / dist) * 0.02; enemy.y += (dy / dist) * 0.02; }
+    let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
+    
+    // Regular enemy movement and collision
+    if(dist < 0.4) gameOver();
+    else if(dist > 0.4) { enemy.x += (dx / dist) * 0.02; enemy.y += (dy / dist) * 0.02; }
+
+    // NEW: Boss spawning logic
+    if (enemy.isBoss) {
+        enemy.spawnTimer = (enemy.spawnTimer || 0) + 1;
+        if (enemy.spawnTimer > 120) { 
+            enemy.spawnTimer = 0;
+            let minionType = Math.random() > 0.5 ? 'cyclops' : 'fiddler';
+            enemies.push({ 
+                x: enemy.x + (Math.random() - 0.5) * 2, // Spawn slightly away from the boss
+                y: enemy.y + (Math.random() - 0.5) * 2, 
+                hp: 3, 
+                type: minionType 
             });
+        }
+    }
+});
         }
 
         function drawWeaponAndParticles() {
@@ -625,7 +680,7 @@
 
                 if (tY > 0) {
                     let spriteScX = Math.floor((screenWidth / 2) * (1 + tX / tY));
-                    let scale = sprite.type === 'ammo' ? 0.35 : 1.0; 
+                    let scale = sprite.isBoss ? 3.0 : (sprite.type === 'ammo' ? 0.35 : 1.0);
                     let baseSize = Math.abs(Math.floor(screenHeight / tY));
                     let spriteH = baseSize * scale; let spriteW = baseSize * scale;
                     let vMove = (baseSize - spriteH) / 2; 
@@ -646,6 +701,16 @@
                     }
                 }
             }
+            // NEW: Boss UI
+            let boss = enemies.find(e => e.isBoss);
+            if (boss) {
+                ctx.fillStyle = '#000'; ctx.fillRect(screenWidth / 2 - 152, 18, 304, 24);
+                ctx.fillStyle = '#C00'; ctx.fillRect(screenWidth / 2 - 150, 20, 300 * (boss.hp / boss.maxHp), 20);
+                ctx.fillStyle = '#FFF'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center';
+                ctx.fillText(boss.name, screenWidth / 2, 36);
+            }
+
+            drawWeaponAndParticles(); drawMiniMap();
             drawWeaponAndParticles(); drawMiniMap();
         }
         function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
