@@ -30,7 +30,7 @@
         .slot:hover { background: #999; }
         .slot.active { border: 2px solid #ffff00; box-shadow: 0 0 5px #ffff00; z-index: 2; }
         .slot-count { position: absolute; bottom: 0px; right: 2px; font-size: 14px; text-shadow: 1px 1px 0 #000;}
-        .slot-icon { width: 32px; height: 32px; display: inline-block; background-size: cover; image-rendering: pixelated; }
+        .slot-icon { width: 32px; height: 32px; display: inline-block; background-size: cover; background-position: center; image-rendering: pixelated; }
         
         /* Inventory Window */
         #inventory-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #c6c6c6; border: 4px solid #000; border-radius: 4px; padding: 10px; display: none; pointer-events: auto; flex-direction: row; box-shadow: inset -2px -2px 0 #555, inset 2px 2px 0 #fff; z-index: 100; color: black; max-height: 90%; max-width: 95%; overflow-y: auto;}
@@ -43,12 +43,13 @@
         .recipe-icon { width: 24px; height: 24px; background-size: cover; image-rendering: pixelated; }
 
         .inv-main-area { display: flex; flex-direction: column; }
-        .inv-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .inv-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; text-align: center; }
         .inv-grid { display: grid; grid-template-columns: repeat(9, 40px); gap: 2px; margin-bottom: 10px; background: #c6c6c6;}
-        .crafting-section { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; justify-content: center;}
+        
+        .crafting-section, .furnace-section { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; justify-content: center;}
         #craft-grid { display: grid; grid-template-columns: repeat(2, 40px); gap: 2px; }
         .arrow { font-size: 24px; font-weight: bold; }
-        #craft-result .slot { width: 48px; height: 48px; }
+        #craft-result .slot, #fur-out-slot { width: 48px; height: 48px; }
 
         /* Cursor Item */
         #cursor-item { position: absolute; pointer-events: none; z-index: 999; display: none; transform: translate(-50%, -50%); }
@@ -69,7 +70,7 @@
         #touch-controls { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; touch-action: none; }
         #joystick-area { position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); pointer-events: auto; touch-action: none; }
         #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; }
-        #look-area { position: absolute; top: 0; right: 0; width: 100%; height: 75%; pointer-events: auto; touch-action: none; } /* Expanded look area for screen tapping */
+        #look-area { position: absolute; top: 0; right: 0; width: 100%; height: 75%; pointer-events: auto; touch-action: none; } 
         #action-buttons { position: absolute; bottom: 90px; right: 20px; display: flex; gap: 10px; pointer-events: auto; flex-wrap: wrap; width: 80px; justify-content: flex-end;}
         .touch-btn { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; user-select: none; font-size: 12px; touch-action: none; }
         .touch-btn:active { background: rgba(255,255,255,0.5); }
@@ -88,10 +89,10 @@
         <div class="setting-row">
             <span>Terrain Gen:</span>
             <select id="start-terrain">
-                <option value="0.2">Flat</option>
-                <option value="1.0" selected>Normal</option>
-                <option value="2.5">Hills</option>
-                <option value="4.0">Extreme Mountains</option>
+                <option value="plains">Plains</option>
+                <option value="normal" selected>Normal</option>
+                <option value="mountains">Mountains</option>
+                <option value="extreme">Extreme Mountains</option>
             </select>
         </div>
         <div class="setting-row">
@@ -145,9 +146,11 @@
     <div id="inventory-screen">
         <div id="recipe-book">
             <div class="inv-title" style="text-align:center;">Recipe Book</div>
+            <!-- Populated by JS -->
         </div>
         <div class="inv-main-area">
-            <div class="crafting-section">
+            
+            <div class="crafting-section" id="ui-crafting-sec">
                 <div>
                     <div class="inv-title" id="craft-title">Crafting</div>
                     <div id="craft-grid"></div>
@@ -156,6 +159,27 @@
                 <div>
                     <div class="inv-title">Result</div>
                     <div id="craft-result"></div>
+                </div>
+            </div>
+
+            <div class="furnace-section" id="ui-furnace-sec" style="display:none;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap: 5px;">
+                    <div class="inv-title">Input</div>
+                    <div class="slot" id="fur-in-slot"></div>
+                    <div style="height:20px; font-size:16px; position:relative; width:20px; text-align:center; background:#444;">
+                        <div id="fur-fire-icon" style="position:absolute; bottom:0; overflow:hidden; width:100%; height:0%; background:orange;">🔥</div>
+                    </div>
+                    <div class="slot" id="fur-fuel-slot"></div>
+                    <div class="inv-title" style="font-size:10px;">Fuel</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div style="position:relative; width:40px; height:20px; background:#555; border: 2px solid #333;">
+                        <div id="fur-prog-bar" style="height:100%; width:0%; background:#0f0;"></div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div class="inv-title">Result</div>
+                    <div class="slot" id="fur-out-slot"></div>
                 </div>
             </div>
             
@@ -179,6 +203,13 @@
 </div>
 
 <script>
+// --- GITHUB EXTERNAL TEXTURE CONFIGURATION ---
+const TEXTURES_CONFIG = {
+    // Set this to your GitHub textures folder (e.g., 'textures/') to automatically load 
+    // grass.png, dirt.png, wooden_pickaxe.png, etc. Set to null to generate procedural visuals.
+    folder: null 
+};
+
 /** Simplex Noise */
 const SimplexNoise = function() {
     var F3 = 1.0/3.0, G3 = 1.0/6.0; var p = new Uint8Array(256);
@@ -234,164 +265,262 @@ const grad3 = new Float32Array([1,1,0,-1,1,0,1,-1,0,-1,-1,0,1,0,1,-1,0,1,1,0,-1,
 const simplex = SimplexNoise();
 
 // --- CONSTANTS & REGISTRY ---
-const CHUNK_SIZE = 16, CHUNK_HEIGHT = 128; // Deep underground
+const CHUNK_SIZE = 16, CHUNK_HEIGHT = 128; 
 
-const BLOCKS = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, COAL: 6, IRON: 7, PLANKS: 8, CRAFTING_TABLE: 9, BEDROCK: 10 };
-const ITEMS = { ...BLOCKS, STICK: 20, WOOD_PICK: 21, STONE_PICK: 22, PORKCHOP: 23, WOOD_SHOVEL: 24, WOOD_AXE: 25, RAW_BEEF: 26 };
+const BLOCKS = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, COAL: 6, IRON: 7, PLANKS: 8, CRAFTING_TABLE: 9, BEDROCK: 10, FURNACE: 11, TORCH: 12, TORCH_N: 13, TORCH_S: 14, TORCH_E: 15, TORCH_W: 16, SAND: 17 };
+const ITEMS = { ...BLOCKS, STICK: 20, WOOD_PICK: 21, STONE_PICK: 22, PORKCHOP: 23, WOOD_SHOVEL: 24, WOOD_AXE: 25, RAW_BEEF: 26, COOKED_PORKCHOP: 27, COOKED_BEEF: 28, IRON_INGOT: 29, WOOD_SWORD: 30, STONE_SWORD: 31, IRON_SWORD: 32, STONE_SHOVEL: 33, STONE_AXE: 34, IRON_PICK: 35, IRON_SHOVEL: 36, IRON_AXE: 37 };
+
+const isTorch = (id) => id >= 12 && id <= 16;
+const MAX_BLOCK_ID = 17;
+
+// Explicit exact mapping from ID to the target image filename
+const ASSET_NAMES = {
+    [BLOCKS.GRASS]: 'grass', [BLOCKS.DIRT]: 'dirt', [BLOCKS.STONE]: 'stone',
+    [BLOCKS.LOG]: 'log', [BLOCKS.LEAVES]: 'leaves', [BLOCKS.COAL]: 'coal_ore',
+    [BLOCKS.IRON]: 'iron_ore', [BLOCKS.PLANKS]: 'planks', [BLOCKS.CRAFTING_TABLE]: 'crafting_table',
+    [BLOCKS.BEDROCK]: 'bedrock', [BLOCKS.FURNACE]: 'furnace',
+    [BLOCKS.TORCH]: 'torch', [BLOCKS.TORCH_N]: 'torch', [BLOCKS.TORCH_S]: 'torch', [BLOCKS.TORCH_E]: 'torch', [BLOCKS.TORCH_W]: 'torch', [BLOCKS.SAND]: 'sand',
+    [ITEMS.STICK]: 'stick', [ITEMS.WOOD_PICK]: 'wooden_pickaxe', [ITEMS.STONE_PICK]: 'stone_pickaxe',
+    [ITEMS.IRON_PICK]: 'iron_pickaxe', [ITEMS.WOOD_AXE]: 'wooden_axe', [ITEMS.STONE_AXE]: 'stone_axe',
+    [ITEMS.IRON_AXE]: 'iron_axe', [ITEMS.WOOD_SHOVEL]: 'wooden_shovel', [ITEMS.STONE_SHOVEL]: 'stone_shovel',
+    [ITEMS.IRON_SHOVEL]: 'iron_shovel', [ITEMS.WOOD_SWORD]: 'wooden_sword', [ITEMS.STONE_SWORD]: 'stone_sword',
+    [ITEMS.IRON_SWORD]: 'iron_sword', [ITEMS.PORKCHOP]: 'porkchop', [ITEMS.COOKED_PORKCHOP]: 'cooked_porkchop',
+    [ITEMS.RAW_BEEF]: 'beef', [ITEMS.COOKED_BEEF]: 'cooked_beef', [ITEMS.IRON_INGOT]: 'iron_ingot'
+};
 
 const BLOCK_COLORS = {
     [BLOCKS.GRASS]: [0.4, 0.7, 0.3], [BLOCKS.DIRT]: [0.5, 0.35, 0.2], 
     [BLOCKS.STONE]: [0.6, 0.6, 0.6], [BLOCKS.LOG]: [0.4, 0.25, 0.15], 
     [BLOCKS.LEAVES]: [0.2, 0.6, 0.2], [BLOCKS.COAL]: [0.3, 0.3, 0.3], 
     [BLOCKS.IRON]: [0.85, 0.7, 0.55], [BLOCKS.PLANKS]: [0.75, 0.6, 0.4],
-    [BLOCKS.CRAFTING_TABLE]: [0.8, 0.5, 0.3], [BLOCKS.BEDROCK]: [0.15, 0.15, 0.15]
+    [BLOCKS.CRAFTING_TABLE]: [0.8, 0.5, 0.3], [BLOCKS.BEDROCK]: [0.15, 0.15, 0.15], [BLOCKS.FURNACE]: [0.5, 0.5, 0.5], 
+    [BLOCKS.TORCH]: [1.0, 0.8, 0.2], [BLOCKS.TORCH_N]: [1.0, 0.8, 0.2], [BLOCKS.TORCH_S]: [1.0, 0.8, 0.2], [BLOCKS.TORCH_E]: [1.0, 0.8, 0.2], [BLOCKS.TORCH_W]: [1.0, 0.8, 0.2], [BLOCKS.SAND]: [0.85, 0.8, 0.6]
 };
+
 const ITEM_NAMES = {
     [BLOCKS.GRASS]: "Grass", [BLOCKS.DIRT]: "Dirt", [BLOCKS.STONE]: "Stone", 
     [BLOCKS.LOG]: "Log", [BLOCKS.LEAVES]: "Leaves", [BLOCKS.COAL]: "Coal", 
-    [BLOCKS.IRON]: "Iron", [BLOCKS.PLANKS]: "Planks", [BLOCKS.CRAFTING_TABLE]: "Craft Tbl", [BLOCKS.BEDROCK]: "Bedrock",
+    [BLOCKS.IRON]: "Iron Ore", [BLOCKS.PLANKS]: "Planks", [BLOCKS.CRAFTING_TABLE]: "Craft Tbl", [BLOCKS.BEDROCK]: "Bedrock", [BLOCKS.FURNACE]: "Furnace", [BLOCKS.TORCH]: "Torch", [BLOCKS.SAND]: "Sand",
     [ITEMS.STICK]: "Stick", [ITEMS.WOOD_PICK]: "W-Pick", 
     [ITEMS.STONE_PICK]: "S-Pick", [ITEMS.PORKCHOP]: "Porkchop",
-    [ITEMS.WOOD_SHOVEL]: "W-Shovel", [ITEMS.WOOD_AXE]: "W-Axe", [ITEMS.RAW_BEEF]: "Raw Beef"
+    [ITEMS.WOOD_SHOVEL]: "W-Shovel", [ITEMS.WOOD_AXE]: "W-Axe", [ITEMS.RAW_BEEF]: "Raw Beef",
+    [ITEMS.COOKED_PORKCHOP]: "C-Pork", [ITEMS.COOKED_BEEF]: "Steak", [ITEMS.IRON_INGOT]: "Iron Bar",
+    [ITEMS.WOOD_SWORD]: "W-Sword", [ITEMS.STONE_SWORD]: "S-Sword", [ITEMS.IRON_SWORD]: "I-Sword",
+    [ITEMS.STONE_SHOVEL]: "S-Shovel", [ITEMS.STONE_AXE]: "S-Axe", [ITEMS.IRON_PICK]: "I-Pick", [ITEMS.IRON_SHOVEL]: "I-Shovel", [ITEMS.IRON_AXE]: "I-Axe"
 };
 
-const isTool = (id) => (id >= ITEMS.WOOD_PICK && id <= ITEMS.WOOD_AXE);
-const getMaxStack = (id) => isTool(id) ? 1 : 64;
+const MAX_DURABILITY = {
+    [ITEMS.WOOD_PICK]: 59, [ITEMS.WOOD_AXE]: 59, [ITEMS.WOOD_SHOVEL]: 59, [ITEMS.WOOD_SWORD]: 59,
+    [ITEMS.STONE_PICK]: 131, [ITEMS.STONE_AXE]: 131, [ITEMS.STONE_SHOVEL]: 131, [ITEMS.STONE_SWORD]: 131,
+    [ITEMS.IRON_PICK]: 250, [ITEMS.IRON_AXE]: 250, [ITEMS.IRON_SHOVEL]: 250, [ITEMS.IRON_SWORD]: 250,
+};
+const isTool = (id) => MAX_DURABILITY[id] !== undefined;
+const getMaxStack = (id) => (isTool(id)) ? 1 : 64;
 
 const getHardness = (id) => {
-    let h = { [BLOCKS.DIRT]: 0.5, [BLOCKS.GRASS]: 0.6, [BLOCKS.LEAVES]: 0.2, [BLOCKS.LOG]: 2, [BLOCKS.PLANKS]: 2, [BLOCKS.CRAFTING_TABLE]: 2.5, [BLOCKS.STONE]: 5, [BLOCKS.COAL]: 6, [BLOCKS.IRON]: 8, [BLOCKS.BEDROCK]: 9999 }[id];
+    if(isTorch(id)) return 0.1;
+    let h = { [BLOCKS.DIRT]: 0.5, [BLOCKS.SAND]: 0.5, [BLOCKS.GRASS]: 0.6, [BLOCKS.LEAVES]: 0.2, [BLOCKS.LOG]: 2, [BLOCKS.PLANKS]: 2, [BLOCKS.CRAFTING_TABLE]: 2.5, [BLOCKS.FURNACE]: 3.5, [BLOCKS.STONE]: 5, [BLOCKS.COAL]: 6, [BLOCKS.IRON]: 8, [BLOCKS.BEDROCK]: 9999 }[id];
     return h || 1.0;
 };
 function getSpeed(blockId, toolId) {
-    if (blockId === BLOCKS.BEDROCK) return 0.0; // Unbreakable
-    if (toolId === ITEMS.WOOD_PICK) return (blockId >= 3 && blockId <= 7) ? 3.0 : 1.0;
-    if (toolId === ITEMS.STONE_PICK) return (blockId >= 3 && blockId <= 7) ? 6.0 : 1.0;
-    if (toolId === ITEMS.WOOD_AXE) return (blockId === BLOCKS.LOG || blockId === BLOCKS.PLANKS || blockId === BLOCKS.CRAFTING_TABLE) ? 3.0 : 1.0;
-    if (toolId === ITEMS.WOOD_SHOVEL) return (blockId === BLOCKS.DIRT || blockId === BLOCKS.GRASS) ? 3.0 : 1.0;
-    return (blockId >= 3 && blockId <= 7) ? 0.2 : 1.0; // Hands
+    if (blockId === BLOCKS.BEDROCK) return 0.0;
+    if (isTorch(blockId) || blockId === BLOCKS.LEAVES) return 10.0;
+    
+    let isWoodType = (blockId === BLOCKS.LOG || blockId === BLOCKS.PLANKS || blockId === BLOCKS.CRAFTING_TABLE);
+    let isStoneType = (blockId === BLOCKS.STONE || blockId === BLOCKS.COAL || blockId === BLOCKS.IRON || blockId === BLOCKS.FURNACE);
+    let isDirtType = (blockId === BLOCKS.DIRT || blockId === BLOCKS.GRASS || blockId === BLOCKS.SAND);
+
+    if (isWoodType) {
+        if (toolId === ITEMS.IRON_AXE) return 6.0;
+        if (toolId === ITEMS.STONE_AXE) return 4.0;
+        if (toolId === ITEMS.WOOD_AXE) return 2.0;
+    }
+    if (isStoneType) {
+        if (toolId === ITEMS.IRON_PICK) return 8.0;
+        if (toolId === ITEMS.STONE_PICK) return 4.0;
+        if (toolId === ITEMS.WOOD_PICK) return 2.0;
+        return 0.1; 
+    }
+    if (isDirtType) {
+        if (toolId === ITEMS.IRON_SHOVEL) return 6.0;
+        if (toolId === ITEMS.STONE_SHOVEL) return 4.0;
+        if (toolId === ITEMS.WOOD_SHOVEL) return 2.0;
+    }
+    return 1.0; 
 }
+const getDamage = (id) => {
+    if (id === ITEMS.IRON_SWORD) return 6;
+    if (id === ITEMS.STONE_SWORD) return 5;
+    if (id === ITEMS.WOOD_SWORD || id === ITEMS.IRON_PICK || id === ITEMS.IRON_AXE) return 4;
+    if (id === ITEMS.STONE_PICK || id === ITEMS.STONE_AXE) return 3;
+    if (id === ITEMS.WOOD_PICK || id === ITEMS.WOOD_AXE) return 2;
+    return 1;
+};
 
 // --- RECIPES ---
 const RECIPES = [
     { name: "Planks", shape: [[BLOCKS.LOG]], res: ITEMS.PLANKS, count: 4 },
     { name: "Craft Tbl", shape: [[BLOCKS.PLANKS, BLOCKS.PLANKS], [BLOCKS.PLANKS, BLOCKS.PLANKS]], res: BLOCKS.CRAFTING_TABLE, count: 1 },
+    { name: "Furnace", shape: [[BLOCKS.STONE, BLOCKS.STONE, BLOCKS.STONE], [BLOCKS.STONE, 0, BLOCKS.STONE], [BLOCKS.STONE, BLOCKS.STONE, BLOCKS.STONE]], res: BLOCKS.FURNACE, count: 1 },
     { name: "Stick", shape: [[BLOCKS.PLANKS], [BLOCKS.PLANKS]], res: ITEMS.STICK, count: 4 },
-    { name: "Wood Pick", shape: [[BLOCKS.PLANKS, BLOCKS.PLANKS, BLOCKS.PLANKS], [0, ITEMS.STICK, 0], [0, ITEMS.STICK, 0]], res: ITEMS.WOOD_PICK, count: 1 },
-    { name: "Stone Pick", shape: [[BLOCKS.STONE, BLOCKS.STONE, BLOCKS.STONE], [0, ITEMS.STICK, 0], [0, ITEMS.STICK, 0]], res: ITEMS.STONE_PICK, count: 1 },
-    { name: "Wood Axe", shape: [[BLOCKS.PLANKS, BLOCKS.PLANKS], [BLOCKS.PLANKS, ITEMS.STICK], [0, ITEMS.STICK]], res: ITEMS.WOOD_AXE, count: 1 },
-    { name: "Wood Shovel", shape: [[BLOCKS.PLANKS], [ITEMS.STICK], [ITEMS.STICK]], res: ITEMS.WOOD_SHOVEL, count: 1 }
+    { name: "Torch", shape: [[BLOCKS.COAL], [ITEMS.STICK]], res: BLOCKS.TORCH, count: 4 },
+    
+    // Tools (Wood)
+    { name: "W-Pick", shape: [[BLOCKS.PLANKS, BLOCKS.PLANKS, BLOCKS.PLANKS], [0, ITEMS.STICK, 0], [0, ITEMS.STICK, 0]], res: ITEMS.WOOD_PICK, count: 1 },
+    { name: "W-Axe", shape: [[BLOCKS.PLANKS, BLOCKS.PLANKS], [BLOCKS.PLANKS, ITEMS.STICK], [0, ITEMS.STICK]], res: ITEMS.WOOD_AXE, count: 1 },
+    { name: "W-Shovel", shape: [[BLOCKS.PLANKS], [ITEMS.STICK], [ITEMS.STICK]], res: ITEMS.WOOD_SHOVEL, count: 1 },
+    { name: "W-Sword", shape: [[BLOCKS.PLANKS], [BLOCKS.PLANKS], [ITEMS.STICK]], res: ITEMS.WOOD_SWORD, count: 1 },
+    // Tools (Stone)
+    { name: "S-Pick", shape: [[BLOCKS.STONE, BLOCKS.STONE, BLOCKS.STONE], [0, ITEMS.STICK, 0], [0, ITEMS.STICK, 0]], res: ITEMS.STONE_PICK, count: 1 },
+    { name: "S-Axe", shape: [[BLOCKS.STONE, BLOCKS.STONE], [BLOCKS.STONE, ITEMS.STICK], [0, ITEMS.STICK]], res: ITEMS.STONE_AXE, count: 1 },
+    { name: "S-Shovel", shape: [[BLOCKS.STONE], [ITEMS.STICK], [ITEMS.STICK]], res: ITEMS.STONE_SHOVEL, count: 1 },
+    { name: "S-Sword", shape: [[BLOCKS.STONE], [BLOCKS.STONE], [ITEMS.STICK]], res: ITEMS.STONE_SWORD, count: 1 },
+    // Tools (Iron)
+    { name: "I-Pick", shape: [[ITEMS.IRON_INGOT, ITEMS.IRON_INGOT, ITEMS.IRON_INGOT], [0, ITEMS.STICK, 0], [0, ITEMS.STICK, 0]], res: ITEMS.IRON_PICK, count: 1 },
+    { name: "I-Axe", shape: [[ITEMS.IRON_INGOT, ITEMS.IRON_INGOT], [ITEMS.IRON_INGOT, ITEMS.STICK], [0, ITEMS.STICK]], res: ITEMS.IRON_AXE, count: 1 },
+    { name: "I-Shovel", shape: [[ITEMS.IRON_INGOT], [ITEMS.STICK], [ITEMS.STICK]], res: ITEMS.IRON_SHOVEL, count: 1 },
+    { name: "I-Sword", shape: [[ITEMS.IRON_INGOT], [ITEMS.IRON_INGOT], [ITEMS.STICK]], res: ITEMS.IRON_SWORD, count: 1 }
 ];
 
-// --- PROCEDURAL TEXTURES (ICONS & BLOCKS) ---
+const SMELT_RECIPES = {
+    [ITEMS.PORKCHOP]: ITEMS.COOKED_PORKCHOP,
+    [ITEMS.RAW_BEEF]: ITEMS.COOKED_BEEF,
+    [BLOCKS.IRON]: ITEMS.IRON_INGOT,
+    [BLOCKS.LOG]: BLOCKS.COAL
+};
+const FUEL_TIMES = {
+    [BLOCKS.COAL]: 80, [BLOCKS.PLANKS]: 15, [BLOCKS.LOG]: 15, [BLOCKS.CRAFTING_TABLE]: 15,
+    [ITEMS.STICK]: 5, [ITEMS.WOOD_PICK]: 10, [ITEMS.WOOD_AXE]: 10, [ITEMS.WOOD_SHOVEL]: 10, [ITEMS.WOOD_SWORD]: 10
+};
+
+
+// --- TEXTURES (ICONS & BLOCKS) ---
+let materialArray = []; // Indexed array of materials corresponding directly to BLOCKS ID
+
+function initMaterials() {
+    materialArray = new Array(MAX_BLOCK_ID + 1).fill(null);
+    for(let id = 1; id <= MAX_BLOCK_ID; id++) {
+        if (TEXTURES_CONFIG.folder && ASSET_NAMES[id]) {
+            // Load individual user-provided image
+            let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${ASSET_NAMES[id]}.png`);
+            tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+            // Provide vertexColors true to still allow shading on different block faces
+            materialArray[id] = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, transparent: isTrans(id), alphaTest: 0.5 });
+        } else {
+            // Generates procedural texture block specific
+            const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s; const ctx = canvas.getContext('2d');
+            let baseCol = BLOCK_COLORS[id] || [1,1,1];
+            for(let i=0; i<s; i++) for(let j=0; j<s; j++) { 
+                let v = 0.7 + Math.random()*0.3; 
+                ctx.fillStyle = `rgb(${baseCol[0]*255*v},${baseCol[1]*255*v},${baseCol[2]*255*v})`; ctx.fillRect(i,j,1,1); 
+            }
+            let tex = new THREE.CanvasTexture(canvas); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+            materialArray[id] = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, transparent: isTrans(id), alphaTest: 0.5 });
+        }
+    }
+}
+
 const textureCache = {};
 function generateIconDataURI(id) {
     if(textureCache[id]) return textureCache[id];
-    const canvas = document.createElement('canvas');
-    canvas.width = 16; canvas.height = 16;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
+    
+    // Check for explicit folder config first!
+    if (TEXTURES_CONFIG.folder && ASSET_NAMES[id]) {
+        return `${TEXTURES_CONFIG.folder}${ASSET_NAMES[id]}.png`;
+    }
 
-    if (id <= 10) { 
+    const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+
+    if (id <= MAX_BLOCK_ID) { 
         let col = BLOCK_COLORS[id] || [1,1,1];
         let r = col[0]*255, g = col[1]*255, b = col[2]*255;
-        ctx.fillStyle = `rgb(${r*1.1},${g*1.1},${b*1.1})`;
-        ctx.beginPath(); ctx.moveTo(8, 2); ctx.lineTo(14, 5); ctx.lineTo(8, 8); ctx.lineTo(2, 5); ctx.fill();
-        ctx.fillStyle = `rgb(${r*0.8},${g*0.8},${b*0.8})`;
-        ctx.beginPath(); ctx.moveTo(2, 5); ctx.lineTo(8, 8); ctx.lineTo(8, 14); ctx.lineTo(2, 11); ctx.fill();
-        ctx.fillStyle = `rgb(${r*0.6},${g*0.6},${b*0.6})`;
-        ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(14, 5); ctx.lineTo(14, 11); ctx.lineTo(8, 14); ctx.fill();
-        ctx.strokeStyle = `rgba(0,0,0,0.5)`; ctx.lineWidth = 1; ctx.stroke();
+        
+        if (isTorch(id)) {
+            ctx.fillStyle = '#5c4033'; ctx.fillRect(7,6,2,8); 
+            ctx.fillStyle = '#ffaa00'; ctx.fillRect(7,4,2,2); 
+            ctx.fillStyle = '#ffff00'; ctx.fillRect(7,3,2,1); ctx.fillRect(6,4,1,2); ctx.fillRect(9,4,1,2); 
+        } else {
+            ctx.fillStyle = `rgb(${r*1.1},${g*1.1},${b*1.1})`; ctx.beginPath(); ctx.moveTo(8, 2); ctx.lineTo(14, 5); ctx.lineTo(8, 8); ctx.lineTo(2, 5); ctx.fill();
+            ctx.fillStyle = `rgb(${r*0.8},${g*0.8},${b*0.8})`; ctx.beginPath(); ctx.moveTo(2, 5); ctx.lineTo(8, 8); ctx.lineTo(8, 14); ctx.lineTo(2, 11); ctx.fill();
+            ctx.fillStyle = `rgb(${r*0.6},${g*0.6},${b*0.6})`; ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(14, 5); ctx.lineTo(14, 11); ctx.lineTo(8, 14); ctx.fill();
+            ctx.strokeStyle = `rgba(0,0,0,0.5)`; ctx.lineWidth = 1; ctx.stroke();
+            if (id === BLOCKS.FURNACE) { ctx.fillStyle = '#222'; ctx.fillRect(4, 9, 3, 3); } 
+        }
     } else { 
         const drawPix = (x,y,c) => { ctx.fillStyle=c; ctx.fillRect(x,y,1,1); };
         const stick = () => { for(let i=0;i<8;i++) drawPix(12-i, 12-i, '#5c4033'); };
+        const getMatCol = (tid) => [ITEMS.WOOD_PICK,ITEMS.WOOD_AXE,ITEMS.WOOD_SHOVEL,ITEMS.WOOD_SWORD].includes(tid) ? '#d2b48c' : ([ITEMS.STONE_PICK,ITEMS.STONE_AXE,ITEMS.STONE_SHOVEL,ITEMS.STONE_SWORD].includes(tid) ? '#888' : '#e6e6e6');
         
         if (id === ITEMS.STICK) { stick(); }
-        else if (id === ITEMS.WOOD_PICK || id === ITEMS.STONE_PICK) {
-            stick(); let c = id===ITEMS.WOOD_PICK ? '#d2b48c' : '#888';
-            drawPix(4,4,c); drawPix(3,5,c); drawPix(5,3,c); drawPix(2,6,c); drawPix(6,2,c); drawPix(3,4,c); drawPix(4,3,c);
+        else if ([ITEMS.WOOD_PICK, ITEMS.STONE_PICK, ITEMS.IRON_PICK].includes(id)) {
+            stick(); let c = getMatCol(id); drawPix(4,4,c); drawPix(3,5,c); drawPix(5,3,c); drawPix(2,6,c); drawPix(6,2,c); drawPix(3,4,c); drawPix(4,3,c);
         }
-        else if (id === ITEMS.WOOD_AXE) {
-            stick(); let c = '#d2b48c';
-            drawPix(4,4,c); drawPix(4,5,c); drawPix(5,4,c); drawPix(4,6,c); drawPix(5,3,c); drawPix(6,4,c);
+        else if ([ITEMS.WOOD_AXE, ITEMS.STONE_AXE, ITEMS.IRON_AXE].includes(id)) {
+            stick(); let c = getMatCol(id); drawPix(4,4,c); drawPix(4,5,c); drawPix(5,4,c); drawPix(4,6,c); drawPix(5,3,c); drawPix(6,4,c);
         }
-        else if (id === ITEMS.WOOD_SHOVEL) {
-            stick(); let c = '#d2b48c'; drawPix(4,4,c); drawPix(3,5,c); drawPix(5,3,c);
+        else if ([ITEMS.WOOD_SHOVEL, ITEMS.STONE_SHOVEL, ITEMS.IRON_SHOVEL].includes(id)) {
+            stick(); let c = getMatCol(id); drawPix(4,4,c); drawPix(3,5,c); drawPix(5,3,c);
         }
-        else if (id === ITEMS.PORKCHOP) {
-            ctx.fillStyle = '#ff88aa'; ctx.fillRect(4,6,8,4); ctx.fillRect(6,4,4,8);
-            ctx.fillStyle = '#fff'; ctx.fillRect(10,7,2,2); 
+        else if ([ITEMS.WOOD_SWORD, ITEMS.STONE_SWORD, ITEMS.IRON_SWORD].includes(id)) {
+            let c = getMatCol(id);
+            drawPix(2,13,'#5c4033'); drawPix(3,12,'#5c4033'); 
+            drawPix(4,11,'#333'); drawPix(1,14,'#333'); drawPix(5,14,'#333'); drawPix(2,11,'#333'); 
+            for(let i=0; i<7; i++) { drawPix(5+i, 10-i, c); drawPix(6+i, 10-i, '#fff'); drawPix(5+i, 9-i, '#fff'); } 
         }
-        else if (id === ITEMS.RAW_BEEF) {
-            ctx.fillStyle = '#a83232'; ctx.fillRect(3,5,10,6); ctx.fillRect(5,3,6,10);
-            ctx.fillStyle = '#fff'; ctx.fillRect(9,6,3,3); 
+        else if (id === ITEMS.PORKCHOP || id === ITEMS.COOKED_PORKCHOP) {
+            ctx.fillStyle = id===ITEMS.PORKCHOP ? '#ff88aa' : '#8b4513'; ctx.fillRect(4,6,8,4); ctx.fillRect(6,4,4,8); ctx.fillStyle = '#fff'; ctx.fillRect(10,7,2,2); 
+        }
+        else if (id === ITEMS.RAW_BEEF || id === ITEMS.COOKED_BEEF) {
+            ctx.fillStyle = id===ITEMS.RAW_BEEF ? '#a83232' : '#5c3317'; ctx.fillRect(3,5,10,6); ctx.fillRect(5,3,6,10); ctx.fillStyle = '#fff'; ctx.fillRect(9,6,3,3); 
+        }
+        else if (id === ITEMS.IRON_INGOT) {
+            ctx.fillStyle = '#e6e6e6'; ctx.fillRect(4,6,8,4); ctx.fillStyle = '#fff'; ctx.fillRect(4,6,8,1); ctx.fillStyle = '#999'; ctx.fillRect(4,9,8,1);
         }
     }
     
     textureCache[id] = canvas.toDataURL(); return textureCache[id];
 }
 
-function generateNoiseTexture() {
-    const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s;
-    const ctx = canvas.getContext('2d');
-    for(let i=0; i<s; i++) for(let j=0; j<s; j++) {
-        let v = 200 + Math.floor(Math.random()*55); 
-        ctx.fillStyle = `rgb(${v},${v},${v})`; ctx.fillRect(i,j,1,1);
-    }
-    let tex = new THREE.CanvasTexture(canvas);
-    tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-    return tex;
-}
-
-// Mob Face Textures
 function generateMobTexture(type) {
-    const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s;
-    const ctx = canvas.getContext('2d');
-    
-    if (type === 'pig') {
-        ctx.fillStyle = '#ffaacc'; ctx.fillRect(0,0,16,16);
-        ctx.fillStyle = '#ff88aa'; ctx.fillRect(6,8,4,3); // snout
-        ctx.fillStyle = '#000'; ctx.fillRect(4,6,2,2); ctx.fillRect(10,6,2,2); // eyes
-    } else if (type === 'cow') {
-        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,16,16);
-        ctx.fillStyle = '#222'; ctx.fillRect(2,2,4,4); ctx.fillRect(10,8,4,5); // spots
-        ctx.fillStyle = '#8b5a2b'; ctx.fillRect(5,10,6,4); // snout
-        ctx.fillStyle = '#000'; ctx.fillRect(3,6,2,2); ctx.fillRect(11,6,2,2); // eyes
+    if (TEXTURES_CONFIG.folder && ASSET_NAMES[type]) {
+        let tex = new THREE.TextureLoader().load(`${TEXTURES_CONFIG.folder}${ASSET_NAMES[type]}.png`);
+        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; return tex;
     }
-    
-    let tex = new THREE.CanvasTexture(canvas);
-    tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-    return tex;
+    const s = 16; const canvas = document.createElement('canvas'); canvas.width = s; canvas.height = s; const ctx = canvas.getContext('2d');
+    if (type === 'pig') { ctx.fillStyle = '#ffaacc'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#ff88aa'; ctx.fillRect(6,8,4,3); ctx.fillStyle = '#000'; ctx.fillRect(4,6,2,2); ctx.fillRect(10,6,2,2); } 
+    else if (type === 'cow') { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#222'; ctx.fillRect(2,2,4,4); ctx.fillRect(10,8,4,5); ctx.fillStyle = '#8b5a2b'; ctx.fillRect(5,10,6,4); ctx.fillStyle = '#000'; ctx.fillRect(3,6,2,2); ctx.fillRect(11,6,2,2); }
+    let tex = new THREE.CanvasTexture(canvas); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; return tex;
 }
-const texPig = generateMobTexture('pig');
-const texCow = generateMobTexture('cow');
+let texPig, texCow;
 
 
 // --- STATE ---
 let scene, camera, renderer, dirLight, outlineMesh;
 let chunks = {}; 
 let mobs = [];
+let furnaces = {}; 
+let placedTorches = []; 
+
+const MAX_TORCHES = 12;
+const torchLights = [];
 
 let handGroup;
 
-let CONFIG = {
-    renderDistance: 2, 
-    shadows: true,
-    touchControls: 'auto',
-    terrainMod: 1.0 // from start screen
-};
+let CONFIG = { renderDistance: 2, shadows: true, touchControls: 'auto', terrainMode: 'normal' };
 
 let invSlots = new Array(36).fill(null); 
 let craftGrid = new Array(9).fill(null);
 let craftResultSlot = null;
 let cursorItem = null;
 let uiMode = 'none'; 
+let currentFurnacePos = null;
 let selectedSlot = 0;
 
 let player = {
     pos: new THREE.Vector3(8, CHUNK_HEIGHT, 8), vel: new THREE.Vector3(0, 0, 0),
     onGround: false, yaw: 0, pitch: 0, width: 0.6, height: 1.8, speed: 5.0, jumpForce: 8.0,
-    hp: 20, maxHp: 20, hunger: 20, maxHunger: 20, fallStart: null
+    hp: 20, maxHp: 20, hunger: 20, maxHunger: 20, fallStart: null, stepOffset: 0
 };
 
 let keys = {}, isTouch = false, touchMoveDir = new THREE.Vector2();
@@ -400,32 +529,22 @@ let isMining = false, mineTarget = null, mineProgress = 0, touchTargetPos = null
 // --- POINTER LOCK HELPERS ---
 function lockPointer() {
     if (isTouch || document.pointerLockElement === document.body || CONFIG.touchControls === 'force_on') return;
-    try {
-        const promise = document.body.requestPointerLock();
-        if (promise !== undefined && promise.catch) promise.catch(e => console.warn(e));
-    } catch (e) { console.warn(e); }
+    try { const promise = document.body.requestPointerLock(); if (promise !== undefined && promise.catch) promise.catch(e => console.warn(e)); } catch (e) {}
 }
-
-function unlockPointer() {
-    if (document.pointerLockElement === document.body) {
-        try { document.exitPointerLock(); } catch(e) {}
-    }
-}
+function unlockPointer() { if (document.pointerLockElement === document.body) try { document.exitPointerLock(); } catch(e) {} }
 
 // --- INITIALIZATION ---
 function init() {
-    checkTouchMode();
+    initMaterials(); // Set up dynamic individual textures!
+    texPig = generateMobTexture('pig'); texCow = generateMobTexture('cow');
 
+    checkTouchMode();
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB); 
     scene.fog = new THREE.Fog(0x87CEEB, 10, CONFIG.renderDistance * CHUNK_SIZE * 1.5);
-
     camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     
-    handGroup = new THREE.Group();
-    handGroup.position.set(0.3, -0.4, -0.5); 
-    camera.add(handGroup);
-    scene.add(camera); 
+    handGroup = new THREE.Group(); handGroup.position.set(0.3, -0.4, -0.5); camera.add(handGroup); scene.add(camera); 
 
     renderer = new THREE.WebGLRenderer({ antialias: false }); 
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -434,56 +553,37 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.getElementById('game-container').appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45); scene.add(ambientLight);
     dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.castShadow = CONFIG.shadows;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.castShadow = CONFIG.shadows; dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
     dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 100;
-    dirLight.shadow.camera.left = -30; dirLight.shadow.camera.right = 30;
-    dirLight.shadow.camera.top = 30; dirLight.shadow.camera.bottom = -30;
-    dirLight.shadow.bias = -0.001;
-    scene.add(dirLight);
+    dirLight.shadow.camera.left = -30; dirLight.shadow.camera.right = 30; dirLight.shadow.camera.top = 30; dirLight.shadow.camera.bottom = -30;
+    dirLight.shadow.bias = -0.001; scene.add(dirLight);
 
-    blockMaterial = new THREE.MeshStandardMaterial({ 
-        vertexColors: true, roughness: 0.9, metalness: 0.0,
-        map: generateNoiseTexture() 
-    });
-    blockMaterial.transparent = true; blockMaterial.alphaTest = 0.5;
+    for(let i=0; i<MAX_TORCHES; i++) {
+        let l = new THREE.PointLight(0xffaa00, 0, 15); scene.add(l); torchLights.push(l);
+    }
 
-    outlineMesh = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.01, 1.01, 1.01)),
-        new THREE.LineBasicMaterial({color: 0x000000})
-    );
-    outlineMesh.visible = false;
-    scene.add(outlineMesh);
+    outlineMesh = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.01, 1.01, 1.01)), new THREE.LineBasicMaterial({color: 0x000000}));
+    outlineMesh.visible = false; scene.add(outlineMesh);
 
-    // Starter Items
-    invSlots[0] = { id: ITEMS.WOOD_PICK, count: 1 };
-    invSlots[1] = { id: ITEMS.WOOD_AXE, count: 1 };
-    invSlots[2] = { id: ITEMS.WOOD_SHOVEL, count: 1 };
+    invSlots[0] = { id: ITEMS.WOOD_PICK, count: 1, durability: MAX_DURABILITY[ITEMS.WOOD_PICK] };
+    invSlots[1] = { id: ITEMS.WOOD_AXE, count: 1, durability: MAX_DURABILITY[ITEMS.WOOD_AXE] };
+    invSlots[2] = { id: ITEMS.WOOD_SHOVEL, count: 1, durability: MAX_DURABILITY[ITEMS.WOOD_SHOVEL] };
     invSlots[3] = { id: BLOCKS.LOG, count: 16 };
     invSlots[4] = { id: ITEMS.PORKCHOP, count: 5 };
 
     generateChunksAroundPlayer();
-    
-    let spawnY = CHUNK_HEIGHT - 1;
-    while(getBlock(8, spawnY, 8) === BLOCKS.AIR && spawnY > 0) spawnY--;
+    let spawnY = CHUNK_HEIGHT - 1; while(getBlock(8, spawnY, 8) === BLOCKS.AIR && spawnY > 0) spawnY--;
     player.pos.set(8, spawnY + 2, 8);
 
-    setupInput();
-    updateHUD();
-    buildRecipeBook();
-    requestAnimationFrame(gameLoop);
+    setupInput(); updateHUD(); buildRecipeBook(uiMode); requestAnimationFrame(gameLoop);
 }
 
 function checkTouchMode() {
     isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     let showTouch = (CONFIG.touchControls === 'force_on') || (CONFIG.touchControls === 'auto' && isTouch);
     if(CONFIG.touchControls === 'force_off') showTouch = false;
-    
     document.getElementById('touch-controls').style.display = showTouch ? 'block' : 'none';
     document.getElementById('crosshair').style.display = showTouch ? 'none' : 'block'; 
 }
@@ -491,28 +591,30 @@ function checkTouchMode() {
 // --- WORLD GEN & CHUNKS ---
 function getChunkKey(cx, cz) { return `${cx},${cz}`; }
 function worldToChunk(x, z) { return { cx: Math.floor(x / CHUNK_SIZE), cz: Math.floor(z / CHUNK_SIZE) }; }
-
 function getBlock(x, y, z) {
     if (y < 0 || y >= CHUNK_HEIGHT) return BLOCKS.AIR;
-    const cx = Math.floor(x / CHUNK_SIZE), cz = Math.floor(z / CHUNK_SIZE);
-    const chunk = chunks[getChunkKey(cx, cz)];
+    const chunk = chunks[getChunkKey(Math.floor(x/CHUNK_SIZE), Math.floor(z/CHUNK_SIZE))];
     if (!chunk) return BLOCKS.AIR;
-    return chunk.data[(x - cx * CHUNK_SIZE) + (z - cz * CHUNK_SIZE) * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE];
+    return chunk.data[(x - chunk.cx * CHUNK_SIZE) + (z - chunk.cz * CHUNK_SIZE) * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE];
 }
 
 function setBlock(x, y, z, blockId) {
     if (y < 0 || y >= CHUNK_HEIGHT) return;
-    if (blockId === BLOCKS.AIR && getBlock(x,y,z) === BLOCKS.BEDROCK) return; 
-    const cx = Math.floor(x / CHUNK_SIZE), cz = Math.floor(z / CHUNK_SIZE);
-    const chunk = chunks[getChunkKey(cx, cz)];
+    let oldId = getBlock(x,y,z);
+    if (blockId === BLOCKS.AIR && oldId === BLOCKS.BEDROCK) return; 
+    
+    if (isTorch(oldId) && !isTorch(blockId)) placedTorches = placedTorches.filter(t => t.x!==x || t.y!==y || t.z!==z);
+    if (isTorch(blockId)) placedTorches.push({x,y,z});
+
+    const chunk = chunks[getChunkKey(Math.floor(x/CHUNK_SIZE), Math.floor(z/CHUNK_SIZE))];
     if (!chunk) return;
-    const lx = x - cx * CHUNK_SIZE, lz = z - cz * CHUNK_SIZE;
+    const lx = x - chunk.cx * CHUNK_SIZE, lz = z - chunk.cz * CHUNK_SIZE;
     chunk.data[lx + lz * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE] = blockId;
     chunk.dirty = true;
-    if (lx === 0 && chunks[getChunkKey(cx-1, cz)]) chunks[getChunkKey(cx-1, cz)].dirty = true;
-    if (lx === CHUNK_SIZE-1 && chunks[getChunkKey(cx+1, cz)]) chunks[getChunkKey(cx+1, cz)].dirty = true;
-    if (lz === 0 && chunks[getChunkKey(cx, cz-1)]) chunks[getChunkKey(cx, cz-1)].dirty = true;
-    if (lz === CHUNK_SIZE-1 && chunks[getChunkKey(cx, cz+1)]) chunks[getChunkKey(cx, cz+1)].dirty = true;
+    if (lx === 0 && chunks[getChunkKey(chunk.cx-1, chunk.cz)]) chunks[getChunkKey(chunk.cx-1, chunk.cz)].dirty = true;
+    if (lx === CHUNK_SIZE-1 && chunks[getChunkKey(chunk.cx+1, chunk.cz)]) chunks[getChunkKey(chunk.cx+1, chunk.cz)].dirty = true;
+    if (lz === 0 && chunks[getChunkKey(chunk.cx, chunk.cz-1)]) chunks[getChunkKey(chunk.cx, chunk.cz-1)].dirty = true;
+    if (lz === CHUNK_SIZE-1 && chunks[getChunkKey(chunk.cx, chunk.cz+1)]) chunks[getChunkKey(chunk.cx, chunk.cz+1)].dirty = true;
 }
 
 function generateChunk(cx, cz) {
@@ -521,13 +623,21 @@ function generateChunk(cx, cz) {
         for (let lz = 0; lz < CHUNK_SIZE; lz++) {
             const wx = cx * CHUNK_SIZE + lx, wz = cz * CHUNK_SIZE + lz;
             
-            // Base height lowered to 40 for deep caves. TerrainMod scales the mountains!
-            let height = Math.floor(40 + (simplex.noise2D(wx * 0.015, wz * 0.015) + simplex.noise2D(wx * 0.08, wz * 0.08) * 0.3) * 25 * CONFIG.terrainMod);
+            let n2 = simplex.noise2D(wx * 0.015, wz * 0.015);
+            let n3 = simplex.noise2D(wx * 0.08, wz * 0.08) * 0.3;
+            let biome = (simplex.noise2D(wx * 0.003, wz * 0.003) + 1) / 2;
+            
+            let mod = 1.0;
+            if (CONFIG.terrainMode === 'plains') mod = 0.2 + n3;
+            else if (CONFIG.terrainMode === 'normal') mod = 0.6 + biome * 1.5;
+            else if (CONFIG.terrainMode === 'mountains') mod = 2.0 + n3;
+            else if (CONFIG.terrainMode === 'extreme') mod = 4.0 + n3 * 2;
+
+            let height = Math.floor(40 + (n2 + n3) * 15 * mod);
             if (height >= CHUNK_HEIGHT) height = CHUNK_HEIGHT - 1;
             
             for (let y = 0; y <= height; y++) {
                 const idx = lx + lz * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
-                
                 if (y === 0) { data[idx] = BLOCKS.BEDROCK; continue; }
                 
                 let isCave = (y < height - 4 && y > 1) && (simplex.noise3D(wx * 0.04, y * 0.04, wz * 0.04) > 0.4);
@@ -541,7 +651,7 @@ function generateChunk(cx, cz) {
                     }
                 }
             }
-            if (height > 30 && Math.random() < 0.01 && lx > 2 && lx < CHUNK_SIZE-2 && lz > 2 && lz < CHUNK_SIZE-2) {
+            if (Math.random() < 0.01 && lx > 2 && lx < CHUNK_SIZE-2 && lz > 2 && lz < CHUNK_SIZE-2) {
                 if (data[lx + lz * CHUNK_SIZE + height * CHUNK_SIZE * CHUNK_SIZE] === BLOCKS.GRASS) {
                     const treeH = 4 + Math.floor(Math.random()*2);
                     for(let th=1; th<=treeH; th++) if(height+th < CHUNK_HEIGHT) data[lx + lz * CHUNK_SIZE + (height+th) * CHUNK_SIZE * CHUNK_SIZE] = BLOCKS.LOG;
@@ -561,14 +671,10 @@ function generateChunk(cx, cz) {
     }
     chunks[getChunkKey(cx, cz)] = { data, mesh: null, dirty: true, cx, cz };
     
-    // Mob spawning
     if (Math.random() < 0.4 && mobs.length < 20) {
         let py = CHUNK_HEIGHT-1, px = cx * CHUNK_SIZE + 8, pz = cz * CHUNK_SIZE + 8;
         while(py > 0 && getBlock(px, py, pz) === BLOCKS.AIR) py--;
-        if (py > 0) {
-            let type = Math.random() > 0.5 ? 'pig' : 'cow';
-            spawnMob(px, py+2, pz, type);
-        }
+        if (py > 0) spawnMob(px, py+2, pz, Math.random() > 0.5 ? 'pig' : 'cow');
     }
 }
 
@@ -580,54 +686,96 @@ const faces = [
     { dir: [0,0,1], corners: [[0,0,1],[1,0,1],[1,1,1],[0,1,1]] },
     { dir: [0,0,-1], corners: [[1,0,0],[0,0,0],[0,1,0],[1,1,0]] }
 ];
+const isTrans = (id) => id === BLOCKS.AIR || id === BLOCKS.LEAVES || isTorch(id);
 
+// Rewritten chunk mesh builder to group faces by block material explicitly!
 function buildChunkMesh(chunk) {
     if (chunk.mesh) { scene.remove(chunk.mesh); chunk.mesh.geometry.dispose(); chunk.mesh = null; }
-    const positions = [], normals = [], colors = [], uvs = [], indices = [];
-    let vCount = 0;
+    
+    let bins = Array.from({length: MAX_BLOCK_ID + 1}, () => ({ positions: [], normals: [], colors: [], uvs: [], indices: [] }));
+
     for (let x = 0; x < CHUNK_SIZE; x++) {
         for (let y = 0; y < CHUNK_HEIGHT; y++) {
             for (let z = 0; z < CHUNK_SIZE; z++) {
                 const blockId = chunk.data[x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE];
                 if (blockId === BLOCKS.AIR) continue;
+                
                 const wx = chunk.cx * CHUNK_SIZE + x, wz = chunk.cz * CHUNK_SIZE + z;
-                const bColor = BLOCK_COLORS[blockId];
+                const bin = bins[blockId];
+                
                 for (let f = 0; f < 6; f++) {
                     const fd = faces[f].dir, nId = getBlock(wx + fd[0], y + fd[1], wz + fd[2]);
-                    if (nId === BLOCKS.AIR || (blockId !== BLOCKS.LEAVES && nId === BLOCKS.LEAVES)) {
+                    
+                    if (isTrans(nId) && (blockId !== BLOCKS.LEAVES || nId !== BLOCKS.LEAVES)) {
+                        let isT = isTorch(blockId);
+                        let vCount = bin.positions.length / 3;
+                        
                         for (let v = 0; v < 4; v++) {
-                            const c = faces[f].corners[v];
-                            positions.push(wx + c[0], y + c[1], wz + c[2]);
-                            normals.push(fd[0], fd[1], fd[2]);
+                            let cx = faces[f].corners[v][0], cy = faces[f].corners[v][1], cz = faces[f].corners[v][2];
                             
+                            if (isT) {
+                                if (blockId === BLOCKS.TORCH) { cx = 0.43 + cx*0.14; cy = cy*0.6; cz = 0.43 + cz*0.14; }
+                                else if (blockId === BLOCKS.TORCH_N) { cx = 0.43 + cx*0.14; cy = 0.2 + cy*0.6; cz = cz*0.2; }
+                                else if (blockId === BLOCKS.TORCH_S) { cx = 0.43 + cx*0.14; cy = 0.2 + cy*0.6; cz = 0.8 + cz*0.2; }
+                                else if (blockId === BLOCKS.TORCH_W) { cx = cx*0.2; cy = 0.2 + cy*0.6; cz = 0.43 + cz*0.14; }
+                                else if (blockId === BLOCKS.TORCH_E) { cx = 0.8 + cx*0.2; cy = 0.2 + cy*0.6; cz = 0.43 + cz*0.14; }
+                            }
+                            
+                            bin.positions.push(wx + cx, y + cy, wz + cz);
+                            bin.normals.push(fd[0], fd[1], fd[2]);
+                            
+                            // Perfect UV mapping to standard 0-1 edges
                             let u, v_uv;
-                            if (fd[0] !== 0) { u = wz + c[2]; v_uv = y + c[1]; } 
-                            else if (fd[1] !== 0) { u = wx + c[0]; v_uv = wz + c[2]; } 
-                            else { u = wx + c[0]; v_uv = y + c[1]; } 
-                            uvs.push(u, v_uv);
+                            if (fd[0] !== 0) { u = faces[f].corners[v][2]; v_uv = faces[f].corners[v][1]; } 
+                            else if (fd[1] !== 0) { u = faces[f].corners[v][0]; v_uv = faces[f].corners[v][2]; } 
+                            else { u = faces[f].corners[v][0]; v_uv = faces[f].corners[v][1]; } 
+                            bin.uvs.push(u, v_uv);
 
+                            // Keep shading multiplication via vertex colors
                             let shade = (fd[1]===-1)?0.4:(fd[0]!==0)?0.75:(fd[2]!==0)?0.8:1.0;
-                            colors.push(bColor[0]*shade, bColor[1]*shade, bColor[2]*shade);
+                            bin.colors.push(shade, shade, shade);
                         }
-                        indices.push(vCount, vCount+1, vCount+2, vCount, vCount+2, vCount+3);
-                        vCount += 4;
+                        bin.indices.push(vCount, vCount+1, vCount+2, vCount, vCount+2, vCount+3);
                     }
                 }
             }
         }
     }
-    if (positions.length > 0) {
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-        geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-        geo.setIndex(indices);
-        chunk.mesh = new THREE.Mesh(geo, blockMaterial);
-        chunk.mesh.castShadow = CONFIG.shadows;
-        chunk.mesh.receiveShadow = CONFIG.shadows;
+    
+    const geo = new THREE.BufferGeometry();
+    let finalPositions = [], finalNormals = [], finalColors = [], finalUvs = [], finalIndices = [];
+    let vCountTotal = 0;
+    
+    for(let matId=1; matId <= MAX_BLOCK_ID; matId++) {
+        let bin = bins[matId];
+        if(bin.positions.length === 0) continue;
+        
+        let groupStart = finalIndices.length;
+        
+        for(let i=0; i<bin.positions.length; i++) finalPositions.push(bin.positions[i]);
+        for(let i=0; i<bin.normals.length; i++) finalNormals.push(bin.normals[i]);
+        for(let i=0; i<bin.colors.length; i++) finalColors.push(bin.colors[i]);
+        for(let i=0; i<bin.uvs.length; i++) finalUvs.push(bin.uvs[i]);
+        for(let i=0; i<bin.indices.length; i++) finalIndices.push(bin.indices[i] + vCountTotal);
+        
+        let groupCount = bin.indices.length;
+        geo.addGroup(groupStart, groupCount, matId);
+        
+        vCountTotal += bin.positions.length / 3;
+    }
+    
+    if (finalPositions.length > 0) {
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(finalPositions, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(finalNormals, 3));
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(finalColors, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(finalUvs, 2));
+        geo.setIndex(finalIndices);
+        
+        chunk.mesh = new THREE.Mesh(geo, materialArray);
+        chunk.mesh.castShadow = CONFIG.shadows; chunk.mesh.receiveShadow = CONFIG.shadows;
         scene.add(chunk.mesh);
     }
+    
     chunk.dirty = false;
 }
 
@@ -657,8 +805,8 @@ function spawnMob(x, y, z, type) {
     let mesh = new THREE.Mesh(mobGeo, baseMat);
     mesh.castShadow = CONFIG.shadows; scene.add(mesh);
     mobs.push({ 
-        type: type, mesh: mesh, mat: baseMat, pos: new THREE.Vector3(x, y, z), 
-        vel: new THREE.Vector3(0,0,0), hp: type==='cow'?5:3, dir: new THREE.Vector3(1,0,0), 
+        type: type, mesh: mesh, mat: mesh.material, pos: new THREE.Vector3(x, y, z), 
+        vel: new THREE.Vector3(0,0,0), hp: 10, dir: new THREE.Vector3(1,0,0), 
         timer: 0, state: 'idle', flashTimer: 0 
     });
 }
@@ -666,21 +814,14 @@ function spawnMob(x, y, z, type) {
 function updateMobs(dt) {
     for (let i = mobs.length - 1; i >= 0; i--) {
         let m = mobs[i];
-        
-        if (m.flashTimer > 0) {
-            m.flashTimer -= dt;
-            if (m.flashTimer <= 0) m.mat.color.setHex(0xffffff);
-        }
+
+        if (m.flashTimer > 0) { m.flashTimer -= dt; if (m.flashTimer <= 0) m.mat.color.setHex(0xffffff); }
 
         m.timer -= dt;
         if (m.timer <= 0) {
-            if (m.state === 'flee') m.state = 'wander'; // Stop panicking eventually
-            
+            if (m.state === 'flee') m.state = 'wander'; 
             if (Math.random() < 0.4) m.state = 'idle';
-            else {
-                m.state = 'wander';
-                m.dir.set((Math.random()-0.5)*2, 0, (Math.random()-0.5)*2).normalize();
-            }
+            else { m.state = 'wander'; m.dir.set((Math.random()-0.5)*2, 0, (Math.random()-0.5)*2).normalize(); }
             m.timer = 1 + Math.random() * 3;
             if(Math.random() < 0.2 && m.vel.y === 0 && m.state !== 'idle') m.vel.y = 6;
         }
@@ -696,33 +837,41 @@ function updateMobs(dt) {
         if (getBlock(Math.floor(next.x), Math.floor(next.y), Math.floor(next.z+(m.vel.z>0?0.4:-0.4))) !== 0) { next.z = m.pos.z; m.dir.z *= -1; if(m.vel.y===0 && speed>0) m.vel.y = 6; }
         
         m.pos.copy(next); m.mesh.position.copy(m.pos);
-        
-        // Face moving direction
         if (speed > 0) m.mesh.rotation.y = Math.atan2(m.dir.x, m.dir.z);
 
         if (m.pos.distanceTo(player.pos) > CONFIG.renderDistance * CHUNK_SIZE * 1.5) { scene.remove(m.mesh); mobs.splice(i, 1); }
     }
 }
 
-// --- COMBAT ---
+// --- TOOLS & COMBAT ---
+function damageTool() {
+    let item = invSlots[selectedSlot];
+    if (item && isTool(item.id)) {
+        if(item.durability === undefined) item.durability = MAX_DURABILITY[item.id];
+        item.durability--;
+        if(item.durability <= 0) invSlots[selectedSlot] = null;
+        updateHUD();
+    }
+}
+
 function attackMob(index) {
     let m = mobs[index];
-    m.hp--; 
+
+    let dmg = getDamage(invSlots[selectedSlot] ? invSlots[selectedSlot].id : 0);
+    m.hp -= dmg; 
+    damageTool();
+    
     m.vel.y = 6; 
     let knockback = player.pos.clone().sub(m.pos).normalize().multiplyScalar(-6);
     knockback.y = 0; m.dir.copy(knockback).normalize();
     m.vel.x = knockback.x; m.vel.z = knockback.z;
     
-    m.state = 'flee';
-    m.timer = 3.0; // run for 3 seconds
-    m.flashTimer = 0.2;
-    m.mat.color.setHex(0xff0000); 
+    m.state = 'flee'; m.timer = 3.0; m.flashTimer = 0.2; m.mat.color.setHex(0xff0000); 
     
     if(m.hp <= 0) { 
         let drop = m.type === 'cow' ? ITEMS.RAW_BEEF : ITEMS.PORKCHOP;
         addItemToInv(drop, 1 + Math.floor(Math.random()*2)); 
-        scene.remove(m.mesh); 
-        mobs.splice(index, 1); 
+        scene.remove(m.mesh); mobs.splice(index, 1); 
     }
 }
 
@@ -733,7 +882,8 @@ function checkCollision(pos) {
     const minY = Math.floor(pos.y), maxY = Math.floor(pos.y + player.height - 0.1);
     const minZ = Math.floor(pos.z - player.width/2), maxZ = Math.floor(pos.z + player.width/2);
     for (let x=minX; x<=maxX; x++) for (let y=minY; y<=maxY; y++) for (let z=minZ; z<=maxZ; z++) {
-        if (getBlock(x,y,z) !== 0) return true;
+        let id = getBlock(x,y,z);
+        if (id !== 0 && !isTorch(id)) return true;
     }
     return false;
 }
@@ -744,29 +894,33 @@ function takeDamage(amt) {
     setTimeout(() => document.getElementById('damage-overlay').style.opacity = 0, 200);
     updateHUD();
     if(player.hp <= 0) {
-        player.hp = 20; player.hunger = 20;
+        player.hp = 20; player.hunger = 20; 
         let spawnY = CHUNK_HEIGHT - 1;
         while(getBlock(8, spawnY, 8) === BLOCKS.AIR && spawnY > 0) spawnY--;
         player.pos.set(8, spawnY + 2, 8); player.vel.set(0,0,0);
         updateHUD();
     }
 }
+function heal(hHp, hHunger) {
+    player.hunger = Math.min(20, player.hunger + hHunger); player.hp = Math.min(20, player.hp + hHp); updateHUD();
+}
+
+function doJump() {
+    if (player.onGround && uiMode === 'none') { player.vel.y = player.jumpForce; }
+}
 
 function updatePlayer(dt) {
+    player.stepOffset = THREE.MathUtils.lerp(player.stepOffset || 0, 0, 15 * dt);
     player.vel.y -= 25.0 * dt;
+    
     if(player.vel.y < 0 && player.fallStart === null) player.fallStart = player.pos.y;
 
     player.pos.y += player.vel.y * dt;
     if (checkCollision(player.pos)) {
         if (player.vel.y < 0) {
             player.pos.y = Math.ceil(player.pos.y - 0.01); player.onGround = true;
-            if(player.fallStart !== null) {
-                let dist = player.fallStart - player.pos.y;
-                if(dist >= 4) takeDamage(Math.floor(dist - 3));
-            }
-        } else {
-            player.pos.y = Math.floor(player.pos.y + player.height) - player.height - 0.01;
-        }
+            if(player.fallStart !== null) { let dist = player.fallStart - player.pos.y; if(dist >= 4) takeDamage(Math.floor(dist - 3)); }
+        } else { player.pos.y = Math.floor(player.pos.y + player.height) - player.height - 0.01; }
         player.vel.y = 0; player.fallStart = null;
     } else { player.onGround = false; }
 
@@ -789,10 +943,29 @@ function updatePlayer(dt) {
     const cosY = Math.cos(player.yaw), sinY = Math.sin(player.yaw);
     const dx = (md.x * cosY + md.z * sinY) * player.speed, dz = (-md.x * sinY + md.z * cosY) * player.speed;
 
-    player.pos.x += dx * dt; if (checkCollision(player.pos)) player.pos.x -= dx * dt;
-    player.pos.z += dz * dt; if (checkCollision(player.pos)) player.pos.z -= dz * dt;
+    let canStep = player.onGround;
 
-    camera.position.set(player.pos.x, player.pos.y + 1.6, player.pos.z);
+    let oldX = player.pos.x;
+    player.pos.x += dx * dt; 
+    if (checkCollision(player.pos)) { 
+        if (canStep) {
+            player.pos.y += 1.1; 
+            if (checkCollision(player.pos)) { player.pos.y -= 1.1; player.pos.x = oldX; } 
+            else { player.stepOffset -= 1.1; } // Smooth step offset
+        } else { player.pos.x = oldX; }
+    }
+
+    let oldZ = player.pos.z;
+    player.pos.z += dz * dt; 
+    if (checkCollision(player.pos)) { 
+        if (canStep) {
+            player.pos.y += 1.1; 
+            if (checkCollision(player.pos)) { player.pos.y -= 1.1; player.pos.z = oldZ; } 
+            else { player.stepOffset -= 1.1; }
+        } else { player.pos.z = oldZ; }
+    }
+
+    camera.position.set(player.pos.x, player.pos.y + 1.6 + player.stepOffset, player.pos.z);
     camera.quaternion.setFromEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
 
     if (player.pos.y < -10) takeDamage(20);
@@ -815,24 +988,17 @@ function updatePlayer(dt) {
     }
 }
 
-// Raycast from Center OR Screen Coordinates (Touch)
 function doRaycast(screenX, screenY) {
     const start = camera.position.clone();
     let dir = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
-    
-    // If screen coords provided (from touch), raycast from that point
     if (screenX !== undefined && screenY !== undefined) {
         let ndc = new THREE.Vector2((screenX / window.innerWidth) * 2 - 1, -(screenY / window.innerHeight) * 2 + 1);
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(ndc, camera);
-        dir = raycaster.ray.direction;
+        let raycaster = new THREE.Raycaster(); raycaster.setFromCamera(ndc, camera); dir = raycaster.ray.direction;
     }
 
     let t = 0; const maxD = 5.0, step = 0.05; let lastA = null;
-    
     for(let i=0; i<mobs.length; i++) {
-        let m = mobs[i];
-        let box = new THREE.Box3(new THREE.Vector3(m.pos.x-0.4, m.pos.y, m.pos.z-0.4), new THREE.Vector3(m.pos.x+0.4, m.pos.y+0.8, m.pos.z+0.4));
+        let m = mobs[i]; let box = new THREE.Box3(new THREE.Vector3(m.pos.x-0.4, m.pos.y, m.pos.z-0.4), new THREE.Vector3(m.pos.x+0.4, m.pos.y+0.8, m.pos.z+0.4));
         if(new THREE.Ray(start, dir).intersectBox(box, new THREE.Vector3()) && start.distanceTo(m.pos)<=maxD) return { hitMob: i };
     }
 
@@ -840,7 +1006,7 @@ function doRaycast(screenX, screenY) {
         const p = start.clone().add(dir.clone().multiplyScalar(t));
         const bx = Math.floor(p.x), by = Math.floor(p.y), bz = Math.floor(p.z);
         const id = getBlock(bx, by, bz);
-        if (id !== 0) return { pos: {x:bx, y:by, z:bz}, prevPos: lastA, id };
+        if (id !== 0 && !isTorch(id)) return { pos: {x:bx, y:by, z:bz}, prevPos: lastA, id };
         lastA = {x:bx, y:by, z:bz}; t += step;
     }
     return null;
@@ -851,13 +1017,18 @@ function getSlotHTML(item) {
     if (!item) return '';
     let c = item.count > 1 ? `<div class='slot-count'>${item.count}</div>` : '';
     let dataUri = generateIconDataURI(item.id);
-    return `<div class='slot-icon' style='background-image:url(${dataUri});'></div><br><span style="margin-top:-5px;">${ITEM_NAMES[item.id].substring(0, 4)}</span>${c}`;
+    let durHTML = '';
+    if (item.durability !== undefined) {
+        let max = MAX_DURABILITY[item.id]; let pct = item.durability / max;
+        let col = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#ff0' : '#f00');
+        durHTML = `<div style="position:absolute;bottom:0;left:2px;right:2px;height:4px;background:#000;"><div style="height:100%;width:${pct*100}%;background:${col};"></div></div>`;
+    }
+    return `<div class='slot-icon' style='background-image:url("${dataUri}");'></div><br><span style="margin-top:-5px;">${ITEM_NAMES[item.id].substring(0, 4)}</span>${c}${durHTML}`;
 }
 
 function updateHUD() {
     let hpHTML = ''; for(let i=0; i<10; i++) hpHTML += (player.hp >= i*2 + 1) ? '❤️' : '🖤';
     document.getElementById('health-bar').innerHTML = hpHTML;
-    
     let foodHTML = ''; for(let i=0; i<10; i++) foodHTML += (player.hunger >= i*2 + 1) ? '🍖' : '🦴';
     document.getElementById('hunger-bar').innerHTML = foodHTML;
 
@@ -866,8 +1037,7 @@ function updateHUD() {
         let d = document.createElement('div');
         d.className = 'slot' + (i === selectedSlot ? ' active' : '');
         d.innerHTML = getSlotHTML(invSlots[i]);
-        d.onclick = () => { selectedSlot = i; updateHUD(); };
-        hb.appendChild(d);
+        d.onclick = () => { selectedSlot = i; updateHUD(); }; hb.appendChild(d);
     }
     updateHeldItemMesh();
 }
@@ -878,68 +1048,44 @@ function updateHeldItemMesh() {
         if(handGroup.children[0].geometry) handGroup.children[0].geometry.dispose();
         handGroup.remove(handGroup.children[0]); 
     }
-    
-    let item = invSlots[selectedSlot];
-    if (!item) return;
-
-    if (item.id <= 10) { 
-        let c = BLOCK_COLORS[item.id];
-        let mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(c[0], c[1], c[2])});
-        mat.depthTest = false; 
+    let item = invSlots[selectedSlot]; if (!item) return;
+    if (item.id <= MAX_BLOCK_ID && !isTorch(item.id)) { 
+        let mat = materialArray[item.id].clone(); mat.depthTest = false; 
         let mesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), mat);
         mesh.renderOrder = 999; handGroup.add(mesh);
     } else { 
-        let tex = new THREE.TextureLoader().load(generateIconDataURI(item.id));
-        tex.magFilter = THREE.NearestFilter;
-        let mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
-        let sprite = new THREE.Sprite(mat);
-        sprite.scale.set(0.4, 0.4, 0.4); sprite.renderOrder = 999;
-        handGroup.add(sprite);
+        let tex = new THREE.TextureLoader().load(generateIconDataURI(item.id)); tex.magFilter = THREE.NearestFilter;
+        let mat = new THREE.SpriteMaterial({ map: tex, depthTest: false }); let sprite = new THREE.Sprite(mat);
+        sprite.scale.set(0.4, 0.4, 0.4); sprite.renderOrder = 999; handGroup.add(sprite);
     }
 }
 
-// --- RECIPE BOOK ---
-function buildRecipeBook() {
-    const container = document.getElementById('recipe-book');
-    container.innerHTML = '<div class="inv-title" style="text-align:center;">Recipe Book</div>';
-    
+function buildRecipeBook(mode) {
+    const container = document.getElementById('recipe-book'); container.innerHTML = '<div class="inv-title" style="text-align:center;">Recipe Book</div>';
     RECIPES.forEach(r => {
-        let btn = document.createElement('div');
-        btn.className = 'recipe-btn';
+        let w = r.shape[0].length, h = r.shape.length;
+        if (mode !== 'crafting_table' && (w > 2 || h > 2)) return;
+
+        let btn = document.createElement('div'); btn.className = 'recipe-btn';
         let iconUrl = generateIconDataURI(r.res);
-        btn.innerHTML = `<div class="recipe-icon" style="background-image:url(${iconUrl})"></div> <span>${r.name}</span>`;
-        btn.onclick = () => tryAutoCraft(r);
-        container.appendChild(btn);
+        btn.innerHTML = `<div class="recipe-icon" style="background-image:url('${iconUrl}')"></div> <span>${r.name}</span>`;
+        btn.onclick = () => tryAutoCraft(r); container.appendChild(btn);
     });
 }
 
 function tryAutoCraft(recipe) {
-    let reqs = {};
-    let shapeW = recipe.shape[0].length, shapeH = recipe.shape.length;
-    
-    for(let i=0; i<craftGrid.length; i++) {
-        if(craftGrid[i]) { addItemToInv(craftGrid[i].id, craftGrid[i].count); craftGrid[i] = null; }
-    }
-    if (cursorItem) { addItemToInv(cursorItem.id, cursorItem.count); cursorItem = null; }
-
-    for(let y=0; y<shapeH; y++) {
-        for(let x=0; x<shapeW; x++) {
-            let id = recipe.shape[y][x];
-            if(id !== 0) { reqs[id] = (reqs[id] || 0) + 1; }
-        }
-    }
-
+    let reqs = {}; let shapeW = recipe.shape[0].length, shapeH = recipe.shape.length;
+    for(let i=0; i<craftGrid.length; i++) { if(craftGrid[i]) { addItemToInv(craftGrid[i].id, craftGrid[i].count, craftGrid[i].durability); craftGrid[i] = null; } }
+    if (cursorItem) { addItemToInv(cursorItem.id, cursorItem.count, cursorItem.durability); cursorItem = null; }
+    for(let y=0; y<shapeH; y++) { for(let x=0; x<shapeW; x++) { let id = recipe.shape[y][x]; if(id !== 0) { reqs[id] = (reqs[id] || 0) + 1; } } }
     let hasEnough = true;
     for(let id in reqs) {
-        let count = 0;
-        for(let i=0; i<36; i++) { if(invSlots[i] && invSlots[i].id == id) count += invSlots[i].count; }
+        let count = 0; for(let i=0; i<36; i++) { if(invSlots[i] && invSlots[i].id == id) count += invSlots[i].count; }
         if (count < reqs[id]) { hasEnough = false; break; }
     }
-
     if ((shapeW > 2 || shapeH > 2) && uiMode !== 'crafting_table') { alert("Requires a Crafting Table!"); return; }
 
     let gridCols = uiMode === 'crafting_table' ? 3 : 2;
-
     if (hasEnough) {
         for(let y=0; y<shapeH; y++) {
             for(let x=0; x<shapeW; x++) {
@@ -947,8 +1093,7 @@ function tryAutoCraft(recipe) {
                 if(id !== 0) {
                     for(let i=0; i<36; i++) {
                         if(invSlots[i] && invSlots[i].id == id) {
-                            invSlots[i].count--;
-                            if(invSlots[i].count <= 0) invSlots[i] = null;
+                            invSlots[i].count--; if(invSlots[i].count <= 0) invSlots[i] = null;
                             craftGrid[y * gridCols + x] = { id: id, count: 1 };
                             break;
                         }
@@ -960,29 +1105,40 @@ function tryAutoCraft(recipe) {
     updateCrafting(); renderUI(); updateHUD();
 }
 
-function openUI(mode) {
+function openUI(mode, x, y, z) {
     uiMode = mode;
     document.getElementById('inventory-screen').style.display = 'none';
     document.getElementById('settings-screen').style.display = 'none';
 
     if (mode === 'none') {
         lockPointer();
-        if (cursorItem) { addItemToInv(cursorItem.id, cursorItem.count); cursorItem = null; }
-        for(let i=0; i<craftGrid.length; i++) { if(craftGrid[i]) { addItemToInv(craftGrid[i].id, craftGrid[i].count); craftGrid[i] = null; } }
+        if (cursorItem) { addItemToInv(cursorItem.id, cursorItem.count, cursorItem.durability); cursorItem = null; }
+        for(let i=0; i<craftGrid.length; i++) { if(craftGrid[i]) { addItemToInv(craftGrid[i].id, craftGrid[i].count, craftGrid[i].durability); craftGrid[i] = null; } }
         updateCursorObj(); updateHUD();
+        currentFurnacePos = null;
     } else if (mode === 'settings') {
         document.getElementById('settings-screen').style.display = 'flex';
         unlockPointer();
     } else {
         document.getElementById('inventory-screen').style.display = 'flex';
         unlockPointer();
-        document.getElementById('craft-title').innerText = (mode === 'crafting_table') ? "Crafting (3x3)" : "Crafting (2x2)";
-        document.getElementById('craft-grid').style.gridTemplateColumns = (mode === 'crafting_table') ? 'repeat(3, 40px)' : 'repeat(2, 40px)';
+        
+        document.getElementById('ui-crafting-sec').style.display = mode==='furnace' ? 'none' : 'flex';
+        document.getElementById('ui-furnace-sec').style.display = mode==='furnace' ? 'flex' : 'none';
+
+        if (mode === 'furnace') {
+            currentFurnacePos = `${x},${y},${z}`;
+            if (!furnaces[currentFurnacePos]) furnaces[currentFurnacePos] = { input:null, fuel:null, output:null, burnTime:0, maxBurnTime:0, cookTime:0 };
+        } else {
+            document.getElementById('craft-title').innerText = (mode === 'crafting_table') ? "Crafting (3x3)" : "Crafting (2x2)";
+            document.getElementById('craft-grid').style.gridTemplateColumns = (mode === 'crafting_table') ? 'repeat(3, 40px)' : 'repeat(2, 40px)';
+        }
+        buildRecipeBook(mode);
         renderUI();
     }
 }
 
-function addItemToInv(id, amount) {
+function addItemToInv(id, amount, durability) {
     let amt = amount;
     for(let i=0; i<36; i++) {
         if(invSlots[i] && invSlots[i].id === id && invSlots[i].count < getMaxStack(id)) {
@@ -996,26 +1152,36 @@ function addItemToInv(id, amount) {
             if(!invSlots[i]) {
                 let toAdd = Math.min(amt, getMaxStack(id));
                 invSlots[i] = { id: id, count: toAdd };
+                if (durability !== undefined) invSlots[i].durability = durability;
+                else if (isTool(id)) invSlots[i].durability = MAX_DURABILITY[id];
                 amt -= toAdd; if(amt <= 0) break;
             }
         }
     }
-    updateHUD(); if(uiMode === 'inventory' || uiMode === 'crafting_table') renderUI();
+    updateHUD(); if(uiMode === 'inventory' || uiMode === 'crafting_table' || uiMode === 'furnace') renderUI();
     return amt; 
 }
 
 function handleSlotClick(type, index, isRightClick) {
     let clickedSlot = null; let updateFn = null;
-    
+    let f = currentFurnacePos ? furnaces[currentFurnacePos] : null;
+
     if (type === 'main' || type === 'hotbar') {
         let i = type === 'hotbar' ? index : index + 9;
         clickedSlot = invSlots[i]; updateFn = (n) => invSlots[i] = n;
     } else if (type === 'craft') {
         clickedSlot = craftGrid[index]; updateFn = (n) => craftGrid[index] = n;
+    } else if (type === 'furnace') {
+        if (index === 0) { clickedSlot = f.input; updateFn = (n) => f.input = n; }
+        if (index === 1) { clickedSlot = f.fuel; updateFn = (n) => f.fuel = n; }
+        if (index === 2) { clickedSlot = f.output; updateFn = (n) => f.output = n; }
+        if (!isRightClick && cursorItem && index === 2) return; 
     } else if (type === 'result') {
         if (!craftResultSlot || (cursorItem && cursorItem.id !== craftResultSlot.id) || (cursorItem && cursorItem.count >= getMaxStack(cursorItem.id))) return;
         if (!cursorItem) cursorItem = { id: craftResultSlot.id, count: craftResultSlot.count };
         else cursorItem.count += craftResultSlot.count;
+        if (craftResultSlot.durability !== undefined) cursorItem.durability = craftResultSlot.durability;
+
         for(let i=0; i<craftGrid.length; i++) { if(craftGrid[i]) { craftGrid[i].count--; if(craftGrid[i].count <= 0) craftGrid[i] = null; } }
         updateCrafting(); renderUI(); updateCursorObj(); return;
     }
@@ -1023,16 +1189,17 @@ function handleSlotClick(type, index, isRightClick) {
     if (isRightClick) {
         if (!cursorItem && clickedSlot) {
             let half = Math.ceil(clickedSlot.count / 2); cursorItem = { id: clickedSlot.id, count: half };
+            if(clickedSlot.durability !== undefined) cursorItem.durability = clickedSlot.durability;
             clickedSlot.count -= half; if (clickedSlot.count <= 0) updateFn(null);
         } else if (cursorItem && (!clickedSlot || clickedSlot.id === cursorItem.id)) {
-            if(!clickedSlot) updateFn({ id: cursorItem.id, count: 1 });
+            if(!clickedSlot) { updateFn({ id: cursorItem.id, count: 1, durability: cursorItem.durability }); }
             else if (clickedSlot.count < getMaxStack(clickedSlot.id)) clickedSlot.count++;
             cursorItem.count--; if(cursorItem.count <= 0) cursorItem = null;
         }
     } else {
         if (!cursorItem) { cursorItem = clickedSlot; updateFn(null); } 
         else {
-            if (clickedSlot && clickedSlot.id === cursorItem.id && clickedSlot.count < getMaxStack(clickedSlot.id)) {
+            if (clickedSlot && clickedSlot.id === cursorItem.id && clickedSlot.count < getMaxStack(clickedSlot.id) && clickedSlot.durability === cursorItem.durability) {
                 let space = getMaxStack(clickedSlot.id) - clickedSlot.count;
                 let transfer = Math.min(space, cursorItem.count);
                 clickedSlot.count += transfer; cursorItem.count -= transfer;
@@ -1045,26 +1212,25 @@ function handleSlotClick(type, index, isRightClick) {
 }
 
 function updateCrafting() {
-    let size = (uiMode === 'crafting_table') ? 3 : 2;
-    let minX=3, minY=3, maxX=-1, maxY=-1;
+    let size = (uiMode === 'crafting_table') ? 3 : 2; let minX=3, minY=3, maxX=-1, maxY=-1;
     for(let y=0; y<size; y++) for(let x=0; x<size; x++) {
         if(craftGrid[y*size+x]) { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); }
     }
-    
     if (maxX === -1) { craftResultSlot = null; return; }
     let w = maxX-minX+1, h = maxY-minY+1; let shape = [];
     for(let y=0; y<h; y++) {
-        let row = [];
-        for(let x=0; x<w; x++) row.push(craftGrid[(minY+y)*size + (minX+x)] ? craftGrid[(minY+y)*size + (minX+x)].id : 0);
-        shape.push(row);
+        let row = []; for(let x=0; x<w; x++) row.push(craftGrid[(minY+y)*size + (minX+x)] ? craftGrid[(minY+y)*size + (minX+x)].id : 0); shape.push(row);
     }
-
     craftResultSlot = null;
     for(let r of RECIPES) {
         if (r.shape.length === h && r.shape[0].length === w) {
             let match = true;
             for(let y=0; y<h; y++) for(let x=0; x<w; x++) if(r.shape[y][x] !== shape[y][x]) match = false;
-            if(match) { craftResultSlot = { id: r.res, count: r.count }; break; }
+            if(match) { 
+                craftResultSlot = { id: r.res, count: r.count }; 
+                if(isTool(r.res)) craftResultSlot.durability = MAX_DURABILITY[r.res];
+                break; 
+            }
         }
     }
 }
@@ -1080,15 +1246,26 @@ function renderUI() {
         let d = document.createElement('div'); d.className='slot'; d.innerHTML = getSlotHTML(invSlots[i]);
         d.onmousedown = (e) => handleSlotClick('hotbar', i, e.button===2); hg.appendChild(d);
     }
-    const cg = document.getElementById('craft-grid'); cg.innerHTML = '';
-    let size = (uiMode === 'crafting_table') ? 9 : 4;
-    for(let i=0; i<size; i++) {
-        let d = document.createElement('div'); d.className='slot'; d.innerHTML = getSlotHTML(craftGrid[i]);
-        d.onmousedown = (e) => handleSlotClick('craft', i, e.button===2); cg.appendChild(d);
+
+    if (uiMode === 'furnace' && currentFurnacePos) {
+        let f = furnaces[currentFurnacePos];
+        document.getElementById('fur-in-slot').innerHTML = getSlotHTML(f.input);
+        document.getElementById('fur-fuel-slot').innerHTML = getSlotHTML(f.fuel);
+        document.getElementById('fur-out-slot').innerHTML = getSlotHTML(f.output);
+        document.getElementById('fur-in-slot').onmousedown = (e) => handleSlotClick('furnace', 0, e.button===2);
+        document.getElementById('fur-fuel-slot').onmousedown = (e) => handleSlotClick('furnace', 1, e.button===2);
+        document.getElementById('fur-out-slot').onmousedown = (e) => handleSlotClick('furnace', 2, e.button===2);
+    } else {
+        const cg = document.getElementById('craft-grid'); cg.innerHTML = '';
+        let size = (uiMode === 'crafting_table') ? 9 : 4;
+        for(let i=0; i<size; i++) {
+            let d = document.createElement('div'); d.className='slot'; d.innerHTML = getSlotHTML(craftGrid[i]);
+            d.onmousedown = (e) => handleSlotClick('craft', i, e.button===2); cg.appendChild(d);
+        }
+        const rg = document.getElementById('craft-result'); rg.innerHTML = '';
+        let rd = document.createElement('div'); rd.className='slot'; rd.innerHTML = getSlotHTML(craftResultSlot);
+        rd.onmousedown = () => handleSlotClick('result', 0, false); rg.appendChild(rd);
     }
-    const rg = document.getElementById('craft-result'); rg.innerHTML = '';
-    let rd = document.createElement('div'); rd.className='slot'; rd.innerHTML = getSlotHTML(craftResultSlot);
-    rd.onmousedown = () => handleSlotClick('result', 0, false); rg.appendChild(rd);
 }
 
 function updateCursorObj() {
@@ -1098,11 +1275,8 @@ function updateCursorObj() {
 }
 
 document.addEventListener('mousemove', e => {
-    if(uiMode === 'inventory' || uiMode === 'crafting_table') {
-        if(cursorItem) {
-            const el = document.getElementById('cursor-item');
-            el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px';
-        }
+    if(uiMode === 'inventory' || uiMode === 'crafting_table' || uiMode === 'furnace') {
+        if(cursorItem) { const el = document.getElementById('cursor-item'); el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px'; }
     }
     if (document.pointerLockElement === document.body && uiMode === 'none') {
         player.yaw -= e.movementX * 0.002; player.pitch -= e.movementY * 0.002;
@@ -1111,58 +1285,71 @@ document.addEventListener('mousemove', e => {
 });
 document.addEventListener('contextmenu', e => e.preventDefault());
 
-// Pointer Lock / Escape Logic for Settings
 document.addEventListener('pointerlockchange', () => {
-    const isLocked = document.pointerLockElement === document.body;
-    
-    // Auto-open settings if user hit ESC to free the cursor
-    if (!isLocked && uiMode === 'none' && !isTouch && CONFIG.touchControls !== 'force_on') {
-        openUI('settings');
-    }
+    if (document.pointerLockElement !== document.body && uiMode === 'none' && !isTouch && CONFIG.touchControls !== 'force_on') openUI('settings');
 });
 
 // --- INTERACTION ---
 function doInteract(sx, sy) {
     const hit = doRaycast(sx, sy);
+
     if (hit && hit.id === BLOCKS.CRAFTING_TABLE) { openUI('crafting_table'); return; }
+    if (hit && hit.id === BLOCKS.FURNACE) { openUI('furnace', hit.pos.x, hit.pos.y, hit.pos.z); return; }
 
     const heldItem = invSlots[selectedSlot];
     if (heldItem) {
-        if (heldItem.id === ITEMS.PORKCHOP || heldItem.id === ITEMS.RAW_BEEF) {
-            if (player.hunger < 20 || player.hp < 20) {
-                player.hunger = Math.min(20, player.hunger + 8); player.hp = Math.min(20, player.hp + 2); 
-                heldItem.count--; if(heldItem.count <= 0) invSlots[selectedSlot] = null;
-                updateHUD();
-            }
-            return;
-        }
-        if (heldItem.id <= 10 && hit && hit.prevPos) {
+        if (heldItem.id === ITEMS.PORKCHOP || heldItem.id === ITEMS.RAW_BEEF) { heal(1,2); heldItem.count--; if(heldItem.count<=0) invSlots[selectedSlot]=null; return; }
+        if (heldItem.id === ITEMS.COOKED_PORKCHOP || heldItem.id === ITEMS.COOKED_BEEF) { heal(5,8); heldItem.count--; if(heldItem.count<=0) invSlots[selectedSlot]=null; return; }
+        
+        if (heldItem.id <= MAX_BLOCK_ID && hit && hit.prevPos) {
             const bp = hit.prevPos, px = Math.floor(player.pos.x), py = Math.floor(player.pos.y), pz = Math.floor(player.pos.z);
-            if (bp.x === px && bp.z === pz && (bp.y === py || bp.y === py+1)) return;
-            setBlock(bp.x, bp.y, bp.z, heldItem.id);
-            heldItem.count--; if(heldItem.count <= 0) invSlots[selectedSlot] = null;
-            updateHUD();
+            if (bp.x === px && bp.z === pz && (bp.y === py || bp.y === py+1) && !isTorch(heldItem.id)) return;
+            
+            let placeId = heldItem.id;
+            if (heldItem.id === BLOCKS.TORCH) {
+                let nx = bp.x - hit.pos.x, ny = bp.y - hit.pos.y, nz = bp.z - hit.pos.z;
+                if (ny === -1) return; 
+                if (ny === 1) placeId = BLOCKS.TORCH; 
+                else if (nz === -1) placeId = BLOCKS.TORCH_N; 
+                else if (nz === 1) placeId = BLOCKS.TORCH_S; 
+                else if (nx === -1) placeId = BLOCKS.TORCH_W; 
+                else if (nx === 1) placeId = BLOCKS.TORCH_E; 
+            }
+
+            setBlock(bp.x, bp.y, bp.z, placeId);
+            heldItem.count--; if(heldItem.count <= 0) invSlots[selectedSlot] = null; updateHUD();
         }
     }
 }
 
-function processMining(dt) {
-    // If we have a touch target, raycast there. Otherwise, center of screen.
-    let rx = touchTargetPos ? touchTargetPos.x : undefined;
-    let ry = touchTargetPos ? touchTargetPos.y : undefined;
+function breakBlock(x,y,z) {
+    let id = getBlock(x,y,z);
+    if (id === 0 || id === BLOCKS.BEDROCK) return;
+    
+    if (id === BLOCKS.LEAVES) { if (Math.random() < 0.1) addItemToInv(ITEMS.STICK, 1); }
+    else if (isTorch(id)) addItemToInv(BLOCKS.TORCH, 1);
+    else addItemToInv(id, 1);
+    
+    setBlock(x, y, z, 0);
+    
+    if(getBlock(x,y+1,z) === BLOCKS.TORCH) breakBlock(x,y+1,z);
+    if(getBlock(x+1,y,z) === BLOCKS.TORCH_E) breakBlock(x+1,y,z);
+    if(getBlock(x-1,y,z) === BLOCKS.TORCH_W) breakBlock(x-1,y,z);
+    if(getBlock(x,y,z+1) === BLOCKS.TORCH_S) breakBlock(x,y,z+1);
+    if(getBlock(x,y,z-1) === BLOCKS.TORCH_N) breakBlock(x,y,z-1);
+}
 
+function processMining(dt) {
+    let rx = touchTargetPos ? touchTargetPos.x : undefined; let ry = touchTargetPos ? touchTargetPos.y : undefined;
     const hit = doRaycast(rx, ry);
     
-    if (hit && hit.id && hit.pos) {
+    if (hit && hit.id && hit.pos && !isTorch(hit.id)) {
         outlineMesh.visible = true; outlineMesh.position.set(hit.pos.x + 0.5, hit.pos.y + 0.5, hit.pos.z + 0.5);
     } else outlineMesh.visible = false;
 
     if (!isMining || uiMode !== 'none') return;
     if (hit) {
-        if (hit.hitMob !== undefined) {
-             mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none'; 
-             return; // Mobs are hit on TAP, not hold.
-        }
+        if (hit.hitMob !== undefined) { mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none'; return; }
         if (hit.id === BLOCKS.BEDROCK) return;
 
         const b = hit.pos, ts = `${b.x},${b.y},${b.z}`;
@@ -1174,19 +1361,15 @@ function processMining(dt) {
         document.getElementById('mining-bar').style.width = Math.min(100, mineProgress*100) + '%';
 
         if (mineProgress >= 1.0) {
-            if(hit.id === BLOCKS.LEAVES) { if(Math.random()<0.1) addItemToInv(ITEMS.STICK, 1); }
-            else addItemToInv(hit.id, 1);
-            setBlock(b.x, b.y, b.z, 0);
+            breakBlock(b.x, b.y, b.z);
+            damageTool();
             mineTarget = null; mineProgress = 0; pb.style.display = 'none';
         }
     } else { mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display = 'none'; }
 }
 
 // --- MULTI-TOUCH HANDLING ---
-let joyTouchId = null;
-let lookTouchId = null;
-let lookLastPos = null;
-
+let joyTouchId = null, lookTouchId = null, lookLastPos = null;
 function updateJoystick(touch, center) {
     let dx = touch.clientX - center.x, dy = touch.clientY - center.y;
     let maxD = 40, dist = Math.sqrt(dx*dx + dy*dy);
@@ -1201,7 +1384,7 @@ function setupInput() {
         if (e.code === 'Escape') { if (uiMode !== 'none') openUI('none'); return; }
         if (uiMode !== 'none' && e.code !== 'KeyE') return;
         keys[e.key.toLowerCase()] = true;
-        if (e.code === 'Space' && player.onGround && uiMode === 'none') player.vel.y = player.jumpForce;
+        if (e.code === 'Space') doJump();
         if (e.code === 'KeyE') openUI(uiMode === 'none' ? 'inventory' : 'none');
         if (e.key >= '1' && e.key <= '9') { selectedSlot = parseInt(e.key)-1; updateHUD(); }
     });
@@ -1212,12 +1395,8 @@ function setupInput() {
     document.addEventListener('mousedown', e => {
         if (document.pointerLockElement !== document.body && !isTouch && uiMode === 'none') return;
         if (uiMode !== 'none') return;
-        touchTargetPos = null; // Desktop uses center
-        if (e.button === 0) {
-            const hit = doRaycast();
-            if (hit && hit.hitMob !== undefined) attackMob(hit.hitMob);
-            else isMining = true;
-        }
+        touchTargetPos = null; 
+        if (e.button === 0) { const hit = doRaycast(); if (hit && hit.hitMob !== undefined) attackMob(hit.hitMob); else isMining = true; }
         if (e.button === 2) doInteract();
     });
     document.addEventListener('mouseup', e => { if (e.button === 0) { isMining=false; mineTarget=null; mineProgress=0; document.getElementById('mining-progress').style.display='none'; }});
@@ -1234,17 +1413,10 @@ function setupInput() {
             }
         }
     }, {passive: false});
-    jArea.addEventListener('touchmove', e => {
-        e.preventDefault();
-        for(let i=0; i<e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === joyTouchId) updateJoystick(e.changedTouches[i], jCenter); }
-    }, {passive: false});
+    jArea.addEventListener('touchmove', e => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === joyTouchId) updateJoystick(e.changedTouches[i], jCenter); } }, {passive: false});
     const endJoystick = (e) => {
         e.preventDefault();
-        for(let i=0; i<e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === joyTouchId) {
-                joyTouchId = null; document.getElementById('joystick-knob').style.transform = `translate(0px, 0px)`; touchMoveDir.set(0,0);
-            }
-        }
+        for(let i=0; i<e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === joyTouchId) { joyTouchId = null; document.getElementById('joystick-knob').style.transform = `translate(0px, 0px)`; touchMoveDir.set(0,0); } }
     };
     jArea.addEventListener('touchend', endJoystick); jArea.addEventListener('touchcancel', endJoystick);
 
@@ -1257,15 +1429,8 @@ function setupInput() {
             if (lookTouchId === null) {
                 let t = e.changedTouches[i]; lookTouchId = t.identifier;
                 lookLastPos = {x: t.clientX, y: t.clientY}; lookStartPos = {x: t.clientX, y: t.clientY};
-                isLookDragging = false; lookTouchStartTime = Date.now();
-                touchTargetPos = {x: t.clientX, y: t.clientY}; // Store where they touched!
-                
-                lookTouchHoldTimer = setTimeout(() => {
-                    if (!isLookDragging && uiMode === 'none') {
-                        const hit = doRaycast(touchTargetPos.x, touchTargetPos.y);
-                        if (!(hit && hit.hitMob !== undefined)) isMining = true;
-                    }
-                }, 250); 
+                isLookDragging = false; lookTouchStartTime = Date.now(); touchTargetPos = {x: t.clientX, y: t.clientY}; 
+                lookTouchHoldTimer = setTimeout(() => { if (!isLookDragging && uiMode === 'none') { const hit = doRaycast(touchTargetPos.x, touchTargetPos.y); if (!(hit && hit.hitMob !== undefined)) isMining = true; } }, 250); 
             }
         }
     }, {passive: false});
@@ -1277,16 +1442,11 @@ function setupInput() {
                 let t = e.changedTouches[i];
                 if (!isLookDragging) {
                     let dx = t.clientX - lookStartPos.x, dy = t.clientY - lookStartPos.y;
-                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                        isLookDragging = true; clearTimeout(lookTouchHoldTimer); isMining = false;
-                        mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none';
-                        touchTargetPos = null; // Canceled hold
-                    }
+                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) { isLookDragging = true; clearTimeout(lookTouchHoldTimer); isMining = false; mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none'; touchTargetPos = null; }
                 }
                 if (isLookDragging) {
                     player.yaw -= (t.clientX - lookLastPos.x) * 0.005; player.pitch -= (t.clientY - lookLastPos.y) * 0.005;
-                    player.pitch = Math.max(-Math.PI/2+0.01, Math.min(Math.PI/2-0.01, player.pitch));
-                    lookLastPos = {x: t.clientX, y: t.clientY};
+                    player.pitch = Math.max(-Math.PI/2+0.01, Math.min(Math.PI/2-0.01, player.pitch)); lookLastPos = {x: t.clientX, y: t.clientY};
                 }
             }
         }
@@ -1296,15 +1456,11 @@ function setupInput() {
         for(let i=0; i<e.changedTouches.length; i++) {
             if (e.changedTouches[i].identifier === lookTouchId) {
                 clearTimeout(lookTouchHoldTimer);
-                let wasMining = isMining; isMining = false;
-                mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none';
-                
+                let wasMining = isMining; isMining = false; mineTarget = null; mineProgress = 0; document.getElementById('mining-progress').style.display='none';
                 let timeSinceStart = Date.now() - lookTouchStartTime;
                 if (!isLookDragging && !wasMining && timeSinceStart < 300 && uiMode === 'none') {
-                    // It was a quick tap! Use exact screen coords.
                     const hit = doRaycast(touchTargetPos.x, touchTargetPos.y);
-                    if (hit && hit.hitMob !== undefined) attackMob(hit.hitMob); 
-                    else doInteract(touchTargetPos.x, touchTargetPos.y); 
+                    if (hit && hit.hitMob !== undefined) attackMob(hit.hitMob); else doInteract(touchTargetPos.x, touchTargetPos.y); 
                 }
                 lookTouchId = null; lookLastPos = null; touchTargetPos = null;
             }
@@ -1312,50 +1468,66 @@ function setupInput() {
     };
     lArea.addEventListener('touchend', endLook); lArea.addEventListener('touchcancel', endLook);
 
-    // Ensure Static UI buttons don't pass clicks through to the game
-    const staticBtnEvents = (id, fn) => {
-        let btn = document.getElementById(id);
-        btn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(); });
-    };
+    const staticBtnEvents = (id, fn) => { let btn = document.getElementById(id); btn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(); }); };
     staticBtnEvents('btn-ui-inv', () => openUI(uiMode === 'none' ? 'inventory' : 'none'));
     staticBtnEvents('btn-ui-settings', () => openUI(uiMode === 'none' ? 'settings' : 'none'));
 
-    document.getElementById('t-btn-jump').addEventListener('touchstart', e => { e.preventDefault(); if(player.onGround && uiMode==='none') player.vel.y=player.jumpForce; });
-
+    document.getElementById('t-btn-jump').addEventListener('touchstart', e => { e.preventDefault(); doJump(); });
     document.getElementById('btn-settings-close').addEventListener('click', () => openUI('none'));
     
-    // Render Dist Toggle
     document.getElementById('start-dist').addEventListener('click', toggleRenderDist);
     document.getElementById('btn-setting-dist').addEventListener('click', toggleRenderDist);
     
     function toggleRenderDist(e) {
         CONFIG.renderDistance = CONFIG.renderDistance === 1 ? 2 : (CONFIG.renderDistance === 2 ? 3 : 1);
         let txt = CONFIG.renderDistance === 1 ? "Close" : (CONFIG.renderDistance === 2 ? "Normal" : "Far");
-        document.getElementById('start-dist').innerText = txt;
-        document.getElementById('btn-setting-dist').innerText = txt;
-        if (scene) {
-            scene.fog.far = CONFIG.renderDistance * CHUNK_SIZE * 1.5;
-            for(let key in chunks) { if(chunks[key].mesh) { scene.remove(chunks[key].mesh); chunks[key].mesh.geometry.dispose(); } }
-            chunks = {};
-        }
+        document.getElementById('start-dist').innerText = txt; document.getElementById('btn-setting-dist').innerText = txt;
+        if (scene) scene.fog.far = CONFIG.renderDistance * CHUNK_SIZE * 1.5; 
     }
 
     document.getElementById('btn-setting-shadows').addEventListener('click', (e) => {
-        CONFIG.shadows = !CONFIG.shadows;
-        e.target.innerText = CONFIG.shadows ? "On" : "Off";
-        renderer.shadowMap.enabled = CONFIG.shadows;
-        if(dirLight) dirLight.castShadow = CONFIG.shadows;
+        CONFIG.shadows = !CONFIG.shadows; e.target.innerText = CONFIG.shadows ? "On" : "Off";
+        renderer.shadowMap.enabled = CONFIG.shadows; if(dirLight) dirLight.castShadow = CONFIG.shadows;
         for(let key in chunks) { if(chunks[key].mesh) { chunks[key].mesh.castShadow = CONFIG.shadows; chunks[key].mesh.receiveShadow = CONFIG.shadows; } }
         mobs.forEach(m => m.mesh.castShadow = CONFIG.shadows);
     });
 
     document.getElementById('btn-setting-touch').addEventListener('click', (e) => {
-        if(CONFIG.touchControls === 'auto') CONFIG.touchControls = 'force_on';
-        else if(CONFIG.touchControls === 'force_on') CONFIG.touchControls = 'force_off';
-        else CONFIG.touchControls = 'auto';
-        e.target.innerText = CONFIG.touchControls === 'force_on' ? "Always On" : (CONFIG.touchControls === 'force_off' ? "Always Off" : "Auto");
-        checkTouchMode();
+        if(CONFIG.touchControls === 'auto') CONFIG.touchControls = 'force_on'; else if(CONFIG.touchControls === 'force_on') CONFIG.touchControls = 'force_off'; else CONFIG.touchControls = 'auto';
+        e.target.innerText = CONFIG.touchControls === 'force_on' ? "Always On" : (CONFIG.touchControls === 'force_off' ? "Always Off" : "Auto"); checkTouchMode();
     });
+}
+
+function processFurnaces(dt) {
+    for (let key in furnaces) {
+        let f = furnaces[key];
+        let wasBurning = f.burnTime > 0;
+        if (f.burnTime > 0) f.burnTime -= dt * 20;
+
+        let canSmelt = f.input && SMELT_RECIPES[f.input.id] && (!f.output || (f.output.id === SMELT_RECIPES[f.input.id] && f.output.count < getMaxStack(f.output.id)));
+        
+        if (f.burnTime <= 0 && canSmelt && f.fuel && FUEL_TIMES[f.fuel.id]) {
+            f.maxBurnTime = f.burnTime = FUEL_TIMES[f.fuel.id];
+            f.fuel.count--; if(f.fuel.count <= 0) f.fuel = null;
+        }
+
+        if (f.burnTime > 0 && canSmelt) {
+            f.cookTime += dt * 20;
+            if (f.cookTime >= 50) { 
+                f.cookTime = 0;
+                let outId = SMELT_RECIPES[f.input.id];
+                f.input.count--; if(f.input.count <= 0) f.input = null;
+                if (!f.output) f.output = { id: outId, count: 1 };
+                else f.output.count++;
+            }
+        } else { f.cookTime = 0; }
+
+        if (uiMode === 'furnace' && currentFurnacePos === key) {
+            document.getElementById('fur-fire-icon').style.height = f.maxBurnTime > 0 ? `${(f.burnTime/f.maxBurnTime)*100}%` : '0%';
+            document.getElementById('fur-prog-bar').style.width = `${Math.min(100, (f.cookTime/50)*100)}%`;
+            if (wasBurning !== (f.burnTime > 0) || f.cookTime === 0 || f.cookTime >= 50) renderUI(); 
+        }
+    }
 }
 
 // --- MAIN LOOP ---
@@ -1374,21 +1546,34 @@ function gameLoop() {
         updateMobs(dt);
     }
     
-    if (dirLight) {
-        dirLight.position.set(player.pos.x + 20, player.pos.y + 30, player.pos.z + 10);
-        dirLight.target.position.copy(player.pos);
-        dirLight.target.updateMatrixWorld();
+    if (scene) {
+        processFurnaces(dt);
+        
+        if (dirLight) {
+            dirLight.position.set(player.pos.x + 20, player.pos.y + 30, player.pos.z + 10);
+            dirLight.target.position.copy(player.pos); dirLight.target.updateMatrixWorld();
+        }
+
+        placedTorches.sort((a,b) => {
+            return ((a.x-player.pos.x)**2 + (a.y-player.pos.y)**2 + (a.z-player.pos.z)**2) - ((b.x-player.pos.x)**2 + (b.y-player.pos.y)**2 + (b.z-player.pos.z)**2);
+        });
+        for(let i=0; i<MAX_TORCHES; i++) {
+            if (i < placedTorches.length && ((placedTorches[i].x-player.pos.x)**2 + (placedTorches[i].y-player.pos.y)**2 + (placedTorches[i].z-player.pos.z)**2) < 400) {
+                torchLights[i].position.set(placedTorches[i].x + 0.5, placedTorches[i].y + 0.5, placedTorches[i].z + 0.5);
+                torchLights[i].intensity = 1.2;
+            } else { torchLights[i].intensity = 0; }
+        }
     }
 
     if (renderer && scene && camera) renderer.render(scene, camera);
 }
 
 document.getElementById('btn-start').addEventListener('click', () => {
-    CONFIG.terrainMod = parseFloat(document.getElementById('start-terrain').value);
+    CONFIG.terrainMode = document.getElementById('start-terrain').value;
     document.getElementById('start-screen').style.display = 'none';
     init(); lockPointer();
 });
-document.getElementById('start-screen').style.display = 'flex'; // Initial show
+document.getElementById('start-screen').style.display = 'flex'; 
 </script>
 </body>
 </html>
