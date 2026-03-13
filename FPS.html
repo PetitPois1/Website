@@ -23,7 +23,7 @@
             color: rgba(255, 255, 255, 0.6); font-weight: bold; font-size: 24px;
             display: flex; justify-content: center; align-items: center;
             pointer-events: auto; text-shadow: 1px 1px 0 #000;
-            border-radius: 8px; /* Slightly rounded for modern mobile feel */
+            border-radius: 8px; 
         }
         .btn:active { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.9); color: #FFF; }
         
@@ -61,6 +61,22 @@
             border: 4px solid #020;
         }
         
+        /* NEW: Faint Fiddler Background */
+        #menu-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('Fiddler.png'); 
+            background-size: 300px; 
+            background-position: center; 
+            background-repeat: no-repeat;
+            opacity: 0.15; /* Makes it faint */
+            z-index: 1; pointer-events: none;
+        }
+
+        /* Ensure menu text stays above the faint background */
+        #menu > *:not(#menu-bg) {
+            position: relative; z-index: 10;
+        }
+
         @keyframes glitch {
             0% { text-shadow: 2px 0 0 #0F0, -2px 0 0 #050; }
             50% { text-shadow: -2px 0 0 #0F0, 2px 0 0 #050; }
@@ -112,7 +128,7 @@
 <body>
 
     <div id="menu">
-        <h1 id="game-title"> Escape His Island </h1>
+        <div id="menu-bg"></div> <h1 id="game-title"> Escape His Island </h1>
         <div id="description">this time YOU are in the files .</div>
         
         <div id="instructions">
@@ -180,7 +196,11 @@
         const texBoss = new Image();
         texBoss.src = "BigYahoo.png";
 
-        // 4. Ammo Box 
+        // NEW: 4. The Orange (New Enemy Image Load)
+        const texOrange = new Image();
+        texOrange.src = "TheOrange.png";
+
+        // 5. Ammo Box 
         const texAmmo = document.createElement('canvas');
         texAmmo.width = texWidth; texAmmo.height = texHeight;
         const aCtx = texAmmo.getContext('2d');
@@ -250,22 +270,23 @@
                 width: 15, height: 15,
                 map: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
                     [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
                     [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,1,3,0,0,0,0,0,0,1],
-                    [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,1,3,1,0,0,0,0,0,1],
+                    [1,1,1,0,0,0,1,0,1,0,0,0,1,1,1],
                     [1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
                     [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
                     [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
                 ],
-                spawnX: 7.5, spawnY: 13.5, enemyTex: texCyclops,
+                // NEW: Enemy is now The Orange for Level 3!
+                spawnX: 7.5, spawnY: 13.5, enemyTex: texOrange,
                 colors: { sky0: '#000205', sky1: '#000a15', floor0: '#000a0f', floor1: '#05101a', wallN: [30,50,70], wallE: [20,35,50] }
             },
             {
@@ -354,7 +375,6 @@
             }
         }
 
-        // --- NEW: Cinematic Overlay ---
         function showOverlay(title, subtitle, callback) {
             let overlay = document.getElementById('overlay-msg');
             document.getElementById('overlay-title').innerText = title;
@@ -364,7 +384,7 @@
             setTimeout(() => {
                 overlay.style.display = 'none';
                 if(callback) callback();
-            }, 3500); // Overlay stays for 3.5 seconds
+            }, 3500); 
         }
 
         function advanceCampaign() {
@@ -420,7 +440,9 @@
         }
         bindButton('btn-up', 'up'); bindButton('btn-down', 'down'); bindButton('btn-left', 'left'); bindButton('btn-right', 'right');
 
-        let isDragging = false; let lastPointerX = 0;
+        // NEW: Multi-Touch System for Looking around while running!
+        let isDragging = false; let lastPointerX = 0; let lookTouchId = null;
+        
         function rotatePlayer(amount) {
             const oldDirX = player.dirX;
             player.dirX = player.dirX * Math.cos(amount) - player.dirY * Math.sin(amount);
@@ -429,13 +451,41 @@
             player.planeX = player.planeX * Math.cos(amount) - player.planeY * Math.sin(amount);
             player.planeY = oldPlaneX * Math.sin(amount) + player.planeY * Math.cos(amount);
         }
+        
         const startLook = (x) => { if(gameActive) { isDragging = true; lastPointerX = x; }};
         const moveLook = (x) => { if (!isDragging || !gameActive) return; rotatePlayer((x - lastPointerX) * 0.015); lastPointerX = x; };
         const endLook = () => { isDragging = false; };
 
-        canvas.addEventListener('touchstart', e => startLook(e.touches[0].clientX), {passive: false});
-        canvas.addEventListener('touchmove', e => { e.preventDefault(); moveLook(e.touches[0].clientX); }, {passive: false});
-        canvas.addEventListener('touchend', endLook);
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            for(let i=0; i < e.changedTouches.length; i++) {
+                lookTouchId = e.changedTouches[i].identifier;
+                startLook(e.changedTouches[i].clientX);
+                break; // Lock onto the first finger that touches the canvas background
+            }
+        }, {passive: false});
+
+        canvas.addEventListener('touchmove', e => { 
+            e.preventDefault(); 
+            for(let i=0; i < e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === lookTouchId) {
+                    moveLook(e.changedTouches[i].clientX);
+                    break;
+                }
+            }
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', e => {
+            for(let i=0; i < e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === lookTouchId) {
+                    endLook();
+                    lookTouchId = null;
+                    break;
+                }
+            }
+        });
+        
+        // Mouse fallbacks for desktop
         canvas.addEventListener('mousedown', e => startLook(e.clientX));
         window.addEventListener('mousemove', e => moveLook(e.clientX));
         window.addEventListener('mouseup', endLook);
@@ -489,7 +539,6 @@
                             });
                         }
 
-                        // NEW: Victory Screen trigger!
                         if (enemy.isBoss) {
                             setTimeout(() => {
                                 gameOver("VICTORY! YOU ESCAPED HIS ISLAND!");
@@ -600,20 +649,16 @@
             if (input.right) { moveX += player.planeX * player.moveSpeed; moveY += player.planeY * player.moveSpeed; moving = true; }
             if (input.left) { moveX -= player.planeX * player.moveSpeed; moveY -= player.planeY * player.moveSpeed; moving = true; }
 
-            // NEW: Smooth Wall Sliding Collision
             let nX = player.x + moveX;
             let nY = player.y + moveY;
 
-            // X-Axis collision check
             if (worldMap[Math.floor(nX)] && (worldMap[Math.floor(nX)][Math.floor(player.y)] === 0 || worldMap[Math.floor(nX)][Math.floor(player.y)] === 3)) {
                 player.x = nX;
             }
-            // Y-Axis collision check
             if (worldMap[Math.floor(player.x)] && (worldMap[Math.floor(player.x)][Math.floor(nY)] === 0 || worldMap[Math.floor(player.x)][Math.floor(nY)] === 3)) {
                 player.y = nY;
             }
 
-            // Check if player stepped into the exit portal
             if (worldMap[Math.floor(player.x)][Math.floor(player.y)] === 3) {
                 if(isCampaign) advanceCampaign();
             }
