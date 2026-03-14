@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dimension Pool 2D/3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root { --primary: #00ffcc; --bg: #0a0a0a; --glass: rgba(20, 20, 20, 0.85); }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white; user-select: none; touch-action: none;
+        }
+
+        #gameCanvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
+        #webgl-container { position: absolute; top: 0; left: 0; z-index: 1; display: none; width: 100%; height: 100%; cursor: crosshair; }
+
+        /* UI Layer */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none; display: flex;
+            flex-direction: column; justify-content: space-between;
+            opacity: 0; transition: opacity 0.8s ease; display: none;
+        }
+
+        .hud { padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .scoreboard { display: flex; gap: 15px; pointer-events: auto; }
+        .hud-panel {
+            background: var(--glass); backdrop-filter: blur(10px);
+            padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.2rem; font-weight: bold; text-align: center; transition: all 0.3s;
+        }
+        .active-turn { box-shadow: 0 0 15px var(--primary); border-color: var(--primary); transform: scale(1.05); }
+
+        .hud-buttons { display: flex; gap: 10px; pointer-events: auto; }
+        .hud-btn { padding: 8px 15px; background: var(--glass); color: white; border: 1px solid var(--primary); border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .hud-btn:hover { background: var(--primary); color: black; }
+
+        #controls {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 20px; pointer-events: auto;
+            background: var(--glass); padding: 20px; border-radius: 20px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #powerSlider {
+            appearance: none; width: 150px; height: 10px; border-radius: 5px; background: #333;
+            outline: none; transform: rotate(-90deg); margin: 70px 0; cursor: pointer; touch-action: auto;
+        }
+        #powerSlider::-webkit-slider-thumb {
+            appearance: none; width: 25px; height: 25px; border-radius: 50%;
+            background: var(--primary); cursor: pointer; box-shadow: 0 0 10px var(--primary);
+        }
+        #shootBtn {
+            background: var(--primary); color: #000; font-weight: bold; padding: 15px;
+            border-radius: 50%; width: 70px; height: 70px; border: none; cursor: pointer;
+            box-shadow: 0 0 20px var(--primary); font-size: 1.1rem; text-transform: uppercase;
+        }
+        #shootBtn:active { transform: scale(0.95); }
+
+        #turn-indicator {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            font-size: 1.5rem; font-weight: bold; text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0,255,204,0.5); pointer-events: none;
+        }
+
+        /* Menu */
+        #menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(8px);
+            z-index: 20; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; pointer-events: auto;
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s;
+        }
+        .menu-hidden { opacity: 0; transform: scale(1.1); pointer-events: none; }
+        
+        h1 { font-size: 4rem; letter-spacing: 5px; margin-bottom: 20px; text-shadow: 0 0 30px var(--primary); animation: float 3s infinite; text-align: center; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .menu-card { background: var(--glass); padding: 40px; border-radius: 20px; width: 80%; max-width: 400px; border: 1px solid rgba(255,255,255,0.2); }
+        .settings-row { display: flex; justify-content: space-between; margin: 20px 0; font-size: 1.1rem; }
+        select { background: #222; color: white; border: 1px solid var(--primary); padding: 5px; border-radius: 5px; }
+        button.play-btn { background: transparent; color: white; border: 2px solid var(--primary); padding: 15px; font-size: 1.3rem; border-radius: 30px; cursor: pointer; width: 100%; transition: 0.3s; text-transform: uppercase; font-weight: bold; margin-top: 10px; }
+        button.play-btn:hover { background: var(--primary); color: black; box-shadow: 0 0 20px var(--primary); }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="webgl-container"></div>
+
+    <div id="ui-layer">
+        <div class="hud">
+            <div class="scoreboard">
+                <div class="hud-panel active-turn" id="panel-player">Player: <span id="playerScore">0</span></div>
+                <div class="hud-panel" id="panel-cpu">CPU: <span id="cpuScore">0</span></div>
+            </div>
+            <div class="hud-buttons">
+                <button class="hud-btn" id="toggleViewBtn" onclick="toggleViewMode()">Switch to 3D</button>
+                <button class="hud-btn" onclick="returnToMenu()">Menu</button>
+            </div>
+        </div>
+        <div id="turn-indicator">Your Turn</div>
+        <div id="controls">
+            <input type="range" id="powerSlider" min="1" max="30" value="15">
+            <button id="shootBtn" onclick="shootCue()">SHOOT</button>
+        </div>
+    </div>
+
+    <div id="menu">
+        <h1>Dimension Pool</h1>
+        <div class="menu-card">
+            <div class="settings-row"><span>Start View:</span>
+                <select id="modeSelect"><option value="2d">2D High-Res</option><option value="3d">3D Blocky</option></select>
+            </div>
+            <div class="settings-row"><span>Difficulty:</span>
+                <select id="diffSelect"><option value="easy">Casual CPU</option><option value="hard">Pro CPU</option></select>
+            </div>
+            <button class="play-btn" onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+<script>
+    const state = {
+        mode: '2d', isMenu: true,
+        playerScore: 0, cpuScore: 0, turn: 'player',
+        tableWidth: 800, tableHeight: 400,
+        aimAngle: 0
+    };
+
+    const BALL_RADIUS = 15;
+    const POCKET_RADIUS = 28;
+    const pockets = [
+        {x: 0, y: 0}, {x: state.tableWidth/2, y: -10}, {x: state.tableWidth, y: 0},
+        {x: 0, y: state.tableHeight}, {x: state.tableWidth/2, y: state.tableHeight+10}, {x: state.tableWidth, y: state.tableHeight}
+    ];
+
+    let balls = [];
+
+    class Ball {
+        constructor(x, y, color, isCue = false) {
+            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
+            this.radius = BALL_RADIUS; this.color = color; this.isCue = isCue;
+            this.active = true; this.mesh3D = null;
+        }
+        update() {
+            if (!this.active) return;
+            
+            let speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > 0) {
+                let friction = 0.025; 
+                let drop = speed < friction ? speed : friction;
+                let ratio = (speed - drop) / speed;
+                this.vx *= ratio; this.vy *= ratio;
+            }
+            if (speed < 0.05) { this.vx = 0; this.vy = 0; }
+
+            this.x += this.vx; this.y += this.vy;
+
+            let bounceLoss = 0.85;
+            if (this.x < this.radius) { this.x = this.radius; this.vx *= -bounceLoss; }
+            if (this.x > state.tableWidth - this.radius) { this.x = state.tableWidth - this.radius; this.vx *= -bounceLoss; }
+            if (this.y < this.radius) { this.y = this.radius; this.vy *= -bounceLoss; }
+            if (this.y > state.tableHeight - this.radius) { this.y = state.tableHeight - this.radius; this.vy *= -bounceLoss; }
+
+            pockets.forEach(p => {
+                let dx = this.x - p.x; let dy = this.y - p.y;
+                if (Math.sqrt(dx*dx + dy*dy) < POCKET_RADIUS) {
+                    this.active = false; this.vx = 0; this.vy = 0;
+                    if (this.mesh3D) this.mesh3D.visible = false;
+                    
+                    if (!state.isMenu) {
+                        if (this.isCue) {
+                            setTimeout(() => { this.x = 200; this.y = state.tableHeight/2; this.active = true; if (this.mesh3D) this.mesh3D.visible = true; }, 1000);
+                        } else {
+                            state.turn === 'player' ? state.playerScore++ : state.cpuScore++;
+                            updateUI();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function resetTable() {
+        balls = [new Ball(200, state.tableHeight / 2, '#ffffff', true)];
+        const startX = 600; const startY = state.tableHeight / 2;
+        let colors = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#111111'];
+        let idx = 0;
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col <= row; col++) {
+                let bx = startX + row * (BALL_RADIUS * 1.8);
+                let by = startY - (row * BALL_RADIUS * 0.9) + (col * BALL_RADIUS * 1.8);
+                balls.push(new Ball(bx, by, colors[idx % colors.length]));
+                idx++;
+            }
+        }
+    }
+
+    function checkCollisions() {
+        for (let i = 0; i < balls.length; i++) {
+            for (let j = i + 1; j < balls.length; j++) {
+                let b1 = balls[i]; let b2 = balls[j];
+                if (!b1.active || !b2.active) continue;
+                let dx = b2.x - b1.x; let dy = b2.y - b1.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < b1.radius + b2.radius) {
+                    let overlap = 0.5 * (b1.radius + b2.radius - dist + 1);
+                    b1.x -= overlap * dx / dist; b1.y -= overlap * dy / dist;
+                    b2.x += overlap * dx / dist; b2.y += overlap * dy / dist;
+
+                    let angle = Math.atan2(dy, dx);
+                    let sin = Math.sin(angle); let cos = Math.cos(angle);
+                    let v1x = b1.vx * cos + b1.vy * sin; let v1y = b1.vy * cos - b1.vx * sin;
+                    let v2x = b2.vx * cos + b2.vy * sin; let v2y = b2.vy * cos - b2.vx * sin;
+                    let temp = v1x; v1x = v2x; v2x = temp; 
+                    
+                    b1.vx = (v1x * cos - v1y * sin) * 0.95; b1.vy = (v1y * cos + v1x * sin) * 0.95;
+                    b2.vx = (v2x * cos - v2y * sin) * 0.95; b2.vy = (v2y * cos + v2x * sin) * 0.95;
+                }
+            }
+        }
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const scale = Math.min(window.innerWidth / state.tableWidth, window.innerHeight / state.tableHeight) * 0.9;
+        ctx.setTransform(scale, 0, 0, scale, (window.innerWidth - state.tableWidth * scale)/2, (window.innerHeight - state.tableHeight * scale)/2);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function render2D() {
+        ctx.clearRect(0, 0, state.tableWidth, state.tableHeight);
+        
+        ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-30, -30, state.tableWidth+60, state.tableHeight+60);
+        ctx.fillStyle = '#0a5c36'; ctx.fillRect(0, 0, state.tableWidth, state.tableHeight);
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, state.tableWidth-10, state.tableHeight-10);
+
+        pockets.forEach(p => {
+            let grad = ctx.createRadialGradient(p.x, p.y, POCKET_RADIUS*0.2, p.x, p.y, POCKET_RADIUS);
+            grad.addColorStop(0, '#000'); grad.addColorStop(1, '#222');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2); ctx.fill();
+        });
+
+        if (!state.isMenu && state.turn === 'player' && isBallsStopped()) {
+            let cue = balls[0];
+            ctx.beginPath(); ctx.moveTo(cue.x, cue.y);
+            ctx.lineTo(cue.x + Math.cos(state.aimAngle) * 500, cue.y + Math.sin(state.aimAngle) * 500);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.setLineDash([10, 10]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+
+            let powerOffset = document.getElementById('powerSlider').value * 2;
+            ctx.beginPath();
+            ctx.moveTo(cue.x - Math.cos(state.aimAngle) * (20 + powerOffset), cue.y - Math.sin(state.aimAngle) * (20 + powerOffset));
+            ctx.lineTo(cue.x - Math.cos(state.aimAngle) * (180 + powerOffset), cue.y - Math.sin(state.aimAngle) * (180 + powerOffset));
+            ctx.strokeStyle = '#d4a373'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
+        }
+
+        balls.forEach(ball => {
+            if (!ball.active) return;
+            ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.arc(ball.x + 3, ball.y + 3, ball.radius, 0, Math.PI*2); ctx.fill();
+            let grad = ctx.createRadialGradient(ball.x - ball.radius/3, ball.y - ball.radius/3, 2, ball.x, ball.y, ball.radius);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.2, ball.color); grad.addColorStop(1, '#000');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); ctx.fill();
+        });
+    }
+
+    let scene, camera, renderer, cueStick3D;
+    function init3D() {
+        if(scene) return; 
+        const container = document.getElementById('webgl-container'); container.innerHTML = '';
+        scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); 
+        renderer.shadowMap.enabled = true; container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const pointLight = new THREE.PointLight(0xffffff, 0.8); pointLight.position.set(400, 300, 200); 
+        pointLight.castShadow = true; scene.add(pointLight);
+
+        const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(state.tableWidth, 10, state.tableHeight), new THREE.MeshPhongMaterial({ color: 0x0a5c36 }));
+        tableMesh.position.set(state.tableWidth/2, -5, state.tableHeight/2); tableMesh.receiveShadow = true; scene.add(tableMesh);
+
+        const woodMat = new THREE.MeshPhongMaterial({ color: 0x5c3a21 });
+        const borderZ = new THREE.BoxGeometry(state.tableWidth + 40, 20, 20); const borderX = new THREE.BoxGeometry(20, 20, state.tableHeight);
+        const bTop = new THREE.Mesh(borderZ, woodMat); bTop.position.set(state.tableWidth/2, 5, -10); scene.add(bTop);
+        const bBot = new THREE.Mesh(borderZ, woodMat); bBot.position.set(state.tableWidth/2, 5, state.tableHeight+10); scene.add(bBot);
+        const bLeft = new THREE.Mesh(borderX, woodMat); bLeft.position.set(-10, 5, state.tableHeight/2); scene.add(bLeft);
+        const bRight = new THREE.Mesh(borderX, woodMat); bRight.position.set(state.tableWidth+10, 5, state.tableHeight/2); scene.add(bRight);
+
+        pockets.forEach(p => {
+            const pocketMesh = new THREE.Mesh(new THREE.CylinderGeometry(POCKET_RADIUS, POCKET_RADIUS, 12, 16), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+            pocketMesh.position.set(p.x, 0, p.y); scene.add(pocketMesh);
+        });
+
+        const cueGeo = new THREE.CylinderGeometry(1.5, 3.5, 200, 8); 
+        cueGeo.translate(0, 100, 0); cueGeo.rotateX(Math.PI / 2); cueGeo.rotateY(-Math.PI / 2); 
+        cueStick3D = new THREE.Mesh(cueGeo, new THREE.MeshPhongMaterial({ color: 0xd4a373 })); scene.add(cueStick3D); cueStick3D.visible = false;
+
+        balls.forEach(ball => {
+            ball.mesh3D = new THREE.Mesh(new THREE.BoxGeometry(ball.radius*2, ball.radius*2, ball.radius*2), new THREE.MeshPhongMaterial({ color: ball.color }));
+            ball.mesh3D.castShadow = true; scene.add(ball.mesh3D);
+        });
+    }
+
+    function render3D() {
+        if (!scene) return;
+        let cueBall = balls[0];
+
+        balls.forEach(ball => {
+            if (ball.active && ball.mesh3D) {
+                ball.mesh3D.position.set(ball.x, ball.radius, ball.y);
+                ball.mesh3D.rotation.x += ball.vy * 0.05; ball.mesh3D.rotation.z -= ball.vx * 0.05;
+                ball.mesh3D.visible = true; 
+            }
+        });
+
+        if (cueBall && cueBall.active) {
+            if (!state.isMenu && state.turn === 'player' && isBallsStopped()) {
+                camera.position.set(cueBall.x - Math.cos(state.aimAngle)*150, 100, cueBall.y - Math.sin(state.aimAngle)*150);
+                camera.lookAt(cueBall.x + Math.cos(state.aimAngle)*50, 0, cueBall.y + Math.sin(state.aimAngle)*50);
+                
+                cueStick3D.visible = true;
+                let sliderOffset = document.getElementById('powerSlider').value * 2;
+                cueStick3D.position.set(cueBall.x - Math.cos(state.aimAngle)*(20 + sliderOffset), cueBall.radius, cueBall.y - Math.sin(state.aimAngle)*(20 + sliderOffset));
+                cueStick3D.rotation.y = -state.aimAngle;
+            } else {
+                cueStick3D.visible = false;
+                camera.position.set(cueBall.x, 250, cueBall.y + 150); camera.lookAt(cueBall.x, 0, cueBall.y);
+            }
+        }
+        renderer.render(scene, camera);
+    }
+
+    function toggleViewMode() {
+        const btn = document.getElementById('toggleViewBtn');
+        if (state.mode === '2d') {
+            state.mode = '3d';
+            document.getElementById('gameCanvas').style.display = 'none';
+            document.getElementById('webgl-container').style.display = 'block';
+            init3D(); 
+            btn.innerText = 'Switch to 2D';
+        } else {
+            state.mode = '2d';
+            document.getElementById('gameCanvas').style.display = 'block';
+            document.getElementById('webgl-container').style.display = 'none';
+            btn.innerText = 'Switch to 3D';
+        }
+    }
+
+    let isDragging = false; let lastMouse = {x:0, y:0};
+    
+    function inputStart(e) { 
+        // FIX: Ignore drags if clicking ANYWHERE inside the UI layer or the Menu
+        if (e.target.closest('#ui-layer') || e.target.closest('#menu')) return;
+        if (state.isMenu) return; 
+        
+        isDragging = true; 
+        lastMouse = {x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY}; 
+    }
+    
+    function inputMove(e) {
+        if (!isDragging || state.turn !== 'player' || !isBallsStopped()) return;
+        let current = {x: e.clientX || (e.touches ? e.touches[0].clientX : 0), y: e.clientY || (e.touches ? e.touches[0].clientY : 0)};
+        let dx = current.x - lastMouse.x;
+        state.aimAngle += dx * 0.01; 
+        lastMouse = current;
+    }
+    function inputEnd() { isDragging = false; }
+
+    window.addEventListener('touchstart', inputStart, {passive: false}); 
+    window.addEventListener('touchmove', inputMove, {passive: false}); 
+    window.addEventListener('touchend', inputEnd);
+    window.addEventListener('mousedown', inputStart); 
+    window.addEventListener('mousemove', inputMove); 
+    window.addEventListener('mouseup', inputEnd);
+
+    function shootCue() {
+        if (state.turn !== 'player' || !isBallsStopped() || state.isMenu) return;
+        let power = document.getElementById('powerSlider').value;
+        balls[0].vx = Math.cos(state.aimAngle) * power;
+        balls[0].vy = Math.sin(state.aimAngle) * power;
+        
+        document.getElementById('powerSlider').value = 15;
+        switchTurn('cpu');
+    }
+
+    function switchTurn(newTurn) {
+        state.turn = newTurn; updateUI();
+        if (newTurn === 'cpu') setTimeout(cpuTurn, 2000);
+    }
+
+    function updateUI() {
+        document.getElementById('playerScore').innerText = state.playerScore; document.getElementById('cpuScore').innerText = state.cpuScore;
+        const ind = document.getElementById('turn-indicator');
+        if (state.turn === 'player') {
+            ind.innerText = "Your Turn"; ind.style.color = "#00ffcc";
+            document.getElementById('panel-player').classList.add('active-turn'); document.getElementById('panel-cpu').classList.remove('active-turn');
+            document.getElementById('controls').style.opacity = '1'; document.getElementById('controls').style.pointerEvents = 'auto';
+        } else {
+            ind.innerText = "CPU Thinking..."; ind.style.color = "#ff3333";
+            document.getElementById('panel-cpu').classList.add('active-turn'); document.getElementById('panel-player').classList.remove('active-turn');
+            document.getElementById('controls').style.opacity = '0.5'; document.getElementById('controls').style.pointerEvents = 'none';
+        }
+    }
+
+    function cpuTurn() {
+        if (state.isMenu) return;
+        let target = balls.find(b => b.active && !b.isCue); let cue = balls[0];
+        if (target && cue.active) {
+            let dx = target.x - cue.x; let dy = target.y - cue.y;
+            let angle = Math.atan2(dy, dx);
+            let error = document.getElementById('diffSelect').value === 'easy' ? 0.15 : 0.02;
+            angle += (Math.random() * error * 2) - error;
+            let power = 15 + Math.random() * 10;
+            cue.vx = Math.cos(angle) * power; cue.vy = Math.sin(angle) * power;
+        }
+        let check = setInterval(() => { if (isBallsStopped()) { clearInterval(check); switchTurn('player'); } }, 500);
+    }
+
+    function isBallsStopped() { return balls.every(b => Math.abs(b.vx) === 0 && Math.abs(b.vy) === 0); }
+
+    function gameLoop() {
+        balls.forEach(b => b.update()); checkCollisions();
+        state.mode === '2d' ? render2D() : render3D();
+        
+        if (state.isMenu && isBallsStopped()) {
+            setTimeout(() => {
+                if(state.isMenu && isBallsStopped()) { resetTable(); balls[0].vx = 25; balls[0].vy = (Math.random()-0.5)*5; }
+            }, 2000);
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        state.mode = document.getElementById('modeSelect').value;
+        state.isMenu = false; state.playerScore = 0; state.cpuScore = 0; state.aimAngle = 0;
+
+        document.getElementById('menu').classList.add('menu-hidden');
+        
+        setTimeout(() => {
+            // FIX: Completely remove the menu from the DOM tree so it can't be clicked
+            document.getElementById('menu').style.display = 'none'; 
+            document.getElementById('ui-layer').style.display = 'flex';
+            setTimeout(()=> document.getElementById('ui-layer').style.opacity = '1', 50);
+        }, 800);
+
+        resetTable(); switchTurn('player');
+        
+        const toggleBtn = document.getElementById('toggleViewBtn');
+
+        if (state.mode === '2d') { 
+            document.getElementById('gameCanvas').style.display = 'block'; 
+            document.getElementById('webgl-container').style.display = 'none'; 
+            toggleBtn.innerText = 'Switch to 3D';
+            resizeCanvas(); 
+        } else { 
+            document.getElementById('gameCanvas').style.display = 'none'; 
+            document.getElementById('webgl-container').style.display = 'block'; 
+            toggleBtn.innerText = 'Switch to 2D';
+            init3D(); 
+        }
+    }
+
+    function returnToMenu() {
+        state.isMenu = true;
+        document.getElementById('ui-layer').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('ui-layer').style.display = 'none';
+            // FIX: Bring the menu back to the DOM tree
+            document.getElementById('menu').style.display = 'flex'; 
+            document.getElementById('menu').classList.remove('menu-hidden');
+            if (scene) { document.getElementById('webgl-container').innerHTML = ''; scene = null; }
+            document.getElementById('gameCanvas').style.display = 'block';
+            state.mode = '2d'; 
+            resizeCanvas(); resetTable(); balls[0].vx = 25; 
+        }, 800);
+    }
+
+    resizeCanvas(); resetTable(); balls[0].vx = 25; 
+    gameLoop();
+</script>
+</body>
+</html>
