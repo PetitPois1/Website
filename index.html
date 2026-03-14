@@ -91,6 +91,77 @@
             left: 100%;
         }
 
+        .filter-chip {
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: #ffffff;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .friend-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px 8px;
+            border-radius: 99px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            font-size: 0.65rem;
+            color: #4ade80;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        .like-button {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .like-button:hover {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: #fb7185;
+        }
+
+        .like-button.liked {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: #f43f5e;
+            color: #f43f5e;
+        }
+
         .search-wrapper {
             position: relative;
             max-width: 500px;
@@ -266,7 +337,7 @@
     </header>
 
     <!-- Search Section -->
-    <div class="max-w-6xl mx-auto px-6 mb-12 flex justify-center">
+    <div class="max-w-6xl mx-auto px-6 mb-8 flex flex-col items-center gap-6">
         <div class="search-wrapper">
             <input 
                 type="text" 
@@ -284,6 +355,16 @@
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                 </svg>
             </button>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-3">
+            <button class="filter-chip active" onclick="setFilter('all', this)">All Games</button>
+            <button class="filter-chip" onclick="setFilter('liked', this)">My Liked</button>
+            <button class="filter-chip" onclick="setFilter('arcade', this)">Arcade</button>
+            <button class="filter-chip" onclick="setFilter('puzzle', this)">Puzzle</button>
+            <button class="filter-chip" onclick="setFilter('cards', this)">Cards</button>
+            <button class="filter-chip" onclick="setFilter('beta', this)">Beta</button>
+            <button class="filter-chip" onclick="setFilter('popular', this)">Most Popular</button>
         </div>
     </div>
 
@@ -332,30 +413,144 @@
         });
 
         const games = [
-            { name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false, broken: false },
-            { name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false },
-            { name: "Pong", url: "pong_game.html", icon: "🏓", beta: false, broken: false },
-            { name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true, broken: false },
-            { name: "Blockblast", url: "Blockblast.html", icon: "🧱", beta: false, broken: false },
-            { name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true, broken: true },
-            { name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false, broken: false },
-            { name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: true },
-            { name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false, broken: false },
-            { name: "Poker", url: "poker.html", icon: "💎", beta: false, broken: false },
-            { name: "Mining", url: "Mining.html", icon: "⛏️", beta: true, broken: false },
-            { name: "Loopy Puzzle", url: "Loopy.html", icon: "➰", beta: false, broken: false },
-            { name: "Neon Dash", url: "NeonDash.html", icon: "🟦", beta: true, broken: false },
-            { name: "Brick Breaker", url: "BrickBreaker.html", icon: "🧱", beta: true, broken: false }
+            { id: "snake", name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false, broken: false, tags: ["arcade"], likes: 124 },
+            { id: "tic-tac-toe", name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false, tags: ["puzzle"], likes: 45 },
+            { id: "pong", name: "Pong", url: "pong_game.html", icon: "🏓", beta: false, broken: false, tags: ["arcade"], likes: 82 },
+            { id: "clicker", name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 210 },
+            { id: "blockblast", name: "Blockblast", url: "Blockblast.html", icon: "🧱", beta: false, broken: false, tags: ["puzzle"], likes: 342 },
+            { id: "tower-defence", name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true, broken: true, tags: ["arcade", "beta"], likes: 12 },
+            { id: "blackjack", name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false, broken: false, tags: ["cards"], likes: 156 },
+            { id: "pacman", name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: true, tags: ["arcade"], likes: 5 },
+            { id: "flappy", name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false, broken: false, tags: ["arcade"], likes: 189 },
+            { id: "poker", name: "Poker", url: "poker.html", icon: "💎", beta: false, broken: false, tags: ["cards"], likes: 98 },
+            { id: "mining", name: "Mining", url: "Mining.html", icon: "⛏️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 167 },
+            { id: "loopy", name: "Loopy Puzzle", url: "Loopy.html", icon: "➰", beta: false, broken: false, tags: ["puzzle"], likes: 54 },
+            { id: "neondash", name: "Neon Dash", url: "NeonDash.html", icon: "🟦", beta: true, broken: false, tags: ["arcade", "beta"], likes: 288 },
+            { id: "brickbreaker", name: "Brick Breaker", url: "BrickBreaker.html", icon: "🧱", beta: true, broken: false, tags: ["arcade", "beta"], likes: 143 },
+            { id: "island", name: "The Island", url: "FPS.html", icon: "🏝️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 0 },
+            { id: "swordbattle", name: "Sword Battle IO", url: "SwordbattleIO.html", icon: "⚔️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 0 },
+            { id: "voxelcraft", name: "Voxelcraft", url: "Voxelcraft.html", icon: "🧊", beta: true, broken: false, tags: ["arcade", "beta"], likes: 0 }
         ];
+
+        let currentFilter = "all";
+        let likedGames = JSON.parse(localStorage.getItem("gamehub_liked_games") || "[]");
+        let friendActivity = {}; // Format: {gameId: [friendNames]}
+        let gameLikes = {}; // Format: {gameId: count}
+
+        function setFilter(tag, el) {
+            currentFilter = tag;
+            document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderGames(document.getElementById('search-bar').value);
+        }
 
         const grid = document.getElementById('game-grid');
 
-        function renderGames(filter = "") {
-            grid.innerHTML = "";
-            const filtered = games.filter(g => g.name.toLowerCase().includes(filter.toLowerCase()));
+        async function fetchGameLikes() {
+            if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const db = window.gameHubFirebase.db;
+            try {
+                // Fetch ALL global likes once
+                const snapshot = await db.collection("game_likes").get();
+                const newLikes = {};
+                snapshot.forEach(doc => {
+                    newLikes[doc.id] = doc.data().count || 0;
+                });
+                gameLikes = newLikes;
+
+                // Sync personal likes from the cloud profile
+                const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
+                if (user) {
+                    const userDoc = await db.collection("users").doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const data = userDoc.data();
+                        if (data.likedGames) {
+                            likedGames = data.likedGames;
+                            // Ensure local cache stays in sync
+                            localStorage.setItem("gamehub_liked_games", JSON.stringify(likedGames));
+                        }
+                    }
+                }
+
+                renderGames(document.getElementById('search-bar').value);
+            } catch(e) { 
+                console.error("[Index] Failed to fetch likes from Firestore:", e);
+                // Fallback to local storage if offline
+                likedGames = JSON.parse(localStorage.getItem("gamehub_liked_games") || "[]");
+                renderGames(document.getElementById('search-bar').value);
+            }
+        }
+
+        async function toggleLike(e, gameId) {
+            e.stopPropagation();
+            if (!window.gameHubAuth || !window.gameHubAuth.getCurrentUser()) {
+                alert("Please sign in to like games!");
+                return;
+            }
+
+            const db = window.gameHubFirebase.db;
+            const user = window.gameHubAuth.getCurrentUser();
+            const isCurrentlyLiked = likedGames.includes(gameId);
             
+            // 1. Update LOCAL state immediately for snappy feel
+            if (isCurrentlyLiked) {
+                likedGames = likedGames.filter(id => id !== gameId);
+                gameLikes[gameId] = Math.max(0, (gameLikes[gameId] || 0) - 1);
+            } else {
+                likedGames.push(gameId);
+                gameLikes[gameId] = (gameLikes[gameId] || 0) + 1;
+            }
+            
+            localStorage.setItem("gamehub_liked_games", JSON.stringify(likedGames));
+            renderGames(document.getElementById('search-bar').value);
+
+            // 2. Sync to CLOUD (Firestore)
+            try {
+                const batch = db.batch();
+                const likeRef = db.collection("game_likes").doc(gameId);
+                const userRef = db.collection("users").doc(user.uid);
+
+                batch.set(likeRef, { 
+                    count: firebase.firestore.FieldValue.increment(isCurrentlyLiked ? -1 : 1) 
+                }, { merge: true });
+
+                batch.set(userRef, { 
+                    likedGames: likedGames 
+                }, { merge: true });
+
+                await batch.commit();
+                console.log(`[Index] Successfully synced ${isCurrentlyLiked ? 'unlike' : 'like'} for ${gameId}`);
+            } catch(err) {
+                console.error("[Index] Like sync failed:", err);
+                // On failure, we revert to the last known cloud state to avoid "fake" likes
+                fetchGameLikes();
+                alert("Failed to sync like to account. Please check your internet or Firebase rules.");
+            }
+        }
+
+        function renderGames(searchQuery = "") {
+            grid.innerHTML = "";
+            let filtered = [...games].map(g => ({
+                ...g,
+                likes: gameLikes[g.id] || 0
+            }));
+
+            // Apply Search
+            if (searchQuery) {
+                filtered = filtered.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
+            }
+
+            // Apply Tags/Filters
+            if (currentFilter === "liked") {
+                filtered = filtered.filter(g => likedGames.includes(g.id));
+            } else if (currentFilter === "popular") {
+                filtered.sort((a, b) => b.likes - a.likes);
+            } else if (currentFilter !== "all") {
+                filtered = filtered.filter(g => g.tags.includes(currentFilter));
+            }
+
             if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500">No games found matching "${filter}"</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500">No games found</div>`;
                 return;
             }
 
@@ -363,26 +558,49 @@
                 const card = document.createElement('div');
                 card.className = `game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer ${game.broken ? 'is-broken' : ''}`;
                 
-                // Keep clickable even if broken
-                card.onclick = () => window.location.href = game.url;
+                // Use a proper event listener with check for child button clicks
+                card.addEventListener('click', (e) => {
+                    // If the user clicked a button or something inside a button, don't trigger the game launch
+                    if (e.target.closest('button')) return;
+                    window.location.href = game.url;
+                });
+                
+                const isLiked = likedGames.includes(game.id);
+                const friendsHere = friendActivity[game.id] || [];
                 
                 let badgeHtml = "";
-                if (game.broken) {
-                    badgeHtml = '<span class="broken-badge">BROKEN</span>';
-                } else if (game.beta) {
-                    badgeHtml = '<span class="beta-badge">BETA</span>';
+                if (game.broken) badgeHtml = '<span class="broken-badge">BROKEN</span>';
+                else if (game.beta) badgeHtml = '<span class="beta-badge">BETA</span>';
+
+                let friendHtml = "";
+                if (friendsHere.length > 0) {
+                    friendHtml = `
+                        <div class="friend-status" title="${friendsHere.join(', ')}">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                            ${friendsHere.length} friend${friendsHere.length > 1 ? 's' : ''} playing
+                        </div>
+                    `;
                 }
 
                 card.innerHTML = `
-                    <div class="game-icon text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center transition-all">
+                    ${friendHtml}
+                    <div class="game-icon text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center transition-all overflow-hidden">
                         ${game.icon}
                     </div>
                     <div class="flex items-center gap-2 mb-2">
                         <h3 class="font-bold text-lg transition-colors">${game.name}</h3>
                         ${badgeHtml}
                     </div>
-                    <p class="text-slate-500 text-sm">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
-                    <div class="mt-6 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-0 transition-opacity hover:opacity-100">
+                    <p class="text-slate-500 text-sm mb-4">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
+                    
+                    <button onclick="toggleLike(event, '${game.id}')" class="like-button ${isLiked ? 'liked' : ''}">
+                        <svg class="w-4 h-4" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>${game.likes}</span>
+                    </button>
+
+                    <div class="mt-2 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-0 transition-opacity hover:opacity-100">
                         PLAY NOW
                     </div>
                 `;
@@ -400,7 +618,12 @@
             renderGames(query);
         }
 
+        // Init
+        fetchGameLikes();
         renderGames();
+        setInterval(fetchFriendActivity, 30000); // Check every 30s
+        setInterval(fetchGameLikes, 60000); // Refresh likes every minute
+        setTimeout(fetchFriendActivity, 2000);   // Initial check after auth might load
     </script>
 
 </body>

@@ -11,6 +11,7 @@
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background-color: #050510; font-family: 'Orbitron', sans-serif; touch-action: none; user-select: none; }
@@ -48,6 +49,14 @@
             100% { transform: scale(1); filter: brightness(1); }
         }
         .animate-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        /* Ship Mode specific styles */
+        .ship-trail {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -88,8 +97,13 @@
         <div id="level-select-menu" class="hidden flex-col items-center pointer-events-auto transition-opacity duration-300 menu-box p-8 rounded-xl w-[90%] max-w-[800px]">
             <h2 class="text-4xl font-black text-neon-cyan mb-2">SELECT LEVEL</h2>
             <div class="flex gap-4 mb-4">
-                <button onclick="renderLevelGrid()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">Built-in Levels</button>
+                <button onclick="renderLevelGrid()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">Built-in</button>
                 <button onclick="loadMyLevels()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">My Levels</button>
+                <button onclick="loadPublicLevels()" class="btn-neon px-4 py-2 text-xs font-bold uppercase cursor-pointer">Community</button>
+            </div>
+            <div class="flex gap-2 mb-4 w-full max-w-sm">
+                <input type="text" id="level-code-input" placeholder="ENTER LEVEL CODE (E.G. A1B2C3)" class="flex-1 bg-gray-900 border border-gray-700 rounded px-4 py-2 text-xs text-cyan-400 focus:outline-none focus:border-cyan-500">
+                <button onclick="playByShortCode(document.getElementById('level-code-input').value)" class="btn-neon px-4 py-2 text-xs font-bold uppercase">PLAY</button>
             </div>
             <p id="level-status-text" class="text-gray-400 text-xs mb-6 uppercase tracking-widest">Loading levels from server...</p>
             <div id="dynamic-levels-container" class="level-grid mb-6"></div>
@@ -153,6 +167,8 @@
                     <button id="tool-bouncepad" onclick="setEditorTool('bouncepad')" class="tool-btn text-green-400">Pad</button>
                     <button id="tool-orb" onclick="setEditorTool('orb')" class="tool-btn text-fuchsia-400">Orb</button>
                     <button id="tool-portal" onclick="setEditorTool('portal')" class="tool-btn text-purple-300">Speed<br>Portal</button>
+                    <button id="tool-shipportal" onclick="setEditorTool('shipportal')" class="tool-btn text-green-300">Ship<br>Portal</button>
+                    <button id="tool-cubeportal" onclick="setEditorTool('cubeportal')" class="tool-btn text-cyan-300">Cube<br>Portal</button>
                     
                     <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 text-center mt-3">System</div>
                     <button id="tool-startpos" onclick="setEditorTool('startpos')" class="tool-btn text-green-300 border-green-400 border-dashed">Start</button>
@@ -225,9 +241,20 @@
         <div id="data-modal" class="hidden absolute inset-0 bg-black bg-opacity-80 flex justify-center items-center pointer-events-auto z-50">
             <div class="menu-box p-8 rounded-xl w-[90%] max-w-[600px] flex flex-col items-center">
                 <h3 class="text-3xl text-neon-cyan font-black mb-2 tracking-widest">SAVE / LOAD LEVEL</h3>
-                <p class="text-gray-400 text-xs text-center mb-6">Name your level and copy the string to save it, or paste an existing code to load it into the editor.</p>
+                <p class="text-gray-400 text-xs text-center mb-2">Name your level and copy the string to save it, or paste an existing code to load it into the editor.</p>
+                <div id="editor-mode-status" class="hidden bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-3 py-1 rounded-full mb-4 animate-pulse">NEW LEVEL</div>
                 
                 <input type="text" id="export-level-name" class="w-full bg-gray-900 text-white p-3 rounded border border-gray-700 focus:border-cyan-400 outline-none mb-4 font-bold text-center" placeholder="Level Name" value="My Custom Level" oninput="updateExportString()">
+                
+                <div class="flex items-center gap-3 mb-4 w-full justify-center bg-gray-900/50 p-2 rounded border border-gray-800">
+                    <label class="text-xs text-gray-400 uppercase font-bold tracking-widest">Visibility:</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="level-is-public" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                        <span class="ml-3 text-xs font-bold text-gray-300 uppercase" id="visibility-label">Public</span>
+                    </label>
+                </div>
+
                 <textarea id="export-textarea" class="w-full bg-gray-900 text-green-400 p-4 rounded border border-gray-700 h-40 mb-6 font-mono text-xs outline-none resize-none leading-relaxed" spellcheck="false"></textarea>
                 
                 <div class="flex flex-wrap gap-4 w-full">
@@ -312,6 +339,7 @@
     let currentLevelCode = "";
     let currentLevelName = "";
     let isTesting = false; 
+    let playerMode = 'CUBE'; // 'CUBE' or 'SHIP'
     
     // Physics, World & Polish
     let cameraX = 0;
@@ -327,7 +355,7 @@
     let coinsCollected = 0; 
     let levelTotalCoins = 0;
 
-    const player = { screenX: 200, y: FLOOR_Y - 40, lastY: FLOOR_Y - 40, size: 40, vy: 0, rotation: 0, isGrounded: true, coyoteTimer: 0, trail: [] };
+    const player = { screenX: 200, y: FLOOR_Y - 40, lastY: FLOOR_Y - 40, size: 40, vy: 0, rotation: 0, isGrounded: true, coyoteTimer: 0, trail: [], isPressing: false };
     let obstacles = [];
     let editorBackupObstacles = []; 
     let particles = [];
@@ -472,7 +500,7 @@
         document.getElementById('col-outline').value = levelColors.outline;
     }
 
-    const typeMap = { 'spike': 'S', 'block': 'B', 'halfblock': 'H', 'fakeblock': 'F', 'bouncepad': 'P', 'sawblade': 'W', 'orb': 'O', 'trigger_color': 'TC', 'portal': 'PO', 'startpos': 'SP', 'coin': 'N' };
+    const typeMap = { 'spike': 'S', 'block': 'B', 'halfblock': 'H', 'fakeblock': 'F', 'bouncepad': 'P', 'sawblade': 'W', 'orb': 'O', 'trigger_color': 'TC', 'portal': 'PO', 'startpos': 'SP', 'coin': 'N', 'shipportal': 'PSH', 'cubeportal': 'PCB' };
     const invMap = Object.keys(typeMap).reduce((ret, key) => { ret[typeMap[key]] = key; return ret; }, {});
 
     function decodeLevel(codeStr) {
@@ -486,16 +514,14 @@
             const d = p.split(',');
             if (d[0] === 'C' && d.length >= 5) {
                 levelColors.bgTop = d[1]; levelColors.bgBot = d[2]; levelColors.floor = d[3]; levelColors.outline = d[4];
-            } else if(invMap[d[0]] || d[0].startsWith('PS')) { 
-                let type = invMap[d[0]] || 'portal';
+            } else if(invMap[d[0]]) { 
+                let type = invMap[d[0]];
                 let item = { type: type, x: parseFloat(d[1]), y: parseFloat(d[2]), width: parseFloat(d[3]), height: parseFloat(d[4]), passed: false };
                 if (type === 'trigger_color') {
                     item.duration = parseFloat(d[5]) || 1.0;
                     item.colors = { bgTop: d[6]||'#000000', bgBot: d[7]||'#000000', floor: d[8]||'#000000', outline: d[9]||'#000000' };
                 } else if (type === 'portal') {
-                    let spd = parseFloat(d[5]);
-                    if (isNaN(spd)) spd = (d[0]==='PS0'?0.7 : d[0]==='PS2'?1.5 : 1.0);
-                    item.speedMulti = spd;
+                    item.speedMulti = parseFloat(d[5]) || 1.0;
                 } else if (type === 'bouncepad') {
                     item.boost = -Math.abs(parseFloat(d[5]) || 1800);
                 } else if (type === 'orb') {
@@ -508,10 +534,51 @@
         return obs;
     }
 
+    function compressObstacles(obsList) {
+        if (!obsList.length) return [];
+        
+        // Group by type and Y-position and height and other unique props
+        const groups = {};
+        const others = [];
+        
+        obsList.forEach(o => {
+            if (o.type === 'block' || o.type === 'halfblock' || o.type === 'fakeblock') {
+                const key = `${o.type}_${o.y}_${o.height}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(o);
+            } else {
+                others.push(o);
+            }
+        });
+
+        const compressed = [...others];
+        
+        Object.keys(groups).forEach(key => {
+            const sorted = groups[key].sort((a, b) => a.x - b.x);
+            if (!sorted.length) return;
+            
+            let current = { ...sorted[0] };
+            for (let i = 1; i < sorted.length; i++) {
+                const next = sorted[i];
+                // If adjacent horizontally, merge them
+                if (Math.abs(next.x - (current.x + current.width)) < 1) {
+                    current.width += next.width;
+                } else {
+                    compressed.push(current);
+                    current = { ...next };
+                }
+            }
+            compressed.push(current);
+        });
+
+        return compressed;
+    }
+
     function encodeLevel(obsList) {
+        const compressedObs = compressObstacles(obsList);
         let colorStr = `C,${levelColors.bgTop},${levelColors.bgBot},${levelColors.floor},${levelColors.outline}`;
-        let piecesStr = obsList.map(o => {
-            let base = `${typeMap[o.type]},${o.x},${o.y},${o.width},${o.height}`;
+        let piecesStr = compressedObs.map(o => {
+            let base = `${typeMap[o.type]},${Math.round(o.x)},${Math.round(o.y)},${Math.round(o.width)},${Math.round(o.height)}`;
             if (o.type === 'trigger_color') return `${base},${o.duration},${o.colors.bgTop},${o.colors.bgBot},${o.colors.floor},${o.colors.outline}`;
             if (o.type === 'portal') return `${base},${o.speedMulti}`;
             if (o.type === 'bouncepad' || o.type === 'orb') return `${base},${Math.abs(o.boost || (o.type === 'orb' ? 1300 : 1800))}`;
@@ -590,6 +657,8 @@
         player.screenX = 200; 
         player.y = FLOOR_Y - player.size; player.lastY = player.y;
         player.vy = 0; player.rotation = 0; player.isGrounded = true; player.coyoteTimer = 0; player.trail = [];
+        player.isPressing = false;
+        playerMode = 'CUBE';
         particles = []; score = 0; currentSpeed = BASE_SPEED;
         targetSpeedMulti = 1; currentSpeedMulti = 1; transition.active = false;
         coinsCollected = 0; levelTotalCoins = 0;
@@ -818,9 +887,17 @@
     /**
      * Level Editor & Custom Properties
      */
-    function startEditor() {
+    function startEditor(isEdit = false) {
         state = 'EDITOR'; isTesting = false; showMenu('editor');
-        cameraX = 0; cameraY = 0; obstacles = []; player.y = FLOOR_Y - player.size; selectedObstacle = null;
+        cameraX = 0; cameraY = 0; player.y = FLOOR_Y - player.size; selectedObstacle = null;
+        
+        if (!isEdit) {
+            obstacles = [];
+            currentEditingLevelId = null;
+            document.getElementById('export-level-name').value = "My Custom Level";
+        }
+        
+        updateEditorStatus();
         setEditorTool('block'); syncColorPickers();
         lastTime = performance.now();
         if (!animationId) animationId = requestAnimationFrame(gameLoop);
@@ -919,55 +996,310 @@
         const ta = document.getElementById('export-textarea'); ta.select(); document.execCommand('copy');
         event.target.innerText = "COPIED!"; setTimeout(() => event.target.innerText = "Copy String", 2000);
     }
+    let currentEditingLevelId = null;
+
     async function saveLevelToAccount() {
         const name = document.getElementById('export-level-name').value.trim() || "Unnamed Level";
         const code = encodeLevel(obstacles);
+        const isPublic = document.getElementById('level-is-public').checked;
         if (!code) return;
 
-        if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+        if (window.gameHubFirebase && window.gameHubFirebase.db) {
             try {
-                const currentMyLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels") || {};
-                currentMyLevels[name] = code;
-                await window.gameHubProgress.saveGameProgress("neondash_mylevels", currentMyLevels);
-                alert("Level saved to your account!");
+                const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
+                
+                if (!user) {
+                    alert("Please sign in to save levels!");
+                    return;
+                }
+
+                const db = window.gameHubFirebase.db;
+                
+                // Fetch the actual custom username from Firestore
+                let authorName = user.displayName || user.email.split('@')[0];
+                try {
+                    const userDoc = await db.collection("users").doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().username) {
+                        authorName = userDoc.data().username;
+                    }
+                } catch (err) { console.warn("Could not fetch author username", err); }
+
+                // Use existing ID if overwriting, otherwise generate new
+                const levelId = currentEditingLevelId || Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                const levelData = {
+                    name: name,
+                    code: code,
+                    author: authorName,
+                    authorId: user.uid,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isPublic: isPublic
+                };
+
+                // Only set createdAt if it's a new level
+                if (!currentEditingLevelId) {
+                    levelData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    levelData.likes = 0;
+                }
+
+                await db.collection("custom_levels").doc(levelId).set(levelData, { merge: true });
+                
+                // Also save to user's private list for easy management
+                if (window.gameHubProgress && window.gameHubProgress.saveGameProgress) {
+                    const currentMyLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels") || {};
+                    currentMyLevels[name] = { id: levelId, code: code, isPublic: isPublic };
+                    await window.gameHubProgress.saveGameProgress("neondash_mylevels", currentMyLevels);
+                }
+                
+                alert(currentEditingLevelId ? `Level "${name}" updated!` : `Level saved to account!${isPublic ? ` Level Code: ${levelId}` : ' (Private)'}`);
+                document.getElementById('export-textarea').value = levelId;
+                
+                // If it was a new save, mark it as the current editing level now
+                currentEditingLevelId = levelId;
+                updateEditorStatus();
             } catch (e) {
                 console.warn("[NeonDash] Failed to save level to account", e);
-                alert("Failed to save level. Are you signed in?");
+                alert(`Failed to save level: ${e.message || "Unknown error"}.`);
             }
         } else {
             alert("Account system not available.");
         }
     }
 
-    async function loadMyLevels() {
+    function updateEditorStatus() {
+        const statusEl = document.getElementById('editor-mode-status');
+        if (currentEditingLevelId) {
+            statusEl.innerText = `Editing: ${document.getElementById('export-level-name').value} (${currentEditingLevelId})`;
+            statusEl.classList.remove('hidden');
+        } else {
+            statusEl.classList.add('hidden');
+        }
+    }
+
+    async function playByShortCode(id) {
+        if (!id) return;
+        const db = window.gameHubFirebase.db;
+        try {
+            const doc = await db.collection("custom_levels").doc(id.toUpperCase()).get();
+            if (doc.exists) {
+                const data = doc.data();
+                // Even if private via author choice, if you have the direct code you can play it?
+                // Or we can enforce isPublic check here too.
+                if (!data.isPublic) {
+                    const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
+                    if (!user || user.uid !== data.authorId) {
+                        alert("This level is private.");
+                        return;
+                    }
+                }
+                startGame('LEVEL', data.code, data.name);
+            } else {
+                alert("Level not found!");
+            }
+        } catch(e) {
+            alert("Error loading level code.");
+        }
+    }
+
+    async function loadPublicLevels() {
+        const container = document.getElementById('dynamic-levels-container');
+        const statusText = document.getElementById('level-status-text');
+        
+        statusText.innerText = "Loading community levels...";
+        container.innerHTML = '';
+
+        if (window.gameHubFirebase) {
+            try {
+                const db = window.gameHubFirebase.db;
+                
+                // Fetch all levels and filter manually to handle levels without isPublic field
+                const snapshot = await db.collection("custom_levels")
+                    .orderBy("createdAt", "desc")
+                    .limit(50)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    let count = 0;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // If isPublic is missing, we assume it's public (legacy support)
+                        if (data.isPublic !== false) {
+                            count++;
+                            const btn = document.createElement('button');
+                            btn.className = 'btn-neon py-2 px-2 text-sm font-bold uppercase cursor-pointer rounded flex flex-col items-center justify-center gap-1 h-24 min-w-[140px] flex-shrink-0';
+                            btn.innerHTML = `
+                                <span class="truncate w-full">${data.name}</span>
+                                <span class="text-[9px] text-gray-400 mt-1">By: ${data.author || 'Unknown'}</span>
+                                <span class="text-[10px] text-cyan-400 font-mono">${doc.id}</span>
+                            `;
+                            btn.onclick = () => startGame('LEVEL', data.code, data.name);
+                            container.appendChild(btn);
+                        }
+                    });
+                    statusText.innerText = `Found ${count} community levels.`;
+                } else {
+                    statusText.innerText = "No community levels found yet. Be the first to create one!";
+                }
+            } catch (e) {
+                console.error("[NeonDash] Failed to load public levels", e);
+                statusText.innerText = "Error loading community levels. Please try again.";
+            }
+        }
+    }
+
+     async function loadMyLevels() {
          const container = document.getElementById('dynamic-levels-container');
          const statusText = document.getElementById('level-status-text');
          
          statusText.innerText = "Loading your levels...";
          container.innerHTML = '';
 
-         if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+         const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
+         if (!user) {
+             statusText.innerText = "Sign in to view your levels.";
+             return;
+         }
+
+         if (window.gameHubFirebase && window.gameHubFirebase.db) {
              try {
-                 const myLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels");
-                 if (myLevels && Object.keys(myLevels).length > 0) {
-                     statusText.innerText = `Found ${Object.keys(myLevels).length} levels on your account.`;
+                 const db = window.gameHubFirebase.db;
+                 // Try simple query first if composite index is missing
+                 let snapshot;
+                 try {
+                     // Check if a basic query works first to see if Firestore is accessible
+                     snapshot = await db.collection("custom_levels")
+                         .where("authorId", "==", user.uid)
+                         .orderBy("createdAt", "desc")
+                         .get();
+                 } catch (err) {
+                     console.warn("[NeonDash] Falling back to non-ordered query for My Levels", err);
+                     // If that fails (likely index error), try without ordering
+                     snapshot = await db.collection("custom_levels")
+                         .where("authorId", "==", user.uid)
+                         .get();
+                 }
+                 
+                 if (!snapshot.empty) {
+                     statusText.innerText = `Found ${snapshot.size} levels on your account.`;
                      
-                     Object.keys(myLevels).forEach(name => {
-                         const btn = document.createElement('button');
-                         btn.className = 'btn-neon py-2 px-2 text-sm font-bold uppercase cursor-pointer rounded flex flex-col items-center justify-center gap-1 h-24 min-w-[140px] flex-shrink-0';
-                         btn.innerHTML = `<span class="truncate w-full">${name}</span><span class="text-[10px] text-gray-400 mt-1">My Level</span>`;
-                         btn.onclick = () => startGame('LEVEL', myLevels[name], name);
+                     snapshot.forEach(doc => {
+                         const data = doc.data();
+                         const btn = document.createElement('div');
+                         btn.className = 'btn-neon p-2 text-sm font-bold uppercase rounded flex flex-col items-center justify-center gap-1 h-28 min-w-[140px] flex-shrink-0 relative group';
+                         
+                         // Create button elements with explicit event listeners for better reliability
+                         const playBtn = document.createElement('button');
+                         playBtn.className = "bg-cyan-500/20 hover:bg-cyan-500 text-[9px] px-2 py-1 rounded transition-colors";
+                         playBtn.innerText = "PLAY";
+                         playBtn.onclick = (e) => { 
+                             e.preventDefault();
+                             e.stopPropagation(); 
+                             startGame('LEVEL', data.code, data.name); 
+                         };
+
+                         const editBtn = document.createElement('button');
+                         editBtn.className = "bg-amber-500/20 hover:bg-amber-500 text-[9px] px-2 py-1 rounded transition-colors";
+                         editBtn.innerText = "EDIT";
+                         editBtn.onclick = (e) => { 
+                             e.preventDefault();
+                             e.stopPropagation(); 
+                             editMyLevel(doc.id, data.name, data.code); 
+                         };
+
+                         const delBtn = document.createElement('button');
+                         delBtn.className = "bg-rose-500/20 hover:bg-rose-500 text-[9px] px-2 py-1 rounded transition-colors";
+                         delBtn.innerText = "DEL";
+                         delBtn.onclick = (e) => { 
+                             e.preventDefault();
+                             e.stopPropagation(); 
+                             deleteMyLevel(doc.id); 
+                         };
+
+                         const label = document.createElement('span');
+                         label.className = "truncate w-full text-center";
+                         label.innerText = data.name;
+
+                         const idLabel = document.createElement('span');
+                         idLabel.className = "text-[10px] text-cyan-400 font-mono";
+                         idLabel.innerText = doc.id;
+
+                         const controls = document.createElement('div');
+                         controls.className = "flex gap-1 mt-1";
+                         controls.appendChild(playBtn);
+                         controls.appendChild(editBtn);
+                         controls.appendChild(delBtn);
+
+                         btn.appendChild(label);
+                         btn.appendChild(idLabel);
+                         btn.appendChild(controls);
+                         
                          container.appendChild(btn);
                      });
                  } else {
                      statusText.innerText = "No levels found on your account.";
                  }
              } catch (e) {
-                 console.warn("[NeonDash] Failed to load my levels", e);
-                 statusText.innerText = "Error loading your levels.";
+                 console.error("[NeonDash] Failed to load my levels", e);
+                 statusText.innerText = "Error loading your levels: " + (e.message || "Connection error");
              }
+         } else {
+             statusText.innerText = "Database connection not available.";
          }
      }
+
+     async function deleteMyLevel(id) {
+         if (!id) return;
+         if (!confirm("Are you sure you want to delete this level? This cannot be undone.")) return;
+         
+         const statusText = document.getElementById('level-status-text');
+         const originalStatus = statusText.innerText;
+         statusText.innerText = "Deleting level...";
+         
+         if (!window.gameHubFirebase || !window.gameHubFirebase.db) {
+             alert("Database not available.");
+             statusText.innerText = originalStatus;
+             return;
+         }
+
+         const db = window.gameHubFirebase.db;
+         try {
+             // 1. Delete from global collection
+             await db.collection("custom_levels").doc(id).delete();
+             
+             // 2. Also try to remove from user's local progress cache if it exists there
+             if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
+                 const currentMyLevels = await window.gameHubProgress.loadGameProgress("neondash_mylevels") || {};
+                 // Find and remove the entry with this ID
+                 for (const key in currentMyLevels) {
+                     if (currentMyLevels[key].id === id) {
+                         delete currentMyLevels[key];
+                         break;
+                     }
+                 }
+                 await window.gameHubProgress.saveGameProgress("neondash_mylevels", currentMyLevels);
+             }
+
+             alert("Level deleted successfully.");
+             await loadMyLevels(); // Refresh the UI list
+         } catch(e) {
+             console.error("[NeonDash] Delete error:", e);
+             alert("Error deleting level: " + (e.message || "Permission denied."));
+             statusText.innerText = originalStatus;
+         }
+     }
+
+     window.deleteMyLevel = deleteMyLevel;
+     window.editMyLevel = (id, name, code) => {
+         // Set editor state before calling startEditor
+         obstacles = decodeLevel(code);
+         currentEditingLevelId = id;
+         document.getElementById('export-level-name').value = name;
+         
+         // Call startEditor with isEdit = true
+         startEditor(true);
+         
+         alert(`Loaded "${name}" into editor. You can now make changes and save again.`);
+     };
 
      function loadEditorCode() {
          let code = document.getElementById('export-textarea').value.trim();
@@ -1015,10 +1347,10 @@
         if (editorTool === 'halfblock') { objH = 20; yOffset = 20; }
         if (editorTool === 'bouncepad') { objH = 10; yOffset = 30; }
         if (editorTool === 'trigger_color') { objH = 200; yOffset = -200 + GRID_SIZE; } 
-        if (editorTool === 'portal') { objH = 120; yOffset = -120 + GRID_SIZE; } 
+        if (editorTool === 'portal' || editorTool === 'shipportal' || editorTool === 'cubeportal') { objH = 120; yOffset = -120 + GRID_SIZE; } 
         
         let worldY = snapY + yOffset;
-        if (editorTool !== 'trigger_color' && editorTool !== 'orb' && editorTool !== 'portal' && editorTool !== 'startpos' && editorTool !== 'coin' && worldY + objH > FLOOR_Y) {
+        if (editorTool !== 'trigger_color' && editorTool !== 'orb' && editorTool !== 'portal' && editorTool !== 'shipportal' && editorTool !== 'cubeportal' && editorTool !== 'startpos' && editorTool !== 'coin' && worldY + objH > FLOOR_Y) {
             worldY = FLOOR_Y - objH;
         }
 
@@ -1026,8 +1358,9 @@
             const eraseBox = { x: worldX, y: snapY, w: GRID_SIZE, h: GRID_SIZE };
             for(let i=obstacles.length-1; i>=0; i--) {
                 let obs = obstacles[i];
-                if(eraseBox.x < obs.x + obs.width && eraseBox.x + eraseBox.w > obs.x &&
-                   eraseBox.y < obs.y + obs.height && eraseBox.y + eraseBox.h > obs.y) {
+                let oRect = getObsRect(obs);
+                if(eraseBox.x < oRect.x + oRect.w && eraseBox.x + eraseBox.w > oRect.x &&
+                   eraseBox.y < oRect.y + oRect.h && eraseBox.y + eraseBox.h > oRect.y) {
                     obstacles.splice(i, 1);
                 }
             }
@@ -1056,10 +1389,13 @@
      */
     function jump() {
         if (state !== 'PLAYING') return;
+        player.isPressing = true;
 
         let pWorldX = player.screenX + cameraX;
         let pRect = { x: pWorldX, y: player.y, w: player.size, h: player.size };
         let hitOrb = false;
+
+        if (playerMode === 'SHIP') return; // Ship mode handled by isPressing flag
 
         const ORB_BUFFER = 30; // More forgiving mid-air orb hitbox
         for (let obs of obstacles) {
@@ -1080,6 +1416,10 @@
         }
     }
 
+    function stopJump() {
+        player.isPressing = false;
+    }
+
     canvas.addEventListener('mousedown', (e) => {
         if(state === 'EDITOR') {
             isEditorMouseDown = true;
@@ -1097,7 +1437,10 @@
         }
     });
 
-    window.addEventListener('mouseup', () => { isEditorMouseDown = false; });
+    window.addEventListener('mouseup', () => { 
+        isEditorMouseDown = false; 
+        if(state === 'PLAYING') stopJump();
+    });
     canvas.addEventListener('touchstart', (e) => {
         if(e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
         if(state === 'EDITOR' && e.touches.length > 0) {
@@ -1114,9 +1457,15 @@
             if (isEditorMouseDown && editorTool !== 'select' && editorTool !== 'startpos') handleEditorClick();
         }
     }, {passive: false});
-    window.addEventListener('touchend', () => { isEditorMouseDown = false; });
+    window.addEventListener('touchend', () => { 
+        isEditorMouseDown = false; 
+        if(state === 'PLAYING') stopJump();
+    });
 
     window.addEventListener('keydown', (e) => {
+        // Prevent game controls from firing if user is typing in a modal input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
         if (e.code === 'Space') { if(state === 'PLAYING') { e.preventDefault(); jump(); } }
         if (state === 'EDITOR') { 
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') isPanningLeft = true; 
@@ -1135,11 +1484,14 @@
         }
     });
     window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') { if(state === 'PLAYING') { e.preventDefault(); stopJump(); } }
         if (state === 'EDITOR') { 
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') isPanningLeft = false; 
             if (e.code === 'ArrowRight' || e.code === 'KeyD') isPanningRight = false; 
             if (e.code === 'ArrowUp' || e.code === 'KeyW') isPanningUp = false;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') isPanningDown = false;
+        } else if (state === 'PLAYING' && (e.code === 'ArrowUp' || e.code === 'KeyW')) {
+            e.preventDefault(); stopJump();
         }
     });
 
@@ -1215,14 +1567,33 @@
         cameraX += currentSpeed * currentSpeedMulti * dt;
 
         player.lastY = player.y;
-        player.vy += GRAVITY * dt;
-        player.y += player.vy * dt;
+        
+        // Physics update based on player mode
+        if (playerMode === 'CUBE') {
+            player.vy += GRAVITY * dt;
+            player.y += player.vy * dt;
 
-        if (player.y + player.size >= FLOOR_Y) {
-            player.y = FLOOR_Y - player.size; player.vy = 0; player.isGrounded = true; player.coyoteTimer = 0.15;
-            player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
-        } else {
-            player.isGrounded = false; player.coyoteTimer -= dt; player.rotation += 4.5 * currentSpeedMulti * dt;
+            if (player.y + player.size >= FLOOR_Y) {
+                player.y = FLOOR_Y - player.size; player.vy = 0; player.isGrounded = true; player.coyoteTimer = 0.15;
+                player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+            } else {
+                player.isGrounded = false; player.coyoteTimer -= dt; player.rotation += 4.5 * currentSpeedMulti * dt;
+            }
+        } else if (playerMode === 'SHIP') {
+            const shipGravity = player.isPressing ? -3500 : 3500;
+            player.vy += shipGravity * dt;
+            player.vy = Math.max(-1000, Math.min(1000, player.vy)); // Limit vertical speed
+            player.y += player.vy * dt;
+            
+            // Rotation based on vertical velocity
+            player.rotation = Math.atan2(player.vy, currentSpeed * currentSpeedMulti) * 0.8;
+            
+            if (player.y + player.size >= FLOOR_Y) {
+                player.y = FLOOR_Y - player.size; player.vy = 0;
+            } else if (player.y < -1000) { // Allow much more height
+                player.y = -1000; player.vy = 0;
+            }
+            player.isGrounded = false; player.coyoteTimer = 0;
         }
 
         player.trail.push({ x: player.screenX + cameraX, y: player.y, rotation: player.rotation });
@@ -1284,12 +1655,28 @@
                 startColorTransition(obs.colors, obs.duration);
             }
             if (obs.type === 'portal' && !obs.passed) {
-                let oRect = { x: obs.x, y: obs.y - 120, w: obs.width, h: obs.height + 240 };
+                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     obs.passed = true;
                     targetSpeedMulti = obs.speedMulti;
                     let pCol = obs.speedMulti > 1.2 ? '#f472b6' : (obs.speedMulti < 0.9 ? '#93c5fd' : '#86efac'); 
                     for(let k=0; k<20; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*800, vy: (Math.random()-0.5)*800, life: 0.6, color: pCol, size: Math.random()*8+4 });
+                }
+            }
+            if (obs.type === 'shipportal' && !obs.passed) {
+                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+                if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
+                    obs.passed = true;
+                    playerMode = 'SHIP';
+                    for(let k=0; k<20; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*800, vy: (Math.random()-0.5)*800, life: 0.6, color: '#86efac', size: Math.random()*8+4 });
+                }
+            }
+            if (obs.type === 'cubeportal' && !obs.passed) {
+                let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+                if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
+                    obs.passed = true;
+                    playerMode = 'CUBE';
+                    for(let k=0; k<20; k++) particles.push({ x: obs.x + obs.width/2, y: obs.y + obs.height/2, vx: (Math.random()-0.5)*800, vy: (Math.random()-0.5)*800, life: 0.6, color: '#00f3ff', size: Math.random()*8+4 });
                 }
             }
             if (obs.type === 'coin' && !obs.passed) {
@@ -1315,7 +1702,7 @@
                 let oRect = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
                 if (pRect.x < oRect.x + oRect.w && pRect.x + pRect.w > oRect.x && pRect.y < oRect.y + oRect.h && pRect.h + pRect.y > oRect.y) {
                     const wasAbove = player.lastY + player.size <= obs.y + 20; 
-                    if (wasAbove) {
+                    if (wasAbove && playerMode === 'CUBE') {
                         if (player.vy >= 0) {
                             player.y = obs.y - player.size; player.vy = 0; player.isGrounded = true; player.coyoteTimer = 0.15;
                             player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2); pRect.y = player.y; 
@@ -1335,7 +1722,7 @@
                 if (dist < (obs.width / 2) * 0.8 + (pRect.w / 2) * 0.8) triggerGameOver();
             }
 
-            if (gameMode === 'ENDLESS' && !obs.passed && obs.x + obs.width < pWorldX && obs.type !== 'trigger_color' && obs.type !== 'portal' && obs.type !== 'coin' && obs.type !== 'orb') {
+            if (gameMode === 'ENDLESS' && !obs.passed && obs.x + obs.width < pWorldX && obs.type !== 'trigger_color' && obs.type !== 'portal' && obs.type !== 'coin' && obs.type !== 'orb' && obs.type !== 'shipportal' && obs.type !== 'cubeportal') {
                 obs.passed = true; score += 1; document.getElementById('current-score').innerText = Math.floor(score);
             }
             if (obs.x + obs.width < cameraX - 100) obstacles.splice(i, 1);
@@ -1448,6 +1835,22 @@
                 ctx.shadowBlur = 15; ctx.shadowColor = pCol; ctx.strokeStyle = pCol; ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.ellipse(0, 0, obs.width/2, obs.height/2, 0, 0, Math.PI*2); ctx.stroke();
                 ctx.fillStyle = pCol; ctx.globalAlpha = 0.2 + Math.sin(Date.now()*0.01)*0.1; ctx.fill(); ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+                ctx.restore();
+            } else if (obs.type === 'shipportal') {
+                ctx.save(); ctx.translate(screenX + obs.width/2, screenY + obs.height/2);
+                ctx.shadowBlur = 15; ctx.shadowColor = '#86efac'; ctx.strokeStyle = '#86efac'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.ellipse(0, 0, obs.width/2, obs.height/2, 0, 0, Math.PI*2); ctx.stroke();
+                ctx.fillStyle = '#86efac'; ctx.globalAlpha = 0.2; ctx.fill();
+                // Draw ship icon inside (Facing Right)
+                ctx.globalAlpha = 1.0; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-10, -8); ctx.lineTo(-5, 0); ctx.lineTo(-10, 8); ctx.closePath(); ctx.fill();
+                ctx.restore();
+            } else if (obs.type === 'cubeportal') {
+                ctx.save(); ctx.translate(screenX + obs.width/2, screenY + obs.height/2);
+                ctx.shadowBlur = 15; ctx.shadowColor = '#00f3ff'; ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.ellipse(0, 0, obs.width/2, obs.height/2, 0, 0, Math.PI*2); ctx.stroke();
+                ctx.fillStyle = '#00f3ff'; ctx.globalAlpha = 0.2; ctx.fill();
+                // Draw cube icon inside
+                ctx.globalAlpha = 1.0; ctx.fillStyle = '#fff'; ctx.fillRect(-8, -8, 16, 16);
                 ctx.restore();
             } else if (obs.type === 'coin') {
                 if (!obs.passed) {
@@ -1572,9 +1975,24 @@
                 ctx.fillStyle = `rgba(0, 243, 255, ${(i / player.trail.length) * 0.3})`; ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size); ctx.restore();
             }
             ctx.save(); ctx.translate(player.screenX + player.size/2, player.y - cameraY + player.size/2); ctx.rotate(player.rotation);
-            ctx.shadowBlur = 20; ctx.shadowColor = COLOR_PLAYER; ctx.fillStyle = COLOR_PLAYER; ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
-            ctx.fillStyle = levelColors.bgTop; ctx.shadowBlur = 0; ctx.fillRect(-player.size/2+8, -player.size/2+8, player.size-16, player.size-16);
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(-player.size/2+12, -player.size/2+12, player.size-24, player.size-24); ctx.restore();
+            ctx.shadowBlur = 20; ctx.shadowColor = COLOR_PLAYER; ctx.fillStyle = COLOR_PLAYER;
+            
+            if (playerMode === 'CUBE') {
+                ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+                ctx.fillStyle = levelColors.bgTop; ctx.shadowBlur = 0; ctx.fillRect(-player.size/2+8, -player.size/2+8, player.size-16, player.size-16);
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(-player.size/2+12, -player.size/2+12, player.size-24, player.size-24);
+            } else if (playerMode === 'SHIP') {
+                // Draw Ship (Facing Right)
+                ctx.beginPath();
+                ctx.moveTo(player.size/2, 0);
+                ctx.lineTo(-player.size/2, -player.size/2);
+                ctx.lineTo(-player.size/4, 0);
+                ctx.lineTo(-player.size/2, player.size/2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(player.size/4, 0); ctx.lineTo(-player.size/4, -player.size/4); ctx.lineTo(-player.size/8, 0); ctx.lineTo(-player.size/4, player.size/4); ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
         }
 
         if (particles.length > 0) {

@@ -321,6 +321,15 @@
     } else {
       allDefs.forEach((ach) => {
         const unlocked = unlockedIds.includes(ach.id);
+        const isSecret = ach.description.toLowerCase().includes("secret:");
+
+        let displayDesc = ach.description;
+        let displayName = ach.name;
+
+        if (isSecret && !unlocked) {
+          displayDesc = "??? (Secret Achievement)";
+          displayName = "???";
+        }
 
         const card = document.createElement("div");
         card.style.borderRadius = "12px";
@@ -345,12 +354,12 @@
         const textWrap = document.createElement("div");
 
         const nameEl = document.createElement("div");
-        nameEl.textContent = ach.name;
+        nameEl.textContent = displayName;
         nameEl.style.fontWeight = "600";
         nameEl.style.fontSize = "0.95rem";
 
         const descEl = document.createElement("div");
-        descEl.textContent = ach.description;
+        descEl.textContent = displayDesc;
         descEl.style.fontSize = "0.8rem";
         descEl.style.color = "#9ca3af";
 
@@ -371,7 +380,97 @@
   window.gameHubAchievements = {
     definitions,
     getDefinitions,
-    showAchievementsModal
+    showAchievementsModal,
+    notifyAchievement: (gameId, achId) => {
+      const gameDefs = definitions[gameId] || [];
+      const ach = gameDefs.find(a => a.id === achId);
+      if (!ach) return;
+
+      // Remove existing if any
+      const existing = document.getElementById("achievement-banner");
+      if (existing) existing.remove();
+
+      const banner = document.createElement("div");
+      banner.id = "achievement-banner";
+      banner.style.position = "fixed";
+      banner.style.top = "24px";
+      banner.style.right = "-400px"; // Start off-screen
+      banner.style.width = "320px";
+      banner.style.backgroundColor = "rgba(15, 23, 42, 0.95)";
+      banner.style.backdropFilter = "blur(12px)";
+      banner.style.border = "1px solid rgba(139, 92, 246, 0.5)";
+      banner.style.borderRadius = "16px";
+      banner.style.padding = "16px";
+      banner.style.display = "flex";
+      banner.style.alignItems = "center";
+      banner.style.gap = "14px";
+      banner.style.zIndex = "2147483647"; 
+      banner.style.transition = "right 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease";
+      banner.style.boxShadow = "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.3)";
+      banner.style.cursor = "pointer";
+      banner.style.opacity = "0";
+
+      const icon = document.createElement("div");
+      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2.34"/><path d="M18 9V6c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v3c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2Z"/></svg>`;
+      icon.style.filter = "drop-shadow(0 0 8px rgba(251, 191, 36, 0.4))";
+
+      const textContainer = document.createElement("div");
+      textContainer.style.display = "flex";
+      textContainer.style.flexDirection = "column";
+      textContainer.style.flex = "1";
+
+      const title = document.createElement("div");
+      title.textContent = "ACHIEVEMENT UNLOCKED";
+      title.style.color = "#a78bfa";
+      title.style.fontSize = "10px";
+      title.style.fontWeight = "800";
+      title.style.letterSpacing = "0.1em";
+      title.style.marginBottom = "2px";
+
+      const name = document.createElement("div");
+      name.textContent = ach.name;
+      name.style.color = "#ffffff";
+      name.style.fontSize = "15px";
+      name.style.fontWeight = "700";
+      name.style.lineHeight = "1.2";
+
+      const desc = document.createElement("div");
+      desc.textContent = ach.description;
+      desc.style.color = "#94a3b8";
+      desc.style.fontSize = "12px";
+      desc.style.marginTop = "2px";
+      desc.style.lineHeight = "1.3";
+
+      textContainer.appendChild(title);
+      textContainer.appendChild(name);
+      textContainer.appendChild(desc);
+      banner.appendChild(icon);
+      banner.appendChild(textContainer);
+
+      document.body.appendChild(banner);
+
+      // Sound
+      try {
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+      } catch(e) {}
+
+      // Animate in
+      requestAnimationFrame(() => {
+          banner.style.right = "24px";
+          banner.style.opacity = "1";
+      });
+
+      const hide = () => {
+          banner.style.right = "-400px";
+          banner.style.opacity = "0";
+          setTimeout(() => { if (banner.parentNode) banner.remove(); }, 700);
+      };
+
+      banner.onclick = hide;
+      setTimeout(hide, 5000);
+    }
   };
 })();
 

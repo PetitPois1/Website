@@ -11,6 +11,7 @@
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
 
@@ -306,6 +307,7 @@
         let score = 0;
         let highScore = 0;
         let currentShapes = [null, null, null]; 
+        let unlockedAchievements = new Set();
         
         // Dragging State
         let isDragging = false;
@@ -426,13 +428,16 @@
         async function initGame() {
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
             score = 0;
-            // Load synced best score if available
+            unlockedAchievements.clear();
+            // Load synced best score and achievements
             if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
                 try {
                     const progress = await window.gameHubProgress.loadGameProgress("blockblast");
                     if (progress && typeof progress.highScore === "number") {
                         highScore = Math.max(highScore, progress.highScore);
                     }
+                    const userAch = await window.gameHubProgress.getUserAchievements("blockblast");
+                    userAch.forEach(id => unlockedAchievements.add(id));
                 } catch (e) {
                     console.warn("[BlockBlast] Failed to load synced progress", e);
                 }
@@ -473,11 +478,39 @@
         }
 
         function generateNewShapes() {
+            let possibleShapes = [];
+            // Strategy: Try to find at least one shape that fits
             for (let i = 0; i < 3; i++) {
-                currentShapes[i] = JSON.parse(JSON.stringify(getRandomShape()));
+                let shape;
+                let attempts = 0;
+                do {
+                    shape = JSON.parse(JSON.stringify(getRandomShape()));
+                    attempts++;
+                } while (attempts < 100 && !canFitSomewhere(shape));
+                
+                // If we failed to find a fitting shape after 100 tries, 
+                // just use a 1x1 block as a fallback to keep the game playable
+                if (attempts >= 100) {
+                    shape = {
+                        m: [[1]],
+                        c: '#ffffff',
+                        id: 'fallback-' + Date.now()
+                    };
+                }
+                currentShapes[i] = shape;
             }
             renderTray();
             checkGameOver();
+        }
+
+        function canFitSomewhere(shape) {
+            if (!shape) return false;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (canPlaceShape(shape, r, c)) return true;
+                }
+            }
+            return false;
         }
 
         function renderTray() {
@@ -911,29 +944,6 @@
                     window.gameHubProgress.saveGameProgress("blockblast", { highScore });
                 }
             }
-
-            if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
-                try {
-                    if (score > 0) {
-                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_first_clear");
-                    }
-                    if (score >= 500) {
-                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_500_score");
-                    }
-                    if (score >= 1000) {
-                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_1000_score");
-                    }
-                    if (score >= 2500) {
-                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_2500_score");
-                    }
-                    if (score >= 5000) {
-                        window.gameHubProgress.unlockAchievement("blockblast", "blockblast_5000_score");
-                    }
-                } catch (e) {
-                    console.warn("[BlockBlast] Failed to unlock achievement", e);
-                }
-            }
-
             modalEl.classList.remove('hidden');
         }
 
@@ -955,6 +965,26 @@
             if (score > highScore) {
                 highScore = score;
                 highScoreEl.innerText = highScore;
+            }
+
+            // Check achievements instantly
+            if (window.gameHubProgress && window.gameHubProgress.unlockAchievement) {
+                try {
+                    const checkAch = (id, threshold) => {
+                        if (score >= threshold && !unlockedAchievements.has(id)) {
+                            window.gameHubProgress.unlockAchievement("blockblast", id);
+                            unlockedAchievements.add(id);
+                        }
+                    };
+
+                    checkAch("blockblast_first_clear", 1);
+                    checkAch("blockblast_500_score", 500);
+                    checkAch("blockblast_1000_score", 1000);
+                    checkAch("blockblast_2500_score", 2500);
+                    checkAch("blockblast_5000_score", 5000);
+                } catch (e) {
+                    console.warn("[BlockBlast] Failed to unlock achievement", e);
+                }
             }
         }
 

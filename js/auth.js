@@ -52,6 +52,9 @@
   async function signOutCurrentUser() {
     if (!firebaseRef || !firebaseRef.auth) return;
     await firebaseRef.auth.signOut();
+    if (window.location.pathname.includes("profile.html")) {
+      window.location.href = "index.html";
+    }
   }
 
   function updateAuthUI(user) {
@@ -61,15 +64,53 @@
     const mobileProfileLink = document.getElementById("mobile-profile-link");
 
     const isLoggedIn = !!user;
+    
+    // Attempt to fetch custom user data for the avatar
+    let customUserData = null;
+    if (isLoggedIn && window.gameHubFirebase && window.gameHubFirebase.db) {
+        window.gameHubFirebase.db.collection("users").doc(user.uid).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.avatar && profileAvatar) {
+                    renderAvatarSVG(profileAvatar, data.avatar, "w-full h-full");
+                } else if (profileAvatar) {
+                    const initial = (data.username || user.displayName || user.email || "?")[0]?.toUpperCase();
+                    profileAvatar.textContent = initial;
+                }
+            }
+        }).catch(e => console.warn("Nav avatar load failed", e));
+    }
+
     const initial =
       (user && (user.displayName || user.email || "?")[0]?.toUpperCase()) ||
       "?";
 
-    if (profileAvatar) {
+    if (profileAvatar && !isLoggedIn) {
       profileAvatar.textContent = initial;
     }
     if (profileLabel) {
       profileLabel.textContent = isLoggedIn ? "Profile" : "Sign In";
+    }
+
+    // Helper to render the same SVG as profile page
+    function renderAvatarSVG(container, config, classes) {
+        const mouths = {
+            smile: "M40 65 Q50 75 60 65",
+            flat: "M40 65 L60 65",
+            surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70"
+        };
+        container.innerHTML = `
+            <svg viewBox="0 0 100 100" class="${classes}">
+                <circle cx="50" cy="50" r="40" fill="${config.base}" />
+                <g>
+                    <circle cx="40" cy="45" r="5" fill="white" />
+                    <circle cx="40" cy="45" r="2" fill="black" />
+                    <circle cx="60" cy="45" r="5" fill="white" />
+                    <circle cx="60" cy="45" r="2" fill="black" />
+                </g>
+                <path d="${mouths[config.mouth] || mouths.smile}" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+            </svg>
+        `;
     }
     if (mobileProfileLink) {
       mobileProfileLink.textContent = isLoggedIn ? "Profile" : "Sign In";

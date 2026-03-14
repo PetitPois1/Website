@@ -67,7 +67,29 @@
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-[0.18em] text-slate-400 mb-1">Signed in as</p>
-                    <p id="profile-page-name" class="text-lg font-semibold text-slate-50">Guest</p>
+                    <div class="flex items-center gap-2 group">
+                        <div id="username-display-container" class="flex items-center gap-2">
+                            <p id="profile-page-name" class="text-lg font-semibold text-slate-50">Loading profile...</p>
+                            <button id="edit-username-btn" class="text-slate-500 hover:text-violet-400 transition-colors hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="username-edit-container" class="hidden flex items-center gap-2">
+                            <input type="text" id="username-input" class="bg-slate-800 border border-violet-500/50 rounded px-2 py-1 text-sm text-slate-100 focus:outline-none focus:border-violet-500" placeholder="New username">
+                            <button id="save-username-btn" class="p-1 text-emerald-500 hover:text-emerald-400 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button id="cancel-username-btn" class="p-1 text-rose-500 hover:text-rose-400 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                     <p id="profile-page-email" class="text-xs text-slate-400">Not signed in</p>
                 </div>
             </div>
@@ -278,6 +300,54 @@
             </article>
         </section>
 
+        <!-- Avatar Editor Section -->
+        <section class="mb-12">
+            <header class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-slate-50 flex items-center gap-3">
+                    <span class="text-2xl">🎨</span> Avatar Character Editor
+                </h2>
+            </header>
+            <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-10">
+                <div id="avatar-preview-container" class="relative w-48 h-48 bg-slate-800 rounded-3xl flex items-center justify-center overflow-hidden border-2 border-violet-500/30">
+                    <!-- Layered SVG Avatar -->
+                    <svg id="avatar-svg" viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="40" id="avatar-base" fill="#8b5cf6" />
+                        <g id="avatar-eyes">
+                            <circle cx="40" cy="45" r="5" fill="white" />
+                            <circle cx="40" cy="45" r="2" fill="black" />
+                            <circle cx="60" cy="45" r="5" fill="white" />
+                            <circle cx="60" cy="45" r="2" fill="black" />
+                        </g>
+                        <path id="avatar-mouth" d="M40 65 Q50 75 60 65" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+                        <path id="avatar-accessory" d="" stroke="white" stroke-width="2" fill="none" />
+                    </svg>
+                </div>
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    <div>
+                        <label class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-2 block">Base Color</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="updateAvatar('base', '#8b5cf6')" class="w-8 h-8 rounded-full bg-[#8b5cf6] border-2 border-white/20"></button>
+                            <button onclick="updateAvatar('base', '#ef4444')" class="w-8 h-8 rounded-full bg-[#ef4444] border-2 border-white/20"></button>
+                            <button onclick="updateAvatar('base', '#10b981')" class="w-8 h-8 rounded-full bg-[#10b981] border-2 border-white/20"></button>
+                            <button onclick="updateAvatar('base', '#f59e0b')" class="w-8 h-8 rounded-full bg-[#f59e0b] border-2 border-white/20"></button>
+                            <button onclick="updateAvatar('base', '#3b82f6')" class="w-8 h-8 rounded-full bg-[#3b82f6] border-2 border-white/20"></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-2 block">Expression</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="updateAvatar('mouth', 'smile')" class="px-3 py-1 rounded bg-slate-800 text-xs">Happy</button>
+                            <button onclick="updateAvatar('mouth', 'flat')" class="px-3 py-1 rounded bg-slate-800 text-xs">Neutral</button>
+                            <button onclick="updateAvatar('mouth', 'surprised')" class="px-3 py-1 rounded bg-slate-800 text-xs">O-O</button>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <button id="save-avatar-btn" class="w-full py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Avatar Design</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Friends Section -->
         <section class="mb-12">
             <header class="flex items-center justify-between mb-6">
@@ -324,84 +394,240 @@
             const bjMoneyEl = document.getElementById("profile-blackjack-money");
             const bjAchEl = document.getElementById("profile-blackjack-achievements");
 
-            const friendsListEl = document.getElementById("friends-list");
-            const friendSearchInput = document.getElementById("friend-search-input");
             const addFriendBtn = document.getElementById("add-friend-btn");
+            const editUsernameBtn = document.getElementById("edit-username-btn");
+            const saveAvatarBtn = document.getElementById("save-avatar-btn");
+            
+            const usernameDisplayContainer = document.getElementById("username-display-container");
+            const usernameEditContainer = document.getElementById("username-edit-container");
+            const usernameInput = document.getElementById("username-input");
+            const saveUsernameBtn = document.getElementById("save-username-btn");
+            const cancelUsernameBtn = document.getElementById("cancel-username-btn");
 
             let currentUid = null;
+            let currentAvatar = { base: "#8b5cf6", mouth: "smile" };
 
-            function applyUser(user) {
+            function applyUser(user, userData = null) {
                 if (!user) {
                     nameEl.textContent = "Guest";
                     emailEl.textContent = "Not signed in";
-                    avatarEl.textContent = "?";
+                    avatarEl.innerHTML = "?";
+                    editUsernameBtn.classList.add('hidden');
                     currentUid = null;
                     return;
                 }
                 const email = user.email || "Signed in";
-                const display = user.displayName || email.split("@")[0];
+                const display = (userData && userData.username) || user.displayName || email.split("@")[0];
                 nameEl.textContent = display;
                 emailEl.textContent = email;
-                avatarEl.textContent = (display[0] || "?").toUpperCase();
+                editUsernameBtn.classList.remove('hidden');
+                
+                if (userData && userData.avatar) {
+                    currentAvatar = userData.avatar;
+                    renderAvatarSVG(avatarEl, currentAvatar, "w-full h-full");
+                    renderAvatarSVG(document.getElementById('avatar-svg'), currentAvatar, "w-full h-full");
+                } else {
+                    avatarEl.innerHTML = (display[0] || "?").toUpperCase();
+                }
+                
                 currentUid = user.uid;
                 loadFriends();
             }
 
-            if (window.gameHubAuth && window.gameHubAuth.onAuthStateChanged) {
-                window.gameHubAuth.onAuthStateChanged((user) => {
-                    applyUser(user);
-                });
+            function renderAvatarSVG(container, config, classes) {
+                const mouths = {
+                    smile: "M40 65 Q50 75 60 65",
+                    flat: "M40 65 L60 65",
+                    surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70"
+                };
+                container.innerHTML = `
+                    <svg viewBox="0 0 100 100" class="${classes}">
+                        <circle cx="50" cy="50" r="40" fill="${config.base}" />
+                        <g>
+                            <circle cx="40" cy="45" r="5" fill="white" />
+                            <circle cx="40" cy="45" r="2" fill="black" />
+                            <circle cx="60" cy="45" r="5" fill="white" />
+                            <circle cx="60" cy="45" r="2" fill="black" />
+                        </g>
+                        <path d="${mouths[config.mouth] || mouths.smile}" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+                    </svg>
+                `;
             }
 
-            if (!window.gameHubProgress || !window.gameHubAchievements) {
-                return;
+            window.updateAvatar = (type, value) => {
+                currentAvatar[type] = value;
+                renderAvatarSVG(document.getElementById('avatar-svg'), currentAvatar, "w-full h-full");
+            };
+
+            saveAvatarBtn.onclick = async () => {
+                if (!currentUid) {
+                    alert("Please sign in to save your avatar!");
+                    return;
+                }
+                const db = window.gameHubFirebase.db;
+                if (!db) {
+                    alert("Database not ready.");
+                    return;
+                }
+
+                saveAvatarBtn.disabled = true;
+                const originalText = saveAvatarBtn.textContent;
+                saveAvatarBtn.textContent = "SAVING...";
+
+                try {
+                    await db.collection("users").doc(currentUid).set({
+                        avatar: currentAvatar
+                    }, { merge: true });
+                    renderAvatarSVG(avatarEl, currentAvatar, "w-full h-full");
+                    alert("Avatar saved!");
+                } catch (e) {
+                    console.error("[Profile] Error saving avatar:", e);
+                    alert("Error saving avatar: " + e.message + "\n\nTip: Make sure you have updated your Firebase Security Rules!");
+                } finally {
+                    saveAvatarBtn.disabled = false;
+                    saveAvatarBtn.textContent = originalText;
+                }
+            };
+
+            editUsernameBtn.onclick = () => {
+                usernameInput.value = nameEl.textContent;
+                usernameDisplayContainer.classList.add('hidden');
+                usernameEditContainer.classList.remove('hidden');
+                usernameInput.focus();
+            };
+
+            cancelUsernameBtn.onclick = () => {
+                usernameDisplayContainer.classList.remove('hidden');
+                usernameEditContainer.classList.add('hidden');
+            };
+
+            saveUsernameBtn.onclick = async () => {
+                if (!currentUid) return;
+                const newUsername = usernameInput.value.trim();
+                if (!newUsername || newUsername === nameEl.textContent) {
+                    cancelUsernameBtn.onclick();
+                    return;
+                }
+                
+                const db = window.gameHubFirebase.db;
+                if (!db) {
+                    alert("Database not ready. Please try again in a moment.");
+                    return;
+                }
+
+                saveUsernameBtn.disabled = true;
+                const originalContent = saveUsernameBtn.innerHTML;
+                saveUsernameBtn.innerHTML = "...";
+                
+                try {
+                    console.log("[Profile] Checking username uniqueness:", newUsername);
+                    // Check uniqueness
+                    const snapshot = await db.collection("users").where("username", "==", newUsername).get();
+                    if (!snapshot.empty) {
+                        alert("Username already taken!");
+                        saveUsernameBtn.disabled = false;
+                        saveUsernameBtn.innerHTML = originalContent;
+                        return;
+                    }
+
+                    console.log("[Profile] Updating username for UID:", currentUid);
+                    await db.collection("users").doc(currentUid).set({
+                        username: newUsername,
+                        email: emailEl.textContent // Also store email for easier searching
+                    }, { merge: true });
+                    
+                    nameEl.textContent = newUsername;
+                    cancelUsernameBtn.onclick();
+                    alert("Username updated!");
+                } catch (e) {
+                    console.error("[Profile] Error updating username:", e);
+                    alert("Error updating username: " + e.message + "\n\nTip: Make sure you have updated your Firebase Security Rules in the Firebase Console!");
+                } finally {
+                    saveUsernameBtn.disabled = false;
+                    saveUsernameBtn.innerHTML = originalContent;
+                }
+            };
+
+            if (window.gameHubAuth && window.gameHubAuth.onAuthStateChanged) {
+                window.gameHubAuth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            const db = window.gameHubFirebase.db;
+                            const doc = await db.collection("users").doc(user.uid).get();
+                            applyUser(user, doc.exists ? doc.data() : null);
+                        } catch (e) {
+                            console.warn("[Profile] Could not load user data from Firestore. Check Security Rules.", e);
+                            applyUser(user, null); // Fallback: still show as user, but without custom data
+                        }
+                        await loadStats(); // Call loadStats here too!
+                    } else {
+                        applyUser(null);
+                    }
+                });
             }
 
             // Load Game Stats
             const loadStats = async () => {
-                const snakeProgress = await window.gameHubProgress.loadGameProgress("snake");
-                const blockProgress = await window.gameHubProgress.loadGameProgress("blockblast");
-                const clickerProgress = await window.gameHubProgress.loadGameProgress("clicker");
-                const flappyProgress = await window.gameHubProgress.loadGameProgress("flappy");
-                const miningProgress = await window.gameHubProgress.loadGameProgress("mining");
-                const brickProgress = await window.gameHubProgress.loadGameProgress("brick");
-                const blackjackProgress = await window.gameHubProgress.loadGameProgress("blackjack");
+                const games = ["snake", "blockblast", "clicker", "flappy", "mining", "brick", "blackjack"];
+                const progressEls = {
+                    snake: { high: snakeHighEl, ach: snakeAchEl },
+                    blockblast: { high: blockHighEl, ach: blockAchEl },
+                    clicker: { high: clickerEarnedEl, ach: clickerAchEl, key: "totalEarned" },
+                    flappy: { high: flappyHighEl, ach: flappyAchEl },
+                    mining: { high: miningDepthEl, ach: miningAchEl, key: "player.stats.maxDepth", suffix: "m" },
+                    brick: { high: brickHighEl, ach: brickAchEl },
+                    blackjack: { high: bjMoneyEl, ach: bjAchEl, key: "bestMoney", prefix: "$" }
+                };
 
-                snakeHighEl.textContent = snakeProgress?.highScore || 0;
-                blockHighEl.textContent = blockProgress?.highScore || 0;
-                clickerEarnedEl.textContent = clickerProgress?.totalEarned ? Math.floor(clickerProgress.totalEarned).toLocaleString() : 0;
-                flappyHighEl.textContent = flappyProgress?.highScore || 0;
-                miningDepthEl.textContent = miningProgress?.player?.stats?.maxDepth ? Math.floor(miningProgress.player.stats.maxDepth) + "m" : "0m";
-                brickHighEl.textContent = brickProgress?.highScore || 0;
-                bjMoneyEl.textContent = "$" + (blackjackProgress?.bestMoney || 0);
+                let totalLinked = 0;
+                let totalAchCount = 0;
 
-                const snakeUnlocked = await window.gameHubProgress.getUserAchievements("snake");
-                const blockUnlocked = await window.gameHubProgress.getUserAchievements("blockblast");
-                const clickerUnlocked = await window.gameHubProgress.getUserAchievements("clicker");
-                const flappyUnlocked = await window.gameHubProgress.getUserAchievements("flappy");
-                const miningUnlocked = await window.gameHubProgress.getUserAchievements("mining");
-                const brickUnlocked = await window.gameHubProgress.getUserAchievements("brick");
-                const bjUnlocked = await window.gameHubProgress.getUserAchievements("blackjack");
+                for (const gameId of games) {
+                    try {
+                        const progress = await window.gameHubProgress.loadGameProgress(gameId);
+                        const unlocked = await window.gameHubProgress.getUserAchievements(gameId);
+                        
+                        const els = progressEls[gameId];
+                        if (!els) continue;
 
-                snakeAchEl.textContent = snakeUnlocked.length;
-                blockAchEl.textContent = blockUnlocked.length;
-                clickerAchEl.textContent = clickerUnlocked.length;
-                flappyAchEl.textContent = flappyUnlocked.length;
-                miningAchEl.textContent = miningUnlocked.length;
-                brickAchEl.textContent = brickUnlocked.length;
-                bjAchEl.textContent = bjUnlocked.length;
+                        if (progress) {
+                            totalLinked++;
+                            let val = 0;
+                            if (els.key) {
+                                // Nested key lookup
+                                val = els.key.split('.').reduce((obj, key) => obj && obj[key], progress) || 0;
+                            } else {
+                                val = progress.highScore || 0;
+                            }
+                            
+                            if (els.high) {
+                                let display = typeof val === "number" ? Math.floor(val).toLocaleString() : val;
+                                if (els.prefix) display = els.prefix + display;
+                                if (els.suffix) display = display + els.suffix;
+                                els.high.textContent = display;
+                            }
+                        }
 
-                const games = [snakeProgress, blockProgress, clickerProgress, flappyProgress, miningProgress, brickProgress, blackjackProgress];
-                const gamesLinked = games.filter(g => g && Object.keys(g).length > 0).length;
-                gamesCountEl.textContent = gamesLinked;
+                        if (els.ach) {
+                            els.ach.textContent = unlocked.length;
+                            totalAchCount += unlocked.length;
+                        }
+                    } catch (e) {
+                        console.warn(`[Profile] Failed to load ${gameId} progress`, e);
+                    }
+                }
 
-                const totalAchievements = snakeUnlocked.length + blockUnlocked.length + clickerUnlocked.length + flappyUnlocked.length + miningUnlocked.length + brickUnlocked.length + bjUnlocked.length;
-                achievementsCountEl.textContent = totalAchievements;
+                if (gamesCountEl) gamesCountEl.textContent = totalLinked;
+                if (achievementsCountEl) achievementsCountEl.textContent = totalAchCount;
             };
 
-            await loadStats();
+            document.getElementById("profile-signout-btn").onclick = async () => {
+                if (window.gameHubAuth) {
+                    await window.gameHubAuth.signOutCurrentUser();
+                }
+            };
 
-            // Friends System
+            // ... rest of scripts ...
             async function loadFriends() {
                 if (!currentUid) return;
                 const db = window.gameHubFirebase.db;
@@ -427,30 +653,37 @@
             function renderFriendCard(uid, data) {
                 const card = document.createElement("div");
                 card.className = "bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4 text-left";
-                const initial = (data.displayName || data.email || "?")[0].toUpperCase();
-                card.innerHTML = `
-                    <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-lg">${initial}</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-bold text-slate-100 truncate">${data.displayName || data.email.split('@')[0]}</p>
-                        <p class="text-xs text-slate-400 truncate">${data.email}</p>
-                    </div>
-                    <button onclick="viewFriendAchievements('${uid}')" class="text-xs px-3 py-1 rounded-lg border border-slate-600 hover:border-violet-500 transition-colors">View</button>
+                
+                const avatarContainer = document.createElement("div");
+                avatarContainer.className = "w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center overflow-hidden";
+                if (data.avatar) {
+                    renderAvatarSVG(avatarContainer, data.avatar, "w-full h-full");
+                } else {
+                    avatarContainer.textContent = (data.username || data.displayName || data.email || "?")[0].toUpperCase();
+                }
+
+                card.appendChild(avatarContainer);
+                
+                const info = document.createElement("div");
+                info.className = "flex-1 min-w-0";
+                info.innerHTML = `
+                    <p class="font-bold text-slate-100 truncate">${data.username || data.displayName || data.email.split('@')[0]}</p>
+                    <p class="text-xs text-slate-400 truncate">${data.email}</p>
                 `;
+                card.appendChild(info);
+
+                const viewBtn = document.createElement("button");
+                viewBtn.className = "text-xs px-3 py-1 rounded-lg border border-slate-600 hover:border-violet-500 transition-colors";
+                viewBtn.textContent = "View";
+                viewBtn.onclick = () => viewFriendAchievements(uid);
+                card.appendChild(viewBtn);
+
                 friendsListEl.appendChild(card);
             }
 
-            window.viewFriendAchievements = async (friendUid) => {
-                // For simplicity, we'll just show a basic alert or we could reuse the achievements modal logic
-                // For now, let's just log it or show a simple summary
-                const db = window.gameHubFirebase.db;
-                const snakeAch = await db.collection("users").doc(friendUid).collection("achievements").doc("snake").get();
-                const unlocked = snakeAch.exists ? snakeAch.data().unlocked || [] : [];
-                alert(`Friend has ${unlocked.length} achievements in Snake!`);
-            };
-
             addFriendBtn.onclick = async () => {
-                const email = friendSearchInput.value.trim();
-                if (!email) return;
+                const searchTerm = friendSearchInput.value.trim();
+                if (!searchTerm) return;
                 if (!currentUid) {
                     alert("Please sign in to add friends.");
                     return;
@@ -458,7 +691,13 @@
 
                 const db = window.gameHubFirebase.db;
                 const usersRef = db.collection("users");
-                const snapshot = await usersRef.where("email", "==", email).get();
+                
+                // Try searching by email first
+                let snapshot = await usersRef.where("email", "==", searchTerm).get();
+                if (snapshot.empty) {
+                    // Try searching by username
+                    snapshot = await usersRef.where("username", "==", searchTerm).get();
+                }
 
                 if (snapshot.empty) {
                     alert("User not found.");

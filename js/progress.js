@@ -60,61 +60,66 @@
     }
   }
 
-  async function saveGameProgress(gameId, progress) {
-    if (!gameId || !progress) return;
-
-    saveLocalProgress(gameId, progress);
-
+  async function saveGameProgress(gameId, data) {
+    if (!gameId) return;
+    
+    // Track current activity
     const user = getUser();
-    const db = getDb();
-    if (!user || !db) return;
+    if (user && getDb()) {
+        try {
+            await getDb().collection("users").doc(user.uid).set({
+                currentlyPlaying: gameId,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } catch(e) {}
+    }
+
+    const key = `gameProgress_${gameId}`;
+    localStorage.setItem(key, JSON.stringify(data));
+
+    if (!user || !getDb()) return;
 
     try {
-      const docRef = db
+      const docRef = getDb()
         .collection("users")
         .doc(user.uid)
         .collection("progress")
         .doc(gameId);
-
-      await docRef.set(
-        Object.assign({}, progress, {
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }),
-        { merge: true }
-      );
+      await docRef.set(data, { merge: true });
     } catch (e) {
       console.warn("[GameHub] Failed to save cloud progress", e);
     }
   }
 
   async function loadGameProgress(gameId) {
-    const local = loadLocalProgress(gameId) || {};
+    if (!gameId) return null;
+
+    // First try local storage for immediate feel
+    const key = `gameProgress_${gameId}`;
+    const local = localStorage.getItem(key);
+    let localData = local ? JSON.parse(local) : null;
 
     const user = getUser();
     const db = getDb();
-    if (!user || !db) {
-      return local;
-    }
+    if (!user || !db) return localData;
 
     try {
-      const docRef = db
+      const doc = await db
         .collection("users")
         .doc(user.uid)
         .collection("progress")
-        .doc(gameId);
+        .doc(gameId)
+        .get();
 
-      const snap = await docRef.get();
-      if (!snap.exists) {
-        return local;
+      if (doc.exists) {
+        const cloudData = doc.data();
+        // Simple merge: cloud usually wins if newer, but for now just return cloud
+        return cloudData;
       }
-      const data = snap.data() || {};
-      const merged = Object.assign({}, local, data);
-      saveLocalProgress(gameId, merged);
-      return merged;
     } catch (e) {
       console.warn("[GameHub] Failed to load cloud progress", e);
-      return local;
     }
+    return localData;
   }
 
   async function unlockAchievement(gameId, achievementId) {
@@ -127,6 +132,11 @@
 
     const updated = existingLocal.concat(achievementId);
     saveLocalAchievements(gameId, updated);
+
+    // Trigger visual notification
+    if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+      window.gameHubAchievements.notifyAchievement(gameId, achievementId);
+    }
 
     const user = getUser();
     const db = getDb();
