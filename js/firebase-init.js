@@ -1,15 +1,11 @@
 (function () {
-  // Replace these placeholder values with your real Firebase config.
-  // You can find them in your Firebase console under Project Settings.
-  const firebaseConfig = {
-    apiKey: "AIzaSyC06oaHGipI9lNfFnCcgLPnOqMKZTPl-wI",
-    authDomain: "game-hub-6b4ec.firebaseapp.com",
-    projectId: "game-hub-6b4ec",
-    storageBucket: "game-hub-6b4ec.firebasestorage.app",
-    messagingSenderId: "562667815247",
-    appId: "1:562667815247:web:f9ba3d431bc8dc2c7e853a",
-    measurementId: "G-VT7F73XYWV"
-  };
+  // Configuration is loaded from js/firebase-config.js
+  const firebaseConfig = window.gameHubConfig;
+
+  if (!firebaseConfig) {
+    console.error("[GameHub] Firebase configuration not found. Check js/firebase-config.js.");
+    return;
+  }
 
   if (!window.firebase) {
     console.error(
