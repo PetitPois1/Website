@@ -9,7 +9,7 @@
         :root {
             --wood-dark: #2a1a17; --wood-mid: #4e342e; --wood-light: #6d4c41;
             --gold-light: #fff3e0; --gold: #ffca28; --gold-dark: #ff8f00;
-            --ocean-blue: #0277bd; --ocean-deep: #01579b; --text-light: #fff8e1;
+            --ocean-blue: #0277bd; --text-light: #fff8e1;
             --danger: #e53935; --success: #43a047; --hp-green: #4caf50; --xp-blue: #29b6f6;
             --bg-modal: rgba(0, 0, 0, 0.85);
         }
@@ -23,7 +23,6 @@
             box-shadow: 0 0 30px rgba(0,0,0,1);
         }
 
-        /* --- TEXTURES & ANIMATIONS --- */
         .wood-texture {
             background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), 
                         repeating-linear-gradient(45deg, var(--wood-dark) 0px, var(--wood-mid) 10px, var(--wood-dark) 20px);
@@ -34,24 +33,19 @@
         .active-view { display: block; animation: slideFadeIn 0.3s ease-out forwards; }
         @keyframes slideFadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- TOAST NOTIFICATIONS --- */
+        /* --- TOAST & TITLE --- */
         #toast-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
         .toast { background: linear-gradient(135deg, rgba(20,20,20,0.95), rgba(50,50,50,0.95)); color: white; padding: 12px 24px; border-radius: 20px; border: 1px solid var(--gold); font-size: 14px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 2s forwards; }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
 
-        /* --- TITLE SCREEN (UPGRADED) --- */
         #title-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #000428, #004e92, #000428); background-size: 300% 300%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; animation: oceanWave 12s ease infinite; overflow: hidden; }
         @keyframes oceanWave { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
-        
-        .sunburst { position: absolute; top: 50%; left: 50%; width: 600px; height: 600px; margin-top: -300px; margin-left: -300px; background: repeating-conic-gradient(from 0deg, rgba(255, 202, 40, 0.1) 0deg 15deg, transparent 15deg 30deg); animation: spin 20s linear infinite; z-index: 0; pointer-events: none; }
+        .sunburst { position: absolute; top: 50%; left: 50%; width: 600px; height: 600px; margin-top: -300px; margin-left: -300px; background: repeating-conic-gradient(from 0deg, rgba(255, 202, 40, 0.1) 0deg 15deg, transparent 15deg 30deg); animation: spin 20s linear infinite; z-index: 0; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .title-logo { font-size: 54px; font-weight: 900; color: var(--gold); text-shadow: 0 8px 15px rgba(0,0,0,0.8), 3px 3px 0 #000, -1px -1px 0 #000; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; z-index: 1; animation: floatLogo 3s ease-in-out infinite; }
+        .title-logo { font-size: 54px; font-weight: 900; color: var(--gold); text-shadow: 0 8px 15px rgba(0,0,0,0.8), 3px 3px 0 #000, -1px -1px 0 #000; text-align: center; margin-bottom: 20px; z-index: 1; animation: floatLogo 3s ease-in-out infinite; text-transform: uppercase;}
         @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        
-        .start-btn-invisible { position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; border: none; z-index: 10; cursor: pointer; }
-        .tap-to-start { z-index: 1; color: white; font-size: 20px; font-weight: bold; letter-spacing: 4px; animation: pulseText 1.5s infinite; text-shadow: 2px 2px 4px #000; margin-top: 40px; }
+        .tap-to-start { z-index: 1; color: white; font-size: 20px; font-weight: bold; letter-spacing: 4px; animation: pulseText 1.5s infinite; text-shadow: 2px 2px 4px #000; margin-top: 40px; cursor: pointer;}
         @keyframes pulseText { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.05); } }
 
         /* --- HEADER & NAV --- */
@@ -59,106 +53,76 @@
         .header-top { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; font-weight: bold;}
         .resources { display: flex; gap: 8px; font-size: 13px; background: rgba(0,0,0,0.4); padding: 6px 10px; border-radius: 12px; border: 1px solid #444;}
         .combat-power { font-size: 14px; color: var(--text-light); text-align: center; background: rgba(0,0,0,0.6); padding: 6px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #555; text-shadow: 1px 1px 0 #000;}
-        .idle-claim-btn { background: linear-gradient(to bottom, #66bb6a, var(--success)); color: white; border: 1px solid #fff; padding: 5px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; text-shadow: 1px 1px 0 #000; box-shadow: 0 3px 0 #1b5e20; transition: all 0.1s;}
-        .idle-claim-btn:active { transform: translateY(3px); box-shadow: 0 0 0 #1b5e20; }
+        .idle-claim-btn { background: linear-gradient(to bottom, #66bb6a, var(--success)); color: white; border: 1px solid #fff; padding: 5px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 3px 0 #1b5e20;}
 
-        nav { background: linear-gradient(to top, var(--wood-dark), var(--wood-mid)); border-top: 3px solid var(--gold); display: flex; height: 75px; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
-        .nav-btn { flex: 1; background: transparent; border: none; color: #aaa; font-size: 13px; font-weight: bold; border-right: 1px solid #222; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-        .nav-btn:last-child { border-right: none; }
-        .nav-btn.active { color: var(--gold); background: rgba(255,255,255,0.05); text-shadow: 0 0 10px rgba(255,202,40,0.5); border-bottom: 3px solid var(--gold); }
-        .nav-icon { font-size: 20px; }
+        nav { background: linear-gradient(to top, var(--wood-dark), var(--wood-mid)); border-top: 3px solid var(--gold); display: flex; height: 75px; flex-shrink: 0; }
+        .nav-btn { flex: 1; background: transparent; border: none; color: #aaa; font-size: 13px; font-weight: bold; border-right: 1px solid #222; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .nav-btn.active { color: var(--gold); background: rgba(255,255,255,0.05); border-bottom: 3px solid var(--gold); }
 
-        /* --- BUTTONS --- */
-        .btn-action { background: linear-gradient(to bottom, var(--gold), var(--gold-dark)); color: #111; border: 2px solid #fff; padding: 12px 24px; font-size: 18px; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 6px 0 #806000, 0 8px 10px rgba(0,0,0,0.4); width: 100%; transition: all 0.1s; text-transform: uppercase; text-shadow: 1px 1px 0 rgba(255,255,255,0.4); }
-        .btn-action:active { transform: translateY(6px); box-shadow: 0 0 0 #806000, 0 0 0 rgba(0,0,0,0); }
-        .btn-action:disabled { background: linear-gradient(to bottom, #555, #333); color: #888; box-shadow: 0 6px 0 #111; border-color: #444; cursor: not-allowed; text-shadow: none; }
+        .btn-action { background: linear-gradient(to bottom, var(--gold), var(--gold-dark)); color: #111; border: 2px solid #fff; padding: 12px 24px; font-size: 18px; font-weight: 900; border-radius: 8px; cursor: pointer; box-shadow: 0 6px 0 #806000; width: 100%; text-transform: uppercase; margin-bottom: 10px;}
+        .btn-action:active { transform: translateY(6px); box-shadow: 0 0 0 #806000; }
+        .btn-action:disabled { background: #555; color: #888; box-shadow: 0 6px 0 #111; cursor: not-allowed; }
 
-        /* --- GACHA (TAVERN) --- */
-        .gacha-panel { border-radius: 12px; padding: 25px; text-align: center; color: var(--text-light); }
-        .gacha-glow { width: 100px; height: 100px; background: radial-gradient(circle, rgba(255,202,40,0.8) 0%, rgba(255,202,40,0) 70%); margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 45px; animation: pulse 2s infinite; }
-        .slot-animation { animation: shake 0.1s infinite; color: #fff; font-style: italic; }
-        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 100% { transform: translateX(0); } }
+        /* --- UI ELEMENTS --- */
+        .type-icon { font-size: 12px; background: rgba(0,0,0,0.7); border-radius: 50%; padding: 2px 4px; border: 1px solid #fff; }
+        .type-brawler { color: #ff5252; }
+        .type-swordsman { color: #448aff; }
+        .type-gunner { color: #69f0ae; }
 
-        /* --- CREW TAB --- */
-        .formation-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; border: 1px solid #555; box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); }
-        .team-slot { width: 60px; height: 60px; border: 2px dashed #666; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); font-size: 10px; color: #888; text-align: center; overflow: hidden; transition: transform 0.1s; }
-        .team-slot.filled { border: 2px solid var(--gold); background: linear-gradient(to bottom, var(--wood-light), var(--wood-mid)); color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.6); }
-        .team-slot.filled:active { transform: scale(0.9); }
+        .type-guide { display: flex; justify-content: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; color: #ccc;}
+
+        /* --- CREW & INVENTORY --- */
+        .formation-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; }
+        .team-slot { width: 60px; height: 60px; border: 2px dashed #666; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); font-size: 10px; color: #888; position: relative;}
+        .team-slot.filled { border: 2px solid var(--gold); background: linear-gradient(to bottom, var(--wood-light), var(--wood-mid)); color: white; cursor: pointer; }
+        .lead-crown { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 16px; display: none; }
+        .team-slot.filled:first-child .lead-crown { display: block; }
         
-        .filter-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
-        .filter-btn { background: linear-gradient(to bottom, #444, #222); color: white; border: 1px solid #666; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all 0.2s; }
-        .filter-btn.active { background: linear-gradient(to bottom, var(--gold), var(--gold-dark)); color: #000; border-color: #fff; text-shadow: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
-
         .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 20px;}
-        .char-card { background: linear-gradient(to bottom, #444, #222); border: 2px solid #555; border-radius: 8px; text-align: center; color: white; font-size: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.6); cursor: pointer; transition: transform 0.1s; position: relative; overflow: hidden;}
-        .char-card:active { transform: scale(0.95); }
-        .card-img-placeholder { width: 100%; height: 80px; background: rgba(0,0,0,0.5); border-bottom: 2px solid #111; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        .card-info { padding: 6px; text-shadow: 1px 1px 0 #000; }
+        .char-card { background: linear-gradient(to bottom, #444, #222); border: 2px solid #555; border-radius: 8px; text-align: center; color: white; font-size: 12px; position: relative;}
+        .card-img-placeholder { width: 100%; height: 80px; background: rgba(0,0,0,0.5); border-bottom: 2px solid #111; display: flex; align-items: center; justify-content: center; font-size: 24px; position: relative;}
+        .card-img-placeholder .type-icon { position: absolute; top: 5px; left: 5px; }
+        .card-info { padding: 6px; }
+        .star-6 { border-color: #ff1744; background: linear-gradient(to bottom, #7f0000, #222); }
         .star-5 { border-color: #ffcc00; background: linear-gradient(to bottom, #665200, #222); } 
         .star-4 { border-color: #b97af5; background: linear-gradient(to bottom, #4a2b6e, #222); } 
         .star-3 { border-color: #6fb0ff; background: linear-gradient(to bottom, #1d3e66, #222); }
-        .in-team-badge { position: absolute; top: -2px; right: -2px; background: var(--success); color: white; font-size: 9px; font-weight: bold; padding: 4px 6px; border-radius: 0 6px 0 8px; border-left: 1px solid white; border-bottom: 1px solid white; display: none; z-index: 10; box-shadow: -2px 2px 4px rgba(0,0,0,0.5);}
+        .in-team-badge { position: absolute; top: -2px; right: -2px; background: var(--success); color: white; font-size: 9px; padding: 4px 6px; border-radius: 0 6px 0 8px; display: none; z-index: 10;}
         .char-card.equipped .in-team-badge { display: block; }
-        .char-card.equipped { filter: brightness(0.7); }
-        .level-badge { background: linear-gradient(to bottom, #4fc3f7, var(--xp-blue)); color: #000; border-radius: 4px; padding: 2px 5px; font-size: 10px; font-weight: bold; margin-top: 2px; display: inline-block; border: 1px solid #fff;}
 
-        /* --- DOCK & VOYAGE & MODAL (Same structural CSS, keeping it clean) --- */
-        .ship-display { height: 150px; background: linear-gradient(to bottom, #81d4fa, #0277bd); border-radius: 12px; border: 3px solid var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 60px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
-        .wave-bg { position: absolute; bottom: -10px; width: 200%; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: drift 4s infinite linear; }
-        @keyframes drift { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .stat-panel { background: rgba(0,0,0,0.6); border: 1px solid #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; color: white; }
-
-        .combat-arena { background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.9)); border-radius: 12px; border: 2px solid var(--wood-light); padding: 15px; margin-bottom: 15px; color: white; text-align: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
-        .clash-view { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid #444; }
-        .clash-side { width: 40%; display: flex; flex-direction: column; align-items: center; }
-        .vs-text { font-size: 24px; font-weight: 900; color: var(--danger); text-shadow: 0 0 10px rgba(229,57,53,0.8), 2px 2px 0 #000; font-style: italic; }
+        /* --- COMBAT ARENA --- */
+        .combat-arena { background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.9)); border-radius: 12px; border: 2px solid var(--wood-light); padding: 15px; margin-bottom: 15px; color: white; text-align: center; position: relative; }
+        .clash-view { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px; }
+        .clash-side { width: 40%; display: flex; flex-direction: column; align-items: center; position: relative;}
+        .vs-text { font-size: 24px; font-weight: 900; color: var(--danger); }
         
         .team-cluster { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 10px; }
-        .mini-sprite { width: 40px; height: 40px; background: linear-gradient(135deg, #555, #222); border: 2px solid var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.6); transition: transform 0.2s; font-weight: bold;}
-        .enemy-sprite { width: 90px; height: 90px; background: linear-gradient(135deg, #8b0000, #3e0000); border: 3px solid var(--danger); border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 40px; box-shadow: 0 0 20px rgba(229,57,53,0.5); }
+        .mini-sprite { width: 40px; height: 40px; background: #333; border: 2px solid var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative;}
+        .mini-sprite .type-icon { position: absolute; bottom: -5px; right: -5px; font-size: 10px; }
+        .enemy-sprite { width: 90px; height: 90px; background: #3e0000; border: 3px solid var(--danger); border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; position: relative;}
+        
+        .hp-bar-container { width: 100%; height: 20px; background: #111; border: 2px solid #000; border-radius: 10px; position: relative; }
+        .hp-fill { height: 100%; background: linear-gradient(to right, #2e7d32, var(--hp-green)); width: 100%; transition: width 0.3s; }
+        .hp-text { position: absolute; width: 100%; text-align: center; top: 2px; left: 0; font-size: 12px; font-weight: bold; }
 
-        .hp-bar-container { width: 100%; height: 20px; background: #111; border: 2px solid #000; border-radius: 10px; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
-        .hp-fill { height: 100%; background: linear-gradient(to right, #2e7d32, var(--hp-green)); width: 100%; transition: width 0.3s ease-out; }
-        .hp-text { position: absolute; width: 100%; text-align: center; top: 2px; left: 0; font-size: 12px; font-weight: bold; line-height: 16px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; }
+        .battle-log { background: rgba(0,0,0,0.8); border: 2px solid #333; border-radius: 8px; height: 120px; overflow-y: auto; padding: 10px; font-size: 12px; text-align: left; display: flex; flex-direction: column; gap: 5px; }
 
+        /* --- ANIMATIONS & FLOATING TEXT --- */
         @keyframes bumpRight { 0% { transform: translateX(0); } 50% { transform: translateX(30px) scale(1.1); } 100% { transform: translateX(0); } }
         @keyframes bumpLeft { 0% { transform: translateX(0); } 50% { transform: translateX(-30px) scale(1.1); } 100% { transform: translateX(0); } }
-        @keyframes flashRed { 0% { filter: brightness(1); } 50% { filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5); transform: translateX(-5px); } 100% { filter: brightness(1); transform: translateX(0); } }
-        @keyframes skillShake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(0, 0) rotate(0deg); } }
+        @keyframes flashRed { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5); } }
         
-        .anim-attack-player { animation: bumpRight 0.3s ease-in-out; z-index: 10; }
-        .anim-attack-enemy { animation: bumpLeft 0.3s ease-in-out; z-index: 10; }
+        .anim-attack-player { animation: bumpRight 0.3s ease-in-out; }
+        .anim-attack-enemy { animation: bumpLeft 0.3s ease-in-out; }
         .anim-hurt { animation: flashRed 0.4s ease-in-out; }
-        .anim-skill { animation: skillShake 0.5s; filter: drop-shadow(0 0 10px var(--gold)); }
 
-        .battle-log { background: rgba(0,0,0,0.8); border: 2px solid #333; border-radius: 8px; height: 140px; overflow-y: auto; padding: 12px; font-size: 13px; color: #ddd; text-align: left; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 4px 10px rgba(0,0,0,0.8); }
-        .log-entry { animation: fadeIn 0.2s ease-in; border-bottom: 1px dotted #333; padding-bottom: 4px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .dmg-text { position: absolute; font-weight: 900; font-size: 24px; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 50; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 50% { transform: translateY(-30px) scale(1.2); } 100% { opacity: 0; transform: translateY(-50px) scale(1); } }
 
-        #char-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); z-index: 200; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
-        .modal-content { border-radius: 12px; width: 100%; max-width: 350px; padding: 20px; color: var(--text-light); position: relative; text-align: center; animation: popIn 0.2s ease-out; }
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .close-btn { position: absolute; top: 5px; right: 15px; color: #ccc; font-size: 32px; font-weight: bold; cursor: pointer; transition: color 0.2s; text-shadow: 0 2px 4px #000; }
-        .close-btn:hover { color: white; }
-        .modal-portrait { width: 100%; height: 160px; background: rgba(0,0,0,0.5); border: 2px solid var(--wood-light); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: inset 0 0 20px #000; }
-        
-        .level-section { background: rgba(0,0,0,0.4); border: 1px solid var(--xp-blue); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-        .btn-level { background: linear-gradient(to bottom, #4fc3f7, var(--xp-blue)); color: #000; border: 1px solid #fff; padding: 10px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 0 #0277bd; text-shadow: 1px 1px 0 rgba(255,255,255,0.5); transition: all 0.1s;}
-        .btn-level:active { transform: translateY(4px); box-shadow: 0 0 0 #0277bd; }
-        .btn-level:disabled { background: linear-gradient(to bottom, #555, #333); color: #888; cursor: not-allowed; border-color: #444; box-shadow: 0 4px 0 #111; text-shadow: none;}
-
-        .equip-section { background: rgba(0,0,0,0.4); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; }
-        .equip-select { width: 100%; padding: 8px; background: #111; color: var(--gold); border: 1px solid #666; border-radius: 4px; margin-top: 5px; font-weight: bold; box-shadow: inset 0 2px 4px #000; outline: none; }
-
-        .modal-stats { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; display: flex; justify-content: space-around; margin: 10px 0; font-weight: bold; border: 1px solid #555; text-shadow: 1px 1px 0 #000;}
-        
-        .btn-equip { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; border: 1px solid #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.6); margin-top: 5px; transition: all 0.1s; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); text-transform: uppercase;}
-        .btn-equip.add { background: linear-gradient(to bottom, #66bb6a, var(--success)); color: white; box-shadow: 0 5px 0 #1b5e20; }
-        .btn-equip.remove { background: linear-gradient(to bottom, #ef5350, var(--danger)); color: white; box-shadow: 0 5px 0 #b71c1c; }
-        .btn-equip:active { transform: translateY(5px); box-shadow: 0 0 0 transparent; }
-
-        .btn-retire { background: transparent; color: #ff8a80; border: 1px dashed #ff8a80; padding: 8px; width: 100%; margin-top: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: background 0.2s;}
-        .btn-retire:hover { background: rgba(255, 138, 128, 0.1); }
+        /* --- MODAL --- */
+        #char-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { border-radius: 12px; width: 100%; max-width: 350px; padding: 20px; color: var(--text-light); position: relative; text-align: center; }
+        .close-btn { position: absolute; top: 5px; right: 15px; font-size: 32px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -166,599 +130,372 @@
     <div id="game-container">
         <div id="toast-container"></div>
 
-        <div id="title-screen">
+        <div id="title-screen" onclick="startGame()">
             <div class="sunburst"></div>
-            <div class="title-logo">For Piece<br><span style="font-size:24px; color: white; text-shadow: 2px 2px 4px #000;">GRAND VOYAGE</span></div>
+            <div class="title-logo">For Piece<br><span style="font-size:20px; color: white;">NEW WORLD VOYAGE</span></div>
             <div class="tap-to-start">TAP TO START</div>
-            <button class="start-btn-invisible" onclick="startGame()"></button>
         </div>
 
         <header id="main-header" style="display: none;">
             <div class="header-top">
-                <div>Lv. <span id="player-level">1</span> Captain</div>
-                <div class="resources">
-                    <div>💎 <span id="gem-count">0</span></div>
-                    <div>🍖 <span id="meat-count">0</span></div>
-                    <div>🪵 <span id="wood-count">0</span></div>
-                </div>
+                <div>Lv. Captain</div>
+                <div class="resources"><div>💎 <span id="gem-count">0</span></div><div>🍖 <span id="meat-count">0</span></div><div>🪵 <span id="wood-count">0</span></div></div>
             </div>
             <div class="combat-power">⚔️ Total Crew Power: <span id="power-level">0</span></div>
             <div style="display:flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 12px; font-weight: normal; color: #bbb;">Idle Loot Generating...</span>
+                <span style="font-size: 12px; color: #bbb;">Idle Loot Generating...</span>
                 <button class="idle-claim-btn" onclick="claimIdleLoot()">Claim Loot</button>
             </div>
         </header>
 
         <section id="view-tavern" class="view-section active-view">
-            <div class="gacha-panel wood-texture">
-                <div class="gacha-glow">🍺</div>
-                <h2 style="margin:0 0 10px 0; font-size: 26px; text-shadow: 2px 2px 4px #000, 0 0 10px var(--gold);">Pirate Tavern</h2>
-                <p id="tavern-hint" style="color: #ddd; margin-bottom: 20px; font-size: 14px; min-height: 40px;">Recruit powerful allies! Beat Stage 4 to unlock Grand Line characters.</p>
-                <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #555;">
-                    Cost: <strong style="color:var(--xp-blue); font-size: 18px;">300 💎</strong>
-                </div>
+            <div class="wood-texture" style="padding: 20px; text-align: center; border-radius: 12px; margin-bottom: 20px;">
+                <h2 style="margin:0; color:var(--gold);">Pirate Tavern</h2>
+                <p id="tavern-hint" style="font-size: 13px; color:#ccc; min-height: 35px;">Recruit allies! Pool expands as you clear stages.</p>
+                <div style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; margin-bottom: 15px;">Cost: <strong style="color:var(--xp-blue);">300 💎</strong></div>
                 <button id="pull-btn" class="btn-action" onclick="pullGacha()">Summon 1x</button>
-                <div id="pull-result" style="margin-top: 25px; font-weight: bold; font-size: 20px; min-height: 50px; text-shadow: 1px 1px 2px #000;"></div>
+                <div id="pull-result" style="margin-top: 15px; font-weight: bold; font-size: 18px; min-height: 45px;"></div>
             </div>
-            <button onclick="clearSave()" style="margin-top: 30px; background: rgba(0,0,0,0.5); color: #888; border: 1px solid #444; padding: 8px 15px; width: 100%; border-radius: 8px; cursor: pointer;">Reset Save Data</button>
         </section>
 
         <section id="view-crew" class="view-section">
-            <h3 style="color: var(--gold); text-align: center; margin: 0 0 10px 0; text-shadow: 1px 1px 4px #000; font-size: 20px;">Active Formation</h3>
-            <div class="formation-container" id="team-ui"></div>
-            
-            <div class="filter-bar">
-                <button class="filter-btn active" onclick="setFilter(0, this)">All</button>
-                <button class="filter-btn" onclick="setFilter(5, this)">5⭐</button>
-                <button class="filter-btn" onclick="setFilter(4, this)">4⭐</button>
-                <button class="filter-btn" onclick="setFilter(3, this)">3⭐</button>
+            <div class="type-guide">
+                <span class="type-brawler">👊 Brawler</span> &gt; <span class="type-gunner">🔫 Gunner</span> &gt; <span class="type-swordsman">⚔️ Sword</span> &gt; <span class="type-brawler">👊</span>
             </div>
-
+            <h3 style="color: var(--gold); text-align: center; margin: 0 0 5px 0;">Active Formation (Slot 1 = Captain)</h3>
+            <div class="formation-container" id="team-ui"></div>
             <div class="inventory-grid" id="inventory-ui"></div>
         </section>
 
         <section id="view-dock" class="view-section">
-            <h2 style="color: var(--gold); text-align: center; margin-top: 0; text-shadow: 2px 2px 4px #000;">Shipyard</h2>
-            <div class="ship-display"><div class="wave-bg"></div>⛵</div>
-            <div class="stat-panel wood-texture">
-                <h3 style="margin: 0 0 10px 0; color: var(--xp-blue);">Ship Level: <span id="ui-ship-level">1</span></h3>
-                <p style="margin: 5px 0; font-size: 14px;">Current Buff: <strong style="color: var(--success);">+<span id="ui-ship-buff">5</span>% All Stats</strong></p>
-                <hr style="border-color: #555; margin: 15px 0;">
-                <p style="margin: 5px 0 15px 0; font-size: 14px;">Next Level Cost: <strong><span id="ui-ship-cost">100</span> 🪵 Wood</strong></p>
+            <div class="wood-texture" style="padding: 20px; text-align: center; border-radius: 12px;">
+                <h2 style="color: var(--gold); margin-top: 0;">Shipyard</h2>
+                <h3 style="color: var(--xp-blue);">Ship Level: <span id="ui-ship-level">1</span></h3>
+                <p>All Stats Buff: <strong style="color: var(--success);">+<span id="ui-ship-buff">5</span>%</strong></p>
+                <p>Next Level: <strong><span id="ui-ship-cost">100</span> 🪵 Wood</strong></p>
                 <button id="upgrade-ship-btn" class="btn-action" onclick="upgradeShip()">Upgrade Ship</button>
             </div>
-            <p style="color: #aaa; text-align: center; font-size: 13px;">Find Wood by winning battles in the Voyage tab!</p>
         </section>
 
         <section id="view-voyage" class="view-section">
-            <h2 id="stage-title" style="color: var(--gold); text-align: center; margin-top: 0; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255,202,40,0.5);">Stage 1: Dawn Island</h2>
-            <div class="combat-arena wood-texture">
+            <h2 id="stage-title" style="color: var(--gold); text-align: center; margin-top: 0;">Stage 1: Dawn Island</h2>
+            <div class="type-guide" style="background: transparent;">Captain's type determines Advantage!</div>
+            
+            <div class="combat-arena wood-texture" id="arena-box">
                 <div class="clash-view">
                     <div class="clash-side" id="clash-player-side">
                         <div class="team-cluster" id="clash-team-sprites"></div>
-                        <h4 style="margin: 5px 0; color: var(--success); text-shadow: 1px 1px 0 #000;">Your Crew</h4>
-                        <div class="hp-bar-container">
-                            <div id="player-hp-fill" class="hp-fill"></div>
-                            <div class="hp-text"><span id="player-hp-text">0/0</span></div>
-                        </div>
+                        <h4 style="margin: 5px 0; color: var(--success);">Your Crew</h4>
+                        <div class="hp-bar-container"><div id="player-hp-fill" class="hp-fill"></div><div class="hp-text"><span id="player-hp-text">0/0</span></div></div>
                     </div>
                     <div class="vs-text">VS</div>
                     <div class="clash-side" id="clash-enemy-side">
                         <div class="enemy-sprite" id="clash-enemy-sprite">☠️</div>
-                        <h4 id="enemy-name" style="margin: 5px 0; color: var(--danger); text-shadow: 1px 1px 0 #000;">Bandit</h4>
-                        <div class="hp-bar-container">
-                            <div id="enemy-hp-fill" class="hp-fill"></div>
-                            <div class="hp-text"><span id="enemy-hp-text">1000/1000</span></div>
-                        </div>
+                        <h4 id="enemy-name" style="margin: 5px 0; color: var(--danger);">Bandit</h4>
+                        <div class="hp-bar-container"><div id="enemy-hp-fill" class="hp-fill"></div><div class="hp-text"><span id="enemy-hp-text">1000/1000</span></div></div>
                     </div>
                 </div>
             </div>
 
             <button id="battle-btn" class="btn-action" onclick="startBattle()">ENGAGE BATTLE</button>
-            <div id="battle-log" class="battle-log" style="margin-top: 15px;">
-                <div class="log-entry" style="color: #888;">Standby for combat...</div>
-            </div>
+            <div id="battle-log" class="battle-log"></div>
         </section>
 
         <nav id="main-nav" style="display: none;">
-            <button class="nav-btn active" onclick="switchTab('tavern', this)"><span class="nav-icon">🍺</span>Tavern</button>
-            <button class="nav-btn" onclick="switchTab('crew', this)"><span class="nav-icon">🏴‍☠️</span>Crew</button>
-            <button class="nav-btn" onclick="switchTab('dock', this)"><span class="nav-icon">⚓</span>Dock</button>
-            <button class="nav-btn" onclick="switchTab('voyage', this)"><span class="nav-icon">⚔️</span>Voyage</button>
+            <button class="nav-btn active" onclick="switchTab('tavern', this)">🍺 Tavern</button>
+            <button class="nav-btn" onclick="switchTab('crew', this)">🏴‍☠️ Crew</button>
+            <button class="nav-btn" onclick="switchTab('dock', this)">⚓ Dock</button>
+            <button class="nav-btn" onclick="switchTab('voyage', this)">⚔️ Voyage</button>
         </nav>
 
         <div id="char-modal">
             <div class="modal-content wood-texture">
                 <span class="close-btn" onclick="closeModal()">&times;</span>
-                <div class="modal-portrait" id="modal-emoji">🧑‍🎤</div>
-                <h2 id="modal-name" style="margin: 0 0 5px 0; color: var(--gold); text-shadow: 2px 2px 4px #000;">Name</h2>
-                <div id="modal-rarity" style="margin-bottom: 5px; font-size: 18px;">⭐⭐⭐⭐⭐</div>
+                <div style="font-size: 50px; margin: 10px 0;" id="modal-emoji"></div>
+                <h2 id="modal-name" style="margin: 0; color: var(--gold);">Name</h2>
+                <div id="modal-rarity" style="margin-bottom: 10px;"></div>
+                <div id="modal-type" style="margin-bottom: 15px; font-weight: bold;"></div>
                 
-                <div class="level-section">
-                    <div style="font-weight: bold; font-size: 18px; text-shadow: 1px 1px 0 #000;">Level <span id="modal-lvl">1</span></div>
-                    <button id="modal-lvl-btn" class="btn-level" onclick="levelUpCharacter()">Level Up (Cost: <span id="modal-cost">50</span> 🍖)</button>
+                <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                    <div>Level <span id="modal-lvl">1</span></div>
+                    <button class="btn-action" style="font-size:14px; padding: 8px; margin-top:5px;" onclick="levelUpCharacter()">Level Up (<span id="modal-cost">50</span> 🍖)</button>
                 </div>
-
-                <div class="equip-section">
-                    <div style="font-size: 12px; color: #ccc;">Equipped Weapon:</div>
-                    <select id="modal-equip-select" class="equip-select" onchange="assignItem(this.value)">
-                        <option value="none">-- No Weapon --</option>
-                    </select>
-                </div>
-
-                <div class="modal-stats">
+                
+                <div style="display:flex; justify-content: space-around; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px;">
                     <div>❤️ <span id="modal-hp">0</span></div>
-                    <div>⚔️ <span id="modal-atk">0</span> <span id="modal-atk-bonus" style="color: var(--success); font-size:12px;"></span></div>
+                    <div>⚔️ <span id="modal-atk">0</span></div>
                 </div>
                 
-                <button id="modal-equip-btn" class="btn-equip add" onclick="toggleEquip()">Add to Team</button>
-                <button class="btn-retire" onclick="retireCharacter()">💰 Retire Character</button>
+                <button id="modal-equip-btn" class="btn-action" style="margin-top: 15px;" onclick="toggleEquip()">Add to Team</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. GAME STATE & EXPANDED DB ---
-        let gems = 3000, meat = 0, wood = 0;
-        let unclaimedMeat = 0;
-        let inventory = [], playerItems = [], activeTeamUids = [];
-        let globalUidCounter = 0, itemUidCounter = 0;
-        let currentlyViewedUid = null, currentFilter = 0, currentStage = 0;
-        let shipLevel = 1;
-        
-        let isBattling = false, isPulling = false;
-        let battleInterval;
+        let gems = 3000, meat = 0, wood = 0, unclaimedMeat = 0;
+        let inventory = [], activeTeamUids = [], globalUidCounter = 0;
+        let currentlyViewedUid = null, currentStage = 0, shipLevel = 1;
+        let isBattling = false;
 
-        // NEW: Characters now have an unlockStage property.
-        // Stage 0-3 = East Blue. Stage 4+ = Grand Line.
+        const typeIcons = { 'brawler': '👊 Brawler', 'swordsman': '⚔️ Sword', 'gunner': '🔫 Gunner' };
+        const typeColors = { 'brawler': '#ff5252', 'swordsman': '#448aff', 'gunner': '#69f0ae' };
+
+        // EXTENDED CHARACTER DB WITH TYPES AND 6-STAR
         const characters = [
-            // East Blue Roster
-            { id: 1, name: "Monkey D. Luffy", rarity: 5, emoji: "👒", skill: "Gomu Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
-            { id: 2, name: "Roronoa Zoro", rarity: 5, emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
-            { id: 3, name: "Dracule Mihawk", rarity: 5, emoji: "🗡️", skill: "Black Blade Strike!", baseHp: 1300, baseAtk: 400, hpGrowth: 130, atkGrowth: 40, unlockStage: 0 },
-            { id: 4, name: "Shanks", rarity: 5, emoji: "👑", skill: "Conqueror's Haki!", baseHp: 1800, baseAtk: 380, hpGrowth: 180, atkGrowth: 38, unlockStage: 0 },
-            { id: 5, name: "Smoker", rarity: 4, emoji: "💨", skill: "White Blow!", baseHp: 1200, baseAtk: 200, hpGrowth: 100, atkGrowth: 20, unlockStage: 0 },
-            { id: 6, name: "Arlong", rarity: 4, emoji: "🦈", skill: "Shark on Tooth!", baseHp: 1300, baseAtk: 220, hpGrowth: 110, atkGrowth: 22, unlockStage: 0 },
-            { id: 7, name: "Nami", rarity: 4, emoji: "🌩️", skill: "Thunderbolt Tempo!", baseHp: 900, baseAtk: 180, hpGrowth: 80, atkGrowth: 18, unlockStage: 0 },
-            { id: 9, name: "Marine Grunt", rarity: 3, emoji: "⚓", skill: "Rifle Volley!", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8, unlockStage: 0 },
-            
-            // Grand Line Roster (Unlocks after stage 3)
-            { id: 10, name: "Nico Robin", rarity: 5, emoji: "🌸", skill: "Seis Fleur!", baseHp: 1600, baseAtk: 420, hpGrowth: 160, atkGrowth: 45, unlockStage: 4 },
-            { id: 11, name: "Sir Crocodile", rarity: 5, emoji: "🐊", skill: "Desert Spada!", baseHp: 1700, baseAtk: 450, hpGrowth: 170, atkGrowth: 50, unlockStage: 4 },
-            { id: 12, name: "Tony Tony Chopper", rarity: 4, emoji: "🦌", skill: "Heavy Point!", baseHp: 1400, baseAtk: 250, hpGrowth: 140, atkGrowth: 25, unlockStage: 4 },
-            { id: 13, name: "Mr. 2 Bon Clay", rarity: 4, emoji: "🦢", skill: "Swan Arabesque!", baseHp: 1350, baseAtk: 260, hpGrowth: 135, atkGrowth: 26, unlockStage: 4 },
-            { id: 14, name: "Baroque Agent", rarity: 3, emoji: "🕴️", skill: "Sneak Attack!", baseHp: 800, baseAtk: 120, hpGrowth: 70, atkGrowth: 12, unlockStage: 4 }
+            // East Blue (Stage 0)
+            { id: 1, name: "Monkey D. Luffy", rarity: 5, type: 'brawler', emoji: "👒", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
+            { id: 2, name: "Roronoa Zoro", rarity: 5, type: 'swordsman', emoji: "⚔️", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
+            { id: 7, name: "Nami", rarity: 4, type: 'gunner', emoji: "🌩️", baseHp: 900, baseAtk: 180, hpGrowth: 80, atkGrowth: 18, unlockStage: 0 },
+            { id: 9, name: "Marine Grunt", rarity: 3, type: 'gunner', emoji: "⚓", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8, unlockStage: 0 },
+            // Grand Line (Stage 4)
+            { id: 10, name: "Nico Robin", rarity: 5, type: 'brawler', emoji: "🌸", baseHp: 1600, baseAtk: 420, hpGrowth: 160, atkGrowth: 45, unlockStage: 4 },
+            { id: 11, name: "Sir Crocodile", rarity: 5, type: 'gunner', emoji: "🐊", baseHp: 1700, baseAtk: 450, hpGrowth: 170, atkGrowth: 50, unlockStage: 4 },
+            // New World Bound (Stages 8+)
+            { id: 15, name: "God Enel", rarity: 5, type: 'gunner', emoji: "⚡", baseHp: 2000, baseAtk: 600, hpGrowth: 200, atkGrowth: 60, unlockStage: 8 },
+            { id: 16, name: "Franky", rarity: 4, type: 'brawler', emoji: "🤖", baseHp: 1800, baseAtk: 350, hpGrowth: 180, atkGrowth: 35, unlockStage: 9 },
+            { id: 17, name: "Rob Lucci", rarity: 5, type: 'brawler', emoji: "🐆", baseHp: 2200, baseAtk: 650, hpGrowth: 220, atkGrowth: 65, unlockStage: 10 },
+            { id: 18, name: "Brook", rarity: 4, type: 'swordsman', emoji: "💀", baseHp: 1500, baseAtk: 400, hpGrowth: 150, atkGrowth: 40, unlockStage: 11 },
+            { id: 19, name: "Bartholomew Kuma", rarity: 5, type: 'brawler', emoji: "🐻", baseHp: 3000, baseAtk: 500, hpGrowth: 300, atkGrowth: 50, unlockStage: 12 },
+            // Ultra Rare 6 Star
+            { id: 20, name: "Admiral Kizaru", rarity: 6, type: 'gunner', emoji: "✨", baseHp: 4000, baseAtk: 1000, hpGrowth: 400, atkGrowth: 100, unlockStage: 12 }
         ];
 
-        // NEW: Expanded Campaign
+        // EXTENDED CAMPAIGN
         const enemies = [
-            // East Blue (Indices 0 - 3)
-            { name: "Mountain Bandit Boss", hp: 1000, maxHp: 1000, atk: 100, rewardGems: 100, rewardMeat: 50, rewardWood: 20, stageName: "Stage 1: Dawn Island" },
-            { name: "Axe-Hand Captain", hp: 3500, maxHp: 3500, atk: 180, rewardGems: 200, rewardMeat: 100, rewardWood: 50, stageName: "Stage 2: Shells Town" },
-            { name: "Clown Pirate Captain", hp: 8000, maxHp: 8000, atk: 280, rewardGems: 300, rewardMeat: 150, rewardWood: 100, stageName: "Stage 3: Orange Town" },
-            { name: "Fishman Boss", hp: 15000, maxHp: 15000, atk: 450, rewardGems: 500, rewardMeat: 250, rewardWood: 200, stageName: "Stage 4: Arlong Park" },
-            
-            // Grand Line (Indices 4 - 7)
-            { name: "White Hunter", hp: 35000, maxHp: 35000, atk: 700, rewardGems: 800, rewardMeat: 400, rewardWood: 400, stageName: "Stage 5: Loguetown" },
-            { name: "Bounty Hunters", hp: 60000, maxHp: 60000, atk: 1100, rewardGems: 1200, rewardMeat: 600, rewardWood: 600, stageName: "Stage 6: Whiskey Peak" },
-            { name: "Tin Tyrant", hp: 90000, maxHp: 90000, atk: 1600, rewardGems: 1800, rewardMeat: 900, rewardWood: 900, stageName: "Stage 7: Drum Island" },
-            { name: "Desert King", hp: 150000, maxHp: 150000, atk: 2500, rewardGems: 3000, rewardMeat: 1500, rewardWood: 1500, stageName: "Stage 8: Alabasta" }
+            { name: "Mountain Bandit", type: 'swordsman', hp: 1000, maxHp: 1000, atk: 100, rewardGems: 100, stageName: "Stage 1: Dawn Island" },
+            { name: "Axe-Hand", type: 'brawler', hp: 3500, maxHp: 3500, atk: 180, rewardGems: 200, stageName: "Stage 2: Shells Town" },
+            { name: "Clown Pirate", type: 'swordsman', hp: 8000, maxHp: 8000, atk: 280, rewardGems: 300, stageName: "Stage 3: Orange Town" },
+            { name: "Fishman Boss", type: 'brawler', hp: 15000, maxHp: 15000, atk: 450, rewardGems: 500, stageName: "Stage 4: Arlong Park" },
+            { name: "White Hunter", type: 'brawler', hp: 35000, maxHp: 35000, atk: 700, rewardGems: 800, stageName: "Stage 5: Loguetown" },
+            { name: "Bounty Hunters", type: 'gunner', hp: 60000, maxHp: 60000, atk: 1100, rewardGems: 1200, stageName: "Stage 6: Whiskey Peak" },
+            { name: "Tin Tyrant", type: 'brawler', hp: 90000, maxHp: 90000, atk: 1600, rewardGems: 1800, stageName: "Stage 7: Drum Island" },
+            { name: "Desert King", type: 'gunner', hp: 150000, maxHp: 150000, atk: 2500, rewardGems: 3000, stageName: "Stage 8: Alabasta" },
+            // New Stages
+            { name: "Thunder God", type: 'gunner', hp: 250000, maxHp: 250000, atk: 4000, rewardGems: 4000, stageName: "Stage 9: Skypiea" },
+            { name: "Cyborg Gang", type: 'brawler', hp: 380000, maxHp: 380000, atk: 5500, rewardGems: 5000, stageName: "Stage 10: Water 7" },
+            { name: "Leopard Assassin", type: 'brawler', hp: 550000, maxHp: 550000, atk: 8000, rewardGems: 6000, stageName: "Stage 11: Enies Lobby" },
+            { name: "Shadow Warlord", type: 'swordsman', hp: 750000, maxHp: 750000, atk: 11000, rewardGems: 7500, stageName: "Stage 12: Thriller Bark" },
+            { name: "Pacifista Army", type: 'gunner', hp: 1000000, maxHp: 1000000, atk: 15000, rewardGems: 10000, stageName: "Stage 13: Sabaody" }
         ];
 
-        // NEW: Expanded Loot
-        const lootPool = [
-            { id: 101, name: "Rusty Cutlass", atkBonus: 20, minStage: 0 },
-            { id: 102, name: "Iron Mace", atkBonus: 35, minStage: 0 },
-            { id: 103, name: "Marine Rifle", atkBonus: 50, minStage: 1 },
-            { id: 104, name: "Captain's Coat", atkBonus: 80, minStage: 2 },
-            { id: 105, name: "Seastone Jitte", atkBonus: 150, minStage: 4 },
-            { id: 106, name: "Golden Hook", atkBonus: 300, minStage: 6 }
-        ];
-
-        // --- 2. SAVE SYSTEM ---
-        function saveGame() {
-            const saveData = { gems, meat, wood, inventory, playerItems, activeTeamUids, globalUidCounter, itemUidCounter, currentStage, shipLevel };
-            localStorage.setItem('forPieceSave', JSON.stringify(saveData));
-        }
-
-        function loadGame() {
-            const saved = localStorage.getItem('forPieceSave');
-            if (saved) {
-                const data = JSON.parse(saved);
-                gems = data.gems !== undefined ? data.gems : 3000;
-                meat = data.meat || 0; wood = data.wood || 0;
-                inventory = data.inventory || []; playerItems = data.playerItems || [];
-                activeTeamUids = data.activeTeamUids || [];
-                globalUidCounter = data.globalUidCounter || 0; itemUidCounter = data.itemUidCounter || 0;
-                currentStage = data.currentStage || 0; shipLevel = data.shipLevel || 1;
-            }
-        }
-
-        function clearSave() {
-            if(confirm("Delete all progress? This cannot be undone!")) { localStorage.removeItem('forPieceSave'); location.reload(); }
-        }
-
-        loadGame(); setInterval(saveGame, 10000); 
-
-        // --- 3. UTILS & UI ---
-        function showToast(message) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast'; toast.innerText = message;
-            container.appendChild(toast); setTimeout(() => toast.remove(), 2500);
-        }
-
-        setInterval(() => unclaimedMeat += (2 + shipLevel), 1000); // Idle meat scales with ship!
-
-        function claimIdleLoot() {
-            if (unclaimedMeat === 0) { showToast("No loot to claim yet!"); return; }
-            meat += unclaimedMeat; showToast(`Claimed ${unclaimedMeat} 🍖 Meat!`);
-            unclaimedMeat = 0; updateHeader(); saveGame();
-        }
-
+        // --- CORE LOGIC ---
         function startGame() {
             document.getElementById('title-screen').style.display = 'none';
             document.getElementById('main-header').style.display = 'flex';
             document.getElementById('main-nav').style.display = 'flex';
-            updateHeader(); calculatePowerLevel(); updateDockUI(); updateTavernUI();
+            updateHeader(); updateDockUI(); updateTavernUI(); setInterval(() => unclaimedMeat += (5 + shipLevel*2), 1000);
         }
 
-        function switchTab(tabName, btnElement) {
-            if (isBattling) { showToast("Cannot flee during combat!"); return; }
+        function switchTab(tab, btn) {
+            if(isBattling) return;
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            
-            const targetView = document.getElementById('view-' + tabName);
-            targetView.style.animation = 'none'; targetView.offsetHeight; targetView.style.animation = null; 
-            targetView.classList.add('active-view'); btnElement.classList.add('active');
-            
-            if(tabName === 'tavern') { updateTavernUI(); }
-            if(tabName === 'crew') { renderInventory(); renderTeam(); }
-            if(tabName === 'voyage') { renderVoyageScreen(); }
-            if(tabName === 'dock') { updateDockUI(); }
+            document.getElementById('view-' + tab).classList.add('active-view'); btn.classList.add('active');
+            if(tab === 'crew') { renderInventory(); renderTeam(); }
+            if(tab === 'voyage') renderVoyageScreen();
         }
 
         function updateHeader() {
             document.getElementById('gem-count').innerText = gems;
             document.getElementById('meat-count').innerText = meat;
             document.getElementById('wood-count').innerText = wood;
+            let p = 0; activeTeamUids.forEach(id => { const c = inventory.find(x=>x.uid===id); if(c) p += (c.hp + c.atk); });
+            document.getElementById('power-level').innerText = Math.floor(p * (1 + shipLevel*0.05));
         }
 
-        // --- 4. SHIP UPGRADES ---
-        function getShipBuffMultiplier() { return 1 + (shipLevel * 0.05); } 
-        function getShipCost() { return shipLevel * 100; }
-
+        function claimIdleLoot() { meat += unclaimedMeat; unclaimedMeat = 0; updateHeader(); }
+        function upgradeShip() { const cost = shipLevel * 100; if(wood >= cost) { wood -= cost; shipLevel++; updateHeader(); updateDockUI(); } }
         function updateDockUI() {
             document.getElementById('ui-ship-level').innerText = shipLevel;
-            document.getElementById('ui-ship-buff').innerText = (shipLevel * 5);
-            document.getElementById('ui-ship-cost').innerText = getShipCost();
-            document.getElementById('upgrade-ship-btn').disabled = wood < getShipCost();
+            document.getElementById('ui-ship-buff').innerText = shipLevel * 5;
+            document.getElementById('ui-ship-cost').innerText = shipLevel * 100;
         }
 
-        function upgradeShip() {
-            const cost = getShipCost();
-            if (wood >= cost) {
-                wood -= cost; shipLevel++;
-                showToast(`Ship upgraded to Level ${shipLevel}!`);
-                updateHeader(); updateDockUI(); calculatePowerLevel(); saveGame();
-            }
-        }
-
-        // --- 5. GACHA (PROGRESSION GATED) ---
+        // --- GACHA ---
         function updateTavernUI() {
-            const hint = document.getElementById('tavern-hint');
-            if (currentStage >= 4) {
-                hint.innerHTML = '<span style="color:var(--success); font-weight:bold;">🌊 GRAND LINE UNLOCKED!</span><br>New characters added to the pool!';
-            } else {
-                hint.innerText = "Recruit powerful allies! Beat Stage 4 to unlock Grand Line characters.";
-            }
+            const h = document.getElementById('tavern-hint');
+            if (currentStage >= 12) h.innerHTML = "<span style='color:var(--danger)'>SABAODY UNLOCKED! 6⭐ Kizaru added!</span>";
+            else if (currentStage >= 8) h.innerHTML = "<span style='color:var(--success)'>NEW WORLD BOUND! Skypiea characters added!</span>";
         }
 
         function pullGacha() {
-            if (gems < 300) { showToast("Not enough Gems!"); return; }
-            if (isPulling) return;
-            isPulling = true; gems -= 300; updateHeader();
-            
-            const btn = document.getElementById('pull-btn');
-            const resultDiv = document.getElementById('pull-result');
-            btn.disabled = true; resultDiv.className = "slot-animation";
-            
-            // Generate pool based on unlocked stages
-            const availableChars = characters.filter(c => c.unlockStage <= currentStage);
-            
-            let ticks = 0;
-            const slotInterval = setInterval(() => {
-                const randomName = availableChars[Math.floor(Math.random() * availableChars.length)].name;
-                resultDiv.innerText = `Summoning...\n${randomName}`;
-                ticks++;
-                if (ticks > 15) { clearInterval(slotInterval); finalizePull(resultDiv, btn, availableChars); }
-            }, 100);
+            if (gems < 300) return; gems -= 300; updateHeader();
+            const pool = characters.filter(c => c.unlockStage <= currentStage);
+            const roll = Math.random() * 100;
+            let r = 3; 
+            if (currentStage >= 12 && roll <= 1) r = 6; // 1% chance for 6 star if unlocked
+            else if (roll <= 6) r = 5; 
+            else if (roll <= 30) r = 4;
+
+            let rarPool = pool.filter(c => c.rarity === r);
+            if(rarPool.length === 0) rarPool = pool.filter(c => c.rarity === 3);
+            const char = { ...rarPool[Math.floor(Math.random() * rarPool.length)], uid: globalUidCounter++, level: 1 };
+            char.hp = char.baseHp; char.atk = char.baseAtk;
+            inventory.push(char);
+            document.getElementById('pull-result').innerHTML = `<span style="color:${r>=5?'var(--gold)':'white'}">${char.emoji} ${char.name} (${r}⭐)</span>`;
         }
 
-        function finalizePull(resultDiv, btn, availableChars) {
-            resultDiv.className = "";
-            const roll = Math.floor(Math.random() * 100) + 1;
-            let pulledRarity = roll <= 5 ? 5 : (roll <= 30 ? 4 : 3);
-            
-            let pool = availableChars.filter(c => c.rarity === pulledRarity);
-            // Fallback if rarity pool is empty (shouldn't happen with our data, but safe)
-            if (pool.length === 0) pool = availableChars.filter(c => c.rarity === 3); 
-            
-            const pulledBase = pool[Math.floor(Math.random() * pool.length)];
-            const pulledInstance = { ...pulledBase, uid: globalUidCounter++, level: 1, hp: pulledBase.baseHp, atk: pulledBase.baseAtk, equippedItemUid: null };
-            inventory.push(pulledInstance);
-            
-            resultDiv.innerText = `${pulledInstance.emoji} ${pulledInstance.name}\n(${pulledInstance.rarity}⭐)`;
-            resultDiv.style.color = pulledInstance.rarity === 5 ? "var(--gold)" : "white";
-            
-            showToast(`Recruited ${pulledInstance.name}!`);
-            isPulling = false; btn.disabled = false; saveGame();
-        }
-
-        // --- 6. ITEMS, LEVELING & RETIRE ---
-        function getLevelupCost(level) { return level * 50; }
-
-        function levelUpCharacter() {
-            const char = inventory.find(c => c.uid === currentlyViewedUid);
-            const cost = getLevelupCost(char.level);
-            if (meat < cost) { showToast("Not enough Meat!"); return; }
-            meat -= cost; char.level += 1;
-            char.hp = char.baseHp + (char.level * char.hpGrowth); char.atk = char.baseAtk + (char.level * char.atkGrowth);
-            showToast(`${char.name} grew to Lv. ${char.level}!`);
-            updateHeader(); openModal(char.uid); calculatePowerLevel(); renderTeam(); renderInventory(); saveGame();
-        }
-
-        function assignItem(selectedItemUid) {
-            const char = inventory.find(c => c.uid === currentlyViewedUid);
-            const parsedUid = selectedItemUid === "none" ? null : parseInt(selectedItemUid);
-            if (parsedUid !== null) {
-                const previousOwner = inventory.find(c => c.equippedItemUid === parsedUid);
-                if (previousOwner) { previousOwner.equippedItemUid = null; showToast(`Weapon moved from ${previousOwner.name}!`); }
-            }
-            char.equippedItemUid = parsedUid; openModal(char.uid); calculatePowerLevel(); saveGame();
-        }
-
-        function retireCharacter() {
-            const char = inventory.find(c => c.uid === currentlyViewedUid);
-            if (!char) return;
-            if (confirm(`Retire ${char.name}? You will get 100 💎 and 50 🍖.`)) {
-                activeTeamUids = activeTeamUids.filter(id => id !== currentlyViewedUid);
-                inventory = inventory.filter(c => c.uid !== currentlyViewedUid);
-                gems += 100; meat += 50;
-                showToast(`${char.name} retired.`);
-                updateHeader(); calculatePowerLevel(); renderTeam(); renderInventory(); closeModal(); saveGame();
-            }
-        }
-
-        function getCharTotalAtk(char) {
-            let total = char.atk;
-            if (char.equippedItemUid !== null && char.equippedItemUid !== undefined) {
-                const item = playerItems.find(i => i.uid === char.equippedItemUid);
-                if (item) total += item.atkBonus;
-            }
-            return Math.floor(total * getShipBuffMultiplier());
-        }
-        function getCharTotalHp(char) { return Math.floor(char.hp * getShipBuffMultiplier()); }
-
-        // --- 7. FORMATION & POWER ---
-        function setFilter(rarity, btnElement) {
-            currentFilter = rarity; document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active'); renderInventory();
-        }
-
-        function toggleEquip() {
-            const isEquipped = activeTeamUids.includes(currentlyViewedUid);
-            if (isEquipped) { activeTeamUids = activeTeamUids.filter(id => id !== currentlyViewedUid); } 
-            else {
-                if (activeTeamUids.length < 5) activeTeamUids.push(currentlyViewedUid);
-                else { showToast("Formation full!"); return; }
-            }
-            calculatePowerLevel(); renderTeam(); renderInventory(); closeModal(); saveGame();
-        }
-
-        function calculatePowerLevel() {
-            let totalPower = 0;
-            activeTeamUids.forEach(uid => {
-                const char = inventory.find(c => c.uid === uid);
-                if (char) totalPower += (getCharTotalHp(char) + getCharTotalAtk(char)); 
+        // --- CREW ---
+        function renderInventory() {
+            const grid = document.getElementById('inventory-ui'); grid.innerHTML = "";
+            inventory.forEach(c => {
+                const isEq = activeTeamUids.includes(c.uid);
+                grid.innerHTML += `
+                    <div class="char-card star-${c.rarity}" onclick="openModal(${c.uid})">
+                        ${isEq ? '<div class="in-team-badge">IN TEAM</div>' : ''}
+                        <div class="card-img-placeholder">
+                            <span class="type-icon type-${c.type}">${c.type === 'brawler' ? '👊' : c.type === 'swordsman' ? '⚔️' : '🔫'}</span>
+                            ${c.emoji}
+                        </div>
+                        <div class="card-info"><strong>${c.name}</strong><br>Lv.${c.level}</div>
+                    </div>`;
             });
-            document.getElementById('power-level').innerText = totalPower;
         }
 
-        function getPlayerStats() {
-            let totalHp = 0, totalAtk = 0;
-            activeTeamUids.forEach(uid => {
-                const char = inventory.find(c => c.uid === uid);
-                if (char) { totalHp += getCharTotalHp(char); totalAtk += getCharTotalAtk(char); }
-            });
-            return { hp: totalHp, maxHp: Math.max(1, totalHp), atk: totalAtk };
-        }
-
-        // --- 8. COMBAT & SKILLS ---
-        function renderVoyageScreen() {
-            if (currentStage >= enemies.length) {
-                document.getElementById('stage-title').innerText = "All Stages Cleared! (For Now...)";
-                document.getElementById('battle-btn').style.display = 'none'; return;
-            }
-            const enemy = enemies[currentStage]; const playerStats = getPlayerStats();
-            document.getElementById('stage-title').innerText = enemy.stageName;
-            document.getElementById('enemy-name').innerText = enemy.name;
-            document.getElementById('enemy-hp-text').innerText = `${enemy.hp}/${enemy.maxHp}`;
-            document.getElementById('player-hp-text').innerText = `${playerStats.hp}/${playerStats.maxHp}`;
-            document.getElementById('enemy-hp-fill').style.width = '100%'; document.getElementById('player-hp-fill').style.width = '100%';
-
-            const spriteContainer = document.getElementById('clash-team-sprites');
-            spriteContainer.innerHTML = '';
-            if (activeTeamUids.length === 0) { spriteContainer.innerHTML = '<div style="font-size:10px; color:#888;">No Crew</div>'; } 
-            else { activeTeamUids.forEach(uid => { const char = inventory.find(c => c.uid === uid); spriteContainer.innerHTML += `<div class="mini-sprite">${char.emoji}</div>`; }); }
-        }
-
-        function logBattle(message, color = "white", isBold = false) {
-            const logBox = document.getElementById('battle-log');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry'; entry.style.color = color; 
-            entry.innerHTML = isBold ? `<strong>${message}</strong>` : message;
-            logBox.appendChild(entry); logBox.scrollTop = logBox.scrollHeight;
-        }
-
-        function playClashAnimation(attackerId, targetId, attackClass) {
-            const attacker = document.getElementById(attackerId); const target = document.getElementById(targetId);
-            attacker.classList.remove('anim-skill'); void attacker.offsetWidth; attacker.classList.add(attackClass);
-            setTimeout(() => { target.classList.add('anim-hurt'); setTimeout(() => { attacker.classList.remove(attackClass); target.classList.remove('anim-hurt'); }, 400); }, 150);
-        }
-
-        function startBattle() {
-            if (activeTeamUids.length === 0) { showToast("Equip a crew member first!"); return; }
-            
-            isBattling = true; document.getElementById('battle-btn').disabled = true; document.getElementById('battle-btn').innerText = "BATTLING...";
-            document.getElementById('battle-log').innerHTML = ""; 
-
-            let enemy = { ...enemies[currentStage] }; let player = getPlayerStats(); let turnCounter = 0;
-            const leadChar = inventory.find(c => c.uid === activeTeamUids[0]);
-
-            logBattle(`Engaging ${enemy.name}!`, "var(--gold)", true);
-
-            battleInterval = setInterval(() => {
-                turnCounter++;
-                let currentAtk = player.atk;
-                let isSkillTurn = (turnCounter % 3 === 0);
-
-                if(isSkillTurn && leadChar) {
-                    currentAtk = Math.floor(player.atk * 2.5);
-                    logBattle(`🔥 ${leadChar.name} uses ${leadChar.skill}`, "#ffca28", true);
-                    document.getElementById('clash-team-sprites').classList.add('anim-skill');
-                }
-
-                playClashAnimation('clash-team-sprites', 'clash-enemy-sprite', 'anim-attack-player');
-                enemy.hp -= currentAtk;
-                logBattle(`Your crew deals ${currentAtk} dmg!`, isSkillTurn ? "#ffca28" : "var(--success)");
-                
-                let enemyPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-                document.getElementById('enemy-hp-fill').style.width = `${enemyPercent}%`;
-                document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
-
-                if (enemy.hp <= 0) {
-                    clearInterval(battleInterval);
-                    logBattle(`Victory! Defeated ${enemy.name}.`, "var(--gold)", true);
-                    logBattle(`Loot: ${enemy.rewardGems}💎 | ${enemy.rewardMeat}🍖 | ${enemy.rewardWood}🪵`, "#00e5ff");
-                    gems += enemy.rewardGems; meat += enemy.rewardMeat; wood += enemy.rewardWood;
-                    
-                    if(Math.random() < 0.4) {
-                        // Filter loot by stage
-                        const availableLoot = lootPool.filter(l => l.minStage <= currentStage);
-                        const baseDrop = availableLoot[Math.floor(Math.random() * availableLoot.length)];
-                        const uniqueDrop = { ...baseDrop, uid: itemUidCounter++ }; 
-                        playerItems.push(uniqueDrop);
-                        logBattle(`🎁 ITEM DROP: ${uniqueDrop.name}!`, "#ff9800", true);
-                        showToast(`Found Item: ${uniqueDrop.name}!`);
-                    }
-
-                    currentStage++; updateHeader(); updateTavernUI(); saveGame(); endBattle(); return;
-                }
-
-                setTimeout(() => {
-                    if(enemy.hp <= 0) return; 
-                    playClashAnimation('clash-enemy-sprite', 'clash-team-sprites', 'anim-attack-enemy');
-                    player.hp -= enemy.atk;
-                    logBattle(`${enemy.name} counters for ${enemy.atk} dmg!`, "var(--danger)");
-                    
-                    let playerPercent = Math.max(0, (player.hp / player.maxHp) * 100);
-                    document.getElementById('player-hp-fill').style.width = `${playerPercent}%`;
-                    document.getElementById('player-hp-text').innerText = `${Math.max(0, player.hp)}/${player.maxHp}`;
-
-                    if (player.hp <= 0) {
-                        clearInterval(battleInterval);
-                        logBattle(`Defeat! Your crew was crushed.`, "var(--danger)", true);
-                        endBattle(); return;
-                    }
-                }, 500);
-            }, 1200); 
-        }
-
-        function endBattle() {
-            isBattling = false;
-            setTimeout(() => {
-                document.getElementById('battle-btn').disabled = false;
-                document.getElementById('battle-btn').innerText = "ENGAGE BATTLE";
-                renderVoyageScreen();
-            }, 2500);
-        }
-
-        // --- 9. UI RENDERING ---
         function renderTeam() {
-            const teamContainer = document.getElementById('team-ui');
-            teamContainer.innerHTML = ""; 
+            const tc = document.getElementById('team-ui'); tc.innerHTML = "";
             for (let i = 0; i < 5; i++) {
                 if (i < activeTeamUids.length) {
-                    const char = inventory.find(c => c.uid === activeTeamUids[i]);
-                    teamContainer.innerHTML += `<div class="team-slot filled star-${char.rarity}" onclick="openModal(${char.uid})">
-                        <div class="level-badge">Lv.${char.level}</div>
-                        <div style="font-size: 20px; margin-top:2px;">${char.emoji}</div>
+                    const c = inventory.find(x => x.uid === activeTeamUids[i]);
+                    tc.innerHTML += `<div class="team-slot filled star-${c.rarity}" onclick="openModal(${c.uid})">
+                        <div class="lead-crown">👑</div>
+                        <span style="font-size:20px">${c.emoji}</span>
                     </div>`;
-                } else { teamContainer.innerHTML += `<div class="team-slot">Empty</div>`; }
+                } else { tc.innerHTML += `<div class="team-slot">Empty</div>`; }
             }
         }
 
-        function renderInventory() {
-            const grid = document.getElementById('inventory-ui');
-            grid.innerHTML = ""; 
-            let displayList = inventory;
-            if (currentFilter !== 0) displayList = inventory.filter(c => c.rarity === currentFilter);
-            if(displayList.length === 0) { grid.innerHTML = "<p style='color:#888; grid-column: span 3; text-align:center;'>No characters found.</p>"; return; }
-            
-            displayList.forEach((char) => {
-                const isEquipped = activeTeamUids.includes(char.uid);
-                grid.innerHTML += `
-                    <div class="char-card star-${char.rarity} ${isEquipped ? 'equipped' : ''}" onclick="openModal(${char.uid})">
-                        <div class="in-team-badge">IN TEAM</div>
-                        <div class="card-img-placeholder">${char.emoji}</div>
-                        <div class="card-info">
-                            <div class="level-badge">Lv. ${char.level}</div><br>
-                            <strong>${char.name}</strong><br>${'⭐'.repeat(char.rarity)}<br>
-                            <small>ATK: ${getCharTotalAtk(char)} | HP: ${getCharTotalHp(char)}</small>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        // --- 10. MODALS ---
         function openModal(uid) {
-            currentlyViewedUid = uid; const char = inventory.find(c => c.uid === uid);
-            document.getElementById('modal-emoji').innerText = char.emoji;
-            document.getElementById('modal-name').innerText = char.name;
-            document.getElementById('modal-rarity').innerText = '⭐'.repeat(char.rarity);
-            document.getElementById('modal-lvl').innerText = char.level;
-            document.getElementById('modal-cost').innerText = getLevelupCost(char.level);
-            document.getElementById('modal-hp').innerText = getCharTotalHp(char);
-            document.getElementById('modal-atk').innerText = getCharTotalAtk(char);
+            currentlyViewedUid = uid; const c = inventory.find(x => x.uid === uid);
+            document.getElementById('modal-emoji').innerText = c.emoji;
+            document.getElementById('modal-name').innerText = c.name;
+            document.getElementById('modal-rarity').innerText = '⭐'.repeat(c.rarity);
+            document.getElementById('modal-type').innerHTML = `<span style="color:${typeColors[c.type]}">${typeIcons[c.type]}</span>`;
+            document.getElementById('modal-lvl').innerText = c.level;
+            document.getElementById('modal-cost').innerText = c.level * 50;
+            document.getElementById('modal-hp').innerText = c.hp;
+            document.getElementById('modal-atk').innerText = c.atk;
             
-            let bonusText = "";
-            if (char.equippedItemUid !== null && char.equippedItemUid !== undefined) {
-                const item = playerItems.find(i => i.uid === char.equippedItemUid);
-                if (item) bonusText = `(+ Weapon/Buffs)`;
-            }
-            document.getElementById('modal-atk-bonus').innerText = bonusText;
-            
-            const select = document.getElementById('modal-equip-select');
-            select.innerHTML = '<option value="none">-- No Weapon --</option>';
-            playerItems.forEach(item => {
-                const isSelected = char.equippedItemUid === item.uid ? "selected" : "";
-                const owner = inventory.find(c => c.equippedItemUid === item.uid);
-                let labelText = `${item.name} (+${item.atkBonus})`;
-                if (owner && owner.uid !== char.uid) labelText += ` (Held by ${owner.name.substring(0,5)}...)`;
-                select.innerHTML += `<option value="${item.uid}" ${isSelected}>${labelText}</option>`;
-            });
-
-            document.getElementById('modal-lvl-btn').disabled = meat < getLevelupCost(char.level);
-
-            const equipBtn = document.getElementById('modal-equip-btn');
-            if (activeTeamUids.includes(currentlyViewedUid)) { equipBtn.className = "btn-equip remove"; equipBtn.innerText = "Remove from Team"; } 
-            else { equipBtn.className = "btn-equip add"; equipBtn.innerText = "Add to Team"; }
-            
+            const btn = document.getElementById('modal-equip-btn');
+            if (activeTeamUids.includes(uid)) { btn.innerText = "Remove"; btn.style.background = "var(--danger)"; }
+            else { btn.innerText = "Equip"; btn.style.background = "var(--success)"; }
             document.getElementById('char-modal').style.display = 'flex';
         }
 
         function closeModal() { document.getElementById('char-modal').style.display = 'none'; }
+        function levelUpCharacter() {
+            const c = inventory.find(x => x.uid === currentlyViewedUid);
+            const cost = c.level * 50;
+            if(meat >= cost) { meat -= cost; c.level++; c.hp += c.hpGrowth; c.atk += c.atkGrowth; updateHeader(); openModal(c.uid); }
+        }
+        function toggleEquip() {
+            if (activeTeamUids.includes(currentlyViewedUid)) activeTeamUids = activeTeamUids.filter(id => id !== currentlyViewedUid);
+            else if (activeTeamUids.length < 5) activeTeamUids.push(currentlyViewedUid);
+            updateHeader(); renderTeam(); renderInventory(); closeModal();
+        }
+
+        // --- COMBAT WITH TYPES & FLOATING TEXT ---
+        function checkAdvantage(atkType, defType) {
+            if (atkType === 'brawler' && defType === 'gunner') return 1.5;
+            if (atkType === 'gunner' && defType === 'swordsman') return 1.5;
+            if (atkType === 'swordsman' && defType === 'brawler') return 1.5;
+            if (atkType === defType) return 1.0;
+            return 0.75; // Disadvantage
+        }
+
+        function spawnFloatingText(text, color, sideId) {
+            const side = document.getElementById(sideId);
+            const el = document.createElement('div');
+            el.className = 'dmg-text'; el.innerText = text; el.style.color = color;
+            el.style.left = (Math.random() * 40 + 30) + '%'; el.style.top = '30%';
+            side.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function renderVoyageScreen() {
+            if (currentStage >= enemies.length) { document.getElementById('stage-title').innerText = "All Stages Cleared!"; return; }
+            const e = enemies[currentStage];
+            document.getElementById('stage-title').innerText = e.stageName;
+            document.getElementById('enemy-name').innerHTML = `<span style="color:${typeColors[e.type]}">${typeIcons[e.type]}</span> <br> ${e.name}`;
+            document.getElementById('enemy-hp-text').innerText = `${e.hp}/${e.maxHp}`;
+            document.getElementById('enemy-hp-fill').style.width = '100%';
+            
+            let pHP = 0, maxPHP = 0;
+            activeTeamUids.forEach(id => { const c = inventory.find(x=>x.uid===id); if(c){ pHP += c.hp; maxPHP += c.hp;} });
+            pHP = Math.floor(pHP * (1 + shipLevel*0.05)); maxPHP = Math.floor(maxPHP * (1 + shipLevel*0.05));
+            document.getElementById('player-hp-text').innerText = `${pHP}/${maxPHP}`;
+            document.getElementById('player-hp-fill').style.width = '100%';
+
+            const sc = document.getElementById('clash-team-sprites'); sc.innerHTML = '';
+            activeTeamUids.forEach(id => { 
+                const c = inventory.find(x=>x.uid===id); 
+                sc.innerHTML += `<div class="mini-sprite">${c.emoji}<span class="type-icon">${c.type==='brawler'?'👊':c.type==='swordsman'?'⚔️':'🔫'}</span></div>`; 
+            });
+        }
+
+        function logBattle(msg, color="#fff") {
+            const b = document.getElementById('battle-log');
+            b.innerHTML += `<div style="color:${color}; border-bottom:1px dotted #444; padding-bottom:3px;">${msg}</div>`;
+            b.scrollTop = b.scrollHeight;
+        }
+
+        function startBattle() {
+            if (activeTeamUids.length === 0) return;
+            isBattling = true; document.getElementById('battle-btn').disabled = true;
+            document.getElementById('battle-log').innerHTML = "";
+            
+            let enemy = { ...enemies[currentStage] };
+            let pAtk = 0, pHP = 0;
+            activeTeamUids.forEach(id => { const c = inventory.find(x=>x.uid===id); if(c){ pAtk += c.atk; pHP += c.hp; } });
+            const buff = 1 + shipLevel*0.05; pAtk = Math.floor(pAtk * buff); pHP = Math.floor(pHP * buff);
+            let maxPHP = pHP;
+
+            const leadChar = inventory.find(x => x.uid === activeTeamUids[0]);
+            const advantageMulti = checkAdvantage(leadChar.type, enemy.type);
+            const disadvantageMulti = checkAdvantage(enemy.type, leadChar.type);
+
+            logBattle(`Engaging ${enemy.name}!`, "var(--gold)");
+            if (advantageMulti > 1) logBattle(`TYPE ADVANTAGE! 1.5x Damage!`, "var(--success)");
+            if (advantageMulti < 1) logBattle(`Type Disadvantage... 0.75x Damage`, "var(--danger)");
+
+            const int = setInterval(() => {
+                // Player Attack
+                const dmgToEnemy = Math.floor(pAtk * advantageMulti);
+                enemy.hp -= dmgToEnemy;
+                
+                document.getElementById('clash-team-sprites').classList.add('anim-attack-player');
+                setTimeout(() => document.getElementById('clash-enemy-sprite').classList.add('anim-hurt'), 150);
+                setTimeout(() => { document.getElementById('clash-team-sprites').classList.remove('anim-attack-player'); document.getElementById('clash-enemy-sprite').classList.remove('anim-hurt'); }, 300);
+
+                spawnFloatingText(`-${dmgToEnemy}`, advantageMulti > 1 ? "var(--gold)" : "#fff", "clash-enemy-side");
+                document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+                
+                if(enemy.hp <= 0) {
+                    clearInterval(int); isBattling = false; document.getElementById('battle-btn').disabled = false;
+                    gems += enemy.rewardGems; wood += enemy.rewardGems; updateHeader(); currentStage++; updateTavernUI(); renderVoyageScreen();
+                    logBattle("VICTORY!", "var(--gold)"); return;
+                }
+
+                // Enemy Attack
+                setTimeout(() => {
+                    if (enemy.hp <= 0) return;
+                    const dmgToPlayer = Math.floor(enemy.atk * disadvantageMulti); // If player has advantage, enemy has disadvantage
+                    pHP -= dmgToPlayer;
+
+                    document.getElementById('clash-enemy-sprite').classList.add('anim-attack-enemy');
+                    setTimeout(() => document.getElementById('clash-team-sprites').classList.add('anim-hurt'), 150);
+                    setTimeout(() => { document.getElementById('clash-enemy-sprite').classList.remove('anim-attack-enemy'); document.getElementById('clash-team-sprites').classList.remove('anim-hurt'); }, 300);
+
+                    spawnFloatingText(`-${dmgToPlayer}`, "var(--danger)", "clash-player-side");
+                    document.getElementById('player-hp-fill').style.width = `${Math.max(0, (pHP/maxPHP)*100)}%`;
+
+                    if(pHP <= 0) {
+                        clearInterval(int); isBattling = false; document.getElementById('battle-btn').disabled = false;
+                        logBattle("DEFEAT...", "var(--danger)"); renderVoyageScreen();
+                    }
+                }, 500);
+            }, 1200);
+        }
     </script>
 </body>
 </html>
