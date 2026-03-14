@@ -157,17 +157,102 @@
         { merge: true }
       );
 
-      // Award currency: 10 coins per achievement
+      // Award currency based on difficulty
+      let reward = 10; // Default
+      if (window.gameHubAchievements && window.gameHubAchievements.definitions) {
+          const gameDefs = window.gameHubAchievements.definitions[gameId] || [];
+          const achDef = gameDefs.find(a => a.id === achievementId);
+          if (achDef && achDef.difficulty) {
+              const rewards = { easy: 10, medium: 25, hard: 50, insane: 100 };
+              reward = rewards[achDef.difficulty] || 10;
+          }
+      }
+
       const userRef = db.collection("users").doc(user.uid);
       await userRef.update({
-        currency: firebase.firestore.FieldValue.increment(10),
+        currency: firebase.firestore.FieldValue.increment(reward),
         achievementsCount: firebase.firestore.FieldValue.increment(1)
       });
-      console.log("[GameHub] Awarded 10 coins for achievement:", achievementId);
+      console.log(`[GameHub] Awarded ${reward} coins for ${achievementId} (${gameId})`);
     } catch (e) {
       console.warn("[GameHub] Failed to unlock cloud achievement or award currency", e);
     }
   }
+
+  // Playtime tracking
+  let sessionStartTime = null;
+  let currentGameId = null;
+
+  function startPlayTimeTracking(gameId) {
+      sessionStartTime = Date.now();
+      currentGameId = gameId;
+      
+      // Heartbeat for "currently playing" and "last seen"
+      updatePresence(gameId);
+      const presenceInterval = setInterval(() => {
+          if (currentGameId === gameId) {
+              updatePresence(gameId);
+          } else {
+              clearInterval(presenceInterval);
+          }
+      }, 30000); // Every 30 seconds
+  }
+
+  async function updatePresence(gameId) {
+      const user = getUser();
+      const db = getDb();
+      if (!user || !db) return;
+      try {
+          await db.collection("users").doc(user.uid).set({
+              currentlyPlaying: gameId,
+              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+      } catch(e) {}
+  }
+
+  async function stopPlayTimeTracking() {
+      if (!sessionStartTime || !currentGameId) return;
+      
+      const durationMs = Date.now() - sessionStartTime;
+      const durationSec = Math.floor(durationMs / 1000);
+      
+      const user = getUser();
+      const db = getDb();
+      
+      // Update local storage
+      const localKey = `playtime_${currentGameId}`;
+      const existingLocal = parseInt(localStorage.getItem(localKey) || "0");
+      localStorage.setItem(localKey, (existingLocal + durationSec).toString());
+
+      if (user && db) {
+          try {
+              const userRef = db.collection("users").doc(user.uid);
+              const playtimeField = `playtime.${currentGameId}`;
+              await userRef.update({
+                  [playtimeField]: firebase.firestore.FieldValue.increment(durationSec),
+                  currentlyPlaying: null,
+                  lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+              });
+          } catch(e) {
+              console.warn("[GameHub] Failed to save cloud playtime", e);
+          }
+      }
+
+      sessionStartTime = null;
+      currentGameId = null;
+  }
+
+  // Listen for page visibility changes to handle backgrounding
+  document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+          stopPlayTimeTracking();
+      } else if (currentGameId) {
+          sessionStartTime = Date.now();
+      }
+  });
+
+  // Handle page unload
+  window.addEventListener('beforeunload', stopPlayTimeTracking);
 
   async function getCurrency() {
     const user = getUser();
@@ -246,7 +331,9 @@
     unlockAchievement,
     getUserAchievements,
     getCurrency,
-    spendCurrency
+    spendCurrency,
+    startPlayTimeTracking,
+    stopPlayTimeTracking
   };
 })();
 

@@ -219,6 +219,11 @@
     }
 
     async function endGame(playerWon) {
+      // Stop playtime tracking
+      if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
+          window.gameHubProgress.stopPlayTimeTracking();
+      }
+
       if (playerWon === true) {
         playerMoney += betAmount * 2; // Return bet and win amount
       } else if (playerWon === false) {
@@ -245,6 +250,11 @@
     }
 
     async function startGame() {
+      // Start playtime tracking
+      if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
+          window.gameHubProgress.startPlayTimeTracking("blackjack");
+      }
+
       playerHand = [dealCard(), dealCard()];
       dealerHand = [dealCard(), dealCard()];
 
@@ -353,8 +363,8 @@
       createDeck();
     })();
   </script>
-  <div>
-    <button onclick="window.location.href='index.html'">Home</button>
+  <div style="margin-top: 20px;">
+    <button onclick="window.location.href='index.html'" style="background-color: #444;">Home</button>
     <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blackjack')">Achievements</button>
   </div>
 </body>

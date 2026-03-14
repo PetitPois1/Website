@@ -1,227 +1,295 @@
 (function () {
   const definitions = {
+    neondash: [
+      {
+        id: "neon_endless_1000",
+        name: "Neon Runner",
+        description: "Reach 1000m in Endless mode.",
+        difficulty: "easy"
+      },
+      {
+        id: "neon_endless_5000",
+        name: "Light Speed",
+        description: "Reach 5000m in Endless mode.",
+        difficulty: "medium"
+      },
+      {
+        id: "neon_level_1",
+        name: "First Steps",
+        description: "Complete Level 1.",
+        difficulty: "easy"
+      },
+      {
+        id: "neon_level_master",
+        name: "Grid Master",
+        description: "Complete all built-in levels.",
+        difficulty: "hard"
+      }
+    ],
     snake: [
       {
         id: "snake_first_apple",
         name: "First Bite",
-        description: "Eat your first food."
+        description: "Eat your first food.",
+        difficulty: "easy"
       },
       {
         id: "snake_score_10",
         name: "Getting Warmed Up",
-        description: "Reach a score of 10."
+        description: "Reach a score of 10.",
+        difficulty: "easy"
       },
       {
         id: "snake_score_25",
         name: "Serious Snake",
-        description: "Reach a score of 25."
+        description: "Reach a score of 25.",
+        difficulty: "medium"
       },
       {
         id: "snake_score_50",
         name: "Snake Master",
-        description: "Reach a score of 50."
+        description: "Reach a score of 50.",
+        difficulty: "medium"
       },
       {
         id: "snake_score_100",
         name: "Snake God",
-        description: "Reach a score of 100."
+        description: "Reach a score of 100.",
+        difficulty: "hard"
       },
       {
         id: "snake_total_100",
         name: "Fruit Salad",
-        description: "Eat 100 fruit in total."
+        description: "Eat 100 fruit in total.",
+        difficulty: "medium"
       },
       {
         id: "snake_total_500",
         name: "Hungry Hungry Snake",
-        description: "Eat 500 fruit in total."
+        description: "Eat 500 fruit in total.",
+        difficulty: "hard"
       },
       {
         id: "snake_total_1000",
         name: "Fruit Extinction",
-        description: "Eat 1000 fruit in total."
+        description: "Eat 1000 fruit in total.",
+        difficulty: "insane"
       },
       {
         id: "snake_complete",
         name: "Board Master",
-        description: "Fill the entire board with the snake."
+        description: "Fill the entire board with the snake.",
+        difficulty: "insane"
       }
     ],
     blockblast: [
       {
         id: "blockblast_first_clear",
         name: "First Clear",
-        description: "Clear your first line or column."
+        description: "Clear your first line or column.",
+        difficulty: "easy"
       },
       {
         id: "blockblast_500_score",
         name: "Solid Start",
-        description: "Score 500 points in a single run."
+        description: "Score 500 points in a single run.",
+        difficulty: "medium"
       },
       {
         id: "blockblast_1000_score",
         name: "Combo Artist",
-        description: "Score 1000 points in a single run."
+        description: "Score 1000 points in a single run.",
+        difficulty: "medium"
       },
       {
         id: "blockblast_2500_score",
         name: "Block Expert",
-        description: "Score 2500 points in a single run."
+        description: "Score 2500 points in a single run.",
+        difficulty: "hard"
       },
       {
         id: "blockblast_5000_score",
         name: "Blast Master",
-        description: "Score 5000 points in a single run."
+        description: "Score 5000 points in a single run.",
+        difficulty: "insane"
       },
       {
         id: "blockblast_insane_mode",
         name: "Reality Warp",
-        description: "Secret: You activated Insane Mode."
+        description: "Secret: You activated Insane Mode.",
+        difficulty: "hard"
       }
     ],
     blackjack: [
       {
         id: "blackjack_first_win",
         name: "First Win",
-        description: "Win your first hand."
+        description: "Win your first hand.",
+        difficulty: "easy"
       },
       {
         id: "blackjack_5_wins",
         name: "On a Roll",
-        description: "Win 5 hands in total."
+        description: "Win 5 hands in total.",
+        difficulty: "medium"
       },
       {
         id: "blackjack_2000_money",
         name: "High Roller",
-        description: "Reach $2000 or more."
+        description: "Reach $2000 or more.",
+        difficulty: "hard"
       }
     ],
     clicker: [
       {
         id: "clicker_1_click",
         name: "Novice",
-        description: "Click 1 time."
+        description: "Click 1 time.",
+        difficulty: "easy"
       },
       {
         id: "clicker_100_clicks",
         name: "Grinder",
-        description: "Click 100 times."
+        description: "Click 100 times.",
+        difficulty: "easy"
       },
       {
         id: "clicker_1000_clicks",
         name: "Click King",
-        description: "Click 1,000 times."
+        description: "Click 1,000 times.",
+        difficulty: "medium"
       },
       {
         id: "clicker_1m_credits",
         name: "Wealthy",
-        description: "Earn 1 Million Credits."
+        description: "Earn 1 Million Credits.",
+        difficulty: "medium"
       },
       {
         id: "clicker_1b_credits",
         name: "Tycoon",
-        description: "Earn 1 Billion Credits."
+        description: "Earn 1 Billion Credits.",
+        difficulty: "hard"
       },
       {
         id: "clicker_1q_credits",
         name: "Godhood",
-        description: "Earn 1 Quadrillion Credits."
+        description: "Earn 1 Quadrillion Credits.",
+        difficulty: "insane"
       },
       {
         id: "clicker_50_pickers",
         name: "Automation",
-        description: "Own 50 Rock Pickers."
+        description: "Own 50 Rock Pickers.",
+        difficulty: "medium"
       },
       {
         id: "clicker_era_3",
         name: "Century",
-        description: "Reach Era 3."
+        description: "Reach Era 3.",
+        difficulty: "hard"
       }
     ],
     flappy: [
       {
         id: "flappy_first_pipe",
         name: "Take Flight",
-        description: "Pass your first pipe."
+        description: "Pass your first pipe.",
+        difficulty: "easy"
       },
       {
         id: "flappy_10_score",
         name: "Wingman",
-        description: "Reach a score of 10."
+        description: "Reach a score of 10.",
+        difficulty: "medium"
       },
       {
         id: "flappy_25_score",
         name: "Aviator",
-        description: "Reach a score of 25."
+        description: "Reach a score of 25.",
+        difficulty: "medium"
       },
       {
         id: "flappy_50_score",
         name: "Sky Ace",
-        description: "Reach a score of 50."
+        description: "Reach a score of 50.",
+        difficulty: "hard"
       },
       {
         id: "flappy_100_score",
         name: "Cloud Ruler",
-        description: "Reach a score of 100."
+        description: "Reach a score of 100.",
+        difficulty: "insane"
       }
     ],
     mining: [
       {
         id: "mining_depth_100",
         name: "Surface Scraper",
-        description: "Reach a depth of 100m."
+        description: "Reach a depth of 100m.",
+        difficulty: "easy"
       },
       {
         id: "mining_depth_500",
         name: "Deep Diver",
-        description: "Reach a depth of 500m."
+        description: "Reach a depth of 500m.",
+        difficulty: "medium"
       },
       {
         id: "mining_depth_1000",
         name: "Abyssal Miner",
-        description: "Reach a depth of 1000m."
+        description: "Reach a depth of 1000m.",
+        difficulty: "hard"
       },
       {
         id: "mining_total_100",
         name: "Ore Collector",
-        description: "Mine 100 ores in total."
+        description: "Mine 100 ores in total.",
+        difficulty: "medium"
       },
       {
         id: "mining_total_1000",
         name: "Mineral Magnate",
-        description: "Mine 1000 ores in total."
+        description: "Mine 1000 ores in total.",
+        difficulty: "hard"
       },
       {
         id: "mining_total_5000",
         name: "Core Master",
-        description: "Mine 5000 ores in total."
+        description: "Mine 5000 ores in total.",
+        difficulty: "insane"
       }
     ],
     brick: [
       {
         id: "brick_first_break",
         name: "Cracked",
-        description: "Break your first brick."
+        description: "Break your first brick.",
+        difficulty: "easy"
       },
       {
         id: "brick_1000_score",
         name: "Score Seeker",
-        description: "Reach a score of 1000."
+        description: "Reach a score of 1000.",
+        difficulty: "medium"
       },
       {
         id: "brick_5000_score",
         name: "High Breaker",
-        description: "Reach a score of 5000."
+        description: "Reach a score of 5000.",
+        difficulty: "hard"
       },
       {
         id: "brick_10000_score",
         name: "Brick Annihilator",
-        description: "Reach a score of 10000."
+        description: "Reach a score of 10000.",
+        difficulty: "insane"
       },
       {
         id: "brick_insane_mode",
         name: "Overclocked",
-        description: "Secret: You activated Insane Mode."
+        description: "Secret: You activated Insane Mode.",
+        difficulty: "hard"
       }
     ]
   };

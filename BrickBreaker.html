@@ -288,9 +288,10 @@
         </div>
     </div>
 
-    <div id="start-screen">
+        <div id="start-screen">
         <h1 id="main-title" onclick="triggerEasterEgg()" style="cursor: pointer; user-select: none;">NEON CORE</h1>
         <button class="btn btn-large" onclick="startGame()">INITIALIZE SYSTEM</button>
+        <button onclick="window.location.href='index.html'" class="mt-4 text-gray-500 hover:text-white uppercase tracking-[0.2em] text-[10px] font-bold transition-colors pointer-events-auto">Return to Hub</button>
         <div class="tutorial">
             Mouse/Touch to Move<br>
             Click/Tap to Launch Ball<br>
@@ -972,6 +973,10 @@ window.closeShop = function() {
 
 window.startGame = function() {
     gameState.running = true;
+    // Start playtime tracking
+    if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
+        window.gameHubProgress.startPlayTimeTracking("brick");
+    }
     initGame();
 };
 

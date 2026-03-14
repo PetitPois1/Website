@@ -98,7 +98,7 @@
 
     <div class="controls">
         <button onclick="resetGame()">Reset Game</button>
-        <button onclick="window.location.href='index.html'">Main Menu</button>
+        <button onclick="window.location.href='index.html'" style="background-color: #444; box-shadow: 0 4px 0 #222;">Main Menu</button>
         <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('snake')">Achievements</button>
     </div>
 
@@ -179,7 +179,13 @@
         }
 
         function gameLoop() {
-            if (waitingForStart) return;
+            if (waitingForStart) {
+                // Start playtime tracking
+                if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
+                    window.gameHubProgress.startPlayTimeTracking("snake");
+                }
+                return;
+            }
 
             clearTimeout(gameTimeout);
             update();
@@ -317,6 +323,11 @@
         }
 
         function gameOver(win = false) {
+            // Stop playtime tracking
+            if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
+                window.gameHubProgress.stopPlayTimeTracking();
+            }
+
             if (win) {
                 alert("CONGRATULATIONS!\nYou filled the whole board!");
             } else {

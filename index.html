@@ -117,6 +117,38 @@
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
 
+        .active-players-stack {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            justify-content: center;
+        }
+
+        .active-player-mini {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #0f172a;
+            margin-left: -6px;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .active-player-mini:first-child {
+            margin-left: 0;
+        }
+
+        .active-player-mini svg {
+            width: 100%;
+            height: 100%;
+        }
+
         .friend-status {
             position: absolute;
             top: 12px;
@@ -438,7 +470,7 @@
 
         let currentFilter = "all";
         let likedGames = JSON.parse(localStorage.getItem("gamehub_liked_games") || "[]");
-        let friendActivity = {}; // Format: {gameId: [friendNames]}
+        let activePlayers = {}; // Format: {gameId: [{uid, username, avatar}]}
         let gameLikes = {}; // Format: {gameId: count}
 
         function setFilter(tag, el) {
@@ -449,6 +481,35 @@
         }
 
         const grid = document.getElementById('game-grid');
+
+        async function fetchActivePlayers() {
+            if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const db = window.gameHubFirebase.db;
+            try {
+                // Find users who have been seen in the last 2 minutes
+                const twoMinutesAgo = new Date(Date.now() - 120000);
+                const snapshot = await db.collection("users")
+                    .where("lastSeen", ">=", twoMinutesAgo)
+                    .get();
+                
+                const newActive = {};
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.currentlyPlaying) {
+                        if (!newActive[data.currentlyPlaying]) newActive[data.currentlyPlaying] = [];
+                        newActive[data.currentlyPlaying].push({
+                            uid: doc.id,
+                            username: data.username,
+                            avatar: data.avatar
+                        });
+                    }
+                });
+                activePlayers = newActive;
+                renderGames(document.getElementById('search-bar').value);
+            } catch(e) {
+                console.warn("[Index] Failed to fetch active players", e);
+            }
+        }
 
         async function fetchGameLikes() {
             if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
@@ -570,24 +631,27 @@
                     window.location.href = game.url;
                 });
                 
-                const friendsHere = friendActivity[game.id] || [];
+                const playersHere = activePlayers[game.id] || [];
                 
                 let badgeHtml = "";
                 if (game.broken) badgeHtml = '<span class="broken-badge">BROKEN</span>';
                 else if (game.beta) badgeHtml = '<span class="beta-badge">BETA</span>';
 
-                let friendHtml = "";
-                if (friendsHere.length > 0) {
-                    friendHtml = `
-                        <div class="friend-status" title="${friendsHere.join(', ')}">
-                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                            ${friendsHere.length} friend${friendsHere.length > 1 ? 's' : ''} playing
+                let playerHtml = "";
+                if (playersHere.length > 0) {
+                    playerHtml = `
+                        <div class="active-players-stack">
+                            ${playersHere.slice(0, 5).map(p => `
+                                <div class="active-player-mini" title="${p.username || 'Player'}">
+                                    ${p.avatar ? renderAvatarSVGString(p.avatar) : (p.username || '?')[0].toUpperCase()}
+                                </div>
+                            `).join('')}
+                            ${playersHere.length > 5 ? `<div class="active-player-mini text-[6px]">+${playersHere.length - 5}</div>` : ''}
                         </div>
                     `;
                 }
 
                 card.innerHTML = `
-                    ${friendHtml}
                     <div class="game-icon text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center transition-all overflow-hidden">
                         ${game.icon}
                     </div>
@@ -595,7 +659,8 @@
                         <h3 class="font-bold text-lg transition-colors">${game.name}</h3>
                         ${badgeHtml}
                     </div>
-                    <p class="text-slate-500 text-sm mb-4">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
+                    <p class="text-slate-500 text-sm mb-1">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
+                    ${playerHtml}
                     
                     <button onclick="toggleLike(event, '${game.id}')" class="like-button ${isLiked ? 'liked' : ''}">
                         <svg class="w-4 h-4" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
@@ -622,17 +687,45 @@
             renderGames(query);
         }
 
+        function renderAvatarSVGString(config) {
+            const mouths = {
+                smile: "M40 65 Q50 75 60 65",
+                flat: "M40 65 L60 65",
+                surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70",
+                cool: "M35 65 L65 65 M35 45 L45 45 M55 45 L65 45",
+                sleepy: "M40 65 Q50 68 60 65"
+            };
+            const eyes = config.mouth === 'cool' ? 
+                `<rect x="30" y="40" width="20" height="8" fill="black" rx="2" />
+                 <rect x="50" y="40" width="20" height="8" fill="black" rx="2" />
+                 <rect x="48" y="43" width="4" height="2" fill="black" />` :
+                `<g>
+                    <circle cx="40" cy="45" r="5" fill="white" />
+                    <circle cx="40" cy="45" r="2" fill="black" />
+                    <circle cx="60" cy="45" r="5" fill="white" />
+                    <circle cx="60" cy="45" r="2" fill="black" />
+                </g>`;
+
+            return `
+                <svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="${config.base}" />
+                    ${eyes}
+                    <path d="${mouths[config.mouth] || mouths.smile}" stroke="${config.mouth === 'cool' ? 'black' : 'white'}" stroke-width="3" fill="none" stroke-linecap="round" />
+                </svg>
+            `;
+        }
+
         function fetchFriendActivity() {
             // Stub for real-time friend activity tracking
             // In a real app, this would query a Firestore collection of "active_sessions"
         }
 
         // Init
+        fetchActivePlayers();
         fetchGameLikes();
         renderGames();
-        setInterval(fetchFriendActivity, 30000); // Check every 30s
+        setInterval(fetchActivePlayers, 30000); // Check active players every 30s
         setInterval(fetchGameLikes, 60000); // Refresh likes every minute
-        setTimeout(fetchFriendActivity, 2000);   // Initial check after auth might load
     </script>
 
 </body>
