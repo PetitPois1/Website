@@ -35,6 +35,7 @@
       email,
       password
     );
+    await result.user.sendEmailVerification();
     return result.user;
   }
 
@@ -46,7 +47,14 @@
       email,
       password
     );
-    return result.user;
+    const user = result.user;
+    if (!user.emailVerified) {
+      await firebaseRef.auth.signOut();
+      throw new Error(
+        "Please verify your email before signing in. Check your inbox for the verification link (and spam folder)."
+      );
+    }
+    return user;
   }
 
   async function sendPasswordResetEmail(email) {
@@ -154,10 +162,14 @@
   function closeAuthModal() {
     const modal = document.getElementById("auth-modal");
     const errorEl = document.getElementById("auth-error");
-    if (modal) {
-      modal.classList.add("hidden");
-    }
+    const formWrapper = document.getElementById("auth-form-wrapper");
+    const verificationPanel = document.getElementById("auth-verification-sent");
+    const resendFeedback = document.getElementById("auth-verification-resend-feedback");
+    if (modal) modal.classList.add("hidden");
     if (errorEl) errorEl.textContent = "";
+    if (formWrapper) formWrapper.classList.remove("hidden");
+    if (verificationPanel) verificationPanel.classList.add("hidden");
+    if (resendFeedback) resendFeedback.textContent = "";
   }
 
   function wireAuthModal() {
@@ -235,6 +247,42 @@
         closeAuthModal();
       };
     }
+    const verificationCloseBtn = document.getElementById("auth-verification-close");
+    if (verificationCloseBtn) {
+      verificationCloseBtn.onclick = async (e) => {
+        e.preventDefault();
+        if (firebaseRef && firebaseRef.auth && firebaseRef.auth.currentUser && !firebaseRef.auth.currentUser.emailVerified) {
+          await firebaseRef.auth.signOut();
+        }
+        closeAuthModal();
+      };
+    }
+    const verificationResendBtn = document.getElementById("auth-verification-resend");
+    const resendFeedbackEl = document.getElementById("auth-verification-resend-feedback");
+    if (verificationResendBtn && resendFeedbackEl) {
+      verificationResendBtn.onclick = async (e) => {
+        e.preventDefault();
+        const user = firebaseRef && firebaseRef.auth ? firebaseRef.auth.currentUser : null;
+        if (!user) {
+          resendFeedbackEl.textContent = "Session ended. Close and sign in after verifying.";
+          resendFeedbackEl.className = "text-xs text-amber-400 min-h-[1rem] mb-2";
+          return;
+        }
+        verificationResendBtn.disabled = true;
+        resendFeedbackEl.textContent = "";
+        resendFeedbackEl.className = "text-xs min-h-[1rem] mb-2";
+        try {
+          await user.sendEmailVerification();
+          resendFeedbackEl.textContent = "Verification email sent again!";
+          resendFeedbackEl.className = "text-xs text-emerald-400 min-h-[1rem] mb-2";
+        } catch (err) {
+          resendFeedbackEl.textContent = err && err.message ? err.message : "Could not resend. Try again in a few minutes.";
+          resendFeedbackEl.className = "text-xs text-rose-400 min-h-[1rem] mb-2";
+        } finally {
+          verificationResendBtn.disabled = false;
+        }
+      };
+    }
 
     if (form) {
       form.onsubmit = async (e) => {
@@ -274,13 +322,20 @@
 
         if (errorEl) errorEl.textContent = "";
 
+        let signupShowVerificationPanel = false;
         try {
           if (mode === "login") {
             await signInWithEmailPassword(email, password);
             closeAuthModal();
           } else if (mode === "signup") {
             await signUpWithEmailPassword(email, password);
-            closeAuthModal();
+            const formWrapper = document.getElementById("auth-form-wrapper");
+            const verificationPanel = document.getElementById("auth-verification-sent");
+            const verificationEmailEl = document.getElementById("auth-verification-email");
+            if (formWrapper) formWrapper.classList.add("hidden");
+            if (verificationPanel) verificationPanel.classList.remove("hidden");
+            if (verificationEmailEl) verificationEmailEl.textContent = email;
+            signupShowVerificationPanel = true;
           } else {
             await sendPasswordResetEmail(email);
             if (errorEl) {
@@ -302,7 +357,7 @@
           }
         } finally {
           submitBtn.disabled = false;
-          renderMode();
+          if (!signupShowVerificationPanel) renderMode();
         }
       };
     }

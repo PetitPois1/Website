@@ -347,6 +347,12 @@
                             <button onclick="updateAvatar('mouth', 'surprised')" class="px-3 py-1 rounded bg-slate-800 text-xs hover:bg-slate-700 transition-colors">O-O</button>
                         </div>
                     </div>
+                    <div>
+                        <label class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-2 block">Hat</label>
+                        <div id="inventory-hat" class="flex flex-wrap gap-2">
+                            <!-- filled by JS -->
+                        </div>
+                    </div>
                     <div class="sm:col-span-2 flex gap-3">
                         <button id="save-avatar-btn" class="flex-1 py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Avatar Design</button>
                     </div>
@@ -361,29 +367,51 @@
                     <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
                         <div class="w-12 h-12 rounded-full bg-[#f43f5e] border-2 border-white/10"></div>
                         <p class="text-xs font-semibold text-slate-200">Rose Red</p>
-                        <button onclick="buyItem('base', '#f43f5e', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                        <button data-shop-type="base" data-shop-value="#f43f5e" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
                     </div>
                     <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
                         <div class="w-12 h-12 rounded-full bg-[#0ea5e9] border-2 border-white/10"></div>
                         <p class="text-xs font-semibold text-slate-200">Sky Blue</p>
-                        <button onclick="buyItem('base', '#0ea5e9', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                        <button data-shop-type="base" data-shop-value="#0ea5e9" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
                     </div>
                     <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
                         <div class="w-12 h-12 rounded-full bg-[#d946ef] border-2 border-white/10"></div>
                         <p class="text-xs font-semibold text-slate-200">Magenta</p>
-                        <button onclick="buyItem('base', '#d946ef', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                        <button data-shop-type="base" data-shop-value="#d946ef" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
                     </div>
 
                     <!-- Expressions -->
                     <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
                         <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl">😎</div>
                         <p class="text-xs font-semibold text-slate-200">Cool Guy</p>
-                        <button onclick="buyItem('mouth', 'cool', 100)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
+                        <button data-shop-type="mouth" data-shop-value="cool" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
                     </div>
                     <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
                         <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl">😴</div>
                         <p class="text-xs font-semibold text-slate-200">Sleepy</p>
-                        <button onclick="buyItem('mouth', 'sleepy', 100)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
+                        <button data-shop-type="mouth" data-shop-value="sleepy" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
+                    </div>
+
+                    <!-- Hats -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl">🧢</div>
+                        <p class="text-xs font-semibold text-slate-200">Cap</p>
+                        <button data-shop-type="hat" data-shop-value="cap" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">75 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl">👑</div>
+                        <p class="text-xs font-semibold text-slate-200">Crown</p>
+                        <button data-shop-type="hat" data-shop-value="crown" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">150 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl">🧙</div>
+                        <p class="text-xs font-semibold text-slate-200">Wizard</p>
+                        <button data-shop-type="hat" data-shop-value="wizard" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">150 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl">🎩</div>
+                        <p class="text-xs font-semibold text-slate-200">Top Hat</p>
+                        <button data-shop-type="hat" data-shop-value="tophat" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
                     </div>
                 </div>
             </div>
@@ -500,10 +528,16 @@
             const cancelUsernameBtn = document.getElementById("cancel-username-btn");
 
             let currentUid = null;
-            let currentAvatar = { base: "#8b5cf6", mouth: "smile" };
-            let userInventory = {
+            let currentAvatar = { base: "#8b5cf6", mouth: "smile", hat: "none" };
+            const defaultInventory = {
                 base: ["#8b5cf6", "#ef4444", "#10b981", "#f59e0b", "#3b82f6"],
-                mouth: ["smile", "flat", "surprised"]
+                mouth: ["smile", "flat", "surprised"],
+                hat: ["none"]
+            };
+            let userInventory = {
+                base: [...defaultInventory.base],
+                mouth: [...defaultInventory.mouth],
+                hat: [...defaultInventory.hat]
             };
 
             function applyUser(user, userData = null) {
@@ -513,6 +547,11 @@
                     avatarEl.innerHTML = "?";
                     editUsernameBtn.classList.add('hidden');
                     currentUid = null;
+                    userInventory.base = [...defaultInventory.base];
+                    userInventory.mouth = [...defaultInventory.mouth];
+                    userInventory.hat = [...defaultInventory.hat];
+                    renderInventoryUI();
+                    refreshShopUI();
                     return;
                 }
                 const email = user.email || "Signed in";
@@ -530,19 +569,30 @@
                     }
                 }
                 
+                // Reset to defaults then merge cloud inventory so bought items show in editor
+                userInventory.base = [...defaultInventory.base];
+                userInventory.mouth = [...defaultInventory.mouth];
+                userInventory.hat = [...defaultInventory.hat];
                 if (userData && userData.inventory) {
-                    // Merge cloud inventory with defaults
-                    if (userData.inventory.base) {
+                    if (userData.inventory.base && userData.inventory.base.length) {
                         userInventory.base = Array.from(new Set([...userInventory.base, ...userData.inventory.base]));
                     }
-                    if (userData.inventory.mouth) {
+                    if (userData.inventory.mouth && userData.inventory.mouth.length) {
                         userInventory.mouth = Array.from(new Set([...userInventory.mouth, ...userData.inventory.mouth]));
+                    }
+                    if (userData.inventory.hat && userData.inventory.hat.length) {
+                        userInventory.hat = Array.from(new Set([...userInventory.hat, ...userData.inventory.hat]));
                     }
                 }
                 renderInventoryUI();
+                refreshShopUI();
 
                 if (userData && userData.avatar) {
-                    currentAvatar = userData.avatar;
+                    currentAvatar = {
+                        base: userData.avatar.base || currentAvatar.base,
+                        mouth: userData.avatar.mouth || currentAvatar.mouth,
+                        hat: userData.avatar.hat || 'none'
+                    };
                     renderAvatarSVG(avatarEl, currentAvatar, "w-full h-full");
                     renderAvatarSVG(document.getElementById('avatar-svg'), currentAvatar, "w-full h-full");
                 } else {
@@ -555,9 +605,12 @@
                 loadPendingRequests();
             }
 
+            const hatLabels = { none: 'None', cap: 'Cap', crown: 'Crown', wizard: 'Wizard', tophat: 'Top Hat' };
+
             function renderInventoryUI() {
                 const baseContainer = document.getElementById('inventory-base-colors');
                 const mouthContainer = document.getElementById('inventory-expressions');
+                const hatContainer = document.getElementById('inventory-hat');
                 if (!baseContainer || !mouthContainer) return;
 
                 baseContainer.innerHTML = '';
@@ -577,6 +630,17 @@
                     btn.textContent = m;
                     mouthContainer.appendChild(btn);
                 });
+
+                if (hatContainer) {
+                    hatContainer.innerHTML = '';
+                    userInventory.hat.forEach(h => {
+                        const btn = document.createElement('button');
+                        btn.onclick = () => updateAvatar('hat', h);
+                        btn.className = `px-3 py-1 rounded bg-slate-800 text-xs hover:bg-slate-700 transition-colors capitalize`;
+                        btn.textContent = hatLabels[h] || h;
+                        hatContainer.appendChild(btn);
+                    });
+                }
             }
 
             async function loadCurrency() {
@@ -626,13 +690,57 @@
                     `;
                 }
 
+                const hatStyle = config.hat && config.hat !== 'none' ? config.hat : null;
+                // Head circle: 50,50 r=40 → top of head at y=10. Hats rest with base at y≈12–16.
+                const hatEl = !hatStyle ? '' : (
+                    hatStyle === 'cap' ? `<g class="hat cap"><ellipse cx="50" cy="14" rx="34" ry="6" fill="#1f2937"/><path d="M18 14 Q18 2 50 -2 Q82 2 82 14" fill="#374151" stroke="#1f2937" stroke-width="0.5"/></g>` :
+                    hatStyle === 'crown' ? `<g class="hat crown"><path d="M22 14 L30 14 L34 -1 L38 14 L46 14 L50 -3 L54 14 L62 14 L66 -1 L70 14 L78 14 L78 16 L22 16 Z" fill="#eab308" stroke="#b45309" stroke-width="0.6"/><circle cx="34" cy="-1" r="2.5" fill="#fef08a"/><circle cx="50" cy="-3" r="2.5" fill="#fef08a"/><circle cx="66" cy="-1" r="2.5" fill="#fef08a"/></g>` :
+                    hatStyle === 'wizard' ? `<g class="hat wizard"><path d="M30 14 L70 14 L50 -10 Z" fill="#4c1d95" stroke="#2e1065" stroke-width="0.6"/><path d="M34 12 L66 12 L50 -6 Z" fill="#5b21b6"/><circle cx="50" cy="-10" r="2" fill="#7c3aed"/></g>` :
+                    hatStyle === 'tophat' ? `<g class="hat tophat"><ellipse cx="50" cy="12" rx="36" ry="6" fill="#1c1917"/><path d="M26 12 L26 -16 L74 -16 L74 12 Z" fill="#1c1917"/><ellipse cx="50" cy="-16" rx="24" ry="4" fill="#292524"/></g>` :
+                    ''
+                );
+
                 container.innerHTML = `
                     <svg viewBox="0 0 100 100" class="${classes}">
                         <circle cx="50" cy="50" r="40" fill="${config.base}" />
                         ${eyes}
                         <path d="${mouths[config.mouth] || mouths.smile}" stroke="${config.mouth === 'cool' ? 'rgba(0,0,0,0.7)' : 'white'}" stroke-width="3" fill="none" stroke-linecap="round" />
+                        ${hatEl}
                     </svg>
                 `;
+            }
+
+            function isOwned(type, value) {
+                const list = userInventory[type];
+                return list && list.includes(value);
+            }
+
+            function refreshShopUI() {
+                // Update each shop item: show "Owned" and equip-on-click if already owned
+                const shopItems = [
+                    { type: 'base', value: '#f43f5e', price: 50, label: 'Rose Red' },
+                    { type: 'base', value: '#0ea5e9', price: 50, label: 'Sky Blue' },
+                    { type: 'base', value: '#d946ef', price: 50, label: 'Magenta' },
+                    { type: 'mouth', value: 'cool', price: 100, label: 'Cool Guy' },
+                    { type: 'mouth', value: 'sleepy', price: 100, label: 'Sleepy' },
+                    { type: 'hat', value: 'cap', price: 75, label: 'Cap' },
+                    { type: 'hat', value: 'crown', price: 150, label: 'Crown' },
+                    { type: 'hat', value: 'wizard', price: 150, label: 'Wizard' },
+                    { type: 'hat', value: 'tophat', price: 100, label: 'Top Hat' }
+                ];
+                shopItems.forEach(({ type, value, price, label }) => {
+                    const btn = document.querySelector(`[data-shop-type="${type}"][data-shop-value="${value}"]`);
+                    if (!btn) return;
+                    if (isOwned(type, value)) {
+                        btn.textContent = 'Owned';
+                        btn.classList.add('opacity-75');
+                        btn.onclick = () => { window.updateAvatar(type, value); };
+                    } else {
+                        btn.textContent = price + ' 🪙';
+                        btn.classList.remove('opacity-75');
+                        btn.onclick = () => window.buyItem(type, value, price);
+                    }
+                });
             }
 
             window.buyItem = async (type, value, price) => {
@@ -640,19 +748,44 @@
                     alert("Please sign in to buy items!");
                     return;
                 }
-                
+                if (isOwned(type, value)) {
+                    window.updateAvatar(type, value);
+                    return;
+                }
                 const confirmed = confirm(`Buy this item for ${price} 🪙?`);
                 if (!confirmed) return;
 
                 const success = await window.gameHubProgress.spendCurrency(price);
                 if (success) {
+                    if (!userInventory[type].includes(value)) {
+                        userInventory[type].push(value);
+                    }
+                    const db = window.gameHubFirebase.db;
+                    if (db) {
+                        try {
+                            await db.collection("users").doc(currentUid).set({
+                                inventory: {
+                                    base: [...userInventory.base],
+                                    mouth: [...userInventory.mouth],
+                                    hat: [...userInventory.hat]
+                                }
+                            }, { merge: true });
+                        } catch (e) {
+                            console.error("[Profile] Error saving inventory:", e);
+                        }
+                    }
+                    renderInventoryUI();
+                    refreshShopUI();
                     window.updateAvatar(type, value);
                     loadCurrency();
-                    alert("Item unlocked and applied!");
+                    alert("Item unlocked and applied! You can change or unequip it anytime in the character editor above.");
                 } else {
                     alert("Not enough currency! Earn more by completing achievements.");
                 }
             };
+
+            // Bind shop buttons on load (auth may not have run yet)
+            refreshShopUI();
 
             window.updateAvatar = (type, value) => {
                 currentAvatar[type] = value;
