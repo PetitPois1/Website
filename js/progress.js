@@ -156,8 +156,51 @@
         },
         { merge: true }
       );
+
+      // Award currency: 10 coins per achievement
+      const userRef = db.collection("users").doc(user.uid);
+      await userRef.update({
+        currency: firebase.firestore.FieldValue.increment(10)
+      });
+      console.log("[GameHub] Awarded 10 coins for achievement:", achievementId);
     } catch (e) {
-      console.warn("[GameHub] Failed to unlock cloud achievement", e);
+      console.warn("[GameHub] Failed to unlock cloud achievement or award currency", e);
+    }
+  }
+
+  async function getCurrency() {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db) return 0;
+
+    try {
+      const doc = await db.collection("users").doc(user.uid).get();
+      return doc.exists ? (doc.data().currency || 0) : 0;
+    } catch (e) {
+      console.warn("[GameHub] Failed to load currency", e);
+      return 0;
+    }
+  }
+
+  async function spendCurrency(amount) {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db) return false;
+
+    try {
+      const userRef = db.collection("users").doc(user.uid);
+      const doc = await userRef.get();
+      const current = doc.exists ? (doc.data().currency || 0) : 0;
+      
+      if (current < amount) return false;
+
+      await userRef.update({
+        currency: firebase.firestore.FieldValue.increment(-amount)
+      });
+      return true;
+    } catch (e) {
+      console.warn("[GameHub] Failed to spend currency", e);
+      return false;
     }
   }
 
@@ -200,7 +243,9 @@
     saveGameProgress,
     loadGameProgress,
     unlockAchievement,
-    getUserAchievements
+    getUserAchievements,
+    getCurrency,
+    spendCurrency
   };
 })();
 

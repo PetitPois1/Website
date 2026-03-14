@@ -49,6 +49,13 @@
     return result.user;
   }
 
+  async function sendPasswordResetEmail(email) {
+    if (!firebaseRef || !firebaseRef.auth) {
+      throw new Error("Auth is not available.");
+    }
+    await firebaseRef.auth.sendPasswordResetEmail(email);
+  }
+
   async function signOutCurrentUser() {
     if (!firebaseRef || !firebaseRef.auth) return;
     await firebaseRef.auth.signOut();
@@ -166,8 +173,10 @@
     const errorEl = document.getElementById("auth-error");
     const confirmWrapper = document.getElementById("auth-password-confirm-wrapper");
     const confirmInput = document.getElementById("auth-password-confirm");
+    const forgotPasswordBtn = document.getElementById("auth-forgot-password");
+    const passwordWrapper = forgotPasswordBtn ? forgotPasswordBtn.closest('div').parentElement : null;
 
-    let mode = "login"; // or "signup"
+    let mode = "login"; // or "signup" or "reset"
 
     function renderMode() {
       if (!titleEl || !submitBtn || !toggleModeBtn) return;
@@ -176,11 +185,21 @@
         submitBtn.textContent = "Sign In";
         toggleModeBtn.textContent = "Need an account? Sign up";
         if (confirmWrapper) confirmWrapper.classList.add("hidden");
-      } else {
+        if (passwordWrapper) passwordWrapper.classList.remove("hidden");
+        if (forgotPasswordBtn) forgotPasswordBtn.classList.remove("hidden");
+      } else if (mode === "signup") {
         titleEl.textContent = "Create Account";
         submitBtn.textContent = "Sign Up";
         toggleModeBtn.textContent = "Have an account? Sign in";
         if (confirmWrapper) confirmWrapper.classList.remove("hidden");
+        if (passwordWrapper) passwordWrapper.classList.remove("hidden");
+        if (forgotPasswordBtn) forgotPasswordBtn.classList.add("hidden");
+      } else if (mode === "reset") {
+        titleEl.textContent = "Reset Password";
+        submitBtn.textContent = "Send Reset Email";
+        toggleModeBtn.textContent = "Back to Sign In";
+        if (confirmWrapper) confirmWrapper.classList.add("hidden");
+        if (passwordWrapper) passwordWrapper.classList.add("hidden");
       }
       if (errorEl) errorEl.textContent = "";
     }
@@ -188,7 +207,19 @@
     if (toggleModeBtn) {
       toggleModeBtn.onclick = (e) => {
         e.preventDefault();
-        mode = mode === "login" ? "signup" : "login";
+        if (mode === "reset") {
+          mode = "login";
+        } else {
+          mode = mode === "login" ? "signup" : "login";
+        }
+        renderMode();
+      };
+    }
+
+    if (forgotPasswordBtn) {
+      forgotPasswordBtn.onclick = (e) => {
+        e.preventDefault();
+        mode = "reset";
         renderMode();
       };
     }
@@ -223,8 +254,12 @@
         const password = passwordInput.value;
         const confirmPassword = confirmInput ? confirmInput.value : "";
 
-        if (!email || !password) {
-          if (errorEl) errorEl.textContent = "Please enter email and password.";
+        if (!email) {
+          if (errorEl) errorEl.textContent = "Please enter your email.";
+          return;
+        }
+        if (mode !== "reset" && !password) {
+          if (errorEl) errorEl.textContent = "Please enter your password.";
           return;
         }
         if (mode === "signup" && password !== confirmPassword) {
@@ -233,25 +268,41 @@
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = mode === "login" ? "Signing In..." : "Signing Up...";
+        if (mode === "login") submitBtn.textContent = "Signing In...";
+        else if (mode === "signup") submitBtn.textContent = "Signing Up...";
+        else submitBtn.textContent = "Sending Email...";
+
         if (errorEl) errorEl.textContent = "";
 
         try {
           if (mode === "login") {
             await signInWithEmailPassword(email, password);
-          } else {
+            closeAuthModal();
+          } else if (mode === "signup") {
             await signUpWithEmailPassword(email, password);
+            closeAuthModal();
+          } else {
+            await sendPasswordResetEmail(email);
+            if (errorEl) {
+              errorEl.className = "text-xs text-emerald-400 min-h-[1.2rem]";
+              errorEl.textContent = "Reset link sent! Check your email.";
+            }
+            setTimeout(() => {
+                mode = "login";
+                renderMode();
+                if (errorEl) errorEl.className = "text-xs text-rose-400 min-h-[1.2rem]";
+            }, 3000);
           }
-          closeAuthModal();
         } catch (err) {
           console.error("[GameHub] auth error", err);
           if (errorEl) {
+            errorEl.className = "text-xs text-rose-400 min-h-[1.2rem]";
             errorEl.textContent =
               (err && err.message) || "Something went wrong. Please try again.";
           }
         } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = mode === "login" ? "Sign In" : "Sign Up";
+          renderMode();
         }
       };
     }

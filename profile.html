@@ -97,6 +97,10 @@
             <div class="flex flex-col md:items-end gap-3">
                 <div class="flex gap-3">
                     <div class="px-4 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70">
+                        <p class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 mb-1">Currency</p>
+                        <p id="profile-currency-count" class="text-base font-semibold text-emerald-400">0 🪙</p>
+                    </div>
+                    <div class="px-4 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70">
                         <p class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 mb-1">Games Linked</p>
                         <p id="profile-games-count" class="text-base font-semibold text-slate-50">0</p>
                     </div>
@@ -342,8 +346,43 @@
                             <button onclick="updateAvatar('mouth', 'surprised')" class="px-3 py-1 rounded bg-slate-800 text-xs">O-O</button>
                         </div>
                     </div>
-                    <div class="sm:col-span-2">
-                        <button id="save-avatar-btn" class="w-full py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Avatar Design</button>
+                    <div class="sm:col-span-2 flex gap-3">
+                        <button id="save-avatar-btn" class="flex-1 py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Avatar Design</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shop Section -->
+            <div class="mt-8">
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 mb-4 px-1">Unlock New Items</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- Base Colors -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-[#f43f5e] border-2 border-white/10"></div>
+                        <p class="text-xs font-semibold text-slate-200">Rose Red</p>
+                        <button onclick="buyItem('base', '#f43f5e', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-[#0ea5e9] border-2 border-white/10"></div>
+                        <p class="text-xs font-semibold text-slate-200">Sky Blue</p>
+                        <button onclick="buyItem('base', '#0ea5e9', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-[#d946ef] border-2 border-white/10"></div>
+                        <p class="text-xs font-semibold text-slate-200">Magenta</p>
+                        <button onclick="buyItem('base', '#d946ef', 50)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">50 🪙</button>
+                    </div>
+
+                    <!-- Expressions -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl">😎</div>
+                        <p class="text-xs font-semibold text-slate-200">Cool Guy</p>
+                        <button onclick="buyItem('mouth', 'cool', 100)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl">😴</div>
+                        <p class="text-xs font-semibold text-slate-200">Sleepy</p>
+                        <button onclick="buyItem('mouth', 'sleepy', 100)" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
                     </div>
                 </div>
             </div>
@@ -356,12 +395,21 @@
                     <span class="text-2xl">👥</span> Friends
                 </h2>
                 <div class="flex gap-2">
-                    <input type="text" id="friend-search-input" placeholder="Search by email..." class="bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-1.5 text-sm focus:outline-none focus:border-violet-500 transition-colors">
+                    <input type="text" id="friend-search-input" placeholder="Email or username..." class="bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-1.5 text-sm focus:outline-none focus:border-violet-500 transition-colors">
                     <button id="add-friend-btn" class="px-4 py-1.5 rounded-lg bg-violet-600 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
-                        Add Friend
+                        Send Request
                     </button>
                 </div>
             </header>
+
+            <!-- Pending Requests Sub-section -->
+            <div id="pending-requests-container" class="hidden mb-8">
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 mb-3 px-1">Pending Friend Requests</h3>
+                <div id="pending-requests-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Pending requests will be injected here -->
+                </div>
+            </div>
+
             <div id="friends-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center py-10 bg-slate-900/30 border border-slate-800/50 rounded-2xl">
                 <p class="col-span-full text-slate-500">No friends added yet. Add friends to see their achievements!</p>
             </div>
@@ -379,6 +427,12 @@
             const avatarEl = document.getElementById("profile-page-avatar");
             const gamesCountEl = document.getElementById("profile-games-count");
             const achievementsCountEl = document.getElementById("profile-achievements-count");
+            const currencyCountEl = document.getElementById("profile-currency-count");
+
+            const friendsListEl = document.getElementById("friends-list");
+            const friendSearchInput = document.getElementById("friend-search-input");
+            const pendingRequestsContainer = document.getElementById("pending-requests-container");
+            const pendingRequestsList = document.getElementById("pending-requests-list");
 
             const snakeHighEl = document.getElementById("profile-snake-highscore");
             const snakeAchEl = document.getElementById("profile-snake-achievements");
@@ -432,28 +486,63 @@
                 }
                 
                 currentUid = user.uid;
+                loadCurrency();
                 loadFriends();
+                loadPendingRequests();
+            }
+
+            async function loadCurrency() {
+                if (!currentUid || !window.gameHubProgress) return;
+                const coins = await window.gameHubProgress.getCurrency();
+                if (currencyCountEl) currencyCountEl.textContent = coins + " 🪙";
             }
 
             function renderAvatarSVG(container, config, classes) {
                 const mouths = {
                     smile: "M40 65 Q50 75 60 65",
                     flat: "M40 65 L60 65",
-                    surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70"
+                    surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70",
+                    cool: "M35 65 L65 65 M35 45 L45 45 M55 45 L65 45",
+                    sleepy: "M40 65 Q50 68 60 65"
                 };
+                const eyes = config.mouth === 'cool' ? 
+                    `<rect x="30" y="40" width="20" height="8" fill="black" rx="2" />
+                     <rect x="50" y="40" width="20" height="8" fill="black" rx="2" />
+                     <rect x="48" y="43" width="4" height="2" fill="black" />` :
+                    `<g>
+                        <circle cx="40" cy="45" r="5" fill="white" />
+                        <circle cx="40" cy="45" r="2" fill="black" />
+                        <circle cx="60" cy="45" r="5" fill="white" />
+                        <circle cx="60" cy="45" r="2" fill="black" />
+                    </g>`;
+
                 container.innerHTML = `
                     <svg viewBox="0 0 100 100" class="${classes}">
                         <circle cx="50" cy="50" r="40" fill="${config.base}" />
-                        <g>
-                            <circle cx="40" cy="45" r="5" fill="white" />
-                            <circle cx="40" cy="45" r="2" fill="black" />
-                            <circle cx="60" cy="45" r="5" fill="white" />
-                            <circle cx="60" cy="45" r="2" fill="black" />
-                        </g>
-                        <path d="${mouths[config.mouth] || mouths.smile}" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+                        ${eyes}
+                        <path d="${mouths[config.mouth] || mouths.smile}" stroke="${config.mouth === 'cool' ? 'black' : 'white'}" stroke-width="3" fill="none" stroke-linecap="round" />
                     </svg>
                 `;
             }
+
+            window.buyItem = async (type, value, price) => {
+                if (!currentUid) {
+                    alert("Please sign in to buy items!");
+                    return;
+                }
+                
+                const confirmed = confirm(`Buy this item for ${price} 🪙?`);
+                if (!confirmed) return;
+
+                const success = await window.gameHubProgress.spendCurrency(price);
+                if (success) {
+                    window.updateAvatar(type, value);
+                    loadCurrency();
+                    alert("Item unlocked and applied!");
+                } else {
+                    alert("Not enough currency! Earn more by completing achievements.");
+                }
+            };
 
             window.updateAvatar = (type, value) => {
                 currentAvatar[type] = value;
@@ -636,7 +725,7 @@
                 const snapshot = await friendsRef.get();
                 
                 if (snapshot.empty) {
-                    friendsListEl.innerHTML = '<p class="col-span-full text-slate-500">No friends added yet.</p>';
+                    friendsListEl.innerHTML = '<p class="col-span-full text-slate-500 py-4">No friends added yet. Add friends to see their achievements!</p>';
                     return;
                 }
 
@@ -649,6 +738,98 @@
                         renderFriendCard(friendUid, friendData);
                     }
                 });
+            }
+
+            async function loadPendingRequests() {
+                if (!currentUid) return;
+                const db = window.gameHubFirebase.db;
+                const requestsRef = db.collection("users").doc(currentUid).collection("friend_requests");
+                const snapshot = await requestsRef.where("status", "==", "pending").get();
+
+                if (snapshot.empty) {
+                    pendingRequestsContainer.classList.add("hidden");
+                    return;
+                }
+
+                pendingRequestsContainer.classList.remove("hidden");
+                pendingRequestsList.innerHTML = '';
+
+                snapshot.forEach(async doc => {
+                    const fromUid = doc.id;
+                    const fromDoc = await db.collection("users").doc(fromUid).get();
+                    if (fromDoc.exists) {
+                        renderRequestCard(fromUid, fromDoc.data());
+                    }
+                });
+            }
+
+            function renderRequestCard(uid, data) {
+                const card = document.createElement("div");
+                card.className = "bg-slate-800 border border-violet-500/30 p-3 rounded-xl flex items-center gap-3 animate-pulse-subtle";
+                
+                const avatarContainer = document.createElement("div");
+                avatarContainer.className = "w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0";
+                if (data.avatar) {
+                    renderAvatarSVG(avatarContainer, data.avatar, "w-full h-full");
+                } else {
+                    avatarContainer.textContent = (data.username || data.email || "?")[0].toUpperCase();
+                }
+
+                const info = document.createElement("div");
+                info.className = "flex-1 min-w-0";
+                info.innerHTML = `
+                    <p class="text-xs font-bold text-slate-100 truncate">${data.username || data.email.split('@')[0]}</p>
+                    <p class="text-[10px] text-slate-400 truncate">Friend Request</p>
+                `;
+
+                const actions = document.createElement("div");
+                actions.className = "flex gap-1";
+                
+                const acceptBtn = document.createElement("button");
+                acceptBtn.className = "p-1.5 rounded-lg bg-emerald-600/20 text-emerald-500 hover:bg-emerald-600/40 transition-colors";
+                acceptBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                acceptBtn.onclick = () => handleRequest(uid, 'accept');
+
+                const rejectBtn = document.createElement("button");
+                rejectBtn.className = "p-1.5 rounded-lg bg-rose-600/20 text-rose-500 hover:bg-rose-600/40 transition-colors";
+                rejectBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+                rejectBtn.onclick = () => handleRequest(uid, 'reject');
+
+                actions.appendChild(acceptBtn);
+                actions.appendChild(rejectBtn);
+
+                card.appendChild(avatarContainer);
+                card.appendChild(info);
+                card.appendChild(actions);
+                pendingRequestsList.appendChild(card);
+            }
+
+            async function handleRequest(fromUid, action) {
+                if (!currentUid) return;
+                const db = window.gameHubFirebase.db;
+                const batch = db.batch();
+
+                if (action === 'accept') {
+                    // Add to both users' friends list
+                    const myFriendRef = db.collection("users").doc(currentUid).collection("friends").doc(fromUid);
+                    const theirFriendRef = db.collection("users").doc(fromUid).collection("friends").doc(currentUid);
+                    
+                    batch.set(myFriendRef, { addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    batch.set(theirFriendRef, { addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+
+                // Delete the request
+                const requestRef = db.collection("users").doc(currentUid).collection("friend_requests").doc(fromUid);
+                batch.delete(requestRef);
+
+                try {
+                    await batch.commit();
+                    loadPendingRequests();
+                    loadFriends();
+                } catch (e) {
+                    console.error("[Profile] Error handling request:", e);
+                    alert("Error: " + e.message);
+                }
             }
 
             function renderFriendCard(uid, data) {
@@ -676,10 +857,20 @@
                 const viewBtn = document.createElement("button");
                 viewBtn.className = "text-xs px-3 py-1 rounded-lg border border-slate-600 hover:border-violet-500 transition-colors";
                 viewBtn.textContent = "View";
-                viewBtn.onclick = () => viewFriendAchievements(uid);
+                viewBtn.onclick = () => viewFriendProfile(uid, data);
                 card.appendChild(viewBtn);
 
                 friendsListEl.appendChild(card);
+            }
+
+            function viewFriendProfile(uid, data) {
+                // For now, let's show a simple alert or a basic modal
+                // In a real app, this might navigate or open a detailed modal
+                const message = `
+Friend: ${data.username || data.email}
+Currency: ${data.currency || 0} 🪙
+                `;
+                alert(message + "\n(More detailed friend profiles coming soon!)");
             }
 
             addFriendBtn.onclick = async () => {
@@ -690,34 +881,54 @@
                     return;
                 }
 
-                const db = window.gameHubFirebase.db;
-                const usersRef = db.collection("users");
-                
-                // Try searching by email first
-                let snapshot = await usersRef.where("email", "==", searchTerm).get();
-                if (snapshot.empty) {
-                    // Try searching by username
-                    snapshot = await usersRef.where("username", "==", searchTerm).get();
+                addFriendBtn.disabled = true;
+                const originalText = addFriendBtn.textContent;
+                addFriendBtn.textContent = "SEARCHING...";
+
+                try {
+                    const db = window.gameHubFirebase.db;
+                    const usersRef = db.collection("users");
+                    
+                    // Search by email
+                    let snapshot = await usersRef.where("email", "==", searchTerm).get();
+                    if (snapshot.empty) {
+                        // Search by username
+                        snapshot = await usersRef.where("username", "==", searchTerm).get();
+                    }
+
+                    if (snapshot.empty) {
+                        alert("User not found.");
+                        return;
+                    }
+
+                    const targetUid = snapshot.docs[0].id;
+                    if (targetUid === currentUid) {
+                        alert("You cannot add yourself.");
+                        return;
+                    }
+
+                    // Check if already friends
+                    const friendDoc = await db.collection("users").doc(currentUid).collection("friends").doc(targetUid).get();
+                    if (friendDoc.exists) {
+                        alert("You are already friends!");
+                        return;
+                    }
+
+                    // Send friend request
+                    await db.collection("users").doc(targetUid).collection("friend_requests").doc(currentUid).set({
+                        status: "pending",
+                        sentAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    friendSearchInput.value = "";
+                    alert("Friend request sent!");
+                } catch (e) {
+                    console.error("[Profile] Error sending friend request:", e);
+                    alert("Error: " + e.message);
+                } finally {
+                    addFriendBtn.disabled = false;
+                    addFriendBtn.textContent = originalText;
                 }
-
-                if (snapshot.empty) {
-                    alert("User not found.");
-                    return;
-                }
-
-                const friendUid = snapshot.docs[0].id;
-                if (friendUid === currentUid) {
-                    alert("You cannot add yourself as a friend.");
-                    return;
-                }
-
-                await db.collection("users").doc(currentUid).collection("friends").doc(friendUid).set({
-                    addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                friendSearchInput.value = "";
-                loadFriends();
-                alert("Friend added!");
             };
         });
     </script>
