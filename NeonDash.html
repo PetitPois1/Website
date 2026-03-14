@@ -91,7 +91,7 @@
                 <button onclick="startGame('ENDLESS')" class="btn-neon px-8 py-4 text-xl font-bold uppercase tracking-widest cursor-pointer w-full">Play Endless</button>
                 <button onclick="showMenu('level-select')" class="btn-neon px-8 py-4 text-xl font-bold uppercase tracking-widest cursor-pointer w-full">Play Levels</button>
                 <button onclick="startEditor()" class="btn-neon-pink px-8 py-4 text-xl font-bold uppercase tracking-widest cursor-pointer w-full">Level Editor</button>
-                <button onclick="window.location.href='index.html'" class="mt-4 text-gray-500 hover:text-white uppercase tracking-[0.2em] text-[10px] font-bold transition-colors">Return to Game Hub</button>
+                <button onclick="window.location.href='index.html'" class="text-gray-500 hover:text-white uppercase tracking-widest text-xs mt-2 transition-colors cursor-pointer">Exit to Game Hub</button>
             </div>
         </div>
 
@@ -605,11 +605,6 @@
     }
 
     function quitToMenu() {
-        // Stop playtime tracking
-        if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
-            window.gameHubProgress.stopPlayTimeTracking();
-        }
-
         state = 'MAIN_MENU'; isTesting = false; player.y = FLOOR_Y - player.size;
         screenShake = 0;
         if(animationId) cancelAnimationFrame(animationId);
@@ -659,11 +654,6 @@
         gameMode = mode; currentLevelCode = codeStr; currentLevelName = levelName; state = 'PLAYING'; showMenu(''); 
         scoreHud.classList.remove('hidden');
         if (isTesting) document.getElementById('hud-exit-btn').classList.remove('hidden');
-
-        // Start playtime tracking
-        if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-            window.gameHubProgress.startPlayTimeTracking("neondash");
-        }
 
         cameraX = 0; cameraY = 0; screenShake = 0;
         player.screenX = 200; 

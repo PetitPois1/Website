@@ -216,9 +216,9 @@
 
     <div class="main-content">
         <div class="nav-bar">
+            <button class="nav-btn" onclick="window.location.href='index.html'">HOME</button>
             <button class="nav-btn" onclick="openSettings()">SETTINGS</button>
             <button class="nav-btn" onclick="saveGame(true)" style="color: var(--save-color); border-color: var(--save-color);">SAVE</button>
-            <button class="nav-btn" onclick="window.location.href='index.html'">HUB</button>
             <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">DEBUG</button>
         </div>
 
@@ -544,12 +544,6 @@
         async function saveGame(manual = false) {
             totalPlaytime += (Date.now() - startTime) / 1000;
             startTime = Date.now();
-            
-            // Stop playtime tracking
-            if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
-                window.gameHubProgress.stopPlayTimeTracking();
-            }
-
             const data = { credits, totalEarned, totalClicks, inventory, currentTier, unlockedAchievements, adminUnlocked, usedCodes, totalPlaytime };
             localStorage.setItem("IndusEvo_V2", JSON.stringify(data));
             
@@ -558,19 +552,9 @@
             }
             
             if(manual) notify("System Progress Saved");
-            
-            // Resume tracking if not manual (manual usually means user is leaving or saving)
-            if (!manual && window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-                window.gameHubProgress.startPlayTimeTracking("clicker");
-            }
         }
 
         async function loadGame() {
-            // Start playtime tracking
-            if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-                window.gameHubProgress.startPlayTimeTracking("clicker");
-            }
-
             let data = null;
             
             // Try cloud first

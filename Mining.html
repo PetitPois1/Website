@@ -307,6 +307,9 @@
             <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('mining')" class="bg-purple-900/80 border border-purple-500 text-purple-100 text-[10px] p-2 rounded hover:bg-purple-700 transition-colors">
                 <i class="fas fa-trophy"></i> ACHIEVEMENTS
             </button>
+            <button onclick="window.location.href='index.html'" class="bg-slate-900/80 border border-slate-500 text-slate-100 text-[10px] p-2 rounded hover:bg-slate-700 transition-colors">
+                <i class="fas fa-home"></i> HOME
+            </button>
         </div>
 
         <!-- Center Notification Area -->
@@ -399,8 +402,7 @@
             </div>
 
             <div class="mt-8 text-center space-y-2">
-                <button class="btn bg-violet-600 w-full py-4 text-lg" onclick="window.location.href='index.html'">RETURN TO HUB</button>
-                <button class="btn bg-red-500 w-full py-2 text-sm" onclick="game.closeShop()">RETURN TO SURFACE</button>
+                <button class="btn bg-red-500 w-full py-4 text-lg" onclick="game.closeShop()">RETURN TO SURFACE</button>
                 <button class="btn bg-gray-700 w-full py-2 text-xs text-gray-400" onclick="game.resetSave()">WIPE SAVE DATA (START OVER)</button>
             </div>
         </div>
@@ -1361,13 +1363,6 @@
         }
 
         loop(time) {
-            if (this.lastTime === 0) {
-                this.lastTime = time;
-                // Start playtime tracking
-                if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-                    window.gameHubProgress.startPlayTimeTracking("mining");
-                }
-            }
             const dt = time - this.lastTime;
             this.lastTime = time;
 

@@ -340,10 +340,6 @@
 
         function startGame() {
             startScreenEl.style.display = 'none';
-            // Start playtime tracking
-            if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-                window.gameHubProgress.startPlayTimeTracking("blockblast");
-            }
             initGame();
         }
 
@@ -941,11 +937,6 @@
         }
 
         function triggerGameOver() {
-            // Stop playtime tracking
-            if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
-                window.gameHubProgress.stopPlayTimeTracking();
-            }
-
             finalScoreEl.innerText = score;
             if (score > highScore) {
                 highScore = score;

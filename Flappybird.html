@@ -166,6 +166,7 @@
         let bird, pipes, frame, score, highScore, gameState;
         let particles = [];
         let clouds = [];
+        let userAvatar = null;
         
         gameState = 'START';
         highScore = parseInt(localStorage.getItem("flappyHighScore")) || 0;
@@ -203,12 +204,30 @@
             scoreDisplay.innerText = score;
             bestScoreEl.innerText = highScore;
 
+            // Sync with cloud
+            if (window.gameHubAuth && window.gameHubAuth.getCurrentUser) {
+                const user = window.gameHubAuth.getCurrentUser();
+                if (user && window.gameHubFirebase && window.gameHubFirebase.db) {
+                    try {
+                        const doc = await window.gameHubFirebase.db.collection("users").doc(user.uid).get();
+                        if (doc.exists) {
+                            const data = doc.data();
+                            userAvatar = data.avatar || null;
+                            if (data.highScores && data.highScores.flappy) {
+                                highScore = Math.max(highScore, data.highScores.flappy);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Error fetching user data for Flappy", e);
+                    }
+                }
+            }
+
             if (gameState === 'START') {
                 overlay.classList.add('active');
                 modalTitle.innerText = "READY?";
             }
 
-            // Sync with cloud
             if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
                 try {
                     const progress = await window.gameHubProgress.loadGameProgress("flappy");
@@ -364,40 +383,83 @@
             ctx.translate(bird.x, bird.y);
             ctx.rotate(bird.rotation);
             
-            // Body shadow
-            ctx.fillStyle = "rgba(0,0,0,0.1)";
-            ctx.beginPath(); ctx.arc(2, 2, bird.radius, 0, Math.PI * 2); ctx.fill();
+            if (userAvatar) {
+                // Draw Avatar-Bird
+                ctx.fillStyle = "rgba(0,0,0,0.1)";
+                ctx.beginPath(); ctx.arc(2, 2, bird.radius, 0, Math.PI * 2); ctx.fill();
 
-            // Main body
-            ctx.fillStyle = "#f7d308";
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(0, 0, bird.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            
-            // Belly
-            ctx.fillStyle = "#fff";
-            ctx.beginPath(); ctx.arc(0, 5, bird.radius * 0.7, 0, Math.PI); ctx.fill();
+                // Base
+                ctx.fillStyle = userAvatar.base;
+                ctx.strokeStyle = "rgba(0,0,0,0.5)";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, bird.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
-            // Eye
-            ctx.fillStyle = "white";
-            ctx.beginPath(); ctx.arc(8, -5, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "black";
-            ctx.beginPath(); ctx.arc(10, -5, 2.5, 0, Math.PI * 2); ctx.fill();
+                // Eyes
+                if (userAvatar.mouth === 'cool') {
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(-10, -5, 10, 4);
+                    ctx.fillRect(2, -5, 10, 4);
+                } else {
+                    ctx.fillStyle = "white";
+                    ctx.beginPath(); ctx.arc(-5, -3, 3.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(5, -3, 3.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "black";
+                    ctx.beginPath(); ctx.arc(-4, -3, 1.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(6, -3, 1.5, 0, Math.PI * 2); ctx.fill();
+                }
 
-            // Beak
-            ctx.fillStyle = "#f44336";
-            ctx.beginPath();
-            ctx.moveTo(12, 0);
-            ctx.lineTo(22, 4);
-            ctx.lineTo(12, 8);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
+                // Mouth
+                ctx.strokeStyle = userAvatar.mouth === 'cool' ? 'black' : 'white';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                if (userAvatar.mouth === 'smile') {
+                    ctx.arc(0, 5, 6, 0.1, Math.PI-0.1);
+                } else if (userAvatar.mouth === 'surprised') {
+                    ctx.arc(0, 8, 3, 0, Math.PI * 2);
+                } else {
+                    ctx.moveTo(-5, 8); ctx.lineTo(5, 8);
+                }
+                ctx.stroke();
 
-            // Wing
-            ctx.fillStyle = "white";
-            ctx.save();
-            ctx.rotate(Math.sin(frame * 0.3) * 0.2);
-            ctx.beginPath(); ctx.ellipse(-8, 2, 10, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.restore();
+                // Wings (Flapping)
+                ctx.fillStyle = userAvatar.base;
+                ctx.save();
+                ctx.rotate(Math.sin(frame * 0.3) * 0.4);
+                ctx.beginPath(); ctx.ellipse(-12, 0, 12, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                ctx.restore();
+
+            } else {
+                // Main body
+                ctx.fillStyle = "#f7d308";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, bird.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                
+                // Belly
+                ctx.fillStyle = "#fff";
+                ctx.beginPath(); ctx.arc(0, 5, bird.radius * 0.7, 0, Math.PI); ctx.fill();
+
+                // Eye
+                ctx.fillStyle = "white";
+                ctx.beginPath(); ctx.arc(8, -5, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.arc(10, -5, 2.5, 0, Math.PI * 2); ctx.fill();
+
+                // Beak
+                ctx.fillStyle = "#f44336";
+                ctx.beginPath();
+                ctx.moveTo(12, 0);
+                ctx.lineTo(22, 4);
+                ctx.lineTo(12, 8);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // Wing
+                ctx.fillStyle = "white";
+                ctx.save();
+                ctx.rotate(Math.sin(frame * 0.3) * 0.2);
+                ctx.beginPath(); ctx.ellipse(-8, 2, 10, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                ctx.restore();
+            }
 
             ctx.restore();
         }
@@ -406,11 +468,6 @@
             if (gameState === 'GAMEOVER') return;
             gameState = 'GAMEOVER';
             
-            // Stop playtime tracking
-            if (window.gameHubProgress && window.gameHubProgress.stopPlayTimeTracking) {
-                window.gameHubProgress.stopPlayTimeTracking();
-            }
-
             // Explosion particles
             for(let i=0; i<20; i++) {
                 particles.push({
@@ -452,10 +509,6 @@
                 overlay.classList.remove('active');
                 init();
                 gameState = 'PLAYING';
-                // Start playtime tracking
-                if (window.gameHubProgress && window.gameHubProgress.startPlayTimeTracking) {
-                    window.gameHubProgress.startPlayTimeTracking("flappy");
-                }
             } else if (gameState === 'PLAYING') {
                 bird.velocity = config.flapStrength;
                 // Little puff particles
