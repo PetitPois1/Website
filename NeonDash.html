@@ -1787,25 +1787,34 @@
                 ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(screenX + 10, screenY + obs.height - 5); ctx.lineTo(screenX + obs.width / 2, screenY + 15); ctx.lineTo(screenX + obs.width - 10, screenY + obs.height - 5); ctx.fill();
                 ctx.shadowBlur = 0;
             } else if (obs.type === 'block' || obs.type === 'halfblock' || obs.type === 'fakeblock') {
-                ctx.fillStyle = '#050a0f'; ctx.fillRect(screenX, screenY, obs.width, obs.height);
                 let isFake = obs.type === 'fakeblock';
-                ctx.strokeStyle = levelColors.outline; ctx.lineWidth = 2; 
-                if (isFake) {
-                    if (state === 'EDITOR') ctx.setLineDash([5,5]); 
-                    else ctx.globalAlpha = 0.6; 
+                if (isFake && state !== 'EDITOR') ctx.globalAlpha = 0.6;
+                ctx.strokeStyle = levelColors.outline; ctx.lineWidth = 2;
+                if (isFake && state === 'EDITOR') ctx.setLineDash([5,5]);
+                ctx.shadowBlur = isFake ? 0 : 10;
+                ctx.shadowColor = levelColors.outline;
+                for (let cx = 0; cx < obs.width; cx += GRID_SIZE) {
+                    for (let cy = 0; cy < obs.height; cy += GRID_SIZE) {
+                        const cw = Math.min(GRID_SIZE, obs.width - cx);
+                        const ch = Math.min(GRID_SIZE, obs.height - cy);
+                        const px = screenX + cx, py = screenY + cy;
+                        ctx.fillStyle = '#050a0f';
+                        ctx.fillRect(px, py, cw, ch);
+                        ctx.strokeRect(px, py, cw, ch);
+                        ctx.strokeStyle = isFake ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)';
+                        ctx.lineWidth = 1;
+                        if (isFake) ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        if (cw >= 20 && ch >= 20) {
+                            for (let i = 15; i < cw; i += 20) { ctx.moveTo(px + i, py); ctx.lineTo(px + i, py + ch); }
+                            for (let i = 15; i < ch; i += 20) { ctx.moveTo(px, py + i); ctx.lineTo(px + cw, py + i); }
+                        }
+                        ctx.stroke();
+                        ctx.strokeStyle = levelColors.outline; ctx.lineWidth = 2;
+                        ctx.setLineDash(isFake && state === 'EDITOR' ? [5,5] : []);
+                    }
                 }
-                ctx.shadowBlur = isFake ? 0 : 10; 
-                ctx.shadowColor = levelColors.outline; 
-                ctx.strokeRect(screenX, screenY, obs.width, obs.height); 
                 ctx.shadowBlur = 0; ctx.setLineDash([]); ctx.globalAlpha = 1.0;
-                ctx.strokeStyle = isFake ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)'; 
-                ctx.lineWidth = 1; 
-                if (isFake) ctx.setLineDash([4, 4]);
-                ctx.beginPath();
-                for(let i = 15; i < obs.width; i += 20) { ctx.moveTo(screenX + i, screenY); ctx.lineTo(screenX + i, screenY + obs.height); }
-                for(let i = 15; i < obs.height; i += 20) { ctx.moveTo(screenX, screenY + i); ctx.lineTo(screenX + obs.width, screenY + i); }
-                ctx.stroke();
-                ctx.setLineDash([]);
             } else if (obs.type === 'bouncepad') {
                 ctx.fillStyle = '#ccff00'; ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
                 ctx.beginPath(); ctx.roundRect(screenX, screenY, obs.width, obs.height, [5, 5, 0, 0]); ctx.fill(); ctx.shadowBlur = 0;

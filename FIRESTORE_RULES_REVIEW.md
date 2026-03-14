@@ -1,6 +1,12 @@
-# Firestore rules review (avatar/inventory)
+# Firestore rules
 
-Your current rules are **sufficient** for the profile avatar and inventory feature.
+A full, working rules file is in **`firestore.rules`** at the project root. Deploy it from Firebase Console (**Firestore** → **Rules** → paste and **Publish**) or via Firebase CLI: `firebase deploy --only firestore:rules`.
+
+---
+
+## Avatar / inventory
+
+Your rules are **sufficient** for the profile avatar and inventory feature.
 
 ## What the app does
 
@@ -29,3 +35,17 @@ So you **do not need to change** the Firestore rules for the new avatar/inventor
 - Other signed-in users to read profiles (e.g. for friends).
 
 No rule updates are required for testing or production for this feature.
+
+---
+
+## Neon Dash (`custom_levels`)
+
+Neon Dash loads and saves levels in the **`custom_levels`** collection. If you see "missing or insufficient permissions" when loading Community or My Levels, the Firestore rules were missing this collection.
+
+The **`firestore.rules`** file includes:
+
+- **Read**: Anyone can read documents where `isPublic` is true (or missing); signed-in users can read their own levels (`authorId == request.auth.uid`).
+- **Create**: Signed-in users can create a level only if `authorId` is their own uid.
+- **Update / Delete**: Only the level author can update or delete a document.
+
+Use the full **`firestore.rules`** content in the Firebase Console so both `users`/subcollections and `custom_levels` work.
