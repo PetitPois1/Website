@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SwordBattle.io</title>
+<style>
+:root {
+--bg-color: #2d5a27;
+--ui-panel: rgba(10, 25, 10, 0.9);
+--accent: #4ecca3;
+--gold: #ffd700;
+--dash: #33a1ff;
+--upgrade: #ffcc00;
+}
+
+body, html {
+margin: 0;
+padding: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+background-color: #1a1a1a;
+font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+color: white;
+user-select: none;
+touch-action: none;
+}
+
+canvas { display: block; }
+
+#ui-overlay {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+z-index: 10;
+}
+
+.hud-element { pointer-events: auto; }
+
+#leaderboard {
+position: absolute;
+top: 140px;
+right: 10px;
+background: var(--ui-panel);
+padding: 12px;
+border-radius: 10px;
+min-width: 160px;
+border: 2px solid rgba(78, 204, 163, 0.3);
+box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+#leaderboard h3 {
+margin: 0 0 8px 0;
+font-size: 14px;
+text-align: center;
+color: var(--accent);
+text-transform: uppercase;
+letter-spacing: 1px;
+border-bottom: 1px solid rgba(255,255,255,0.1);
+padding-bottom: 4px;
+}
+
+.leaderboard-entry {
+display: flex;
+justify-content: space-between;
+font-size: 13px;
+margin-bottom: 4px;
+font-weight: 500;
+}
+
+#stats {
+position: absolute;
+top: 10px;
+left: 10px;
+background: var(--ui-panel);
+padding: 12px;
+border-radius: 10px;
+border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-bar {
+width: 140px;
+height: 10px;
+background: #1a1a1a;
+border-radius: 5px;
+margin-top: 4px;
+overflow: hidden;
+border: 1px solid #333;
+}
+
+#hp-fill { height: 100%; background: linear-gradient(90deg, #ff4d4d, #4dff88); width: 100%; transition: width 0.3s; }
+
+.action-btn {
+position: absolute;
+width: 85px;
+height: 85px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 900;
+color: white;
+pointer-events: auto;
+border: 4px solid rgba(255,255,255,0.8);
+box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+transition: transform 0.1s, background 0.2s;
+z-index: 20;
+text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#dash-btn-ui { bottom: 145px; right: 35px; background: var(--dash); }
+#attack-btn-ui { bottom: 40px; right: 35px; background: #ff4757; font-size: 22px; }
+
+#minimap-container {
+position: absolute;
+top: 10px;
+right: 10px;
+width: 130px;
+height: 130px;
+background: rgba(0,0,0,0.5);
+border: 3px solid rgba(255,255,255,0.4);
+border-radius: 12px;
+pointer-events: none;
+overflow: hidden;
+box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+
+#minimap-canvas { width: 100%; height: 100%; }
+
+#joystick-outer {
+position: absolute;
+bottom: 60px;
+left: 40px;
+width: 130px;
+height: 130px;
+background: rgba(255,255,255,0.15);
+border-radius: 50%;
+border: 3px solid rgba(255,255,255,0.3);
+pointer-events: auto;
+backdrop-filter: blur(2px);
+}
+
+#joystick-inner {
+position: absolute;
+top: 50%;
+left: 50%;
+width: 55px;
+height: 55px;
+background: white;
+border-radius: 50%;
+transform: translate(-50%, -50%);
+}
+
+#start-screen {
+position: absolute;
+top: 0; left: 0; width: 100%; height: 100%;
+background: radial-gradient(circle, #333 0%, #000 100%);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 200;
+pointer-events: auto;
+}
+
+.title-card {
+background: var(--ui-panel);
+padding: 30px;
+border-radius: 20px;
+text-align: center;
+border: 3px solid var(--accent);
+box-shadow: 0 0 30px rgba(0,0,0,0.7);
+max-width: 500px;
+width: 90%;
+}
+
+.map-selector {
+display: flex;
+justify-content: center;
+gap: 10px;
+margin: 20px 0;
+flex-wrap: wrap;
+}
+
+.map-option {
+padding: 10px 15px;
+border: 2px solid #555;
+border-radius: 8px;
+cursor: pointer;
+background: rgba(255,255,255,0.05);
+transition: all 0.2s;
+flex: 1;
+min-width: 100px;
+}
+
+.map-option.selected {
+border-color: var(--accent);
+background: rgba(78, 204, 163, 0.2);
+}
+
+#death-screen {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0,0,0,0.85);
+display: none;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 210;
+pointer-events: auto;
+}
+
+.death-panel {
+background: var(--ui-panel);
+padding: 40px;
+border-radius: 20px;
+border: 4px solid #ff4d4d;
+text-align: center;
+box-shadow: 0 0 50px rgba(255,77,77,0.3);
+}
+
+.play-btn {
+background: var(--accent);
+color: #1a3317;
+border: none;
+padding: 15px 40px;
+font-size: 20px;
+font-weight: 900;
+border-radius: 10px;
+cursor: pointer;
+transition: transform 0.2s;
+pointer-events: auto;
+margin-top: 20px;
+}
+
+.play-btn:hover { transform: scale(1.05); }
+
+input[type="text"] {
+background: rgba(255,255,255,0.1);
+border: 2px solid var(--accent);
+color: white;
+padding: 10px;
+border-radius: 8px;
+font-size: 16px;
+outline: none;
+width: 80%;
+text-align: center;
+pointer-events: auto;
+}
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+<div class="title-card">
+<h1 style="color: var(--accent); margin: 0; font-size: 36px;">SWORD BATTLE</h1>
+<p style="margin: 10px 0; font-weight: bold; opacity: 0.8;">CHOOSE YOUR REALM</p>
+
+<input type="text" id="username" placeholder="ENTER NAME" maxlength="12">
+
+<div class="map-selector" id="map-selector">
+<div class="map-option selected" id="opt-grass" onclick="selectMap('grasslands', 'opt-grass')">
+<h4>GRASSLANDS</h4>
+<p>Standard Blade</p>
+</div>
+<div class="map-option" id="opt-volc" onclick="selectMap('volcano', 'opt-volc')">
+<h4>VOLCANO</h4>
+<p>Heavy Claymore</p>
+</div>
+<div class="map-option" id="opt-frost" onclick="selectMap('frostlands', 'opt-frost')">
+<h4>FROSTLANDS</h4>
+<p>Thin Rapier</p>
+</div>
+</div>
+
+<button class="play-btn" onclick="startGame()">START BATTLE</button>
+</div>
+</div>
+
+<div id="death-screen">
+<div class="death-panel">
+<h1 style="color: #ff4d4d; font-size: 48px; margin: 0;">YOU FELL!</h1>
+<p id="death-stats" style="margin: 20px 0; font-size: 24px; font-weight: bold;"></p>
+<button class="play-btn" id="menu-btn" style="background: #ff4d4d;">RETURN TO MENU</button>
+</div>
+</div>
+
+<div id="ui-overlay">
+<div id="stats" class="hud-element">
+<div style="font-size: 14px; font-weight: bold;">XP: <span id="xp-val">0</span></div>
+<div class="stat-bar"><div id="hp-fill"></div></div>
+</div>
+
+<div id="leaderboard" class="hud-element">
+<h3>Top Warriors</h3>
+<div id="leaderboard-list"></div>
+</div>
+
+<div id="joystick-outer"><div id="joystick-inner"></div></div>
+<div id="dash-btn-ui" class="action-btn hud-element">DASH</div>
+<div id="attack-btn-ui" class="action-btn hud-element">HIT</div>
+
+<div id="minimap-container">
+<canvas id="minimap-canvas"></canvas>
+</div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const WORLD_SIZE = 4000;
+const INITIAL_BOTS = 12;
+const INITIAL_COINS = 150;
+const UPGRADE_SHRINES_COUNT = 5;
+const DASH_COOLDOWN = 3000;
+const UPGRADE_COST_XP = 40;
+const GROWTH_XP_STEP = 500; // XP needed for each size increase
+
+const MAP_DATA = {
+grasslands: { color: '#2d5a27', sword: 'standard', grid: 'rgba(255,255,255,0.04)' },
+volcano: { color: '#4a1414', sword: 'heavy', grid: 'rgba(255,100,0,0.06)' },
+frostlands: { color: '#2c3e50', sword: 'thin', grid: 'rgba(200,230,255,0.05)' }
+};
+
+let currentMap = 'grasslands';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const mCanvas = document.getElementById('minimap-canvas');
+const mCtx = mCanvas.getContext('2d');
+
+let width, height;
+let gameActive = false;
+let player = null;
+let entities = [];
+let coins = [];
+let shrines = [];
+let particles = [];
+let camera = { x: 0, y: 0 };
+let keys = {};
+let joystick = { active: false, id: null, startX: 0, startY: 0, angle: 0, dist: 0 };
+
+const dist = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function selectMap(mapId, elId) {
+currentMap = mapId;
+document.querySelectorAll('.map-option').forEach(opt => opt.classList.remove('selected'));
+document.getElementById(elId).classList.add('selected');
+}
+
+class Particle {
+constructor(x, y, color) {
+this.x = x; this.y = y; this.color = color;
+this.vx = (Math.random() - 0.5) * 12;
+this.vy = (Math.random() - 0.5) * 12;
+this.life = 1.0;
+this.size = Math.random() * 4 + 2;
+}
+update() { this.x += this.vx; this.y += this.vy; this.life -= 0.04; }
+draw() {
+ctx.globalAlpha = Math.max(0, this.life);
+ctx.fillStyle = this.color;
+ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+ctx.globalAlpha = 1;
+}
+}
+
+class Shrine {
+constructor() {
+this.x = 500 + Math.random() * (WORLD_SIZE - 1000);
+this.y = 500 + Math.random() * (WORLD_SIZE - 1000);
+this.type = ['Speed', 'Health', 'Damage'][Math.floor(Math.random() * 3)];
+this.radius = 80;
+this.active = true;
+this.timer = 0;
+}
+update() {
+if(!this.active) {
+if(++this.timer > 1000) { this.active = true; this.timer = 0; }
+return;
+}
+entities.forEach(e => {
+if(dist(e.x, e.y, this.x, this.y) < this.radius && e.xp >= UPGRADE_COST_XP) {
+this.active = false;
+e.xp -= UPGRADE_COST_XP;
+if(this.type === 'Speed') e.speedMod += 0.6;
+if(this.type === 'Health') { e.maxHp += 40; e.hp = e.maxHp; }
+if(this.type === 'Damage') e.dmgMod += 3;
+for(let i=0; i<20; i++) particles.push(new Particle(this.x, this.y, '#ffcc00'));
+}
+});
+}
+draw() {
+if(!this.active) return;
+ctx.beginPath();
+ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+ctx.strokeStyle = '#ffcc00';
+ctx.setLineDash([10, 5]);
+ctx.lineWidth = 4;
+ctx.stroke();
+ctx.setLineDash([]);
+ctx.fillStyle = 'rgba(255, 204, 0, 0.1)';
+ctx.fill();
+ctx.fillStyle = '#ffcc00';
+ctx.textAlign = 'center';
+ctx.font = 'bold 16px Arial';
+ctx.fillText(this.type.toUpperCase(), this.x, this.y);
+ctx.font = 'bold 12px Arial';
+ctx.fillText(`${UPGRADE_COST_XP} XP`, this.x, this.y + 20);
+}
+}
+
+class Coin {
+constructor() {
+this.x = Math.random() * WORLD_SIZE;
+this.y = Math.random() * WORLD_SIZE;
+this.pulse = Math.random() * Math.PI;
+}
+draw() {
+this.pulse += 0.05;
+const s = 8 + Math.sin(this.pulse) * 2;
+ctx.beginPath();
+ctx.arc(this.x, this.y, s, 0, Math.PI*2);
+ctx.fillStyle = '#ffd700';
+ctx.fill();
+ctx.strokeStyle = '#b8860b';
+ctx.lineWidth = 2;
+ctx.stroke();
+}
+}
+
+class Entity {
+constructor(x, y, name, color, isBot = false) {
+this.x = x; this.y = y; this.name = name; this.color = color; this.isBot = isBot;
+this.vx = 0; this.vy = 0; this.angle = 0;
+this.hp = 100; this.maxHp = 100; this.xp = 0;
+this.baseSize = 30;
+this.size = this.baseSize;
+this.scale = 1.0; // Current visual scale based on XP
+this.speedMod = 0; this.dmgMod = 0;
+this.isDashing = false; this.lastDash = 0;
+this.isAttacking = false; this.swordAngle = -1.2;
+this.swordType = MAP_DATA[currentMap].sword;
+}
+getSpeed() { return (4.0 + this.speedMod); }
+dash() {
+if(Date.now() - this.lastDash < DASH_COOLDOWN) return;
+this.isDashing = true;
+this.lastDash = Date.now();
+this.vx += Math.cos(this.angle) * 45;
+this.vy += Math.sin(this.angle) * 45;
+setTimeout(() => this.isDashing = false, 250);
+}
+attack() {
+if(this.isAttacking) return;
+this.isAttacking = true;
+this.swordAngle = -1.5;
+}
+update() {
+// Calculate scale based on XP (every 500xp adds 20% size)
+const growthStages = Math.floor(this.xp / GROWTH_XP_STEP);
+this.scale = 1.0 + (growthStages * 0.2);
+this.size = this.baseSize * this.scale;
+
+this.vx *= 0.82; this.vy *= 0.82;
+this.x += this.vx; this.y += this.vy;
+this.x = Math.max(0, Math.min(WORLD_SIZE, this.x));
+this.y = Math.max(0, Math.min(WORLD_SIZE, this.y));
+
+if(this.isAttacking) {
+const attackSpeed = this.swordType === 'thin' ? 0.45 : (this.swordType === 'heavy' ? 0.25 : 0.35);
+this.swordAngle += attackSpeed;
+if(this.swordAngle >= 1.5) this.isAttacking = false;
+const sAngle = this.angle + this.swordAngle;
+
+// Reach also scales with growth
+const baseReach = this.swordType === 'heavy' ? 110 : (this.swordType === 'thin' ? 100 : 95);
+const reach = baseReach * this.scale;
+
+const sx = this.x + Math.cos(sAngle) * reach;
+const sy = this.y + Math.sin(sAngle) * reach;
+
+entities.forEach(e => {
+if(e !== this && dist(sx, sy, e.x, e.y) < e.size + (25 * this.scale)) {
+const baseDmg = this.swordType === 'heavy' ? 8 : (this.swordType === 'thin' ? 4 : 6);
+const dmg = baseDmg + this.dmgMod + (this.xp * 0.005);
+e.hp -= dmg;
+e.vx += Math.cos(sAngle) * (this.swordType === 'heavy' ? 15 : 10);
+e.vy += Math.sin(sAngle) * (this.swordType === 'heavy' ? 15 : 10);
+for(let i=0; i<3; i++) particles.push(new Particle(e.x, e.y, '#ff0000'));
+if(e.hp <= 0) this.xp += 100 + Math.floor(e.xp * 0.2);
+}
+});
+}
+if(this.isBot) this.updateAI();
+}
+updateAI() {
+let nearest = null; let minDist = 600 * this.scale;
+entities.forEach(e => {
+if(e === this) return;
+const d = dist(this.x, this.y, e.x, e.y);
+if(d < minDist) { minDist = d; nearest = e; }
+});
+if(nearest) {
+this.angle = Math.atan2(nearest.y - this.y, nearest.x - this.x);
+this.vx += Math.cos(this.angle) * 0.5;
+this.vy += Math.sin(this.angle) * 0.5;
+if(minDist < (90 * this.scale)) this.attack();
+} else {
+this.angle += 0.02;
+this.vx += Math.cos(this.angle) * 0.3;
+this.vy += Math.sin(this.angle) * 0.3;
+}
+}
+draw() {
+ctx.save();
+ctx.translate(this.x, this.y);
+
+// Name plate scale
+ctx.fillStyle = 'white';
+ctx.textAlign = 'center';
+ctx.font = `bold ${14 * Math.sqrt(this.scale)}px Arial`;
+ctx.fillText(`${this.name} (${Math.floor(this.xp)} XP)`, 0, -55 * this.scale);
+
+// Sword draw logic with scale
+ctx.save();
+ctx.rotate(this.angle + (this.isAttacking ? this.swordAngle : -0.8));
+ctx.shadowBlur = 5; ctx.shadowColor = 'black';
+
+if(this.swordType === 'heavy') {
+ctx.fillStyle = '#7f8c8d'; ctx.fillRect(0, -10 * this.scale, 110 * this.scale, 20 * this.scale);
+ctx.fillStyle = '#2c3e50'; ctx.fillRect(10 * this.scale, -20 * this.scale, 10 * this.scale, 40 * this.scale);
+} else if(this.swordType === 'thin') {
+ctx.fillStyle = '#ecf0f1'; ctx.fillRect(0, -3 * this.scale, 100 * this.scale, 6 * this.scale);
+ctx.beginPath(); ctx.arc(10 * this.scale, 0, 15 * this.scale, 0, Math.PI*2);
+ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2 * this.scale; ctx.stroke();
+} else {
+ctx.fillStyle = '#bdc3c7'; ctx.fillRect(0, -6 * this.scale, 95 * this.scale, 12 * this.scale);
+ctx.fillStyle = '#7f8c8d'; ctx.fillRect(15 * this.scale, -15 * this.scale, 8 * this.scale, 30 * this.scale);
+}
+ctx.restore();
+
+// Player body
+ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI*2);
+ctx.fillStyle = this.color; ctx.fill();
+ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 3; ctx.stroke();
+
+// Health bar
+ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-25 * this.scale, -45 * this.scale, 50 * this.scale, 8 * this.scale);
+const hpPercent = Math.max(0, this.hp / this.maxHp);
+ctx.fillStyle = hpPercent > 0.4 ? '#4dff88' : '#ff4d4d';
+ctx.fillRect(-25 * this.scale, -45 * this.scale, (50 * this.scale) * hpPercent, 8 * this.scale);
+ctx.restore();
+}
+}
+
+function resize() {
+width = canvas.width = window.innerWidth;
+height = canvas.height = window.innerHeight;
+mCanvas.width = 130; mCanvas.height = 130;
+}
+
+function startGame() {
+const nameInput = document.getElementById('username');
+const name = nameInput.value.trim() || "WARRIOR";
+
+player = new Entity(WORLD_SIZE/2, WORLD_SIZE/2, name, "#4ecca3");
+entities = [player];
+coins = Array.from({length: INITIAL_COINS}, () => new Coin());
+shrines = Array.from({length: UPGRADE_SHRINES_COUNT}, () => new Shrine());
+particles = [];
+
+for(let i=0; i<INITIAL_BOTS; i++) {
+entities.push(new Entity(Math.random()*WORLD_SIZE, Math.random()*WORLD_SIZE, "BOT", "#ff4757", true));
+}
+
+document.getElementById('start-screen').style.display = 'none';
+document.getElementById('death-screen').style.display = 'none';
+gameActive = true;
+requestAnimationFrame(loop);
+}
+
+function loop() {
+if(!gameActive) return;
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+function update() {
+let moveX = 0, moveY = 0;
+if(joystick.active) {
+moveX = Math.cos(joystick.angle) * joystick.dist;
+moveY = Math.sin(joystick.angle) * joystick.dist;
+player.angle = joystick.angle;
+} else {
+if(keys['KeyW'] || keys['ArrowUp']) moveY -= 1;
+if(keys['KeyS'] || keys['ArrowDown']) moveY += 1;
+if(keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+if(keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+if(moveX || moveY) player.angle = Math.atan2(moveY, moveX);
+}
+
+if(moveX || moveY) {
+player.vx += (moveX / Math.max(1, Math.hypot(moveX, moveY))) * 0.8;
+player.vy += (moveY / Math.max(1, Math.hypot(moveX, moveY))) * 0.8;
+}
+
+entities.forEach((e, i) => {
+e.update();
+if(e.hp <= 0) {
+entities.splice(i, 1);
+if(e === player) {
+gameActive = false;
+document.getElementById('death-screen').style.display = 'flex';
+document.getElementById('death-stats').innerText = `TOTAL XP: ${Math.floor(player.xp)}`;
+} else {
+setTimeout(() => {
+if(gameActive) entities.push(new Entity(Math.random()*WORLD_SIZE, Math.random()*WORLD_SIZE, "BOT", "#ff4757", true));
+}, 5000);
+}
+}
+});
+
+for(let i = coins.length - 1; i >= 0; i--) {
+const c = coins[i];
+if(dist(player.x, player.y, c.x, c.y) < player.size + 15) {
+player.xp += 15;
+coins.splice(i, 1);
+setTimeout(() => coins.push(new Coin()), 3000);
+}
+}
+
+shrines.forEach(s => s.update());
+for(let i = particles.length - 1; i >= 0; i--) {
+particles[i].update();
+if(particles[i].life <= 0) particles.splice(i, 1);
+}
+
+camera.x = lerp(camera.x, player.x - width/2, 0.1);
+camera.y = lerp(camera.y, player.y - height/2, 0.1);
+
+document.getElementById('xp-val').innerText = Math.floor(player.xp);
+document.getElementById('hp-fill').style.width = (player.hp / player.maxHp) * 100 + "%";
+
+const sorted = [...entities].sort((a,b) => b.xp - a.xp).slice(0, 5);
+document.getElementById('leaderboard-list').innerHTML = sorted.map((e, i) => `
+<div class="leaderboard-entry" style="color:${e===player?'#4ecca3':'white'}">
+<span>${i+1}. ${e.name}</span>
+<span>${Math.floor(e.xp)}</span>
+</div>`).join('');
+}
+
+function draw() {
+const mapStyle = MAP_DATA[currentMap];
+ctx.clearRect(0,0,width,height);
+ctx.save();
+ctx.translate(-camera.x, -camera.y);
+ctx.fillStyle = mapStyle.color;
+ctx.fillRect(0,0,WORLD_SIZE,WORLD_SIZE);
+ctx.strokeStyle = mapStyle.grid; ctx.lineWidth = 2;
+for(let i=0; i<=WORLD_SIZE; i+=200) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,WORLD_SIZE); ctx.stroke(); }
+for(let i=0; i<=WORLD_SIZE; i+=200) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(WORLD_SIZE,i); ctx.stroke(); }
+shrines.forEach(s => s.draw());
+coins.forEach(c => c.draw());
+entities.forEach(e => e.draw());
+particles.forEach(p => p.draw());
+ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 20; ctx.strokeRect(0,0,WORLD_SIZE,WORLD_SIZE);
+ctx.restore();
+
+mCtx.fillStyle = 'rgba(0,0,0,0.5)'; mCtx.fillRect(0,0,130,130);
+const s = 130 / WORLD_SIZE;
+entities.forEach(e => {
+mCtx.fillStyle = e === player ? '#4ecca3' : '#ff4757';
+mCtx.beginPath(); mCtx.arc(e.x*s, e.y*s, 3, 0, Math.PI*2); mCtx.fill();
+});
+}
+
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('mousedown', (e) => {
+if(gameActive && e.target.tagName === 'CANVAS') player.attack();
+});
+window.addEventListener('resize', resize);
+
+document.getElementById('menu-btn').addEventListener('click', () => {
+location.reload();
+});
+
+const joyOuter = document.getElementById('joystick-outer');
+const joyInner = document.getElementById('joystick-inner');
+
+function handleTouch(e) {
+if (!gameActive) return;
+const touches = e.touches;
+let joyFound = false;
+
+if (joystick.active) {
+const t = Array.from(touches).find(t => t.identifier === joystick.id);
+if (t) {
+joyFound = true;
+const dx = t.clientX - joystick.startX;
+const dy = t.clientY - joystick.startY;
+const d = Math.min(dist(0, 0, dx, dy), 65);
+joystick.angle = Math.atan2(dy, dx);
+joystick.dist = d / 65;
+joyInner.style.transform = `translate(calc(-50% + ${Math.cos(joystick.angle) * d}px), calc(-50% + ${Math.sin(joystick.angle) * d}px))`;
+}
+}
+
+if (e.type === 'touchstart') {
+for (let i = 0; i < e.changedTouches.length; i++) {
+const t = e.changedTouches[i];
+const x = t.clientX, y = t.clientY;
+if (x > window.innerWidth - 120) continue;
+const joyRect = joyOuter.getBoundingClientRect();
+const jcX = joyRect.left + joyRect.width/2;
+const jcY = joyRect.top + joyRect.height/2;
+if (!joystick.active && dist(x, y, jcX, jcY) < 100) {
+joystick.active = true;
+joystick.id = t.identifier;
+joystick.startX = jcX;
+joystick.startY = jcY;
+}
+}
+}
+if (!joyFound && e.type !== 'touchstart') {
+joystick.active = false; joystick.dist = 0;
+joyInner.style.transform = `translate(-50%, -50%)`;
+}
+}
+
+window.addEventListener('touchstart', handleTouch);
+window.addEventListener('touchmove', handleTouch);
+window.addEventListener('touchend', handleTouch);
+
+document.getElementById('dash-btn-ui').addEventListener('touchstart', (e) => { e.preventDefault(); if(gameActive) player.dash(); });
+document.getElementById('attack-btn-ui').addEventListener('touchstart', (e) => { e.preventDefault(); if(gameActive) player.attack(); });
+document.getElementById('dash-btn-ui').addEventListener('mousedown', (e) => { e.preventDefault(); if(gameActive) player.dash(); });
+document.getElementById('attack-btn-ui').addEventListener('mousedown', (e) => { e.preventDefault(); if(gameActive) player.attack(); });
+
+resize();
+</script>
+</body>
+</html>

@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escape His Island</title>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #000; 
+            overflow: hidden; 
+            touch-action: none; 
+            font-family: 'Courier New', Courier, monospace; 
+            user-select: none; 
+        }
+        
+        canvas { 
+            display: block; 
+            width: 100vw; 
+            height: 100vh; 
+            image-rendering: pixelated; 
+        }
+        
+        /* UI Elements */
+        #ui-layer { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            height: 40%; 
+            pointer-events: none; 
+            display: none; 
+            z-index: 60;
+        }
+        
+        .btn {
+            position: absolute; 
+            background: rgba(0, 0, 0, 0.4); 
+            border: 2px solid rgba(255, 255, 255, 0.2); 
+            color: rgba(255, 255, 255, 0.6); 
+            font-weight: bold; 
+            font-size: 24px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            pointer-events: auto; 
+            text-shadow: 1px 1px 0 #000; 
+            border-radius: 8px; 
+        }
+        
+        .btn:active { 
+            background: rgba(255, 255, 255, 0.3); 
+            border-color: rgba(255, 255, 255, 0.9); 
+            color: #FFF; 
+        }
+        
+        /* BIGGER BUTTONS */
+        #btn-up { bottom: 135px; left: 95px; width: 70px; height: 70px; }
+        #btn-down { bottom: 45px; left: 95px; width: 70px; height: 70px; }
+        #btn-left { bottom: 90px; left: 15px; width: 70px; height: 70px; }
+        #btn-right { bottom: 90px; left: 175px; width: 70px; height: 70px; }
+        
+        #btn-fire { 
+            bottom: 65px; 
+            right: 25px; 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            border-color: #C00; 
+            color: #F55; 
+        }
+        
+        /* BFG Button */
+        #btn-bfg { 
+            bottom: 170px; 
+            right: 25px; 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            border-color: #0F0; 
+            color: #0F0; 
+            font-size: 16px; 
+            display: none; 
+        }
+
+        #crosshair { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 8px; 
+            height: 8px; 
+            background: rgba(0, 255, 0, 0.6); 
+            transform: translate(-50%, -50%); 
+            pointer-events: none; 
+            display: none; 
+            box-shadow: 2px 2px 0px rgba(0, 100, 0, 0.8); 
+        }
+
+        .hud-text { 
+            position: absolute; 
+            font-size: 24px; 
+            font-weight: bold; 
+            display: none; 
+            pointer-events: none; 
+            z-index: 50; 
+        }
+        
+        #score-board { top: 10px; right: 20px; color: #0F0; text-shadow: 2px 2px 0 #030; }
+        #ammo-board { top: 40px; right: 20px; color: #FF0; text-shadow: 2px 2px 0 #330; }
+        #level-board { top: 10px; left: 20px; color: #0FF; text-shadow: 2px 2px 0 #003; }
+        #lives-board { top: 70px; right: 20px; color: #F00; text-shadow: 2px 2px 0 #300; }
+
+        /* Menus */
+        .menu-screen {
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #030503;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px), 
+                              radial-gradient(circle at center, #0a110a 0%, #000 100%);
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            z-index: 100; 
+            color: #0F0; 
+            text-align: center; 
+            padding: 20px; 
+            box-sizing: border-box; 
+            border: 4px solid #020;
+            overflow-y: auto;
+        }
+        
+        #menu-bg { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background-image: url('Fiddler.png'); 
+            background-size: 300px; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            opacity: 0.15; 
+            z-index: 1; 
+            pointer-events: none; 
+        }
+        
+        .menu-screen > *:not(#menu-bg) { 
+            position: relative; 
+            z-index: 10; 
+        }
+
+        @keyframes glitch { 
+            0% { text-shadow: 2px 0 0 #0F0, -2px 0 0 #050; } 
+            50% { text-shadow: -2px 0 0 #0F0, 2px 0 0 #050; } 
+            100% { text-shadow: 2px 0 0 #0F0, -2px 0 0 #050; } 
+        }
+        
+        h1 { 
+            color: #EFFFDF; 
+            font-size: 56px; 
+            text-transform: uppercase; 
+            letter-spacing: 4px; 
+            margin-bottom: 5px; 
+            animation: glitch 0.5s infinite steps(2); 
+        }
+        
+        h2 { 
+            color: #0FF; 
+            text-shadow: 2px 2px 0 #005; 
+        }
+        
+        #description { 
+            font-size: 16px; color: #6A6; max-width: 400px; margin-bottom: 25px; 
+            line-height: 1.5; text-shadow: 1px 1px 0 #000;
+        }
+        
+        #fatality-msg { 
+            color: #0F0; font-size: 40px; font-weight: bold; 
+            text-shadow: 3px 3px 0 #050, -2px -2px 0 #020; 
+            display: none; text-align: center; margin-bottom: 20px; letter-spacing: 2px; 
+        }
+        
+        .menu-btn {
+            background: #000; color: #0F0; border: 2px solid #0F0; 
+            padding: 15px 40px; font-size: 20px; font-weight: bold; font-family: inherit;
+            cursor: pointer; box-shadow: 4px 4px 0px #040; transition: all 0.1s; 
+            margin: 10px; width: 320px; text-transform: uppercase;
+        }
+        
+        .menu-btn:hover { 
+            background: #0F0; color: #000; box-shadow: 6px 6px 0px #040; 
+            transform: translate(-2px, -2px); 
+        }
+        
+        .menu-btn:active { 
+            background: #050; color: #0F0; border-color: #050; 
+            box-shadow: 0px 0px 0px #0F0; transform: translate(4px, 4px); 
+        }
+        
+        .menu-btn:disabled { 
+            border-color: #333; color: #555; box-shadow: none; cursor: not-allowed; 
+        }
+        
+        #overlay-msg { 
+            position: absolute; top: 30%; width: 100%; text-align: center; 
+            color: #0FF; font-size: 30px; font-weight: bold; 
+            text-shadow: 3px 3px 0 #005; display: none; pointer-events: none; z-index: 200; 
+        }
+        
+        #overlay-subtitle { 
+            font-size: 18px; color: #FFF; margin-top: 15px; font-weight: normal; 
+            text-shadow: 2px 2px 0 #000; line-height: 1.5; 
+        }
+
+        /* Store Elements */
+        .store-item { 
+            border: 2px solid #0F0; 
+            padding: 10px; 
+            margin: 10px; 
+            text-align: left; 
+            width: 340px; 
+            background: rgba(0, 20, 0, 0.8); 
+        }
+        
+        .store-item span { 
+            display: block; 
+            color: #AAA; 
+            font-size: 14px; 
+            margin-bottom: 5px; 
+        }
+        
+        .buy-btn { 
+            background: #0F0; color: #000; border: none; padding: 5px 10px; 
+            font-weight: bold; cursor: pointer; float: right; font-family: inherit;
+        }
+        
+        #store-scroll-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #040;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu" class="menu-screen">
+        <div id="menu-bg"></div> 
+        <h1 id="game-title"> Escape His Island </h1>
+        <div id="description">this time YOU are in the files .</div>
+        
+        <div id="fatality-msg">CONNECTION LOST<br><span style="font-size: 20px; text-shadow: none;">BYTES EARNED: <span id="final-score">0</span></span></div>
+        
+        <div style="color: #FF0; font-size: 20px; margin-bottom: 10px; font-weight: bold;">DATA BYTES: <span id="menu-bank">0</span></div>
+
+        <button id="campaign-btn" class="menu-btn" style="border-color: #0FF; color: #0FF; box-shadow: 4px 4px 0px #004;">CAMPAIGN 1: THE CORE</button>
+        <button id="mansion-btn" class="menu-btn" style="border-color: #FFF; color: #FFF; box-shadow: 4px 4px 0px #444;" disabled>CAMPAIGN 2: THE MANSION</button>
+        <button id="endless-btn" class="menu-btn" style="border-color: #6A6; color: #6A6; font-size: 16px; padding: 10px;">ENDLESS MODE</button>
+        <button id="store-btn" class="menu-btn" style="border-color: #FF0; color: #FF0; box-shadow: 4px 4px 0px #440; margin-top: 20px;">UPGRADE STORE</button>
+    </div>
+
+    <div id="store-menu" class="menu-screen" style="display: none;">
+        <h2>THE BLACK MARKET</h2>
+        <div style="color: #FF0; font-size: 20px; margin-bottom: 20px; font-weight: bold;">DATA BYTES: <span id="store-bank">0</span></div>
+        
+        <div id="store-scroll-container">
+            <div class="store-item">
+                <strong>DAMAGE UP (<span id="upg-dmg-lvl">0</span>)</strong>
+                <span>+15 Damage per shot.</span>
+                Cost: <span id="upg-dmg-cost">500</span> <button class="buy-btn" onclick="buyUpgrade('dmg')">BUY</button>
+            </div>
+            
+            <div class="store-item">
+                <strong>FIRE RATE (<span id="upg-fire-lvl">0</span>)</strong>
+                <span>Shoot significantly faster.</span>
+                Cost: <span id="upg-fire-cost">600</span> <button class="buy-btn" onclick="buyUpgrade('fireRate')">BUY</button>
+            </div>
+            
+            <div class="store-item">
+                <strong>STEPHEN HAWKKINS WHEELCHAIR (<span id="upg-legs-lvl">0</span>)</strong>
+                <span>Increases your movement speed.</span>
+                Cost: <span id="upg-legs-cost">400</span> <button class="buy-btn" onclick="buyUpgrade('legs')">BUY</button>
+            </div>
+            
+            <div class="store-item">
+                <strong>AMMO SYNTHESIZER (<span id="upg-ammo-lvl">0</span>)</strong>
+                <span>Drops yield more ammo (+2 per lvl).</span>
+                Cost: <span id="upg-ammo-cost">300</span> <button class="buy-btn" onclick="buyUpgrade('ammoSynth')">BUY</button>
+            </div>
+
+            <div class="store-item">
+                <strong> TAX EVASION (<span id="upg-vamp-lvl">0</span>)</strong>
+                <span>5% chance to steal an Extra Life on kill.</span>
+                Cost: <span id="upg-vamp-cost">1500</span> <button class="buy-btn" onclick="buyUpgrade('vampire')">BUY</button>
+            </div>
+
+            <div class="store-item">
+                <strong>ELON'S SATALIITTE SYSTEM (<span id="upg-radar-lvl">0</span>)</strong>
+                <span>Minimap reveals enemy sightlines.</span>
+                Cost: <span id="upg-radar-cost">800</span> <button class="buy-btn" onclick="buyUpgrade('radar')">BUY</button>
+            </div>
+
+            <div class="store-item">
+                <strong>EXTRA LIFE (<span id="upg-lives-lvl">0</span>)</strong>
+                <span>Survive a fatal blow.</span>
+                Cost: 1000 <button class="buy-btn" onclick="buyUpgrade('lives')">BUY</button>
+            </div>
+            
+            <div class="store-item" style="border-color: #0FF;">
+                <strong style="color: #0FF;">BFG 9000</strong>
+                <span>Obliterates all visible enemies. Uses 5 Ammo.</span>
+                Cost: 5000 <button class="buy-btn" id="btn-buy-bfg" onclick="buyUpgrade('bfg')">BUY</button>
+            </div>
+        </div>
+        
+        <button class="menu-btn" onclick="document.getElementById('store-menu').style.display='none'; document.getElementById('menu').style.display='flex';" style="margin-top: 30px;">BACK TO MENU</button>
+    </div>
+
+    <div id="level-board" class="hud-text">LEVEL: <span id="level-val">1</span></div>
+    <div id="score-board" class="hud-text">SCORE: <span id="score-val">0</span></div>
+    <div id="ammo-board" class="hud-text">AMMO: <span id="ammo-val">10</span></div>
+    <div id="lives-board" class="hud-text" style="display: none;">LIVES: <span id="lives-val">0</span></div>
+    
+    <div id="overlay-msg">
+        <span id="overlay-title">LEVEL COMPLETE</span>
+        <div id="overlay-subtitle"></div>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    <div id="crosshair"></div>
+
+    <div id="ui-layer">
+        <div class="btn" id="btn-up">W</div>
+        <div class="btn" id="btn-left">A</div>
+        <div class="btn" id="btn-down">S</div>
+        <div class="btn" id="btn-right">D</div>
+        <div class="btn" id="btn-fire">FIRE</div>
+        <div class="btn" id="btn-bfg">BFG</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const screenWidth = 320; 
+        const screenHeight = 240;
+        canvas.width = screenWidth; 
+        canvas.height = screenHeight;
+
+        // --- Save Data & Store System ---
+        let bank = parseInt(localStorage.getItem('fpsBank')) || 0;
+        
+        let defaultUpgrades = { 
+            dmg: 0, 
+            fireRate: 0, 
+            lives: 0, 
+            bfg: false, 
+            mansionUnlocked: false,
+            legs: 0,
+            ammoSynth: 0,
+            vampire: 0,
+            radar: 0
+        };
+        
+        let upgrades = JSON.parse(localStorage.getItem('fpsUpgrades')) || defaultUpgrades;
+        
+        // Ensure older saves get the new upgrade keys
+        if (upgrades.legs === undefined) upgrades.legs = 0;
+        if (upgrades.ammoSynth === undefined) upgrades.ammoSynth = 0;
+        if (upgrades.vampire === undefined) upgrades.vampire = 0;
+        if (upgrades.radar === undefined) upgrades.radar = 0;
+
+        function saveGame() {
+            localStorage.setItem('fpsBank', bank);
+            localStorage.setItem('fpsUpgrades', JSON.stringify(upgrades));
+            updateMenuUI();
+        }
+
+        function updateMenuUI() {
+            document.getElementById('menu-bank').innerText = bank;
+            document.getElementById('store-bank').innerText = bank;
+            
+            document.getElementById('upg-dmg-lvl').innerText = upgrades.dmg;
+            document.getElementById('upg-dmg-cost').innerText = 500 + (upgrades.dmg * 500);
+            
+            document.getElementById('upg-fire-lvl').innerText = upgrades.fireRate;
+            document.getElementById('upg-fire-cost').innerText = 600 + (upgrades.fireRate * 600);
+            
+            document.getElementById('upg-legs-lvl').innerText = upgrades.legs;
+            document.getElementById('upg-legs-cost').innerText = 400 + (upgrades.legs * 400);
+
+            document.getElementById('upg-ammo-lvl').innerText = upgrades.ammoSynth;
+            document.getElementById('upg-ammo-cost').innerText = 300 + (upgrades.ammoSynth * 300);
+
+            document.getElementById('upg-vamp-lvl').innerText = upgrades.vampire;
+            document.getElementById('upg-vamp-cost').innerText = 1500 + (upgrades.vampire * 1500);
+
+            document.getElementById('upg-radar-lvl').innerText = upgrades.radar;
+            document.getElementById('upg-radar-cost').innerText = 800 + (upgrades.radar * 800);
+
+            document.getElementById('upg-lives-lvl').innerText = upgrades.lives;
+            
+            if (upgrades.bfg) {
+                document.getElementById('btn-buy-bfg').innerText = "OWNED";
+                document.getElementById('btn-buy-bfg').disabled = true;
+            }
+            
+            if (upgrades.mansionUnlocked) {
+                document.getElementById('mansion-btn').disabled = false;
+                document.getElementById('mansion-btn').innerText = "CAMPAIGN 2: THE MANSION";
+            } else {
+                document.getElementById('mansion-btn').innerText = "[LOCKED - BEAT CAMP 1]";
+            }
+        }
+
+        function buyUpgrade(type) {
+            let cost = 0;
+            if (type === 'dmg') cost = 500 + (upgrades.dmg * 500);
+            if (type === 'fireRate') cost = 600 + (upgrades.fireRate * 600);
+            if (type === 'legs') cost = 400 + (upgrades.legs * 400);
+            if (type === 'ammoSynth') cost = 300 + (upgrades.ammoSynth * 300);
+            if (type === 'vampire') cost = 1500 + (upgrades.vampire * 1500);
+            if (type === 'radar') cost = 800 + (upgrades.radar * 800);
+            if (type === 'lives') cost = 1000;
+            if (type === 'bfg' && !upgrades.bfg) cost = 5000;
+
+            if (bank >= cost && cost > 0) {
+                bank -= cost;
+                if (type === 'dmg') upgrades.dmg++;
+                if (type === 'fireRate') upgrades.fireRate++;
+                if (type === 'legs') upgrades.legs++;
+                if (type === 'ammoSynth') upgrades.ammoSynth++;
+                if (type === 'vampire') upgrades.vampire++;
+                if (type === 'radar') upgrades.radar++;
+                if (type === 'lives') upgrades.lives++;
+                if (type === 'bfg') upgrades.bfg = true;
+                saveGame();
+            }
+        }
+        // --- High-Resolution Procedural Textures ---
+        const texWidth = 256; 
+        const texHeight = 256;
+        
+        // 1. Cyclops Enemy
+        const texCyclops = document.createElement('canvas'); 
+        texCyclops.width = texWidth; 
+        texCyclops.height = texHeight;
+        const cCtx = texCyclops.getContext('2d');
+        cCtx.fillStyle = '#AA2222'; cCtx.beginPath(); cCtx.arc(128, 128, 112, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#00FF00'; cCtx.beginPath(); cCtx.arc(128, 96, 56, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000000'; cCtx.beginPath(); cCtx.arc(128, 96, 20, 0, Math.PI*2); cCtx.fill();
+        cCtx.fillStyle = '#000'; cCtx.fillRect(72, 176, 112, 40);
+        cCtx.fillStyle = '#FFF'; 
+        [80, 112, 144, 160].forEach(x => cCtx.fillRect(x, 176, 16, 16)); 
+        [96, 128].forEach(x => cCtx.fillRect(x, 200, 16, 16));
+
+        // 2. Generate Procedural Bed Prop
+        const texBed = document.createElement('canvas'); 
+        texBed.width = texWidth; 
+        texBed.height = texHeight;
+        const bCtx = texBed.getContext('2d');
+        bCtx.fillStyle = '#444'; bCtx.fillRect(20, 100, 216, 156); // Bed frame
+        bCtx.fillStyle = '#EEE'; bCtx.fillRect(30, 90, 196, 50); // Pillow
+        bCtx.fillStyle = '#800'; bCtx.fillRect(30, 140, 196, 116); // Red Blanket
+        bCtx.fillStyle = '#000'; bCtx.strokeRect(30, 90, 196, 50); bCtx.strokeRect(30, 140, 196, 116);
+
+        // 3. Generate Mansion Enemy (Marble Statue)
+       const texStatue = new Image(); 
+        texStatue.src = "MyStatue.png"; // Put your image file name here!
+
+        // External Images
+        const texFiddler = new Image(); texFiddler.src = "Fiddler.png";
+        const texBoss = new Image(); texBoss.src = "BigYahoo.png";
+        const texOrange = new Image(); texOrange.src = "TheOrange.png";
+
+        // 4. Ammo Box 
+        const texAmmo = document.createElement('canvas'); 
+        texAmmo.width = texWidth; 
+        texAmmo.height = texHeight;
+        const aCtx = texAmmo.getContext('2d');
+        aCtx.fillStyle = '#888800'; aCtx.fillRect(48, 100, 160, 120); 
+        aCtx.fillStyle = '#FFFF00'; aCtx.fillRect(56, 108, 144, 104); 
+        aCtx.fillStyle = '#000000'; aCtx.font = "bold 40px Courier"; 
+        aCtx.fillText("AMMO", 70, 170);
+
+        // --- Game State & Map Dynamics ---
+        let gameActive = false; 
+        let activeCampaign = [];
+        let score = 0; 
+        let frames = 0; 
+        let ammo = 10; 
+        let currentLives = 0;
+        
+        let ammoPickups = []; 
+        let enemies = []; 
+        let particles = []; 
+        let enemyProjectiles = []; 
+        let staticProps = [];
+        
+        let spawnInterval = 180; 
+        let minSpawnInterval = 30; 
+        let currentEnemyHp = 15; 
+        
+        let mapWidth = 0; 
+        let mapHeight = 0;
+        let worldMap = []; 
+        let currentLevelIdx = 0;
+        let currentColors = { sky0: '#000', sky1: '#000', floor0: '#000', floor1: '#000', wallN: [50,50,50], wallE: [30,30,30] };
+        let currentEnemyTex = texFiddler;
+        
+        // Base move speed applies, but updates later based on Cyber-Legs upgrade
+        const player = { x: 0, y: 0, dirX: 0.0, dirY: -1.0, planeX: 0.66, planeY: 0.0, moveSpeed: 0.08 };
+        let zBuffer = new Array(screenWidth); 
+        let moveBob = 0; 
+
+        // --- Campaign 1 Data ---
+        const camp1Levels = [
+            {
+                name: "The Holding Cells", 
+                storyText: "Holding cell.<br>i wake up and all I can remember is his face",
+                width: 10, height: 10,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,1,0,0,0,0,0,1],
+                    [1,0,0,1,0,1,1,1,0,1],
+                    [1,1,0,1,0,1,3,1,0,1],
+                    [1,0,0,0,0,1,0,0,0,1],
+                    [1,0,1,1,1,1,0,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,0,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 1.5, spawnY: 8.5, 
+                enemyTex: texCyclops,
+                props: [{ x: 2.5, y: 8.5, tex: texBed }], // Bed placed right next to spawn
+                colors: { sky0: '#020302', sky1: '#0a100a', floor0: '#0a0a0a', floor1: '#141814', wallN: [40,60,40], wallE: [25,40,25] }
+            },
+            {
+                name: "Maintenance Shafts", 
+                width: 14, height: 14,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,0,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,1,0,1,0,0,0,0,1,0,1,0,1],
+                    [1,0,1,0,1,0,3,1,0,1,0,1,0,1],
+                    [1,0,1,0,1,1,0,1,0,1,0,1,0,1],
+                    [1,0,1,0,0,0,0,1,0,1,0,1,0,1],
+                    [1,0,1,1,1,1,1,1,0,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,1,0,1,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 1.5, spawnY: 1.5, 
+                enemyTex: texFiddler, 
+                props: [],
+                colors: { sky0: '#050200', sky1: '#150a00', floor0: '#0f0a05', floor1: '#1a1005', wallN: [80,50,30], wallE: [55,35,20] }
+            },
+            {
+                name: "The Overseer's Core", 
+                width: 15, height: 15,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1,3,1,0,0,0,0,0,1],
+                    [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+                    [1,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 7.5, spawnY: 13.5, 
+                enemyTex: texOrange, 
+                props: [],
+                colors: { sky0: '#000205', sky1: '#000a15', floor0: '#000a0f', floor1: '#05101a', wallN: [30,50,70], wallE: [20,35,50] }
+            },
+            {
+                name: "The Temple", 
+                width: 15, height: 15,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 7.5, spawnY: 13.5, 
+                enemyTex: texFiddler, 
+                enemyHp: 30, 
+                spawnInterval: 280, 
+                props: [],
+                colors: { sky0: '#FFD700', sky1: '#B8860B', floor0: '#EEEEEE', floor1: '#CCCCCC', wallN: [0, 102, 204], wallE: [240, 240, 255] },
+                hasBoss: true, bossTex: texBoss, bossName: "The Big Yahoo"
+            }
+        ];
+
+        // --- Campaign 2 Data (The Mansion) ---
+        const camp2Levels = [
+            {
+                name: "The Grand Foyer", 
+                storyText: "welcome to the white house.",
+                width: 12, height: 12,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1], 
+                    [1,0,0,0,1,0,0,1,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,1,0,0,1,0,0,0,1], 
+                    [1,1,0,1,1,1,1,1,1,0,1,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,3,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,1,0,1,1,1,1,1,1,0,1,1],
+                    [1,0,0,0,1,0,0,1,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 5.5, spawnY: 10.5, 
+                enemyTex: texStatue, 
+                props: [], 
+                enemyHp: 30, 
+                spawnInterval: 150,
+                colors: { sky0: '#111', sky1: '#333', floor0: '#FFF', floor1: '#DDD', wallN: [220,220,220], wallE: [180,180,180] }
+            },
+            {
+                name: "The oval office", 
+                width: 15, height: 15,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                spawnX: 7.5, spawnY: 13.5, 
+                enemyTex: texStatue, 
+                enemyHp: 45, 
+                spawnInterval: 250, 
+                props: [],
+                colors: { sky0: '#200', sky1: '#500', floor0: '#FFF', floor1: '#CCC', wallN: [150,0,0], wallE: [100,0,0] },
+                hasBoss: true, bossTex: texOrange, bossName: "The Giant Orange", isMansionBoss: true
+            }
+        ];
+
+        const endlessMapTemplate = {
+            name: "Endless Arena",
+            width: 20, height: 20,
+            map: [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                [1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,0,1],
+                [1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1],
+                [1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1],
+                [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+                [1,1,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1],
+                [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
+                [1,0,1,1,1,0,1,0,0,0,0,0,0,1,0,1,1,1,0,1],
+                [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                [1,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,0,1,0,1],
+                [1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1],
+                [1,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0,1],
+                [1,1,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1],
+                [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+                [1,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ],
+            spawnX: 1.5, spawnY: 1.5, enemyTex: texFiddler, props: [],
+            colors: { sky0: '#020302', sky1: '#0a100a', floor0: '#0a0a0a', floor1: '#141814', wallN: [40,60,40], wallE: [25,40,25] }
+        };
+
+        function loadLevelData(data) {
+            mapWidth = data.width; 
+            mapHeight = data.height; 
+            worldMap = JSON.parse(JSON.stringify(data.map)); 
+            player.x = data.spawnX; 
+            player.y = data.spawnY; 
+            
+            // Apply Cyber-Legs Upgrade
+            player.moveSpeed = 0.08 + (upgrades.legs * 0.015);
+            
+            currentEnemyTex = data.enemyTex; 
+            currentEnemyHp = data.enemyHp || 15; 
+            currentColors = data.colors; 
+            staticProps = data.props || [];
+            
+            player.dirX = 0.0; player.dirY = -1.0; 
+            player.planeX = 0.66; player.planeY = 0.0;
+            
+            enemies = []; ammoPickups = []; particles = []; enemyProjectiles = []; 
+            frames = 0; moveBob = 0;
+            spawnInterval = data.spawnInterval || 180; 
+            
+            for(let i=0; i<3 + currentLevelIdx*2; i++) spawnEnemy();
+
+            if (data.hasBoss) {
+                enemies.push({ 
+                    x: 7.5, y: 3.5, 
+                    hp: 150 + (upgrades.dmg * 20), // Bosses get more HP if you have damage upgrades to keep it somewhat balanced
+                    maxHp: 150 + (upgrades.dmg * 20), 
+                    isBoss: true, 
+                    isMansionBoss: data.isMansionBoss || false, 
+                    spawnTimer: 0, 
+                    name: data.bossName, 
+                    tex: data.bossTex 
+                });
+            }
+        }
+
+        function showOverlay(title, subtitle, callback) {
+            let overlay = document.getElementById('overlay-msg');
+            document.getElementById('overlay-title').innerText = title; 
+            document.getElementById('overlay-subtitle').innerHTML = subtitle || "";
+            overlay.style.display = 'block';
+            
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+                if(callback) callback(); 
+            }, 3500); 
+        }
+
+        function advanceCampaign() {
+            currentLevelIdx++;
+            if(currentLevelIdx >= activeCampaign.length) {
+                // If beating Campaign 1 for the first time, unlock Mansion
+                if (activeCampaign === camp1Levels && !upgrades.mansionUnlocked) {
+                    upgrades.mansionUnlocked = true; 
+                    saveGame();
+                }
+                bank += score; 
+                saveGame();
+                gameOver("CAMPAIGN COMPLETE! SCORE SAVED."); 
+                return;
+            }
+            
+            gameActive = false; 
+            document.getElementById('level-val').innerText = currentLevelIdx + 1;
+            
+            showOverlay("ENTERING: " + activeCampaign[currentLevelIdx].name, activeCampaign[currentLevelIdx].storyText || "", () => {
+                loadLevelData(activeCampaign[currentLevelIdx]); 
+                gameActive = true;
+            });
+        }
+
+        function checkLineOfSight(x1, y1, x2, y2) {
+            let dx = x2 - x1; let dy = y2 - y1; 
+            let distance = Math.sqrt(dx * dx + dy * dy); 
+            let steps = Math.ceil(distance * 5); 
+            
+            for (let i = 0; i <= steps; i++) {
+                let checkX = Math.floor(x1 + dx * (i / steps)); 
+                let checkY = Math.floor(y1 + dy * (i / steps));
+                if (worldMap[checkX][checkY] === 1) return false; 
+            } 
+            return true;
+        }
+
+        function takePlayerDamage() {
+            if (currentLives > 0) {
+                currentLives--; 
+                document.getElementById('lives-val').innerText = currentLives;
+                if (currentLives === 0) {
+                    document.getElementById('lives-board').style.display = 'none';
+                }
+                screenFlash = 10; 
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; 
+                ctx.fillRect(0,0,screenWidth,screenHeight);
+            } else {
+                bank += score; 
+                saveGame();
+                gameOver("YOU WERE DESTROYED. SCORE SAVED.");
+            }
+        }
+
+        // --- Inputs ---
+        const input = { up: false, down: false, left: false, right: false }; 
+        let isShooting = false; 
+        let screenFlash = 0;
+        
+        window.addEventListener('keydown', (e) => {
+            if(!gameActive) return;
+            if(e.code === 'KeyW' || e.code === 'ArrowUp') input.up = true; 
+            if(e.code === 'KeyS' || e.code === 'ArrowDown') input.down = true;
+            if(e.code === 'KeyA') input.left = true; 
+            if(e.code === 'KeyD') input.right = true;
+            if(e.code === 'Space') fire(); 
+            if(e.code === 'KeyQ') fireBFG();
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if(e.code === 'KeyW' || e.code === 'ArrowUp') input.up = false; 
+            if(e.code === 'KeyS' || e.code === 'ArrowDown') input.down = false;
+            if(e.code === 'KeyA') input.left = false; 
+            if(e.code === 'KeyD') input.right = false;
+        });
+
+        function bindButton(id, key) {
+            const btn = document.getElementById(id);
+            const start = (e) => { e.preventDefault(); if(gameActive) input[key] = true; };
+            const end = (e) => { e.preventDefault(); input[key] = false; };
+            btn.addEventListener('touchstart', start, {passive: false}); btn.addEventListener('touchend', end, {passive: false});
+            btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end); btn.addEventListener('mouseleave', end);
+        }
+        
+        bindButton('btn-up', 'up'); bindButton('btn-down', 'down'); 
+        bindButton('btn-left', 'left'); bindButton('btn-right', 'right');
+
+        // Multi-touch Look setup
+        let isDragging = false; 
+        let lastPointerX = 0; 
+        let lookTouchId = null;
+        
+        function rotatePlayer(amount) {
+            const oldDirX = player.dirX; 
+            player.dirX = player.dirX * Math.cos(amount) - player.dirY * Math.sin(amount); 
+            player.dirY = oldDirX * Math.sin(amount) + player.dirY * Math.cos(amount);
+            
+            const oldPlaneX = player.planeX; 
+            player.planeX = player.planeX * Math.cos(amount) - player.planeY * Math.sin(amount); 
+            player.planeY = oldPlaneX * Math.sin(amount) + player.planeY * Math.cos(amount);
+        }
+        
+        const startLook = (x) => { if(gameActive) { isDragging = true; lastPointerX = x; }};
+        const moveLook = (x) => { if (!isDragging || !gameActive) return; rotatePlayer((x - lastPointerX) * 0.015); lastPointerX = x; };
+        const endLook = () => { isDragging = false; };
+
+        canvas.addEventListener('touchstart', e => { 
+            e.preventDefault(); 
+            for(let i=0; i < e.changedTouches.length; i++) { 
+                lookTouchId = e.changedTouches[i].identifier; 
+                startLook(e.changedTouches[i].clientX); 
+                break; 
+            } 
+        }, {passive: false});
+        
+        canvas.addEventListener('touchmove', e => { 
+            e.preventDefault(); 
+            for(let i=0; i < e.changedTouches.length; i++) { 
+                if(e.changedTouches[i].identifier === lookTouchId) { 
+                    moveLook(e.changedTouches[i].clientX); 
+                    break; 
+                } 
+            } 
+        }, {passive: false});
+        
+        canvas.addEventListener('touchend', e => { 
+            for(let i=0; i < e.changedTouches.length; i++) { 
+                if(e.changedTouches[i].identifier === lookTouchId) { 
+                    endLook(); 
+                    lookTouchId = null; 
+                    break; 
+                } 
+            } 
+        });
+        
+        canvas.addEventListener('mousedown', e => startLook(e.clientX)); 
+        window.addEventListener('mousemove', e => moveLook(e.clientX)); 
+        window.addEventListener('mouseup', endLook);
+        // --- Standard Fire Weapon ---
+        const fireBtn = document.getElementById('btn-fire');
+        const fire = (e) => {
+            if(e) e.preventDefault(); 
+            if(!gameActive || isShooting || ammo <= 0) return; 
+            
+            ammo--; 
+            document.getElementById('ammo-val').innerText = ammo;
+            isShooting = true; 
+            screenFlash = 4;
+            
+            const gunTipX = screenWidth / 2; 
+            const gunTipY = screenHeight - 90 + (moveBob * 0.5);
+            
+            for(let i = 0; i < 25; i++) {
+                particles.push({ 
+                    x: gunTipX + (Math.random() - 0.5) * 16, 
+                    y: gunTipY + (Math.random() - 0.5) * 10, 
+                    vx: (Math.random() - 0.5) * 16, 
+                    vy: -(Math.random() * 12 + 6), 
+                    life: 1.0, 
+                    decay: Math.random() * 0.1 + 0.05, 
+                    size: Math.floor(Math.random() * 6) + 3, 
+                    color: Math.random() > 0.4 ? '255, 150, 0' : '255, 255, 50' 
+                });
+            }
+
+            let dmgDealt = 15 + (upgrades.dmg * 15); // Factor in Damage Upgrades
+            
+            for(let i = enemies.length - 1; i >= 0; i--) {
+                let enemy = enemies[i]; 
+                let dx = enemy.x - player.x; 
+                let dy = enemy.y - player.y; 
+                let dist = Math.sqrt(dx*dx + dy*dy); 
+                let dot = (player.dirX * (dx/dist)) + (player.dirY * (dy/dist));
+                
+                if(dot > 0.96 && checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
+                    enemy.hp -= dmgDealt; 
+                    
+                    if (enemy.hp <= 0) {
+                        // Drop Ammo (With Ammo Synthesizer Upgrade)
+                        let ammoYield = 5 + (upgrades.ammoSynth * 2);
+                        ammoPickups.push({ x: enemy.x, y: enemy.y, amount: ammoYield }); 
+                        
+                        enemies.splice(i, 1); 
+                        score += enemy.isBoss ? 1000 : 100; 
+                        document.getElementById('score-val').innerText = score;
+                        
+                        // Vampire Protocol (Steal Life on Kill)
+                        if (upgrades.vampire > 0 && Math.random() < (upgrades.vampire * 0.05)) {
+                            currentLives++;
+                            document.getElementById('lives-val').innerText = currentLives;
+                            document.getElementById('lives-board').style.display = 'block';
+                            // Green health particle burst
+                            for(let p = 0; p < 15; p++) {
+                                particles.push({ 
+                                    x: (screenWidth / 2) + (Math.random() - 0.5) * 30, 
+                                    y: (screenHeight / 2) + (Math.random() - 0.5) * 30, 
+                                    vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10 - 2, 
+                                    life: 1.0, decay: 0.05, size: 5, color: '0, 255, 0' 
+                                });
+                            }
+                        }
+
+                        // Death Explosion
+                        for(let p = 0; p < 30; p++) {
+                            particles.push({ 
+                                x: (screenWidth / 2) + (Math.random() - 0.5) * 50, 
+                                y: (screenHeight / 2) + (Math.random() - 0.5) * 50, 
+                                vx: (Math.random() - 0.5) * 15, 
+                                vy: (Math.random() - 0.5) * 15 - 2, 
+                                life: 1.0, 
+                                decay: Math.random() * 0.05 + 0.02, 
+                                size: Math.floor(Math.random() * 8) + 4, 
+                                color: enemy.isBoss ? '0, 255, 255' : '200, 0, 0' 
+                            });
+                        }
+                        
+                        if (enemy.isBoss) { 
+                            bank += score; 
+                            saveGame(); 
+                            setTimeout(() => { gameOver("VICTORY! SCORE SAVED."); }, 2000); 
+                        }
+                    } else {
+                        // Hit Marker (Survived)
+                        for(let p = 0; p < 10; p++) {
+                            particles.push({ 
+                                x: (screenWidth / 2) + (Math.random() - 0.5) * 20, 
+                                y: (screenHeight / 2) + (Math.random() - 0.5) * 20, 
+                                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, 
+                                life: 1.0, decay: 0.1, size: 3, color: '0, 255, 255' 
+                            });
+                        }
+                    } 
+                    break; 
+                }
+            }
+            
+            let fireCooldown = Math.max(50, 250 - (upgrades.fireRate * 30));
+            setTimeout(() => isShooting = false, fireCooldown);
+        };
+        fireBtn.addEventListener('touchstart', fire, {passive: false}); 
+        fireBtn.addEventListener('mousedown', fire);
+
+        // --- BFG 9000 Weapon ---
+        const bfgBtn = document.getElementById('btn-bfg');
+        const fireBFG = (e) => {
+            if(e) e.preventDefault(); 
+            if(!gameActive || !upgrades.bfg || isShooting || ammo < 5) return;
+            
+            ammo -= 5; 
+            document.getElementById('ammo-val').innerText = ammo; 
+            isShooting = true; 
+            screenFlash = 20;
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.8)'; 
+            ctx.fillRect(0,0,screenWidth,screenHeight); // Blinding Green Flash
+            
+            let ammoYield = 5 + (upgrades.ammoSynth * 2);
+
+            for(let i = enemies.length - 1; i >= 0; i--) {
+                let enemy = enemies[i];
+                if(checkLineOfSight(player.x, player.y, enemy.x, enemy.y)) { 
+                    enemy.hp -= 500; // Devastating damage
+                    
+                    if (enemy.hp <= 0) {
+                        ammoPickups.push({ x: enemy.x, y: enemy.y, amount: ammoYield }); 
+                        enemies.splice(i, 1); 
+                        score += enemy.isBoss ? 1000 : 100; 
+                        document.getElementById('score-val').innerText = score;
+                        
+                        // Huge green explosions for BFG kills
+                        for(let p = 0; p < 30; p++) {
+                            particles.push({ 
+                                x: (screenWidth / 2) + (Math.random() - 0.5) * 50, 
+                                y: (screenHeight / 2) + (Math.random() - 0.5) * 50, 
+                                vx: (Math.random() - 0.5) * 25, 
+                                vy: (Math.random() - 0.5) * 25, 
+                                life: 1.0, decay: 0.02, size: 6, color: '0, 255, 0' 
+                            });
+                        }
+                        
+                        if (enemy.isBoss) { 
+                            bank += score; 
+                            saveGame(); 
+                            setTimeout(() => { gameOver("VICTORY! SCORE SAVED."); }, 2000); 
+                        }
+                    }
+                }
+            }
+            setTimeout(() => isShooting = false, 1000); // 1 Second Cooldown for BFG
+        };
+        bfgBtn.addEventListener('touchstart', fireBFG, {passive: false}); 
+        bfgBtn.addEventListener('mousedown', fireBFG);
+
+        function spawnEnemy() {
+            if (enemies.length >= 20) return; 
+            let spawned = false; 
+            let attempts = 0;
+            
+            while(!spawned && attempts < 50) {
+                let rx = Math.floor(Math.random() * mapWidth); 
+                let ry = Math.floor(Math.random() * mapHeight);
+                
+                if(worldMap[rx][ry] === 0) {
+                    let dx = rx - player.x; 
+                    let dy = ry - player.y;
+                    if(Math.sqrt(dx*dx + dy*dy) > 4) { 
+                        enemies.push({ x: rx + 0.5, y: ry + 0.5, hp: currentEnemyHp }); 
+                        spawned = true; 
+                    }
+                } 
+                attempts++;
+            }
+        }
+
+        function gameOver(customMsg) {
+            gameActive = false; 
+            input.up = false; input.down = false; input.left = false; input.right = false;
+            
+            document.getElementById('ui-layer').style.display = 'none'; 
+            document.getElementById('crosshair').style.display = 'none'; 
+            document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'none');
+            
+            document.getElementById('menu').style.display = 'flex'; 
+            updateMenuUI();
+            
+            let msgEl = document.getElementById('fatality-msg'); 
+            msgEl.innerHTML = (customMsg || "CONNECTION LOST") + `<br><span style="font-size: 20px; text-shadow: none;">BYTES EARNED: <span id="final-score">${score}</span></span>`; 
+            msgEl.style.display = 'block'; 
+            msgEl.style.color = customMsg ? '#0FF' : '#0F0';
+        }
+
+        document.getElementById('store-btn').addEventListener('click', () => { 
+            document.getElementById('menu').style.display = 'none'; 
+            document.getElementById('store-menu').style.display = 'flex'; 
+        });
+
+        function startGame(campaignData) {
+            document.getElementById('menu').style.display = 'none'; 
+            score = 0; 
+            document.getElementById('score-val').innerText = score; 
+            ammo = 10; 
+            document.getElementById('ammo-val').innerText = ammo;
+            
+            currentLives = upgrades.lives; 
+            document.getElementById('lives-val').innerText = currentLives; 
+            document.getElementById('lives-board').style.display = currentLives > 0 ? 'block' : 'none';
+            
+            if (upgrades.bfg) {
+                document.getElementById('btn-bfg').style.display = 'flex';
+            } else {
+                document.getElementById('btn-bfg').style.display = 'none';
+            }
+            
+            activeCampaign = campaignData; 
+            currentLevelIdx = 0;
+            
+            document.getElementById('level-board').style.display = 'block'; 
+            document.getElementById('level-val').innerText = "1";
+            
+            showOverlay("ENTERING: " + activeCampaign[0].name, activeCampaign[0].storyText, () => {
+                document.getElementById('ui-layer').style.display = 'block'; 
+                document.getElementById('crosshair').style.display = 'block'; 
+                document.querySelectorAll('.hud-text').forEach(el => el.style.display = 'block');
+                loadLevelData(activeCampaign[0]); 
+                gameActive = true;
+            });
+        }
+        
+        document.getElementById('campaign-btn').addEventListener('click', () => startGame(camp1Levels));
+        document.getElementById('mansion-btn').addEventListener('click', () => startGame(camp2Levels));
+        document.getElementById('endless-btn').addEventListener('click', () => startGame([endlessMapTemplate]));
+        
+        updateMenuUI(); // Init menu states
+
+        function update() {
+            if(!gameActive) return; 
+            
+            frames++;
+            if(frames % spawnInterval === 0) { 
+                spawnEnemy(); 
+                if(spawnInterval > minSpawnInterval) spawnInterval -= 2; 
+            }
+            
+            // Pickup Ammo
+            for (let i = ammoPickups.length - 1; i >= 0; i--) {
+                let dx = player.x - ammoPickups[i].x; 
+                let dy = player.y - ammoPickups[i].y;
+                if (Math.sqrt(dx*dx + dy*dy) < 0.5) { 
+                    ammo += ammoPickups[i].amount || 5; // Use upgraded amount
+                    document.getElementById('ammo-val').innerText = ammo; 
+                    ammoPickups.splice(i, 1); 
+                }
+            }
+
+            let moving = false; 
+            let moveX = 0; 
+            let moveY = 0;
+            
+            if (input.up) { moveX += player.dirX * player.moveSpeed; moveY += player.dirY * player.moveSpeed; moving = true; }
+            if (input.down) { moveX -= player.dirX * player.moveSpeed; moveY -= player.dirY * player.moveSpeed; moving = true; }
+            if (input.right) { moveX += player.planeX * player.moveSpeed; moveY += player.planeY * player.moveSpeed; moving = true; }
+            if (input.left) { moveX -= player.planeX * player.moveSpeed; moveY -= player.planeY * player.moveSpeed; moving = true; }
+
+            let nX = player.x + moveX; 
+            let nY = player.y + moveY;
+            
+            if (worldMap[Math.floor(nX)] && (worldMap[Math.floor(nX)][Math.floor(player.y)] === 0 || worldMap[Math.floor(nX)][Math.floor(player.y)] === 3)) {
+                player.x = nX;
+            }
+            if (worldMap[Math.floor(player.x)] && (worldMap[Math.floor(player.x)][Math.floor(nY)] === 0 || worldMap[Math.floor(player.x)][Math.floor(nY)] === 3)) {
+                player.y = nY;
+            }
+            
+            if (worldMap[Math.floor(player.x)][Math.floor(player.y)] === 3) {
+                advanceCampaign();
+            }
+            
+            if (moving) moveBob = Math.sin(frames * 0.2) * 8; 
+            else moveBob = moveBob * 0.8; 
+
+            // Update Enemy Projectiles (From Mansion Boss)
+            for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+                let p = enemyProjectiles[i]; 
+                p.x += p.vx; 
+                p.y += p.vy;
+                
+                // Wall Collision
+                if (worldMap[Math.floor(p.x)] && worldMap[Math.floor(p.x)][Math.floor(p.y)] === 1) { 
+                    enemyProjectiles.splice(i, 1); 
+                    continue; 
+                }
+                
+                // Player Collision
+                let dx = player.x - p.x; 
+                let dy = player.y - p.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 0.4) { 
+                    enemyProjectiles.splice(i, 1); 
+                    takePlayerDamage(); 
+                }
+            }
+
+            // Enemy AI Update
+            enemies.forEach(enemy => {
+                let dx = player.x - enemy.x; 
+                let dy = player.y - enemy.y; 
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < 0.4) { 
+                    takePlayerDamage(); 
+                    enemy.x -= dx * 0.5; // Slight pushback
+                    enemy.y -= dy * 0.5; 
+                } else if(dist > 0.4 && !enemy.isBoss) { 
+                    // Move towards player
+                    enemy.x += (dx / dist) * 0.02; 
+                    enemy.y += (dy / dist) * 0.02; 
+                }
+
+                // Boss Behaviors
+                if (enemy.isBoss) {
+                    enemy.spawnTimer++;
+                    if (enemy.isMansionBoss) { 
+                        // Mansion Boss: Shoots Orange Projectiles
+                        if (enemy.spawnTimer > 90) { 
+                            enemy.spawnTimer = 0; 
+                            let speed = 0.05;
+                            enemyProjectiles.push({ 
+                                x: enemy.x, y: enemy.y, 
+                                vx: (dx/dist)*speed, vy: (dy/dist)*speed 
+                            });
+                        }
+                    } else { 
+                        // Core Boss: Spawns Minions
+                        if (enemy.spawnTimer > 120) { 
+                            enemy.spawnTimer = 0; 
+                            let minionType = Math.random() > 0.5 ? 'cyclops' : 'fiddler';
+                            enemies.push({ 
+                                x: enemy.x + (Math.random() - 0.5) * 2, 
+                                y: enemy.y + (Math.random() - 0.5) * 2, 
+                                type: minionType, 
+                                hp: 15 
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawWeaponAndParticles() {
+            const cX = screenWidth / 2; 
+            const bot = screenHeight; 
+            const wBob = moveBob * 0.5;
+            
+            ctx.fillStyle = '#0a0a0a'; ctx.fillRect(cX - 16, bot - 90 + wBob, 32, 90); 
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(cX - 8, bot - 90 + wBob, 16, 90); 
+            ctx.fillStyle = '#333333'; ctx.fillRect(cX - 4, bot - 85 + wBob, 8, 85);
+            
+            if (screenFlash > 0) { 
+                ctx.fillStyle = `rgba(255, 255, 200, ${screenFlash * 0.15})`; 
+                ctx.fillRect(0, 0, screenWidth, screenHeight); 
+                screenFlash--; 
+            }
+            
+            for(let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; 
+                p.x += p.vx; 
+                p.y += p.vy; 
+                p.vy += 0.5; 
+                p.size += 0.2; 
+                p.life -= p.decay;
+                if(p.life <= 0) { particles.splice(i, 1); continue; }
+                ctx.fillStyle = `rgba(${p.color}, ${p.life})`; 
+                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+            }
+        }
+
+        function drawMiniMap() {
+            const mmScale = 4; 
+            const mmX = 10; 
+            const mmY = 100; // Moved down to avoid overlapping Lives UI
+            
+            ctx.fillStyle = 'rgba(0, 20, 0, 0.7)'; 
+            ctx.fillRect(mmX, mmY, mapWidth * mmScale, mapHeight * mmScale);
+            
+            for(let y = 0; y < mapHeight; y++) { 
+                for(let x = 0; x < mapWidth; x++) { 
+                    if(worldMap[x][y] === 1) { 
+                        ctx.fillStyle = '#040'; 
+                        ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale); 
+                    } 
+                    if(worldMap[x][y] === 3) { 
+                        ctx.fillStyle = '#0FF'; 
+                        ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale); 
+                    } 
+                } 
+            }
+            
+            ctx.fillStyle = '#FF0'; 
+            ammoPickups.forEach(a => { ctx.fillRect(mmX + a.x * mmScale - 1, mmY + a.y * mmScale - 1, 2, 2); });
+            
+            ctx.fillStyle = '#F80'; 
+            enemyProjectiles.forEach(p => { ctx.fillRect(mmX + p.x * mmScale - 1, mmY + p.y * mmScale - 1, 2, 2); });
+            
+            // Advanced Radar Upgrade Logic
+            if (upgrades.radar > 0) {
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                enemies.forEach(e => {
+                    if (!e.isBoss) {
+                        // Draw line pointing towards player
+                        let dx = player.x - e.x; 
+                        let dy = player.y - e.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        ctx.beginPath();
+                        ctx.moveTo(mmX + e.x * mmScale, mmY + e.y * mmScale);
+                        ctx.lineTo(mmX + (e.x + (dx/dist) * 3) * mmScale, mmY + (e.y + (dy/dist) * 3) * mmScale);
+                        ctx.stroke();
+                    }
+                });
+            }
+
+            ctx.fillStyle = '#F00'; 
+            enemies.forEach(e => { ctx.fillRect(mmX + e.x * mmScale - 1, mmY + e.y * mmScale - 1, 2, 2); });
+            
+            ctx.fillStyle = '#0F0'; 
+            ctx.fillRect(mmX + player.x * mmScale - 1, mmY + player.y * mmScale - 1, 2, 2);
+            
+            ctx.strokeStyle = '#0F0'; 
+            ctx.lineWidth = 1; 
+            ctx.beginPath(); 
+            ctx.moveTo(mmX + player.x * mmScale, mmY + player.y * mmScale); 
+            ctx.lineTo(mmX + player.x * mmScale + player.dirX * 6, mmY + player.y * mmScale + player.dirY * 6); 
+            ctx.stroke();
+        }
+
+        function draw() {
+            // Draw Ceiling
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, screenHeight / 2 + moveBob); 
+            skyGrad.addColorStop(0, currentColors.sky0); 
+            skyGrad.addColorStop(1, currentColors.sky1); 
+            ctx.fillStyle = skyGrad; 
+            ctx.fillRect(0, 0, screenWidth, screenHeight); 
+            
+            // Draw Floor
+            let floorGrad = ctx.createLinearGradient(0, screenHeight / 2 + moveBob, 0, screenHeight); 
+            floorGrad.addColorStop(0, currentColors.floor0); 
+            floorGrad.addColorStop(1, currentColors.floor1); 
+            ctx.fillStyle = floorGrad; 
+            ctx.fillRect(0, screenHeight / 2 + moveBob, screenWidth, screenHeight); 
+            
+            if(!gameActive) return; 
+
+            // Raycasting Loop for Walls
+            for (let x = 0; x < screenWidth; x++) {
+                const cameraX = 2 * x / screenWidth - 1; 
+                const rDX = player.dirX + player.planeX * cameraX; 
+                const rDY = player.dirY + player.planeY * cameraX;
+                
+                let mX = Math.floor(player.x); 
+                let mY = Math.floor(player.y); 
+                let sDX, sDY; 
+                const dDX = Math.abs(1 / rDX); 
+                const dDY = Math.abs(1 / rDY); 
+                let pWallDist, hit = 0, side, stepX, stepY;
+                
+                if (rDX < 0) { stepX = -1; sDX = (player.x - mX) * dDX; } else { stepX = 1; sDX = (mX + 1.0 - player.x) * dDX; }
+                if (rDY < 0) { stepY = -1; sDY = (player.y - mY) * dDY; } else { stepY = 1; sDY = (mY + 1.0 - player.y) * dDY; }
+                
+                while (hit === 0) { 
+                    if (sDX < sDY) { sDX += dDX; mX += stepX; side = 0; } else { sDY += dDY; mY += stepY; side = 1; } 
+                    if (mX < 0 || mX >= mapWidth || mY < 0 || mY >= mapHeight) { hit = 1; break; } 
+                    if (worldMap[mX][mY] > 0) hit = worldMap[mX][mY]; 
+                }
+                
+                if (side === 0) pWallDist = (mX - player.x + (1 - stepX) / 2) / rDX; 
+                else pWallDist = (mY - player.y + (1 - stepY) / 2) / rDY;
+                
+                zBuffer[x] = pWallDist; 
+                const lineH = Math.floor(screenHeight / pWallDist);
+                
+                let drawS = Math.floor(-lineH / 2 + screenHeight / 2 + moveBob); if (drawS < 0) drawS = 0; 
+                let drawE = Math.floor(lineH / 2 + screenHeight / 2 + moveBob); if (drawE >= screenHeight) drawE = screenHeight - 1;
+                
+                let col; 
+                if (hit === 1) col = side === 1 ? currentColors.wallE.slice() : currentColors.wallN.slice(); 
+                else if (hit === 3) { let pulse = Math.abs(Math.sin(frames * 0.1)) * 100; col = [0, 155 + pulse, 255]; }
+                
+                let shade = 1 / (1 + pWallDist * 0.3); 
+                ctx.fillStyle = `rgb(${col[0]*shade}, ${col[1]*shade}, ${col[2]*shade})`; 
+                ctx.fillRect(x, drawS, 1, drawE - drawS);
+            }
+
+            // Sprite Rendering Array
+            let allSprites = [
+                ...enemies.map(e => ({ ...e, type: 'enemy', dist: Math.pow(player.x - e.x, 2) + Math.pow(player.y - e.y, 2) })),
+                ...ammoPickups.map(a => ({ ...a, type: 'ammo', dist: Math.pow(player.x - a.x, 2) + Math.pow(player.y - a.y, 2) })),
+                ...enemyProjectiles.map(p => ({ ...p, type: 'proj', dist: Math.pow(player.x - p.x, 2) + Math.pow(player.y - p.y, 2) })),
+                ...staticProps.map(p => ({ ...p, type: 'prop', dist: Math.pow(player.x - p.x, 2) + Math.pow(player.y - p.y, 2) }))
+            ].sort((a, b) => b.dist - a.dist); // Draw back to front
+
+            for (let i = 0; i < allSprites.length; i++) {
+                let sprite = allSprites[i]; 
+                let sX = sprite.x - player.x; 
+                let sY = sprite.y - player.y;
+                let invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY); 
+                let tX = invDet * (player.dirY * sX - player.dirX * sY); 
+                let tY = invDet * (-player.planeY * sX + player.planeX * sY);
+                
+                if (tY > 0) {
+                    let spriteScX = Math.floor((screenWidth / 2) * (1 + tX / tY));
+                    let scale = sprite.isBoss ? 3.0 : (sprite.type === 'ammo' || sprite.type === 'proj' ? 0.35 : 1.0);
+                    let baseSize = Math.abs(Math.floor(screenHeight / tY)); 
+                    let spriteH = baseSize * scale; 
+                    let spriteW = baseSize * scale;
+                    let vMove = (baseSize - spriteH) / 2; 
+                    if (sprite.type === 'prop') vMove += baseSize * 0.5; // push props down to floor
+                    
+                    let drawSY = -spriteH / 2 + screenHeight / 2 + moveBob + vMove; 
+                    let drawSX = -spriteW / 2 + spriteScX;
+                    let startStripe = Math.max(0, drawSX); 
+                    let endStripe = Math.min(screenWidth, drawSX + spriteW);
+                    
+                    let textureToDraw;
+                    if (sprite.type === 'prop') { textureToDraw = sprite.tex; }
+                    else if (sprite.type === 'proj') { textureToDraw = null; } // Draw procedural orb
+                    else if (sprite.isBoss) { textureToDraw = sprite.tex; } 
+                    else if (sprite.type === 'enemy') { textureToDraw = currentEnemyTex; } 
+                    else { textureToDraw = texAmmo; }
+
+                    for(let stripe = startStripe; stripe < endStripe; stripe++) {
+                        if (tY < zBuffer[stripe]) {
+                            if (sprite.type === 'proj') { 
+                                // Procedural Plasma Orb (Pulsing Orange)
+                                let glow = Math.abs(Math.sin(frames * 0.2)) * 50;
+                                ctx.fillStyle = `rgb(255, ${100 + glow}, 0)`; 
+                                ctx.fillRect(stripe, drawSY, 1, spriteH);
+                            } else {
+                                let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
+                                if (spriteH > 0 && spriteW > 0) {
+                                    ctx.drawImage(textureToDraw, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH);
+                                }
+                                ctx.fillStyle = `rgba(17, 17, 17, ${1 - (1 / (1 + tY * 0.3))})`; 
+                                ctx.fillRect(stripe, drawSY, 1, spriteH);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Draw Boss HP Bar UI
+            let boss = enemies.find(e => e.isBoss);
+            if (boss) {
+                ctx.fillStyle = '#000'; ctx.fillRect(screenWidth / 2 - 152, 18, 304, 24); 
+                ctx.fillStyle = '#C00'; ctx.fillRect(screenWidth / 2 - 150, 20, 300 * (boss.hp / boss.maxHp), 20);
+                ctx.fillStyle = '#FFF'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; 
+                ctx.fillText(boss.name, screenWidth / 2, 36);
+            }
+            
+            drawWeaponAndParticles(); 
+            drawMiniMap();
+        }
+
+        // Main Loop Driver
+        function gameLoop() { 
+            update(); 
+            draw(); 
+            requestAnimationFrame(gameLoop); 
+        }
+        
+        // Boot Engine
+        gameLoop(); 
+    </script>
+</body>
+</html>

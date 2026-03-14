@@ -556,6 +556,7 @@
 
             filtered.forEach(game => {
                 const card = document.createElement('div');
+                const isLiked = likedGames.includes(game.id);
                 card.className = `game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer ${game.broken ? 'is-broken' : ''}`;
                 
                 // Use a proper event listener with check for child button clicks
@@ -565,7 +566,6 @@
                     window.location.href = game.url;
                 });
                 
-                const isLiked = likedGames.includes(game.id);
                 const friendsHere = friendActivity[game.id] || [];
                 
                 let badgeHtml = "";
@@ -616,6 +616,11 @@
         function filterGames() {
             const query = document.getElementById('search-bar').value;
             renderGames(query);
+        }
+
+        function fetchFriendActivity() {
+            // Stub for real-time friend activity tracking
+            // In a real app, this would query a Firestore collection of "active_sessions"
         }
 
         // Init
