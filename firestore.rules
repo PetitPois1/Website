@@ -7,6 +7,22 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Tic-Tac-Toe online: one doc per match, minimal reads (one listener) and writes (one per move/join)
+    match /tictactoe_matches/{matchId} {
+      allow read: if request.auth != null && (
+        resource.data.status == 'waiting'
+        || resource.data.creatorId == request.auth.uid
+        || resource.data.opponentId == request.auth.uid
+      );
+      allow create: if request.auth != null && request.resource.data.creatorId == request.auth.uid;
+      allow update: if request.auth != null && (
+        resource.data.creatorId == request.auth.uid
+        || resource.data.opponentId == request.auth.uid
+        || (resource.data.status == 'waiting' && resource.data.opponentId == null)
+      );
+      allow delete: if request.auth != null && resource.data.creatorId == request.auth.uid;
+    }
+
     // Neon Dash: community and personal levels (Play Levels → Built-in / My Levels / Community)
     match /custom_levels/{levelId} {
       // Anyone can read public levels; authors can read their own (including private)

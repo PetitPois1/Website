@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic-Tac-Toe Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/auth.js"></script>
     <style>
         :root {
             --bg: #0f0c29;
@@ -120,6 +126,24 @@
         }
 
         button:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
+
+        .online-lobby {
+            text-align: center;
+            padding: 24px;
+            background: var(--glass);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 400px;
+        }
+        .online-lobby h3 { margin: 0 0 16px 0; font-size: 18px; color: var(--accent); }
+        .online-lobby p { margin: 8px 0; font-size: 14px; color: #aaa; }
+        .online-lobby button { margin: 8px; }
+        .online-lobby input { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--cell-bg); color: white; width: 120px; text-align: center; font-size: 14px; }
+        .match-list { list-style: none; padding: 0; margin: 12px 0; max-height: 200px; overflow-y: auto; text-align: left; }
+        .match-list li { padding: 10px 14px; margin: 4px 0; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
+        .match-list li:hover { border-color: var(--accent); }
+        .online-status { font-size: 12px; color: #8f8; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -131,12 +155,18 @@
 
     <div class="controls">
         Mode: 
-        <select id="difficulty" onchange="resetGame(true)">
+        <select id="difficulty" onchange="onModeChange()">
             <option value="coop">2 Player (Local)</option>
             <option value="easy">VS AI (Easy)</option>
             <option value="medium">VS AI (Medium)</option>
             <option value="hard" selected>VS AI (Hard)</option>
+            <option value="online">Online (Multiplayer)</option>
         </select>
+    </div>
+
+    <div id="online-lobby" class="online-lobby" style="display: none;">
+        <h3>Online Match</h3>
+        <div id="online-lobby-content"></div>
     </div>
 
     <div class="board" id="board">
@@ -154,7 +184,7 @@
 
     <div class="turn-indicator" id="turn-indicator">X's Turn</div>
 
-    <button onclick="resetGame(true)">Reset All</button>
+    <button id="btn-reset" onclick="resetGame(true)">Reset All</button>
 
     <script>
         let board = ['', '', '', '', '', '', '', '', ''];
@@ -169,6 +199,12 @@
         const difficulty = document.getElementById('difficulty');
         const oLabel = document.getElementById('player-o-label');
 
+        // Online multiplayer state (one listener per match, one write per move)
+        let onlineMatchId = null;
+        let onlineRole = null;
+        let onlineUnsubscribe = null;
+        const GRID_SIZE = 3;
+
         const winConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
@@ -180,6 +216,13 @@
         function handleCellClick(e) {
             const index = e.target.getAttribute('data-index');
             if (board[index] !== '' || !isGameActive) return;
+
+            if (difficulty.value === 'online' && onlineMatchId) {
+                const mySymbol = onlineRole === 'X' ? 'X' : 'O';
+                if (currentPlayer !== mySymbol) return;
+                makeOnlineMove(index);
+                return;
+            }
 
             executeMove(index, currentPlayer);
 
@@ -261,7 +304,9 @@
         }
 
         function updateLabels() {
-            if (difficulty.value === 'coop') {
+            if (difficulty.value === 'online') {
+                oLabel.innerHTML = `OPPONENT (O) <span class="score-val" id="o-score">${oScore}</span>`;
+            } else if (difficulty.value === 'coop') {
                 oLabel.innerHTML = `PLAYER (O) <span class="score-val" id="o-score">${oScore}</span>`;
             } else {
                 oLabel.innerHTML = `AI (O) <span class="score-val" id="o-score">${oScore}</span>`;
@@ -269,6 +314,12 @@
         }
 
         function resetGame(fullReset = false) {
+            if (difficulty.value === 'online' && onlineUnsubscribe) {
+                onlineUnsubscribe();
+                onlineUnsubscribe = null;
+                onlineMatchId = null;
+                onlineRole = null;
+            }
             board = ['', '', '', '', '', '', '', '', ''];
             isGameActive = true;
             currentPlayer = 'X';
@@ -284,8 +335,8 @@
                 document.getElementById('x-score').textContent = "0";
             }
             
-            // This ensures the label updates whenever mode changes or game resets
             updateLabels();
+            if (difficulty.value === 'online') renderOnlineLobby();
         }
 
         function getRandomMove() {
@@ -314,7 +365,206 @@
             return null;
         }
 
-        // Initialize labels on load
+        function onModeChange() {
+            if (difficulty.value === 'online') {
+                document.getElementById('online-lobby').style.display = 'block';
+                document.getElementById('btn-reset').textContent = 'Leave match';
+                if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; onlineMatchId = null; }
+                renderOnlineLobby();
+            } else {
+                document.getElementById('online-lobby').style.display = 'none';
+                document.getElementById('btn-reset').textContent = 'Reset All';
+                if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; onlineMatchId = null; }
+            }
+            updateLabels();
+            resetGame(true);
+        }
+
+        function renderOnlineLobby() {
+            const lobby = document.getElementById('online-lobby');
+            const content = document.getElementById('online-lobby-content');
+            if (difficulty.value !== 'online') return;
+
+            if (onlineMatchId) {
+                content.innerHTML = '<p class="online-status">In match. Play below.</p>';
+                return;
+            }
+
+            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
+            if (!user) {
+                const hasModal = document.getElementById('auth-modal');
+                content.innerHTML = '<p>Sign in to play online.</p>' + (hasModal
+                    ? '<button onclick="window.gameHubAuth && window.gameHubAuth.openAuthModal && window.gameHubAuth.openAuthModal()">Sign In</button>'
+                    : '<p><a href="index.html" style="color: var(--accent);">Go to Game Hub</a> to sign in, then return here.</p>');
+                return;
+            }
+
+            if (!window.gameHubFirebase || !window.gameHubFirebase.db) {
+                content.innerHTML = '<p>Database not ready.</p>';
+                return;
+            }
+
+            content.innerHTML = `
+                <button onclick="createOnlineMatch()">Create match</button>
+                <button onclick="showJoinMatchList()">Join a match</button>
+                <div id="join-match-list" style="display:none; margin-top: 12px;">
+                    <p>Available matches:</p>
+                    <ul class="match-list" id="match-list-el"></ul>
+                    <button onclick="showJoinMatchList()">Refresh</button>
+                </div>
+            `;
+        }
+
+        function createOnlineMatch() {
+            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
+            if (!user || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const db = window.gameHubFirebase.db;
+            const displayName = user.displayName || (user.email || '').split('@')[0] || 'Player';
+            const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const ref = db.collection('tictactoe_matches').doc(matchId);
+            ref.set({
+                creatorId: user.uid,
+                creatorName: displayName,
+                opponentId: null,
+                opponentName: null,
+                board: ['', '', '', '', '', '', '', '', ''],
+                turn: 'X',
+                status: 'waiting',
+                winner: null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                onlineMatchId = matchId;
+                onlineRole = 'X';
+                listenToMatch(ref);
+                document.getElementById('online-lobby-content').innerHTML = `
+                    <p>Waiting for opponent...</p>
+                    <p>Share this link: <input type="text" id="match-link" readonly value="${window.location.origin + window.location.pathname + '?join=' + matchId}" onclick="this.select()" /></p>
+                    <p class="online-status">Or they can click "Join a match" and pick yours.</p>
+                `;
+            }).catch(e => {
+                alert('Failed to create match: ' + (e.message || e));
+            });
+        }
+
+        function showJoinMatchList() {
+            const db = window.gameHubFirebase.db;
+            const listEl = document.getElementById('match-list-el');
+            const listDiv = document.getElementById('join-match-list');
+            if (!listEl || !listDiv) return;
+            listDiv.style.display = 'block';
+            listEl.innerHTML = '<li style="cursor:default;">Loading...</li>';
+            db.collection('tictactoe_matches')
+                .where('status', '==', 'waiting')
+                .limit(15)
+                .get()
+                .then(snap => {
+                    listEl.innerHTML = '';
+                    if (snap.empty) {
+                        listEl.innerHTML = '<li style="cursor:default;">No matches waiting. Create one!</li>';
+                        return;
+                    }
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.creatorId === (window.gameHubAuth.getCurrentUser && window.gameHubAuth.getCurrentUser()?.uid)) return;
+                        const li = document.createElement('li');
+                        li.textContent = d.creatorName + ' — ' + doc.id;
+                        li.onclick = () => joinOnlineMatch(doc.id);
+                        listEl.appendChild(li);
+                    });
+                })
+                .catch(e => {
+                    listEl.innerHTML = '<li style="cursor:default;">Error: ' + (e.message || 'list failed') + '</li>';
+                });
+        }
+
+        function joinOnlineMatch(id) {
+            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
+            if (!user || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const db = window.gameHubFirebase.db;
+            const displayName = user.displayName || (user.email || '').split('@')[0] || 'Player';
+            const ref = db.collection('tictactoe_matches').doc(id);
+            ref.get().then(doc => {
+                if (!doc.exists || doc.data().status !== 'waiting' || doc.data().opponentId) {
+                    alert('Match no longer available.');
+                    showJoinMatchList();
+                    return;
+                }
+                return ref.update({
+                    opponentId: user.uid,
+                    opponentName: displayName,
+                    status: 'playing'
+                });
+            }).then(() => {
+                onlineMatchId = id;
+                onlineRole = 'O';
+                listenToMatch(ref);
+                document.getElementById('join-match-list').style.display = 'none';
+                document.getElementById('online-lobby-content').innerHTML = '<p class="online-status">Joined. Your turn when O.</p>';
+            }).catch(e => {
+                alert('Could not join: ' + (e.message || e));
+                showJoinMatchList();
+            });
+        }
+
+        function listenToMatch(ref) {
+            if (onlineUnsubscribe) onlineUnsubscribe();
+            onlineUnsubscribe = ref.onSnapshot(doc => {
+                if (!doc.exists) return;
+                const d = doc.data();
+                board = Array.isArray(d.board) ? [...d.board] : ['', '', '', '', '', '', '', '', ''];
+                currentPlayer = d.turn || 'X';
+                isGameActive = d.status === 'playing';
+                for (let i = 0; i < 9; i++) {
+                    cells[i].textContent = board[i];
+                    cells[i].className = 'cell' + (board[i] ? ' ' + board[i].toLowerCase() : '');
+                }
+                turnDisplay.textContent = d.status === 'finished' ? (d.winner ? d.winner + ' wins!' : 'Draw!') : (currentPlayer + "'s Turn");
+                if (d.status === 'finished') {
+                    statusDisplay.textContent = d.winner ? d.winner + ' Wins!' : 'Draw!';
+                    statusDisplay.classList.add('show-status');
+                    setTimeout(() => { statusDisplay.classList.remove('show-status'); }, 3000);
+                }
+            });
+        }
+
+        function makeOnlineMove(index) {
+            if (board[index] !== '' || !onlineMatchId || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const mySymbol = onlineRole;
+            if (currentPlayer !== mySymbol) return;
+            const newBoard = [...board];
+            newBoard[index] = mySymbol;
+            const nextTurn = mySymbol === 'X' ? 'O' : 'X';
+            const winConditions = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            const won = winConditions.some(c => c.every(i => newBoard[i] === mySymbol));
+            const draw = !won && !newBoard.includes('');
+            const ref = window.gameHubFirebase.db.collection('tictactoe_matches').doc(onlineMatchId);
+            const update = {
+                board: newBoard,
+                turn: nextTurn
+            };
+            if (won || draw) {
+                update.status = 'finished';
+                update.winner = won ? mySymbol : 'draw';
+            }
+            ref.update(update).catch(e => alert('Move failed: ' + (e.message || e)));
+        }
+
+        (function checkJoinFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const joinId = params.get('join');
+            if (joinId && window.gameHubFirebase && window.gameHubFirebase.db) {
+                difficulty.value = 'online';
+                document.getElementById('online-lobby').style.display = 'block';
+                document.getElementById('btn-reset').textContent = 'Leave match';
+                renderOnlineLobby();
+                setTimeout(() => {
+                    const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
+                    if (user) joinOnlineMatch(joinId.toUpperCase());
+                    else document.getElementById('online-lobby-content').innerHTML = '<p>Sign in first.</p><p><a href="index.html" style="color: var(--accent);">Go to Game Hub to sign in</a>, then refresh this page.</p>';
+                }, 500);
+            }
+        })();
+
         updateLabels();
     </script>
 </body>
