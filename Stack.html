@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Stack Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            font-family: 'Poppins', sans-serif;
+            touch-action: none;
+            transition: background-color 0.5s ease;
+        }
+
+        /* Glassmorphism UI */
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 40px;
+            font-size: 80px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            pointer-events: auto;
+        }
+
+        h1 { margin: 0 0 10px 0; color: white; font-size: 48px; }
+        p { color: #ddd; font-size: 18px; margin-bottom: 30px; }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 25px rgba(79, 172, 254, 0.6);
+        }
+
+        button:active { transform: translateY(1px); }
+
+        #main-menu, #game-over { display: flex; }
+        #game-over { display: none; }
+        
+        .hidden { display: none !important; }
+        
+        /* Combo Text */
+        #combo-text {
+            position: absolute;
+            top: 130px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd700;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            text-shadow: 0px 2px 10px rgba(255, 215, 0, 0.5);
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <div id="score-display" class="hidden">0</div>
+        <div id="combo-text">PERFECT!</div>
+
+        <div id="main-menu" class="panel">
+            <h1>STACK 3D</h1>
+            <p>Tap to drop the blocks.</p>
+            <button onclick="startGame()">PLAY NOW</button>
+        </div>
+
+        <div id="game-over" class="panel">
+            <h1>GAME OVER</h1>
+            <p>Final Score: <span id="final-score" style="font-weight: bold; color: white;">0</span></p>
+            <button onclick="startGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if (type === 'drop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'perfect') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'gameover') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        // --- GAME VARIABLES ---
+        let scene, camera, renderer;
+        let stack = [];
+        let overhangs = [];
+        let particles = [];
+        const boxHeight = 1;
+        const originalBoxSize = 3;
+        let gameEnded = true;
+        let currentScore = 0;
+        let speed = 0.12;
+        let hue = Math.random() * 360;
+
+        // --- SETUP SCENE ---
+        function init() {
+            scene = new THREE.Scene();
+            // Optional subtle fog for depth
+            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.02);
+            
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 12;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100);
+            camera.position.set(10, 10, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Enable Shadows
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Upgraded Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.left = -15;
+            dirLight.shadow.camera.right = 15;
+            dirLight.shadow.camera.top = 15;
+            dirLight.shadow.camera.bottom = -15;
+            scene.add(dirLight);
+
+            animate();
+        }
+
+        function updateBackground() {
+            hue = (hue + 15) % 360;
+            document.body.style.backgroundColor = `hsl(${hue}, 40%, 15%)`;
+            scene.fog.color.setHSL(hue / 360, 0.4, 0.15);
+        }
+
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // UI Resets
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('score-display').classList.remove('hidden');
+            currentScore = 0;
+            updateScoreText();
+
+            // Clear Scene
+            stack.forEach(b => scene.remove(b.mesh));
+            overhangs.forEach(o => scene.remove(o));
+            particles.forEach(p => scene.remove(p.mesh));
+            stack = [];
+            overhangs = [];
+            particles = [];
+            speed = 0.12;
+            gameEnded = false;
+            camera.position.set(10, 10, 10);
+            updateBackground();
+
+            // Setup Foundation
+            addLayer(0, 0, originalBoxSize, originalBoxSize, 'x');
+            addLayer(-10, 0, originalBoxSize, originalBoxSize, 'x');
+        }
+
+        // --- BOX GENERATION ---
+        function addLayer(x, z, width, depth, direction) {
+            const y = boxHeight * stack.length;
+            const geometry = new THREE.BoxGeometry(width, boxHeight, depth);
+            
+            const color = new THREE.Color(`hsl(${hue + stack.length * 5}, 80%, 60%)`);
+            // Upgraded Material
+            const material = new THREE.MeshStandardMaterial({ 
+                color: color,
+                roughness: 0.2,
+                metalness: 0.1
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            
+            stack.push({ mesh, width, depth, direction });
+        }
+
+        // --- PARTICLE SYSTEM ---
+        function spawnParticles(x, y, z, color) {
+            const particleCount = 15;
+            const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const material = new THREE.MeshStandardMaterial({ color: color });
+
+            for (let i = 0; i < particleCount; i++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x + (Math.random() - 0.5), y, z + (Math.random() - 0.5));
+                scene.add(mesh);
+                particles.push({
+                    mesh: mesh,
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.4,
+                        Math.random() * 0.4 + 0.2,
+                        (Math.random() - 0.5) * 0.4
+                    ),
+                    life: 1.0
+                });
+            }
+        }
+
+        // --- CORE GAME LOGIC ---
+        window.addEventListener('mousedown', placeBlock);
+        window.addEventListener('touchstart', (e) => {
+            if(e.target.tagName !== 'BUTTON') placeBlock(); 
+        });
+
+        function showPerfectCombo() {
+            const comboText = document.getElementById('combo-text');
+            comboText.style.opacity = '1';
+            comboText.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                comboText.style.opacity = '0';
+                comboText.style.transform = 'translateY(0px)';
+            }, 600);
+        }
+
+        function updateScoreText() {
+            const scoreEl = document.getElementById('score-display');
+            scoreEl.innerText = currentScore;
+            // Pop animation
+            scoreEl.style.transform = 'scale(1.3)';
+            setTimeout(() => scoreEl.style.transform = 'scale(1)', 100);
+        }
+
+        function placeBlock() {
+            if (gameEnded) return;
+
+            const topLayer = stack[stack.length - 1];
+            const previousLayer = stack[stack.length - 2];
+
+            const direction = topLayer.direction;
+            const size = direction === 'x' ? topLayer.width : topLayer.depth;
+            const delta = topLayer.mesh.position[direction] - previousLayer.mesh.position[direction];
+            const overhangSize = Math.abs(delta);
+            
+            // Tolerance for a "Perfect" drop
+            const tolerance = 0.15;
+            let overlap = size - overhangSize;
+
+            if (overhangSize < tolerance) {
+                // PERFECT MATCH
+                playSound('perfect');
+                showPerfectCombo();
+                spawnParticles(topLayer.mesh.position.x, topLayer.mesh.position.y, topLayer.mesh.position.z, topLayer.mesh.material.color);
+                
+                // Snap to exact center
+                topLayer.mesh.position[direction] = previousLayer.mesh.position[direction];
+                overlap = size; 
+            } else if (overlap > 0) {
+                // REGULAR SLICE
+                playSound('drop');
+                const newWidth = direction === 'x' ? overlap : topLayer.width;
+                const newDepth = direction === 'z' ? overlap : topLayer.depth;
+
+                topLayer.width = newWidth;
+                topLayer.depth = newDepth;
+                topLayer.mesh.scale[direction] = overlap / size;
+                topLayer.mesh.position[direction] -= delta / 2;
+
+                const overhangShift = (overlap / 2 + overhangSize / 2) * Math.sign(delta);
+                const overhangX = direction === 'x' ? topLayer.mesh.position.x + overhangShift : topLayer.mesh.position.x;
+                const overhangZ = direction === 'z' ? topLayer.mesh.position.z + overhangShift : topLayer.mesh.position.z;
+                const overhangW = direction === 'x' ? overhangSize : newWidth;
+                const overhangD = direction === 'z' ? overhangSize : newDepth;
+
+                createOverhang(overhangX, topLayer.mesh.position.y, overhangZ, overhangW, overhangD, topLayer.mesh.material);
+            }
+
+            if (overlap > 0) {
+                // SUCCESS
+                currentScore++;
+                updateScoreText();
+                updateBackground();
+                speed += 0.003; 
+
+                const nextDirection = direction === 'x' ? 'z' : 'x';
+                const nextX = nextDirection === 'x' ? -12 : topLayer.mesh.position.x;
+                const nextZ = nextDirection === 'z' ? -12 : topLayer.mesh.position.z;
+                
+                addLayer(nextX, nextZ, topLayer.width, topLayer.depth, nextDirection);
+                
+                // Move camera up smoothly
+                camera.position.y += boxHeight;
+            } else {
+                // FAIL / GAME OVER
+                playSound('gameover');
+                gameEnded = true;
+                topLayer.mesh.material.transparent = true;
+                topLayer.mesh.material.opacity = 0.5; 
+                
+                // Add physics to the failing block so it drops
+                overhangs.push(topLayer.mesh);
+                
+                document.getElementById('final-score').innerText = currentScore;
+                document.getElementById('score-display').classList.add('hidden');
+                
+                setTimeout(() => {
+                    document.getElementById('game-over').style.display = 'flex';
+                }, 1000);
+            }
+        }
+
+        function createOverhang(x, y, z, width, depth, material) {
+            const geometry = new THREE.BoxGeometry(width, boxHeight, depth);
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            overhangs.push(mesh);
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!gameEnded && stack.length > 1) {
+                const topLayer = stack[stack.length - 1];
+                topLayer.mesh.position[topLayer.direction] += speed;
+
+                if (topLayer.mesh.position[topLayer.direction] > 15 || topLayer.mesh.position[topLayer.direction] < -15) {
+                    speed = -speed;
+                }
+            }
+
+            // Overhangs Gravity
+            for (let i = 0; i < overhangs.length; i++) {
+                overhangs[i].position.y -= 0.2;
+                overhangs[i].rotation.x += 0.03;
+                overhangs[i].rotation.y += 0.03;
+                
+                if (overhangs[i].position.y < camera.position.y - 20) {
+                    scene.remove(overhangs[i]);
+                    overhangs.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Particle Physics
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.mesh.position.add(p.velocity);
+                p.velocity.y -= 0.02; // Gravity
+                p.mesh.rotation.x += 0.1;
+                p.mesh.rotation.y += 0.1;
+                p.life -= 0.02;
+                
+                // Fade out
+                p.mesh.material.transparent = true;
+                p.mesh.material.opacity = p.life;
+
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 12;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
