@@ -40,10 +40,19 @@
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
 
-        /* --- TITLE SCREEN --- */
-        #title-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, #012cbd, #0088ff, #012cbd); background-size: 400% 400%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; animation: oceanWave 10s ease infinite; }
+        /* --- TITLE SCREEN (UPGRADED) --- */
+        #title-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #000428, #004e92, #000428); background-size: 300% 300%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; animation: oceanWave 12s ease infinite; overflow: hidden; }
         @keyframes oceanWave { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
-        .title-logo { font-size: 48px; font-weight: 900; color: var(--gold); text-shadow: 0 4px 10px rgba(0,0,0,0.8), 2px 2px 0 #000, -1px -1px 0 #000; text-align: center; margin-bottom: 50px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .sunburst { position: absolute; top: 50%; left: 50%; width: 600px; height: 600px; margin-top: -300px; margin-left: -300px; background: repeating-conic-gradient(from 0deg, rgba(255, 202, 40, 0.1) 0deg 15deg, transparent 15deg 30deg); animation: spin 20s linear infinite; z-index: 0; pointer-events: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .title-logo { font-size: 54px; font-weight: 900; color: var(--gold); text-shadow: 0 8px 15px rgba(0,0,0,0.8), 3px 3px 0 #000, -1px -1px 0 #000; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; z-index: 1; animation: floatLogo 3s ease-in-out infinite; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        
+        .start-btn-invisible { position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; border: none; z-index: 10; cursor: pointer; }
+        .tap-to-start { z-index: 1; color: white; font-size: 20px; font-weight: bold; letter-spacing: 4px; animation: pulseText 1.5s infinite; text-shadow: 2px 2px 4px #000; margin-top: 40px; }
+        @keyframes pulseText { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.05); } }
 
         /* --- HEADER & NAV --- */
         header { background: linear-gradient(to bottom, var(--wood-mid), var(--wood-dark)); color: var(--gold); padding: 12px 15px; display: flex; flex-direction: column; border-bottom: 4px solid var(--gold-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
@@ -93,13 +102,12 @@
         .char-card.equipped { filter: brightness(0.7); }
         .level-badge { background: linear-gradient(to bottom, #4fc3f7, var(--xp-blue)); color: #000; border-radius: 4px; padding: 2px 5px; font-size: 10px; font-weight: bold; margin-top: 2px; display: inline-block; border: 1px solid #fff;}
 
-        /* --- DOCK (SHIP UPGRADES) --- */
+        /* --- DOCK & VOYAGE & MODAL (Same structural CSS, keeping it clean) --- */
         .ship-display { height: 150px; background: linear-gradient(to bottom, #81d4fa, #0277bd); border-radius: 12px; border: 3px solid var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 60px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
         .wave-bg { position: absolute; bottom: -10px; width: 200%; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: drift 4s infinite linear; }
         @keyframes drift { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .stat-panel { background: rgba(0,0,0,0.6); border: 1px solid #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; color: white; }
 
-        /* --- VOYAGE (COMBAT) --- */
         .combat-arena { background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.9)); border-radius: 12px; border: 2px solid var(--wood-light); padding: 15px; margin-bottom: 15px; color: white; text-align: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .clash-view { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid #444; }
         .clash-side { width: 40%; display: flex; flex-direction: column; align-items: center; }
@@ -113,7 +121,6 @@
         .hp-fill { height: 100%; background: linear-gradient(to right, #2e7d32, var(--hp-green)); width: 100%; transition: width 0.3s ease-out; }
         .hp-text { position: absolute; width: 100%; text-align: center; top: 2px; left: 0; font-size: 12px; font-weight: bold; line-height: 16px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; }
 
-        /* Animations */
         @keyframes bumpRight { 0% { transform: translateX(0); } 50% { transform: translateX(30px) scale(1.1); } 100% { transform: translateX(0); } }
         @keyframes bumpLeft { 0% { transform: translateX(0); } 50% { transform: translateX(-30px) scale(1.1); } 100% { transform: translateX(0); } }
         @keyframes flashRed { 0% { filter: brightness(1); } 50% { filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5); transform: translateX(-5px); } 100% { filter: brightness(1); transform: translateX(0); } }
@@ -128,7 +135,6 @@
         .log-entry { animation: fadeIn 0.2s ease-in; border-bottom: 1px dotted #333; padding-bottom: 4px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- CHARACTER MODAL --- */
         #char-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); z-index: 200; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
         .modal-content { border-radius: 12px; width: 100%; max-width: 350px; padding: 20px; color: var(--text-light); position: relative; text-align: center; animation: popIn 0.2s ease-out; }
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -161,8 +167,10 @@
         <div id="toast-container"></div>
 
         <div id="title-screen">
-            <div class="title-logo">For Piece<br><span style="font-size:20px; color: white; text-shadow: none;">WEB VOYAGE</span></div>
-            <button class="start-btn" onclick="startGame()">PRESS START</button>
+            <div class="sunburst"></div>
+            <div class="title-logo">For Piece<br><span style="font-size:24px; color: white; text-shadow: 2px 2px 4px #000;">GRAND VOYAGE</span></div>
+            <div class="tap-to-start">TAP TO START</div>
+            <button class="start-btn-invisible" onclick="startGame()"></button>
         </div>
 
         <header id="main-header" style="display: none;">
@@ -185,7 +193,7 @@
             <div class="gacha-panel wood-texture">
                 <div class="gacha-glow">🍺</div>
                 <h2 style="margin:0 0 10px 0; font-size: 26px; text-shadow: 2px 2px 4px #000, 0 0 10px var(--gold);">Pirate Tavern</h2>
-                <p style="color: #ddd; margin-bottom: 20px; font-size: 14px;">Recruit powerful allies to your crew!</p>
+                <p id="tavern-hint" style="color: #ddd; margin-bottom: 20px; font-size: 14px; min-height: 40px;">Recruit powerful allies! Beat Stage 4 to unlock Grand Line characters.</p>
                 <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #555;">
                     Cost: <strong style="color:var(--xp-blue); font-size: 18px;">300 💎</strong>
                 </div>
@@ -197,8 +205,7 @@
 
         <section id="view-crew" class="view-section">
             <h3 style="color: var(--gold); text-align: center; margin: 0 0 10px 0; text-shadow: 1px 1px 4px #000; font-size: 20px;">Active Formation</h3>
-            <div class="formation-container" id="team-ui">
-                </div>
+            <div class="formation-container" id="team-ui"></div>
             
             <div class="filter-bar">
                 <button class="filter-btn active" onclick="setFilter(0, this)">All</button>
@@ -212,12 +219,7 @@
 
         <section id="view-dock" class="view-section">
             <h2 style="color: var(--gold); text-align: center; margin-top: 0; text-shadow: 2px 2px 4px #000;">Shipyard</h2>
-            
-            <div class="ship-display">
-                <div class="wave-bg"></div>
-                ⛵
-            </div>
-
+            <div class="ship-display"><div class="wave-bg"></div>⛵</div>
             <div class="stat-panel wood-texture">
                 <h3 style="margin: 0 0 10px 0; color: var(--xp-blue);">Ship Level: <span id="ui-ship-level">1</span></h3>
                 <p style="margin: 5px 0; font-size: 14px;">Current Buff: <strong style="color: var(--success);">+<span id="ui-ship-buff">5</span>% All Stats</strong></p>
@@ -230,7 +232,6 @@
 
         <section id="view-voyage" class="view-section">
             <h2 id="stage-title" style="color: var(--gold); text-align: center; margin-top: 0; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255,202,40,0.5);">Stage 1: Dawn Island</h2>
-            
             <div class="combat-arena wood-texture">
                 <div class="clash-view">
                     <div class="clash-side" id="clash-player-side">
@@ -241,9 +242,7 @@
                             <div class="hp-text"><span id="player-hp-text">0/0</span></div>
                         </div>
                     </div>
-
                     <div class="vs-text">VS</div>
-
                     <div class="clash-side" id="clash-enemy-side">
                         <div class="enemy-sprite" id="clash-enemy-sprite">☠️</div>
                         <h4 id="enemy-name" style="margin: 5px 0; color: var(--danger); text-shadow: 1px 1px 0 #000;">Bandit</h4>
@@ -293,13 +292,13 @@
                 </div>
                 
                 <button id="modal-equip-btn" class="btn-equip add" onclick="toggleEquip()">Add to Team</button>
-                <button class="btn-retire" onclick="retireCharacter()">💰 Retire Character (Get Gems/Meat)</button>
+                <button class="btn-retire" onclick="retireCharacter()">💰 Retire Character</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. GAME STATE & DB ---
+        // --- 1. GAME STATE & EXPANDED DB ---
         let gems = 3000, meat = 0, wood = 0;
         let unclaimedMeat = 0;
         let inventory = [], playerItems = [], activeTeamUids = [];
@@ -310,29 +309,50 @@
         let isBattling = false, isPulling = false;
         let battleInterval;
 
+        // NEW: Characters now have an unlockStage property.
+        // Stage 0-3 = East Blue. Stage 4+ = Grand Line.
         const characters = [
-            { id: 1, name: "Monkey D. Luffy", rarity: 5, emoji: "👒", skill: "Gomu Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30 },
-            { id: 2, name: "Roronoa Zoro", rarity: 5, emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35 },
-            { id: 3, name: "Dracule Mihawk", rarity: 5, emoji: "🗡️", skill: "Black Blade Strike!", baseHp: 1300, baseAtk: 400, hpGrowth: 130, atkGrowth: 40 },
-            { id: 4, name: "Shanks", rarity: 5, emoji: "👑", skill: "Conqueror's Haki!", baseHp: 1800, baseAtk: 380, hpGrowth: 180, atkGrowth: 38 },
-            { id: 5, name: "Smoker", rarity: 4, emoji: "💨", skill: "White Blow!", baseHp: 1200, baseAtk: 200, hpGrowth: 100, atkGrowth: 20 },
-            { id: 6, name: "Arlong", rarity: 4, emoji: "🦈", skill: "Shark on Tooth!", baseHp: 1300, baseAtk: 220, hpGrowth: 110, atkGrowth: 22 },
-            { id: 7, name: "Nami", rarity: 4, emoji: "🌩️", skill: "Thunderbolt Tempo!", baseHp: 900, baseAtk: 180, hpGrowth: 80, atkGrowth: 18 },
-            { id: 9, name: "Marine Grunt", rarity: 3, emoji: "⚓", skill: "Rifle Volley!", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8 }
+            // East Blue Roster
+            { id: 1, name: "Monkey D. Luffy", rarity: 5, emoji: "👒", skill: "Gomu Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
+            { id: 2, name: "Roronoa Zoro", rarity: 5, emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
+            { id: 3, name: "Dracule Mihawk", rarity: 5, emoji: "🗡️", skill: "Black Blade Strike!", baseHp: 1300, baseAtk: 400, hpGrowth: 130, atkGrowth: 40, unlockStage: 0 },
+            { id: 4, name: "Shanks", rarity: 5, emoji: "👑", skill: "Conqueror's Haki!", baseHp: 1800, baseAtk: 380, hpGrowth: 180, atkGrowth: 38, unlockStage: 0 },
+            { id: 5, name: "Smoker", rarity: 4, emoji: "💨", skill: "White Blow!", baseHp: 1200, baseAtk: 200, hpGrowth: 100, atkGrowth: 20, unlockStage: 0 },
+            { id: 6, name: "Arlong", rarity: 4, emoji: "🦈", skill: "Shark on Tooth!", baseHp: 1300, baseAtk: 220, hpGrowth: 110, atkGrowth: 22, unlockStage: 0 },
+            { id: 7, name: "Nami", rarity: 4, emoji: "🌩️", skill: "Thunderbolt Tempo!", baseHp: 900, baseAtk: 180, hpGrowth: 80, atkGrowth: 18, unlockStage: 0 },
+            { id: 9, name: "Marine Grunt", rarity: 3, emoji: "⚓", skill: "Rifle Volley!", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8, unlockStage: 0 },
+            
+            // Grand Line Roster (Unlocks after stage 3)
+            { id: 10, name: "Nico Robin", rarity: 5, emoji: "🌸", skill: "Seis Fleur!", baseHp: 1600, baseAtk: 420, hpGrowth: 160, atkGrowth: 45, unlockStage: 4 },
+            { id: 11, name: "Sir Crocodile", rarity: 5, emoji: "🐊", skill: "Desert Spada!", baseHp: 1700, baseAtk: 450, hpGrowth: 170, atkGrowth: 50, unlockStage: 4 },
+            { id: 12, name: "Tony Tony Chopper", rarity: 4, emoji: "🦌", skill: "Heavy Point!", baseHp: 1400, baseAtk: 250, hpGrowth: 140, atkGrowth: 25, unlockStage: 4 },
+            { id: 13, name: "Mr. 2 Bon Clay", rarity: 4, emoji: "🦢", skill: "Swan Arabesque!", baseHp: 1350, baseAtk: 260, hpGrowth: 135, atkGrowth: 26, unlockStage: 4 },
+            { id: 14, name: "Baroque Agent", rarity: 3, emoji: "🕴️", skill: "Sneak Attack!", baseHp: 800, baseAtk: 120, hpGrowth: 70, atkGrowth: 12, unlockStage: 4 }
         ];
 
+        // NEW: Expanded Campaign
         const enemies = [
+            // East Blue (Indices 0 - 3)
             { name: "Mountain Bandit Boss", hp: 1000, maxHp: 1000, atk: 100, rewardGems: 100, rewardMeat: 50, rewardWood: 20, stageName: "Stage 1: Dawn Island" },
             { name: "Axe-Hand Captain", hp: 3500, maxHp: 3500, atk: 180, rewardGems: 200, rewardMeat: 100, rewardWood: 50, stageName: "Stage 2: Shells Town" },
             { name: "Clown Pirate Captain", hp: 8000, maxHp: 8000, atk: 280, rewardGems: 300, rewardMeat: 150, rewardWood: 100, stageName: "Stage 3: Orange Town" },
-            { name: "Fishman Boss", hp: 15000, maxHp: 15000, atk: 450, rewardGems: 500, rewardMeat: 250, rewardWood: 200, stageName: "Stage 4: Arlong Park" }
+            { name: "Fishman Boss", hp: 15000, maxHp: 15000, atk: 450, rewardGems: 500, rewardMeat: 250, rewardWood: 200, stageName: "Stage 4: Arlong Park" },
+            
+            // Grand Line (Indices 4 - 7)
+            { name: "White Hunter", hp: 35000, maxHp: 35000, atk: 700, rewardGems: 800, rewardMeat: 400, rewardWood: 400, stageName: "Stage 5: Loguetown" },
+            { name: "Bounty Hunters", hp: 60000, maxHp: 60000, atk: 1100, rewardGems: 1200, rewardMeat: 600, rewardWood: 600, stageName: "Stage 6: Whiskey Peak" },
+            { name: "Tin Tyrant", hp: 90000, maxHp: 90000, atk: 1600, rewardGems: 1800, rewardMeat: 900, rewardWood: 900, stageName: "Stage 7: Drum Island" },
+            { name: "Desert King", hp: 150000, maxHp: 150000, atk: 2500, rewardGems: 3000, rewardMeat: 1500, rewardWood: 1500, stageName: "Stage 8: Alabasta" }
         ];
 
+        // NEW: Expanded Loot
         const lootPool = [
-            { id: 101, name: "Rusty Cutlass", atkBonus: 20 },
-            { id: 102, name: "Iron Mace", atkBonus: 35 },
-            { id: 103, name: "Marine Rifle", atkBonus: 50 },
-            { id: 104, name: "Captain's Coat", atkBonus: 80 }
+            { id: 101, name: "Rusty Cutlass", atkBonus: 20, minStage: 0 },
+            { id: 102, name: "Iron Mace", atkBonus: 35, minStage: 0 },
+            { id: 103, name: "Marine Rifle", atkBonus: 50, minStage: 1 },
+            { id: 104, name: "Captain's Coat", atkBonus: 80, minStage: 2 },
+            { id: 105, name: "Seastone Jitte", atkBonus: 150, minStage: 4 },
+            { id: 106, name: "Golden Hook", atkBonus: 300, minStage: 6 }
         ];
 
         // --- 2. SAVE SYSTEM ---
@@ -355,7 +375,7 @@
         }
 
         function clearSave() {
-            if(confirm("Are you sure you want to delete all progress? This cannot be undone!")) { localStorage.removeItem('forPieceSave'); location.reload(); }
+            if(confirm("Delete all progress? This cannot be undone!")) { localStorage.removeItem('forPieceSave'); location.reload(); }
         }
 
         loadGame(); setInterval(saveGame, 10000); 
@@ -368,7 +388,7 @@
             container.appendChild(toast); setTimeout(() => toast.remove(), 2500);
         }
 
-        setInterval(() => unclaimedMeat += 2, 1000);
+        setInterval(() => unclaimedMeat += (2 + shipLevel), 1000); // Idle meat scales with ship!
 
         function claimIdleLoot() {
             if (unclaimedMeat === 0) { showToast("No loot to claim yet!"); return; }
@@ -380,7 +400,7 @@
             document.getElementById('title-screen').style.display = 'none';
             document.getElementById('main-header').style.display = 'flex';
             document.getElementById('main-nav').style.display = 'flex';
-            updateHeader(); calculatePowerLevel(); updateDockUI();
+            updateHeader(); calculatePowerLevel(); updateDockUI(); updateTavernUI();
         }
 
         function switchTab(tabName, btnElement) {
@@ -388,15 +408,11 @@
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
             
-            // Re-trigger animation
             const targetView = document.getElementById('view-' + tabName);
-            targetView.style.animation = 'none';
-            targetView.offsetHeight; /* trigger reflow */
-            targetView.style.animation = null; 
-            targetView.classList.add('active-view');
+            targetView.style.animation = 'none'; targetView.offsetHeight; targetView.style.animation = null; 
+            targetView.classList.add('active-view'); btnElement.classList.add('active');
             
-            btnElement.classList.add('active');
-            
+            if(tabName === 'tavern') { updateTavernUI(); }
             if(tabName === 'crew') { renderInventory(); renderTeam(); }
             if(tabName === 'voyage') { renderVoyageScreen(); }
             if(tabName === 'dock') { updateDockUI(); }
@@ -408,8 +424,8 @@
             document.getElementById('wood-count').innerText = wood;
         }
 
-        // --- 4. SHIP UPGRADES (THE DOCK) ---
-        function getShipBuffMultiplier() { return 1 + (shipLevel * 0.05); } // 5% per level
+        // --- 4. SHIP UPGRADES ---
+        function getShipBuffMultiplier() { return 1 + (shipLevel * 0.05); } 
         function getShipCost() { return shipLevel * 100; }
 
         function updateDockUI() {
@@ -423,12 +439,21 @@
             const cost = getShipCost();
             if (wood >= cost) {
                 wood -= cost; shipLevel++;
-                showToast(`Ship upgraded to Level ${shipLevel}! (+${shipLevel*5}% Stats)`);
+                showToast(`Ship upgraded to Level ${shipLevel}!`);
                 updateHeader(); updateDockUI(); calculatePowerLevel(); saveGame();
             }
         }
 
-        // --- 5. GACHA ---
+        // --- 5. GACHA (PROGRESSION GATED) ---
+        function updateTavernUI() {
+            const hint = document.getElementById('tavern-hint');
+            if (currentStage >= 4) {
+                hint.innerHTML = '<span style="color:var(--success); font-weight:bold;">🌊 GRAND LINE UNLOCKED!</span><br>New characters added to the pool!';
+            } else {
+                hint.innerText = "Recruit powerful allies! Beat Stage 4 to unlock Grand Line characters.";
+            }
+        }
+
         function pullGacha() {
             if (gems < 300) { showToast("Not enough Gems!"); return; }
             if (isPulling) return;
@@ -438,22 +463,28 @@
             const resultDiv = document.getElementById('pull-result');
             btn.disabled = true; resultDiv.className = "slot-animation";
             
+            // Generate pool based on unlocked stages
+            const availableChars = characters.filter(c => c.unlockStage <= currentStage);
+            
             let ticks = 0;
             const slotInterval = setInterval(() => {
-                const randomName = characters[Math.floor(Math.random() * characters.length)].name;
+                const randomName = availableChars[Math.floor(Math.random() * availableChars.length)].name;
                 resultDiv.innerText = `Summoning...\n${randomName}`;
                 ticks++;
-                if (ticks > 15) { clearInterval(slotInterval); finalizePull(resultDiv, btn); }
+                if (ticks > 15) { clearInterval(slotInterval); finalizePull(resultDiv, btn, availableChars); }
             }, 100);
         }
 
-        function finalizePull(resultDiv, btn) {
+        function finalizePull(resultDiv, btn, availableChars) {
             resultDiv.className = "";
             const roll = Math.floor(Math.random() * 100) + 1;
             let pulledRarity = roll <= 5 ? 5 : (roll <= 30 ? 4 : 3);
-            const pool = characters.filter(c => c.rarity === pulledRarity);
-            const pulledBase = pool[Math.floor(Math.random() * pool.length)];
             
+            let pool = availableChars.filter(c => c.rarity === pulledRarity);
+            // Fallback if rarity pool is empty (shouldn't happen with our data, but safe)
+            if (pool.length === 0) pool = availableChars.filter(c => c.rarity === 3); 
+            
+            const pulledBase = pool[Math.floor(Math.random() * pool.length)];
             const pulledInstance = { ...pulledBase, uid: globalUidCounter++, level: 1, hp: pulledBase.baseHp, atk: pulledBase.baseAtk, equippedItemUid: null };
             inventory.push(pulledInstance);
             
@@ -490,8 +521,7 @@
         function retireCharacter() {
             const char = inventory.find(c => c.uid === currentlyViewedUid);
             if (!char) return;
-            if (confirm(`Retire ${char.name}? You will get 100 💎 and 50 🍖. Items will be unequipped.`)) {
-                // Unequip item naturally (it stays in playerItems array)
+            if (confirm(`Retire ${char.name}? You will get 100 💎 and 50 🍖.`)) {
                 activeTeamUids = activeTeamUids.filter(id => id !== currentlyViewedUid);
                 inventory = inventory.filter(c => c.uid !== currentlyViewedUid);
                 gems += 100; meat += 50;
@@ -500,7 +530,6 @@
             }
         }
 
-        // SHIP BUFFS APPLIED HERE
         function getCharTotalAtk(char) {
             let total = char.atk;
             if (char.equippedItemUid !== null && char.equippedItemUid !== undefined) {
@@ -548,7 +577,7 @@
         // --- 8. COMBAT & SKILLS ---
         function renderVoyageScreen() {
             if (currentStage >= enemies.length) {
-                document.getElementById('stage-title').innerText = "All Stages Cleared!";
+                document.getElementById('stage-title').innerText = "All Stages Cleared! (For Now...)";
                 document.getElementById('battle-btn').style.display = 'none'; return;
             }
             const enemy = enemies[currentStage]; const playerStats = getPlayerStats();
@@ -574,27 +603,17 @@
 
         function playClashAnimation(attackerId, targetId, attackClass) {
             const attacker = document.getElementById(attackerId); const target = document.getElementById(targetId);
-            attacker.classList.remove('anim-skill'); // Reset skill anim if present
-            void attacker.offsetWidth; // trigger reflow
-            attacker.classList.add(attackClass);
-            setTimeout(() => {
-                target.classList.add('anim-hurt');
-                setTimeout(() => { attacker.classList.remove(attackClass); target.classList.remove('anim-hurt'); }, 400);
-            }, 150);
+            attacker.classList.remove('anim-skill'); void attacker.offsetWidth; attacker.classList.add(attackClass);
+            setTimeout(() => { target.classList.add('anim-hurt'); setTimeout(() => { attacker.classList.remove(attackClass); target.classList.remove('anim-hurt'); }, 400); }, 150);
         }
 
         function startBattle() {
             if (activeTeamUids.length === 0) { showToast("Equip a crew member first!"); return; }
             
-            isBattling = true;
-            document.getElementById('battle-btn').disabled = true; document.getElementById('battle-btn').innerText = "BATTLING...";
+            isBattling = true; document.getElementById('battle-btn').disabled = true; document.getElementById('battle-btn').innerText = "BATTLING...";
             document.getElementById('battle-log').innerHTML = ""; 
 
-            let enemy = { ...enemies[currentStage] }; 
-            let player = getPlayerStats();
-            let turnCounter = 0;
-            
-            // Get lead character for skill name
+            let enemy = { ...enemies[currentStage] }; let player = getPlayerStats(); let turnCounter = 0;
             const leadChar = inventory.find(c => c.uid === activeTeamUids[0]);
 
             logBattle(`Engaging ${enemy.name}!`, "var(--gold)", true);
@@ -624,15 +643,17 @@
                     logBattle(`Loot: ${enemy.rewardGems}💎 | ${enemy.rewardMeat}🍖 | ${enemy.rewardWood}🪵`, "#00e5ff");
                     gems += enemy.rewardGems; meat += enemy.rewardMeat; wood += enemy.rewardWood;
                     
-                    if(Math.random() < 0.3) {
-                        const baseDrop = lootPool[Math.floor(Math.random() * lootPool.length)];
+                    if(Math.random() < 0.4) {
+                        // Filter loot by stage
+                        const availableLoot = lootPool.filter(l => l.minStage <= currentStage);
+                        const baseDrop = availableLoot[Math.floor(Math.random() * availableLoot.length)];
                         const uniqueDrop = { ...baseDrop, uid: itemUidCounter++ }; 
                         playerItems.push(uniqueDrop);
                         logBattle(`🎁 ITEM DROP: ${uniqueDrop.name}!`, "#ff9800", true);
                         showToast(`Found Item: ${uniqueDrop.name}!`);
                     }
 
-                    updateHeader(); currentStage++; saveGame(); endBattle(); return;
+                    currentStage++; updateHeader(); updateTavernUI(); saveGame(); endBattle(); return;
                 }
 
                 setTimeout(() => {
@@ -702,9 +723,7 @@
 
         // --- 10. MODALS ---
         function openModal(uid) {
-            currentlyViewedUid = uid;
-            const char = inventory.find(c => c.uid === uid);
-            
+            currentlyViewedUid = uid; const char = inventory.find(c => c.uid === uid);
             document.getElementById('modal-emoji').innerText = char.emoji;
             document.getElementById('modal-name').innerText = char.name;
             document.getElementById('modal-rarity').innerText = '⭐'.repeat(char.rarity);
@@ -716,7 +735,7 @@
             let bonusText = "";
             if (char.equippedItemUid !== null && char.equippedItemUid !== undefined) {
                 const item = playerItems.find(i => i.uid === char.equippedItemUid);
-                if (item) bonusText = `(Base+Item * Buffs)`;
+                if (item) bonusText = `(+ Weapon/Buffs)`;
             }
             document.getElementById('modal-atk-bonus').innerText = bonusText;
             
