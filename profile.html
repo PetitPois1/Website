@@ -416,6 +416,45 @@
         </section>
      </main>
 
+    <!-- Friend Profile Modal -->
+    <div id="friend-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] hidden">
+        <div class="absolute inset-0" onclick="closeFriendModal()"></div>
+        <div class="relative bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center gap-4">
+                    <div id="modal-friend-avatar" class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-2xl shadow-lg border border-white/5"></div>
+                    <div>
+                        <h2 id="modal-friend-name" class="text-xl font-bold text-white">Friend Name</h2>
+                        <p id="modal-friend-status" class="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Friend
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeFriendModal()" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all">✕</button>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-slate-800/40 p-4 rounded-2xl border border-white/5 text-center">
+                        <p class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-1">Total Currency</p>
+                        <p id="modal-friend-currency" class="text-xl font-bold text-emerald-400">0 🪙</p>
+                    </div>
+                    <div class="bg-slate-800/40 p-4 rounded-2xl border border-white/5 text-center">
+                        <p class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-1">Achievements</p>
+                        <p id="modal-friend-achievements" class="text-xl font-bold text-violet-400">0</p>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold text-slate-300 mb-4 px-1">Recent Achievements</h3>
+                <div id="modal-friend-achievements-list" class="space-y-3">
+                    <!-- Achievement items will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="mt-16 border-t border-slate-900 pt-8 text-center text-slate-500 text-xs">
         <p>Progress and achievements are stored locally when signed out, and synced to your account when signed in.</p>
     </footer>
@@ -778,7 +817,7 @@
                 const info = document.createElement("div");
                 info.className = "flex-1 min-w-0";
                 info.innerHTML = `
-                    <p class="text-xs font-bold text-slate-100 truncate">${data.username || data.email.split('@')[0]}</p>
+                    <p class="text-xs font-bold text-slate-100 truncate">${data.username || "Anonymous Player"}</p>
                     <p class="text-[10px] text-slate-400 truncate">Friend Request</p>
                 `;
 
@@ -849,8 +888,8 @@
                 const info = document.createElement("div");
                 info.className = "flex-1 min-w-0";
                 info.innerHTML = `
-                    <p class="font-bold text-slate-100 truncate">${data.username || data.displayName || data.email.split('@')[0]}</p>
-                    <p class="text-xs text-slate-400 truncate">${data.email}</p>
+                    <p class="font-bold text-slate-100 truncate">${data.username || "Anonymous Player"}</p>
+                    <p class="text-xs text-slate-400 truncate">${data.currency || 0} 🪙</p>
                 `;
                 card.appendChild(info);
 
@@ -864,14 +903,72 @@
             }
 
             function viewFriendProfile(uid, data) {
-                // For now, let's show a simple alert or a basic modal
-                // In a real app, this might navigate or open a detailed modal
-                const message = `
-Friend: ${data.username || data.email}
-Currency: ${data.currency || 0} 🪙
-                `;
-                alert(message + "\n(More detailed friend profiles coming soon!)");
+                const modal = document.getElementById('friend-modal');
+                const nameEl = document.getElementById('modal-friend-name');
+                const avatarEl = document.getElementById('modal-friend-avatar');
+                const currencyEl = document.getElementById('modal-friend-currency');
+                const achievementsCountEl = document.getElementById('modal-friend-achievements');
+                const listEl = document.getElementById('modal-friend-achievements-list');
+
+                nameEl.textContent = data.username || "Anonymous Player";
+                currencyEl.textContent = (data.currency || 0) + " 🪙";
+                
+                if (data.avatar) {
+                    renderAvatarSVG(avatarEl, data.avatar, "w-full h-full");
+                } else {
+                    avatarEl.textContent = (data.username || "?")[0].toUpperCase();
+                }
+
+                modal.classList.remove('hidden');
+                listEl.innerHTML = '<p class="text-xs text-slate-500 italic">Loading achievements...</p>';
+
+                // Fetch friend achievements
+                const db = window.gameHubFirebase.db;
+                
+                // Get high-level stats first
+                db.collection("users").doc(uid).get().then(doc => {
+                    if (doc.exists) {
+                        const d = doc.data();
+                        achievementsCountEl.textContent = d.achievementsCount || 0;
+                    }
+                });
+
+                db.collection("users").doc(uid).collection("achievements").orderBy("unlockedAt", "desc").limit(10).get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        listEl.innerHTML = '<p class="text-xs text-slate-500">No achievements unlocked yet.</p>';
+                        return;
+                    }
+                    listEl.innerHTML = '';
+                    snapshot.forEach(doc => {
+                        const ach = doc.data();
+                        const achId = doc.id;
+                        const date = ach.unlockedAt ? ach.unlockedAt.toDate().toLocaleDateString() : 'Recently';
+                        
+                        const item = document.createElement('div');
+                        item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-white/5";
+                        item.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center text-sm">🏆</div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-100">${achId.replace(/-/g, ' ')}</p>
+                                    <p class="text-[10px] text-slate-500 uppercase">${ach.gameId || 'Game Hub'}</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-500">${date}</span>
+                        `;
+                        listEl.appendChild(item);
+                    });
+                })
+                .catch(err => {
+                    console.error("Error loading friend achievements:", err);
+                    listEl.innerHTML = '<p class="text-xs text-rose-500">Error loading achievements. (Check privacy rules)</p>';
+                });
             }
+
+            window.closeFriendModal = () => {
+                document.getElementById('friend-modal').classList.add('hidden');
+            };
 
             addFriendBtn.onclick = async () => {
                 const searchTerm = friendSearchInput.value.trim();

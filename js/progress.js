@@ -160,7 +160,8 @@
       // Award currency: 10 coins per achievement
       const userRef = db.collection("users").doc(user.uid);
       await userRef.update({
-        currency: firebase.firestore.FieldValue.increment(10)
+        currency: firebase.firestore.FieldValue.increment(10),
+        achievementsCount: firebase.firestore.FieldValue.increment(1)
       });
       console.log("[GameHub] Awarded 10 coins for achievement:", achievementId);
     } catch (e) {
