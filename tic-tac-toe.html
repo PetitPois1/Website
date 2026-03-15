@@ -15,7 +15,7 @@
             --bg: #0f0c29;
             --cell-bg: #1b1b3a;
             --accent: #00f2ff;
-            --x-color: #ff007b;
+            --x-color: #ec4899;
             --o-color: #00f2ff;
             --glass: rgba(255, 255, 255, 0.1);
         }
@@ -144,6 +144,86 @@
         .match-list li { padding: 10px 14px; margin: 4px 0; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
         .match-list li:hover { border-color: var(--accent); }
         .online-status { font-size: 12px; color: #8f8; margin-top: 8px; }
+
+        /* Improved Multiplayer Score UI */
+        .mp-score-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mp-player-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .mp-player-name {
+            font-size: 14px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mp-player-score {
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .mp-vs-badge {
+            background: var(--cell-bg);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .mp-vs-badge::after {
+            content: 'FIRST TO ' attr(data-target);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 8px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .mp-score-card.x-active { border-left: 4px solid var(--x-color); }
+        .mp-score-card.o-active { border-right: 4px solid var(--o-color); }
+
+        .mp-controls-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -167,6 +247,26 @@
     <div id="online-lobby" class="online-lobby" style="display: none;">
         <h3>Online Match</h3>
         <div id="online-lobby-content"></div>
+    </div>
+
+    <div id="multiplayer-status" style="display: none; width: 100%; max-width: 500px;">
+        <div class="mp-score-card" id="mp-score-card">
+            <div class="mp-player-info">
+                <p id="player-x-name" class="mp-player-name">Waiting...</p>
+                <p id="player-x-score" class="mp-player-score" style="color: var(--x-color);">0</p>
+            </div>
+            
+            <div id="mp-vs-badge" class="mp-vs-badge" data-target="3">VS</div>
+
+            <div class="mp-player-info">
+                <p id="player-o-name" class="mp-player-name">Waiting...</p>
+                <p id="player-o-score" class="mp-player-score" style="color: var(--o-color);">0</p>
+            </div>
+        </div>
+        
+        <div id="multiplayer-controls" class="mp-controls-container">
+            <!-- Buttons like Start Game, Rematch will go here -->
+        </div>
     </div>
 
     <div class="board" id="board">
@@ -419,28 +519,43 @@
             const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
             if (!user || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
             const db = window.gameHubFirebase.db;
+            
+            // Ask for target score
+            const targetScore = parseInt(prompt("Enter target score to win (e.g. 3):", "3")) || 3;
+
             const displayName = user.displayName || (user.email || '').split('@')[0] || 'Player';
-            const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const ref = db.collection('tictactoe_matches').doc(matchId);
-            ref.set({
-                creatorId: user.uid,
-                creatorName: displayName,
-                opponentId: null,
-                opponentName: null,
-                board: ['', '', '', '', '', '', '', '', ''],
-                turn: 'X',
-                status: 'waiting',
-                winner: null,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                onlineMatchId = matchId;
-                onlineRole = 'X';
-                listenToMatch(ref);
-                document.getElementById('online-lobby-content').innerHTML = `
-                    <p>Waiting for opponent...</p>
-                    <p>Share this link: <input type="text" id="match-link" readonly value="${window.location.origin + window.location.pathname + '?join=' + matchId}" onclick="this.select()" /></p>
-                    <p class="online-status">Or they can click "Join a match" and pick yours.</p>
-                `;
+            
+            // Try to get username from Firestore if available
+            db.collection("users").doc(user.uid).get().then(doc => {
+                const username = (doc.exists && doc.data().username) ? doc.data().username : displayName;
+                const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const ref = db.collection('tictactoe_matches').doc(matchId);
+                
+                return ref.set({
+                    creatorId: user.uid,
+                    creatorName: username,
+                    opponentId: null,
+                    opponentName: null,
+                    board: ['', '', '', '', '', '', '', '', ''],
+                    turn: 'X',
+                    firstTurn: 'X', // Track who started the round
+                    status: 'waiting',
+                    winner: null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    targetScore: targetScore,
+                    scores: { X: 0, O: 0 },
+                    rematchRequested: { X: false, O: false }
+                }).then(() => {
+                    onlineMatchId = matchId;
+                    onlineRole = 'X';
+                    listenToMatch(ref);
+                    document.getElementById('online-lobby-content').innerHTML = `
+                        <p>Waiting for opponent...</p>
+                        <p>Target Score: <strong>${targetScore}</strong></p>
+                        <p>Share this link: <input type="text" id="match-link" readonly value="${window.location.origin + window.location.pathname + '?join=' + matchId}" onclick="this.select()" /></p>
+                        <p class="online-status">Or they can click "Join a match" and pick yours.</p>
+                    `;
+                });
             }).catch(e => {
                 alert('Failed to create match: ' + (e.message || e));
             });
@@ -467,7 +582,10 @@
                         const d = doc.data();
                         if (d.creatorId === (window.gameHubAuth.getCurrentUser && window.gameHubAuth.getCurrentUser()?.uid)) return;
                         const li = document.createElement('li');
-                        li.textContent = d.creatorName + ' — ' + doc.id;
+                        li.innerHTML = `
+                            <span>${d.creatorName} — ${doc.id}</span>
+                            <span style="font-size: 10px; color: var(--accent);">First to ${d.targetScore || 3}</span>
+                        `;
                         li.onclick = () => joinOnlineMatch(doc.id);
                         listEl.appendChild(li);
                     });
@@ -482,24 +600,29 @@
             if (!user || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
             const db = window.gameHubFirebase.db;
             const displayName = user.displayName || (user.email || '').split('@')[0] || 'Player';
-            const ref = db.collection('tictactoe_matches').doc(id);
-            ref.get().then(doc => {
-                if (!doc.exists || doc.data().status !== 'waiting' || doc.data().opponentId) {
-                    alert('Match no longer available.');
-                    showJoinMatchList();
-                    return;
-                }
-                return ref.update({
-                    opponentId: user.uid,
-                    opponentName: displayName,
-                    status: 'playing'
+            
+            db.collection("users").doc(user.uid).get().then(doc => {
+                const username = (doc.exists && doc.data().username) ? doc.data().username : displayName;
+                const ref = db.collection('tictactoe_matches').doc(id);
+                
+                return ref.get().then(doc => {
+                    if (!doc.exists || doc.data().status !== 'waiting' || doc.data().opponentId) {
+                        alert('Match no longer available.');
+                        showJoinMatchList();
+                        return;
+                    }
+                    return ref.update({
+                        opponentId: user.uid,
+                        opponentName: username,
+                        status: 'lobby' // Changed from 'playing' to 'lobby' to allow for Start Game button
+                    });
+                }).then(() => {
+                    onlineMatchId = id;
+                    onlineRole = 'O';
+                    listenToMatch(ref);
+                    document.getElementById('join-match-list').style.display = 'none';
+                    document.getElementById('online-lobby-content').innerHTML = '<p class="online-status">Joined lobby. Wait for host to start.</p>';
                 });
-            }).then(() => {
-                onlineMatchId = id;
-                onlineRole = 'O';
-                listenToMatch(ref);
-                document.getElementById('join-match-list').style.display = 'none';
-                document.getElementById('online-lobby-content').innerHTML = '<p class="online-status">Joined. Your turn when O.</p>';
             }).catch(e => {
                 alert('Could not join: ' + (e.message || e));
                 showJoinMatchList();
@@ -509,20 +632,155 @@
         function listenToMatch(ref) {
             if (onlineUnsubscribe) onlineUnsubscribe();
             onlineUnsubscribe = ref.onSnapshot(doc => {
-                if (!doc.exists) return;
+                if (!doc.exists) {
+                    alert("Match has been closed.");
+                    resetGame(true);
+                    difficulty.value = 'coop';
+                    onModeChange();
+                    return;
+                }
                 const d = doc.data();
                 board = Array.isArray(d.board) ? [...d.board] : ['', '', '', '', '', '', '', '', ''];
                 currentPlayer = d.turn || 'X';
+                
+                // UI Updates
+                const lobby = document.getElementById('online-lobby');
+                const multiStatus = document.getElementById('multiplayer-status');
+                const scoreBoard = document.querySelector('.score-board');
+                
+                if (d.status === 'waiting') {
+                    lobby.style.display = 'block';
+                    multiStatus.style.display = 'none';
+                    scoreBoard.style.display = 'flex';
+                    
+                    // Show creator UI if host
+                    if (onlineRole === 'X') {
+                        document.getElementById('online-lobby-content').innerHTML = `
+                            <p>Waiting for opponent...</p>
+                            <p>Target Score: <strong>${d.targetScore || 3}</strong></p>
+                            <p>Share this link: <input type="text" id="match-link" readonly value="${window.location.origin + window.location.pathname + '?join=' + doc.id}" onclick="this.select()" /></p>
+                        `;
+                    }
+                } else {
+                    lobby.style.display = 'none';
+                    multiStatus.style.display = 'block';
+                    scoreBoard.style.display = 'none';
+                    
+                    document.getElementById('player-x-name').textContent = d.creatorName || "Player X";
+                    document.getElementById('player-o-name').textContent = d.opponentName || "Waiting...";
+                    document.getElementById('player-x-score').textContent = d.scores?.X || 0;
+                    document.getElementById('player-o-score').textContent = d.scores?.O || 0;
+                    
+                    const vsBadge = document.getElementById('mp-vs-badge');
+                    vsBadge.setAttribute('data-target', d.targetScore || 3);
+
+                    const scoreCard = document.getElementById('mp-score-card');
+                    scoreCard.classList.remove('x-active', 'o-active');
+                    if (d.status === 'playing') {
+                        scoreCard.classList.add(currentPlayer === 'X' ? 'x-active' : 'o-active');
+                    }
+
+                    // Handle Controls
+                    const controls = document.getElementById('multiplayer-controls');
+                    controls.innerHTML = '';
+                    
+                    if (d.status === 'lobby') {
+                        if (onlineRole === 'X') {
+                            const startBtn = document.createElement('button');
+                            startBtn.textContent = "Start Game";
+                            startBtn.onclick = () => ref.update({ status: 'playing' });
+                            controls.appendChild(startBtn);
+                        } else {
+                            const waitMsg = document.createElement('p');
+                            waitMsg.className = 'text-xs italic';
+                            waitMsg.textContent = "Waiting for host to start...";
+                            controls.appendChild(waitMsg);
+                        }
+                    } else if (d.status === 'finished') {
+                        const isMatchWinner = (d.winner === 'X' && d.scores.X >= d.targetScore) || (d.winner === 'O' && d.scores.O >= d.targetScore);
+                        
+                        if (isMatchWinner) {
+                            const msg = document.createElement('p');
+                            msg.className = 'text-xl font-bold mb-2';
+                            const amIWinner = (onlineRole === 'X' && d.scores.X >= d.targetScore) || (onlineRole === 'O' && d.scores.O >= d.targetScore);
+                            msg.textContent = amIWinner ? "MATCH WON!" : "MATCH LOST!";
+                            msg.style.color = amIWinner ? "#4ade80" : "#fb7185";
+                            controls.appendChild(msg);
+                            
+                            const leaveBtn = document.createElement('button');
+                            leaveBtn.textContent = "Back to Lobby";
+                            leaveBtn.onclick = () => {
+                                ref.delete();
+                                resetGame(true);
+                                onModeChange();
+                            };
+                            controls.appendChild(leaveBtn);
+                        } else {
+                            // Round finished, show rematch/next round buttons
+                            const rematchBtn = document.createElement('button');
+                            const myRematch = d.rematchRequested?.[onlineRole];
+                            rematchBtn.textContent = myRematch ? "Waiting..." : "Next Round";
+                            rematchBtn.disabled = myRematch;
+                            rematchBtn.onclick = () => {
+                                const update = {};
+                                update[`rematchRequested.${onlineRole}`] = true;
+                                ref.update(update);
+                            };
+                            controls.appendChild(rematchBtn);
+
+                            const leaveBtn = document.createElement('button');
+                            leaveBtn.textContent = "Leave Match";
+                            leaveBtn.style.borderColor = "#fb7185";
+                            leaveBtn.style.color = "#fb7185";
+                            leaveBtn.onclick = () => {
+                                ref.delete();
+                                resetGame(true);
+                                onModeChange();
+                            };
+                            controls.appendChild(leaveBtn);
+
+                            // Check if both requested rematch
+                            if (d.rematchRequested?.X && d.rematchRequested?.O) {
+                                if (onlineRole === 'X') { // One player resets
+                                    ref.update({
+                                        board: ['', '', '', '', '', '', '', '', ''],
+                                        turn: d.firstTurn === 'X' ? 'O' : 'X',
+                                        firstTurn: d.firstTurn === 'X' ? 'O' : 'X',
+                                        status: 'playing',
+                                        winner: null,
+                                        rematchRequested: { X: false, O: false }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
                 isGameActive = d.status === 'playing';
                 for (let i = 0; i < 9; i++) {
                     cells[i].textContent = board[i];
                     cells[i].className = 'cell' + (board[i] ? ' ' + board[i].toLowerCase() : '');
                 }
-                turnDisplay.textContent = d.status === 'finished' ? (d.winner ? d.winner + ' wins!' : 'Draw!') : (currentPlayer + "'s Turn");
+                
                 if (d.status === 'finished') {
-                    statusDisplay.textContent = d.winner ? d.winner + ' Wins!' : 'Draw!';
+                    const amIWinner = (onlineRole === 'X' && d.winner === 'X') || (onlineRole === 'O' && d.winner === 'O');
+                    const isDraw = d.winner === 'draw';
+                    
+                    if (isDraw) {
+                        statusDisplay.textContent = "Draw!";
+                        statusDisplay.style.color = "white";
+                    } else {
+                        statusDisplay.textContent = amIWinner ? "You Won!" : "You Lost!";
+                        statusDisplay.style.color = amIWinner ? "#4ade80" : "#fb7185";
+                    }
                     statusDisplay.classList.add('show-status');
-                    setTimeout(() => { statusDisplay.classList.remove('show-status'); }, 3000);
+                    turnDisplay.textContent = "Round Over";
+                } else if (d.status === 'playing') {
+                    statusDisplay.classList.remove('show-status');
+                    const isMyTurn = currentPlayer === onlineRole;
+                    turnDisplay.textContent = isMyTurn ? "Your Turn" : "Opponent's Turn";
+                } else if (d.status === 'lobby') {
+                    turnDisplay.textContent = "Waiting in Lobby";
                 }
             });
         }
@@ -531,22 +789,34 @@
             if (board[index] !== '' || !onlineMatchId || !window.gameHubFirebase || !window.gameHubFirebase.db) return;
             const mySymbol = onlineRole;
             if (currentPlayer !== mySymbol) return;
+            
             const newBoard = [...board];
             newBoard[index] = mySymbol;
             const nextTurn = mySymbol === 'X' ? 'O' : 'X';
-            const winConditions = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            
             const won = winConditions.some(c => c.every(i => newBoard[i] === mySymbol));
             const draw = !won && !newBoard.includes('');
+            
             const ref = window.gameHubFirebase.db.collection('tictactoe_matches').doc(onlineMatchId);
-            const update = {
-                board: newBoard,
-                turn: nextTurn
-            };
-            if (won || draw) {
-                update.status = 'finished';
-                update.winner = won ? mySymbol : 'draw';
-            }
-            ref.update(update).catch(e => alert('Move failed: ' + (e.message || e)));
+            
+            ref.get().then(doc => {
+                const d = doc.data();
+                const update = {
+                    board: newBoard,
+                    turn: nextTurn
+                };
+
+                if (won || draw) {
+                    update.status = 'finished';
+                    update.winner = won ? mySymbol : 'draw';
+                    if (won) {
+                        const newScores = { ...d.scores };
+                        newScores[mySymbol]++;
+                        update.scores = newScores;
+                    }
+                }
+                return ref.update(update);
+            }).catch(e => alert('Move failed: ' + (e.message || e)));
         }
 
         (function checkJoinFromUrl() {

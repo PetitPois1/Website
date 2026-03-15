@@ -14,6 +14,11 @@
       }
     });
     updateAuthUI(currentUser);
+
+    // Sync existing high scores to All Time leaderboards on login
+    if (currentUser && window.gameHubProgress && window.gameHubProgress.syncAllHighScoresToLeaderboards) {
+      window.gameHubProgress.syncAllHighScoresToLeaderboards();
+    }
   }
 
   function onAuthStateChanged(callback) {

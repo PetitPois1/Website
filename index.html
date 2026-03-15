@@ -117,6 +117,25 @@
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
 
+        .multiplayer-card {
+            border: 2px solid #22c55e !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+        
+        .multiplayer-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #22c55e;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            z-index: 10;
+            letter-spacing: 0.05em;
+        }
+
         .friend-status {
             position: absolute;
             top: 12px;
@@ -254,6 +273,7 @@
                 <a href="index.html" class="text-violet-400 font-semibold">Home</a>
                 <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
                 <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
+                <a href="settings.html" class="text-slate-400 hover:text-white transition-colors">Settings</a>
                 <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
             </div>
 
@@ -376,6 +396,7 @@
 
         <div class="flex flex-wrap justify-center gap-3">
             <button class="filter-chip active" onclick="setFilter('all', this)">All Games</button>
+            <button class="filter-chip" onclick="setFilter('multiplayer', this)">Multiplayer</button>
             <button class="filter-chip" onclick="setFilter('liked', this)">My Liked</button>
             <button class="filter-chip" onclick="setFilter('arcade', this)">Arcade</button>
             <button class="filter-chip" onclick="setFilter('puzzle', this)">Puzzle</button>
@@ -431,7 +452,7 @@
 
         const games = [
             { id: "snake", name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false, broken: false, tags: ["arcade"], likes: 124 },
-            { id: "tic-tac-toe", name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false, tags: ["puzzle"], likes: 45 },
+            { id: "tic-tac-toe", name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false, tags: ["puzzle", "multiplayer"], likes: 45, multiplayer: true },
             { id: "pong", name: "Pong", url: "pong_game.html", icon: "🏓", beta: false, broken: false, tags: ["arcade"], likes: 82 },
             { id: "clicker", name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 210 },
             { id: "blockblast", name: "Blockblast", url: "Blockblast.html", icon: "🧱", beta: false, broken: false, tags: ["puzzle"], likes: 342 },
@@ -606,7 +627,7 @@
             filtered.forEach(game => {
                 const card = document.createElement('div');
                 const isLiked = likedGames.includes(game.id);
-                card.className = `game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer ${game.broken ? 'is-broken' : ''}`;
+                card.className = `game-card p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer ${game.broken ? 'is-broken' : ''} ${game.multiplayer ? 'multiplayer-card' : ''}`;
                 
                 // Use a proper event listener with check for child button clicks
                 card.addEventListener('click', (e) => {
@@ -620,6 +641,8 @@
                 let badgeHtml = "";
                 if (game.broken) badgeHtml = '<span class="broken-badge">BROKEN</span>';
                 else if (game.beta) badgeHtml = '<span class="beta-badge">BETA</span>';
+
+                let multiTagHtml = game.multiplayer ? '<span class="multiplayer-tag">MULTIPLAYER</span>' : '';
 
                 let playerHtml = "";
                 if (currentPlayers.length > 0) {
@@ -652,6 +675,7 @@
                 }
 
                 card.innerHTML = `
+                    ${multiTagHtml}
                     ${playerHtml}
                     <div class="game-icon text-4xl mb-4 p-4 bg-slate-800/50 rounded-2xl w-20 h-20 flex items-center justify-center transition-all overflow-hidden">
                         ${game.icon}

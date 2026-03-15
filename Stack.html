@@ -113,6 +113,14 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/auth.js"></script>
 </head>
 <body>
 
@@ -122,6 +130,7 @@
 
         <div id="main-menu" class="panel">
             <h1>STACK</h1>
+            <div id="auth-status" class="text-xs text-slate-400 mb-2">Sign in to save progress</div>
             <div class="high-score-badge">BEST: <span id="menu-high-score">0</span></div>
             <p>Tap anywhere to drop.</p>
             <button id="btn-play">PLAY</button>
@@ -132,13 +141,43 @@
             <div class="high-score-badge">BEST: <span id="over-high-score">0</span></div>
             <p>Score: <span id="final-score" style="font-weight: bold; color: white; font-size: 24px;">0</span></p>
             <button id="btn-restart">RESTART</button>
+            <button onclick="window.location.href='index.html'" style="margin-top: 10px; background: rgba(255,255,255,0.1); box-shadow: none; font-size: 16px; padding: 12px 0;">EXIT</button>
         </div>
     </div>
 
     <script>
-        // --- MEMORY: LOCAL STORAGE ---
-        let highScore = localStorage.getItem('stackHighScore') || 0;
-        document.getElementById('menu-high-score').innerText = highScore;
+        // --- GAME HUB INTEGRATION ---
+        let highScore = 0;
+        const GAME_ID = 'stack';
+
+        async function syncProgress() {
+            if (window.gameHubProgress) {
+                const progress = await window.gameHubProgress.loadGameProgress(GAME_ID);
+                if (progress && progress.highScore) {
+                    highScore = progress.highScore;
+                    document.getElementById('menu-high-score').innerText = highScore;
+                    document.getElementById('over-high-score').innerText = highScore;
+                }
+            }
+        }
+
+        // Wait for auth and sync
+        setTimeout(syncProgress, 1000);
+
+        // Update auth status text
+        if (window.gameHubAuth) {
+            window.gameHubAuth.onAuthStateChanged(user => {
+                const statusEl = document.getElementById('auth-status');
+                if (user) {
+                    statusEl.innerText = "Signed in as " + (user.displayName || user.email.split('@')[0]);
+                    statusEl.style.color = "#4ade80";
+                    syncProgress();
+                } else {
+                    statusEl.innerText = "Sign in to save progress";
+                    statusEl.style.color = "";
+                }
+            });
+        }
 
         // --- AUDIO ENGINE ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -384,7 +423,17 @@
                 // Check and Update High Score
                 if (currentScore > highScore) {
                     highScore = currentScore;
-                    localStorage.setItem('stackHighScore', highScore);
+                    if (window.gameHubProgress) {
+                        window.gameHubProgress.saveGameProgress(GAME_ID, { highScore: highScore });
+                    }
+                }
+
+                // Check achievements
+                if (window.gameHubProgress) {
+                    if (currentScore >= 10) window.gameHubProgress.unlockAchievement(GAME_ID, 'stack_score_10');
+                    if (currentScore >= 25) window.gameHubProgress.unlockAchievement(GAME_ID, 'stack_score_25');
+                    if (currentScore >= 50) window.gameHubProgress.unlockAchievement(GAME_ID, 'stack_score_50');
+                    if (currentScore >= 100) window.gameHubProgress.unlockAchievement(GAME_ID, 'stack_score_100');
                 }
                 
                 document.getElementById('final-score').innerText = currentScore;

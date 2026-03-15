@@ -29,6 +29,17 @@
             color: #e5e7eb;
             min-height: 100vh;
         }
+
+        /* Username Styles */
+        .glow-violet { text-shadow: 0 0 10px #8b5cf6, 0 0 20px #8b5cf6; }
+        .glow-emerald { text-shadow: 0 0 10px #10b981, 0 0 20px #10b981; }
+        .glow-pulse { animation: username-pulse 2s infinite; }
+        @keyframes username-pulse {
+            0% { text-shadow: 0 0 5px #f59e0b; }
+            50% { text-shadow: 0 0 20px #f59e0b, 0 0 30px #f59e0b; }
+            100% { text-shadow: 0 0 5px #f59e0b; }
+        }
+
         .glass-nav {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(12px);
@@ -48,14 +59,10 @@
                     GAME HUB
                 </span>
             </a>
-            <button id="profile-button" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-white/10 hover:border-violet-500 hover:bg-slate-900 text-sm transition-colors">
-                <div id="profile-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold">
-                    ?
-                </div>
-                <span id="profile-label" class="text-slate-200 font-medium">
-                    Profile
-                </span>
-            </button>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Games</a>
+                <a href="settings.html" class="text-slate-400 hover:text-white transition-colors">Settings</a>
+            </div>
         </div>
     </nav>
 
@@ -111,6 +118,9 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
+                    <button id="sync-scores-btn" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/50 text-xs font-semibold text-emerald-400 hover:bg-emerald-600 hover:text-white transition-colors">
+                        Sync Scores
+                    </button>
                     <button id="profile-signout-btn" class="px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-600/80 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:border-rose-500 hover:text-rose-100 transition-colors">
                         Sign Out
                     </button>
@@ -136,6 +146,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High score</p>
                         <p id="profile-snake-highscore" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('snake')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -162,6 +173,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Best score</p>
                         <p id="profile-blockblast-highscore" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('blockblast')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -188,6 +200,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Total Earned</p>
                         <p id="profile-clicker-earned" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('clicker')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -214,6 +227,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High Score</p>
                         <p id="profile-flappy-highscore" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('flappy')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -240,6 +254,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Max Depth</p>
                         <p id="profile-mining-depth" class="text-base font-semibold text-slate-50">0m</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('mining')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -266,6 +281,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High Score</p>
                         <p id="profile-brick-highscore" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('brick')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -292,6 +308,7 @@
                     <div class="text-right">
                         <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">Best bankroll</p>
                         <p id="profile-blackjack-money" class="text-base font-semibold text-slate-50">$0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('blackjack')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
                     </div>
                 </header>
                 <footer class="flex items-center justify-between mt-2">
@@ -300,6 +317,33 @@
                         <span class="text-slate-500"> / 3 achievements</span>
                     </p>
                     <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('blackjack')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                        View Achievements
+                    </button>
+                </footer>
+            </article>
+
+            <!-- Stack -->
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg shadow-black/30">
+                <header class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-sky-500/80 flex items-center justify-center text-lg">🧈</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-100">3D Stack</h3>
+                            <p class="text-[0.7rem] text-slate-400">Tower building</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">High Score</p>
+                        <p id="profile-stack-highscore" class="text-base font-semibold text-slate-50">0</p>
+                        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showLeaderboardModal('stack')" class="text-[0.6rem] text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wider">Leaderboard</button>
+                    </div>
+                </header>
+                <footer class="flex items-center justify-between mt-2">
+                    <p class="text-[0.7rem] text-slate-400">
+                        <span id="profile-stack-achievements" class="font-semibold text-slate-200">0</span>
+                        <span class="text-slate-500"> / 4 achievements</span>
+                    </p>
+                    <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('stack')" class="text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
                         View Achievements
                     </button>
                 </footer>
@@ -353,8 +397,14 @@
                             <!-- filled by JS -->
                         </div>
                     </div>
-                    <div class="sm:col-span-2 flex gap-3">
-                        <button id="save-avatar-btn" class="flex-1 py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Avatar Design</button>
+                    <div class="sm:col-span-2 flex flex-col gap-4">
+                        <div>
+                            <label class="text-[0.65rem] uppercase tracking-wider text-slate-500 mb-2 block">Username Style</label>
+                            <div id="inventory-username-styles" class="flex flex-wrap gap-2">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                        <button id="save-avatar-btn" class="w-full py-2 rounded-xl bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition-colors">Save Character Design</button>
                     </div>
                 </div>
             </div>
@@ -412,6 +462,35 @@
                         <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-xl">🎩</div>
                         <p class="text-xs font-semibold text-slate-200">Top Hat</p>
                         <button data-shop-type="hat" data-shop-value="tophat" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">100 🪙</button>
+                    </div>
+
+                    <!-- Username Colors -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-lg bg-indigo-500 border border-white/20"></div>
+                        <p class="text-xs font-semibold text-slate-200">Indigo Name</p>
+                        <button data-shop-type="nameColor" data-shop-value="#818cf8" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">200 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-lg bg-rose-500 border border-white/20"></div>
+                        <p class="text-xs font-semibold text-slate-200">Rose Name</p>
+                        <button data-shop-type="nameColor" data-shop-value="#f43f5e" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">200 🪙</button>
+                    </div>
+
+                    <!-- Glow Effects -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-lg bg-violet-500 border border-white/20 shadow-[0_0_15px_#8b5cf6]"></div>
+                        <p class="text-xs font-semibold text-slate-200">Violet Glow</p>
+                        <button data-shop-type="glow" data-shop-value="glow-violet" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">500 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-lg bg-emerald-500 border border-white/20 shadow-[0_0_15px_#10b981]"></div>
+                        <p class="text-xs font-semibold text-slate-200">Emerald Glow</p>
+                        <button data-shop-type="glow" data-shop-value="glow-emerald" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">500 🪙</button>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 rounded-lg bg-amber-500 border border-white/20 animate-pulse shadow-[0_0_15px_#f59e0b]"></div>
+                        <p class="text-xs font-semibold text-slate-200">Pulse Glow</p>
+                        <button data-shop-type="glow" data-shop-value="glow-pulse" class="w-full py-1.5 rounded-lg bg-slate-800 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all">750 🪙</button>
                     </div>
                 </div>
             </div>
@@ -528,21 +607,27 @@
             const cancelUsernameBtn = document.getElementById("cancel-username-btn");
 
             let currentUid = null;
-            let currentAvatar = { base: "#8b5cf6", mouth: "smile", hat: "none" };
+            let currentAvatar = { base: "#8b5cf6", mouth: "smile", hat: "none", nameColor: "inherit", glow: "none" };
             const defaultInventory = {
                 base: ["#8b5cf6", "#ef4444", "#10b981", "#f59e0b", "#3b82f6"],
                 mouth: ["smile", "flat", "surprised"],
-                hat: ["none"]
+                hat: ["none"],
+                nameColor: ["inherit"],
+                glow: ["none"]
             };
             let userInventory = {
                 base: [...defaultInventory.base],
                 mouth: [...defaultInventory.mouth],
-                hat: [...defaultInventory.hat]
+                hat: [...defaultInventory.hat],
+                nameColor: [...defaultInventory.nameColor],
+                glow: [...defaultInventory.glow]
             };
 
             function applyUser(user, userData = null) {
                 if (!user) {
                     nameEl.textContent = "Guest";
+                    nameEl.style.color = "inherit";
+                    nameEl.className = "text-lg font-semibold text-slate-50";
                     emailEl.textContent = "Not signed in";
                     avatarEl.innerHTML = "?";
                     editUsernameBtn.classList.add('hidden');
@@ -550,6 +635,8 @@
                     userInventory.base = [...defaultInventory.base];
                     userInventory.mouth = [...defaultInventory.mouth];
                     userInventory.hat = [...defaultInventory.hat];
+                    userInventory.nameColor = [...defaultInventory.nameColor];
+                    userInventory.glow = [...defaultInventory.glow];
                     renderInventoryUI();
                     refreshShopUI();
                     return;
@@ -573,16 +660,15 @@
                 userInventory.base = [...defaultInventory.base];
                 userInventory.mouth = [...defaultInventory.mouth];
                 userInventory.hat = [...defaultInventory.hat];
+                userInventory.nameColor = [...defaultInventory.nameColor];
+                userInventory.glow = [...defaultInventory.glow];
+
                 if (userData && userData.inventory) {
-                    if (userData.inventory.base && userData.inventory.base.length) {
-                        userInventory.base = Array.from(new Set([...userInventory.base, ...userData.inventory.base]));
-                    }
-                    if (userData.inventory.mouth && userData.inventory.mouth.length) {
-                        userInventory.mouth = Array.from(new Set([...userInventory.mouth, ...userData.inventory.mouth]));
-                    }
-                    if (userData.inventory.hat && userData.inventory.hat.length) {
-                        userInventory.hat = Array.from(new Set([...userInventory.hat, ...userData.inventory.hat]));
-                    }
+                    if (userData.inventory.base) userInventory.base = Array.from(new Set([...userInventory.base, ...userData.inventory.base]));
+                    if (userData.inventory.mouth) userInventory.mouth = Array.from(new Set([...userInventory.mouth, ...userData.inventory.mouth]));
+                    if (userData.inventory.hat) userInventory.hat = Array.from(new Set([...userInventory.hat, ...userData.inventory.hat]));
+                    if (userData.inventory.nameColor) userInventory.nameColor = Array.from(new Set([...userInventory.nameColor, ...userData.inventory.nameColor]));
+                    if (userData.inventory.glow) userInventory.glow = Array.from(new Set([...userInventory.glow, ...userData.inventory.glow]));
                 }
                 renderInventoryUI();
                 refreshShopUI();
@@ -591,12 +677,20 @@
                     currentAvatar = {
                         base: userData.avatar.base || currentAvatar.base,
                         mouth: userData.avatar.mouth || currentAvatar.mouth,
-                        hat: userData.avatar.hat || 'none'
+                        hat: userData.avatar.hat || 'none',
+                        nameColor: userData.avatar.nameColor || 'inherit',
+                        glow: userData.avatar.glow || 'none'
                     };
                     renderAvatarSVG(avatarEl, currentAvatar, "w-full h-full");
                     renderAvatarSVG(document.getElementById('avatar-svg'), currentAvatar, "w-full h-full");
+                    
+                    // Apply styles to name
+                    nameEl.style.color = currentAvatar.nameColor;
+                    nameEl.className = `text-lg font-semibold ${currentAvatar.glow !== 'none' ? currentAvatar.glow : ''}`;
                 } else {
                     avatarEl.innerHTML = (display[0] || "?").toUpperCase();
+                    nameEl.style.color = "inherit";
+                    nameEl.className = "text-lg font-semibold text-slate-50";
                 }
                 
                 currentUid = user.uid;
@@ -606,12 +700,14 @@
             }
 
             const hatLabels = { none: 'None', cap: 'Cap', crown: 'Crown', wizard: 'Wizard', tophat: 'Top Hat' };
+            const glowLabels = { none: 'None', 'glow-violet': 'Violet', 'glow-emerald': 'Emerald', 'glow-pulse': 'Pulse' };
 
             function renderInventoryUI() {
                 const baseContainer = document.getElementById('inventory-base-colors');
                 const mouthContainer = document.getElementById('inventory-expressions');
                 const hatContainer = document.getElementById('inventory-hat');
-                if (!baseContainer || !mouthContainer) return;
+                const styleContainer = document.getElementById('inventory-username-styles');
+                if (!baseContainer || !mouthContainer || !styleContainer) return;
 
                 baseContainer.innerHTML = '';
                 userInventory.base.forEach(color => {
@@ -641,6 +737,25 @@
                         hatContainer.appendChild(btn);
                     });
                 }
+
+                styleContainer.innerHTML = '';
+                // Color options
+                userInventory.nameColor.forEach(color => {
+                    const btn = document.createElement('button');
+                    btn.onclick = () => updateAvatar('nameColor', color);
+                    btn.className = `w-8 h-8 rounded border-2 border-white/10 transition-transform hover:scale-110`;
+                    btn.style.backgroundColor = color === 'inherit' ? '#475569' : color;
+                    btn.title = color === 'inherit' ? 'Default Color' : 'Name Color';
+                    styleContainer.appendChild(btn);
+                });
+                // Glow options
+                userInventory.glow.forEach(glow => {
+                    const btn = document.createElement('button');
+                    btn.onclick = () => updateAvatar('glow', glow);
+                    btn.className = `px-3 py-1 rounded bg-slate-800 text-[10px] hover:bg-slate-700 transition-colors ${glow}`;
+                    btn.textContent = glowLabels[glow] || glow;
+                    styleContainer.appendChild(btn);
+                });
             }
 
             async function loadCurrency() {
@@ -726,7 +841,12 @@
                     { type: 'hat', value: 'cap', price: 75, label: 'Cap' },
                     { type: 'hat', value: 'crown', price: 150, label: 'Crown' },
                     { type: 'hat', value: 'wizard', price: 150, label: 'Wizard' },
-                    { type: 'hat', value: 'tophat', price: 100, label: 'Top Hat' }
+                    { type: 'hat', value: 'tophat', price: 100, label: 'Top Hat' },
+                    { type: 'nameColor', value: '#818cf8', price: 200, label: 'Indigo Name' },
+                    { type: 'nameColor', value: '#f43f5e', price: 200, label: 'Rose Name' },
+                    { type: 'glow', value: 'glow-violet', price: 500, label: 'Violet Glow' },
+                    { type: 'glow', value: 'glow-emerald', price: 500, label: 'Emerald Glow' },
+                    { type: 'glow', value: 'glow-pulse', price: 750, label: 'Pulse Glow' }
                 ];
                 shopItems.forEach(({ type, value, price, label }) => {
                     const btn = document.querySelector(`[data-shop-type="${type}"][data-shop-value="${value}"]`);
@@ -763,13 +883,9 @@
                     const db = window.gameHubFirebase.db;
                     if (db) {
                         try {
-                            await db.collection("users").doc(currentUid).set({
-                                inventory: {
-                                    base: [...userInventory.base],
-                                    mouth: [...userInventory.mouth],
-                                    hat: [...userInventory.hat]
-                                }
-                            }, { merge: true });
+                            const updateObj = { inventory: {} };
+                            updateObj.inventory[type] = userInventory[type];
+                            await db.collection("users").doc(currentUid).set(updateObj, { merge: true });
                         } catch (e) {
                             console.error("[Profile] Error saving inventory:", e);
                         }
@@ -790,6 +906,14 @@
             window.updateAvatar = (type, value) => {
                 currentAvatar[type] = value;
                 renderAvatarSVG(document.getElementById('avatar-svg'), currentAvatar, "w-full h-full");
+                
+                // Update preview live
+                if (type === 'nameColor') {
+                    nameEl.style.color = value;
+                }
+                if (type === 'glow') {
+                    nameEl.className = `text-lg font-semibold ${value !== 'none' ? value : ''}`;
+                }
             };
 
             saveAvatarBtn.onclick = async () => {
@@ -901,7 +1025,7 @@
 
             // Load Game Stats
             const loadStats = async () => {
-                const games = ["snake", "blockblast", "clicker", "flappy", "mining", "brick", "blackjack"];
+                const games = ["snake", "blockblast", "clicker", "flappy", "mining", "brick", "blackjack", "stack"];
                 const progressEls = {
                     snake: { high: snakeHighEl, ach: snakeAchEl },
                     blockblast: { high: blockHighEl, ach: blockAchEl },
@@ -909,7 +1033,8 @@
                     flappy: { high: flappyHighEl, ach: flappyAchEl },
                     mining: { high: miningDepthEl, ach: miningAchEl, key: "player.stats.maxDepth", suffix: "m" },
                     brick: { high: brickHighEl, ach: brickAchEl },
-                    blackjack: { high: bjMoneyEl, ach: bjAchEl, key: "bestMoney", prefix: "$" }
+                    blackjack: { high: bjMoneyEl, ach: bjAchEl, key: "bestMoney", prefix: "$" },
+                    stack: { high: document.getElementById("profile-stack-highscore"), ach: document.getElementById("profile-stack-achievements") }
                 };
 
                 let totalLinked = 0;
@@ -959,6 +1084,22 @@
                     await window.gameHubAuth.signOutCurrentUser();
                 }
             };
+
+            const syncScoresBtn = document.getElementById('sync-scores-btn');
+            if (syncScoresBtn) {
+                syncScoresBtn.onclick = async () => {
+                    if (window.gameHubProgress && window.gameHubProgress.syncAllHighScoresToLeaderboards) {
+                        syncScoresBtn.disabled = true;
+                        syncScoresBtn.textContent = 'Syncing...';
+                        await window.gameHubProgress.syncAllHighScoresToLeaderboards();
+                        syncScoresBtn.textContent = 'Done!';
+                        setTimeout(() => {
+                            syncScoresBtn.disabled = false;
+                            syncScoresBtn.textContent = 'Sync Scores';
+                        }, 2000);
+                    }
+                };
+            }
 
             // ... rest of scripts ...
             async function loadFriends() {
@@ -1199,13 +1340,20 @@
                         const achId = doc.id;
                         const date = ach.unlockedAt ? ach.unlockedAt.toDate().toLocaleDateString() : 'Recently';
                         
+                        let achTitle = achId.replace(/-/g, ' ');
+                        if (window.gameHubAchievements && window.gameHubAchievements.getDefinitions) {
+                            const defs = window.gameHubAchievements.getDefinitions(ach.gameId);
+                            const found = defs.find(d => d.id === achId);
+                            if (found) achTitle = found.name;
+                        }
+
                         const item = document.createElement('div');
                         item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-white/5 hover:border-violet-500/30 transition-colors";
                         item.innerHTML = `
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center text-sm shadow-inner">🏆</div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-100">${achId.replace(/-/g, ' ')}</p>
+                                    <p class="text-xs font-bold text-slate-100">${achTitle}</p>
                                     <p class="text-[10px] text-slate-500 uppercase font-medium">${ach.gameId || 'Game Hub'}</p>
                                 </div>
                             </div>

@@ -80,12 +80,48 @@
     if (!user || !getDb()) return;
 
     try {
-      const docRef = getDb()
+      const db = getDb();
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const username = userDoc.exists ? (userDoc.data().username || user.displayName || user.email.split('@')[0]) : (user.displayName || user.email.split('@')[0]);
+
+      const docRef = db
         .collection("users")
         .doc(user.uid)
         .collection("progress")
         .doc(gameId);
       await docRef.set(data, { merge: true });
+
+      // Update Leaderboards if it's a high score
+      if (data.highScore || data.totalEarned || (data.player && data.player.stats && data.player.stats.maxDepth)) {
+        const score = data.highScore || data.totalEarned || (data.player && data.player.stats && data.player.stats.maxDepth);
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const monthStr = dateStr.substring(0, 7); // YYYY-MM
+        
+        const leaderboardData = {
+          uid: user.uid,
+          username: username,
+          score: score,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        const lbRef = db.collection("leaderboards").doc(gameId);
+        
+        // All Time
+        await lbRef.collection("alltime").doc(user.uid).set(leaderboardData);
+        
+        // Monthly
+        await lbRef.collection("monthly").doc(`${monthStr}_${user.uid}`).set({
+          ...leaderboardData,
+          period: monthStr
+        });
+
+        // Daily
+        await lbRef.collection("daily").doc(`${dateStr}_${user.uid}`).set({
+          ...leaderboardData,
+          period: dateStr
+        });
+      }
     } catch (e) {
       console.warn("[GameHub] Failed to save cloud progress", e);
     }
@@ -130,47 +166,100 @@
       return;
     }
 
-    const updated = existingLocal.concat(achievementId);
-    saveLocalAchievements(gameId, updated);
-
-    // Trigger visual notification
-    if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
-      window.gameHubAchievements.notifyAchievement(gameId, achievementId);
-    }
-
     const user = getUser();
     const db = getDb();
-    if (!user || !db) return;
 
-    try {
-      const docRef = db
-        .collection("users")
-        .doc(user.uid)
-        .collection("achievements")
-        .doc(achievementId);
+    // If signed in, check cloud before notifying or adding locally
+    if (user && db) {
+      try {
+        const docRef = db
+          .collection("users")
+          .doc(user.uid)
+          .collection("achievements")
+          .doc(achievementId);
 
-      await docRef.set(
-        {
+        const doc = await docRef.get();
+        if (doc.exists) {
+          // Sync local if missing but skip notification/reward
+          if (!existingLocal.includes(achievementId)) {
+            saveLocalAchievements(gameId, existingLocal.concat(achievementId));
+          }
+          return;
+        }
+
+        // Proceed with unlock
+        await docRef.set({
           gameId,
           unlockedAt: firebase.firestore.FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+        }, { merge: true });
 
-      // Award currency based on difficulty
-      let reward = 10;
-      if (window.gameHubAchievements && window.gameHubAchievements.getAchievementValue) {
-        reward = window.gameHubAchievements.getAchievementValue(gameId, achievementId);
+        // Award currency based on difficulty
+        let reward = 10;
+        if (window.gameHubAchievements && window.gameHubAchievements.getAchievementValue) {
+          reward = window.gameHubAchievements.getAchievementValue(gameId, achievementId);
+        }
+
+        const userRef = db.collection("users").doc(user.uid);
+        await userRef.update({
+          currency: firebase.firestore.FieldValue.increment(reward),
+          achievementsCount: firebase.firestore.FieldValue.increment(1)
+        });
+        
+        // Save locally after cloud success
+        saveLocalAchievements(gameId, existingLocal.concat(achievementId));
+
+        // Trigger visual notification
+        if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+          window.gameHubAchievements.notifyAchievement(gameId, achievementId, reward);
+        }
+        
+        console.log(`[GameHub] Awarded ${reward} coins for achievement:`, achievementId);
+
+        // Check for "The Perfectionist"
+        if (achievementId !== 'perfectionist') {
+          checkPerfectionist();
+        }
+      } catch (e) {
+        console.warn("[GameHub] Failed to unlock cloud achievement or award currency", e);
       }
+    } else {
+      // Guest mode - just local
+      saveLocalAchievements(gameId, existingLocal.concat(achievementId));
+      if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+        window.gameHubAchievements.notifyAchievement(gameId, achievementId);
+      }
+      if (achievementId !== 'perfectionist') {
+        checkPerfectionist();
+      }
+    }
+  }
 
-      const userRef = db.collection("users").doc(user.uid);
-      await userRef.update({
-        currency: firebase.firestore.FieldValue.increment(reward),
-        achievementsCount: firebase.firestore.FieldValue.increment(1)
+  async function checkPerfectionist() {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db || !window.gameHubAchievements) return;
+
+    try {
+      const allDefs = window.gameHubAchievements.getDefinitions();
+      let totalAchRequired = 0;
+      Object.keys(allDefs).forEach(gameId => {
+        if (gameId !== 'global') {
+          totalAchRequired += allDefs[gameId].length;
+        }
       });
-      console.log(`[GameHub] Awarded ${reward} coins for achievement:`, achievementId);
+
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const currentCount = userDoc.exists ? (userDoc.data().achievementsCount || 0) : 0;
+
+      if (currentCount >= totalAchRequired) {
+        // Double check by fetching all achievement IDs
+        const achSnap = await db.collection("users").doc(user.uid).collection("achievements").get();
+        if (achSnap.size >= totalAchRequired) {
+          unlockAchievement('global', 'perfectionist');
+        }
+      }
     } catch (e) {
-      console.warn("[GameHub] Failed to unlock cloud achievement or award currency", e);
+      console.warn("[GameHub] Perfectionist check failed", e);
     }
   }
 
@@ -228,6 +317,28 @@
   } else if (path.endsWith("/") || path.endsWith("index.html")) {
     setTimeout(() => startHeartbeat(null), 2000);
   }
+
+  // Global Theme Application
+  (function applyGlobalTheme() {
+    const saved = localStorage.getItem('gamehub_theme');
+    if (saved) {
+      try {
+        const theme = JSON.parse(saved);
+        const root = document.documentElement;
+        root.style.setProperty('--bg-dark', theme.bg);
+        root.style.setProperty('--primary', theme.primary);
+        root.style.setProperty('--text-main', theme.text);
+        root.style.setProperty('--card-bg', theme.card);
+        root.style.setProperty('--border-color', theme.border);
+        
+        // Apply custom styles to body directly if needed
+        document.addEventListener('DOMContentLoaded', () => {
+          document.body.style.backgroundColor = theme.bg;
+          document.body.style.color = theme.text;
+        });
+      } catch(e) {}
+    }
+  })();
 
   async function getCurrency() {
     const user = getUser();
@@ -300,6 +411,108 @@
     }
   }
 
+  async function getLeaderboard(gameId, type = "alltime", scope = "everyone") {
+    const db = getDb();
+    if (!db) return [];
+    
+    const user = getUser();
+    let query = db.collection("leaderboards").doc(gameId).collection(type).orderBy("score", "desc").limit(50);
+    
+    if (scope === "friends" && user) {
+        // First get friend IDs
+        const friendsSnap = await db.collection("users").doc(user.uid).collection("friends").get();
+        const friendIds = [user.uid]; // Include self
+        friendsSnap.forEach(doc => friendIds.push(doc.id));
+        
+        // Firestore 'in' operator supports up to 10 IDs. For more, we'd need multiple queries or client-side filtering.
+        // For simplicity, we'll use 'in' for the first 10, or filter client-side if more.
+        if (friendIds.length <= 10) {
+            query = query.where("uid", "in", friendIds);
+        } else {
+            // Fetch more and filter client-side
+            const snap = await query.limit(100).get();
+            const entries = [];
+            snap.forEach(doc => {
+                if (friendIds.includes(doc.data().uid)) {
+                    entries.push(doc.data());
+                }
+            });
+            return entries;
+        }
+    }
+    
+    try {
+        const snap = await query.get();
+        const entries = [];
+        snap.forEach(doc => entries.push(doc.data()));
+        return entries;
+    } catch (e) {
+        console.warn("[GameHub] Leaderboard fetch failed", e);
+        return [];
+    }
+  }
+
+  async function syncAllHighScoresToLeaderboards() {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db) return;
+
+    const games = [
+      { id: "snake", key: "highScore" },
+      { id: "blockblast", key: "highScore" },
+      { id: "clicker", key: "totalEarned" },
+      { id: "flappy", key: "highScore" },
+      { id: "mining", key: "player.stats.maxDepth" },
+      { id: "brick", key: "highScore" },
+      { id: "blackjack", key: "bestMoney" },
+      { id: "stack", key: "highScore" }
+    ];
+
+    try {
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      if (!userDoc.exists) return;
+      
+      const userData = userDoc.data();
+      const username = userData.username || user.displayName || user.email.split('@')[0];
+
+      for (const game of games) {
+        const progressDoc = await db.collection("users").doc(user.uid).collection("progress").doc(game.id).get();
+        if (progressDoc.exists) {
+          const data = progressDoc.data();
+          let score = 0;
+          
+          if (game.key.includes('.')) {
+            const parts = game.key.split('.');
+            let val = data;
+            for (const part of parts) {
+              val = val ? val[part] : null;
+            }
+            score = val || 0;
+          } else {
+            score = data[game.key] || 0;
+          }
+
+          if (score > 0) {
+            const lbRef = db.collection("leaderboards").doc(game.id).collection("alltime").doc(user.uid);
+            const lbDoc = await lbRef.get();
+            
+            if (!lbDoc.exists || lbDoc.data().score < score) {
+              await lbRef.set({
+                uid: user.uid,
+                username: username,
+                score: score,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log(`[GameHub] Migrated ${game.id} score to All Time leaderboard: ${score}`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[GameHub] High score migration failed", e);
+    }
+  }
+
   window.gameHubProgress = {
     saveGameProgress,
     loadGameProgress,
@@ -307,7 +520,9 @@
     getUserAchievements,
     getCurrency,
     spendCurrency,
-    startHeartbeat
+    startHeartbeat,
+    getLeaderboard,
+    syncAllHighScoresToLeaderboards
   };
 })();
 

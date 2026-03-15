@@ -307,6 +307,45 @@
         difficulty: "hard",
         value: 50
       }
+    ],
+    stack: [
+      {
+        id: "stack_score_10",
+        name: "Solid Base",
+        description: "Reach a score of 10.",
+        difficulty: "easy",
+        value: 10
+      },
+      {
+        id: "stack_score_25",
+        name: "Getting High",
+        description: "Reach a score of 25.",
+        difficulty: "medium",
+        value: 25
+      },
+      {
+        id: "stack_score_50",
+        name: "Skyscraper",
+        description: "Reach a score of 50.",
+        difficulty: "hard",
+        value: 50
+      },
+      {
+        id: "stack_score_100",
+        name: "Cloud Brusher",
+        description: "Reach a score of 100.",
+        difficulty: "insane",
+        value: 100
+      }
+    ],
+    global: [
+      {
+        id: "perfectionist",
+        name: "The Perfectionist",
+        description: "Unlock all other achievements in the Game Hub.",
+        difficulty: "insane",
+        value: 500
+      }
     ]
   };
 
@@ -467,11 +506,217 @@
     body.appendChild(overlay);
   }
 
+  async function showLeaderboardModal(gameId) {
+    const body = document.body;
+    if (!body) return;
+
+    const existing = document.getElementById("gamehub-leaderboard-modal");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "gamehub-leaderboard-modal";
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.backgroundColor = "rgba(15,23,42,0.85)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "9999";
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    const panel = document.createElement("div");
+    panel.style.background = "linear-gradient(to bottom right, rgba(15,23,42,0.98), rgba(15,23,42,0.9))";
+    panel.style.borderRadius = "20px";
+    panel.style.padding = "24px";
+    panel.style.color = "#e5e7eb";
+    panel.style.width = "90%";
+    panel.style.maxWidth = "500px";
+    panel.style.maxHeight = "85vh";
+    panel.style.display = "flex";
+    panel.style.flexDirection = "column";
+    panel.style.boxShadow = "0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(148,163,184,0.1)";
+
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+    header.style.marginBottom = "20px";
+
+    const title = document.createElement("h2");
+    title.textContent = `${gameId.charAt(0).toUpperCase() + gameId.slice(1)} Leaderboard`;
+    title.style.fontSize = "1.5rem";
+    title.style.fontWeight = "800";
+    title.style.background = "linear-gradient(to right, #fff, #94a3b8)";
+    title.style.webkitBackgroundClip = "text";
+    title.style.webkitTextFillColor = "transparent";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "✕";
+    closeBtn.style.background = "rgba(255,255,255,0.05)";
+    closeBtn.style.border = "none";
+    closeBtn.style.color = "#9ca3af";
+    closeBtn.style.width = "32px";
+    closeBtn.style.height = "32px";
+    closeBtn.style.borderRadius = "50%";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.onclick = () => overlay.remove();
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    // Filters
+    const filterRow = document.createElement("div");
+    filterRow.style.display = "flex";
+    filterRow.style.gap = "8px";
+    filterRow.style.marginBottom = "16px";
+    filterRow.style.flexWrap = "wrap";
+
+    const periods = ["daily", "monthly", "alltime"];
+    const periodLabels = { daily: "Daily", monthly: "Monthly", alltime: "All Time" };
+    const scopes = ["everyone", "friends"];
+    const scopeLabels = { everyone: "Everyone", friends: "Friends" };
+
+    let currentPeriod = "alltime";
+    let currentScope = "everyone";
+
+    const listContainer = document.createElement("div");
+    listContainer.style.flex = "1";
+    listContainer.style.overflowY = "auto";
+    listContainer.style.paddingRight = "4px";
+
+    async function refreshList() {
+      listContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #64748b; font-size: 0.9rem;">Loading scores...</p>';
+      
+      const entries = await window.gameHubProgress.getLeaderboard(gameId, currentPeriod, currentScope);
+      
+      listContainer.innerHTML = '';
+      if (entries.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: #64748b; font-size: 0.9rem;">No scores yet for this period.</p>';
+        return;
+      }
+
+      entries.forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.padding = "12px 16px";
+        row.style.background = index % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent";
+        row.style.borderRadius = "12px";
+        row.style.marginBottom = "4px";
+        row.style.border = "1px solid rgba(255,255,255,0.05)";
+
+        const rank = document.createElement("div");
+        rank.textContent = index + 1;
+        rank.style.width = "30px";
+        rank.style.fontWeight = "800";
+        rank.style.color = index === 0 ? "#fbbf24" : index === 1 ? "#94a3b8" : index === 2 ? "#b45309" : "#475569";
+
+        const name = document.createElement("div");
+        name.textContent = entry.username;
+        name.style.flex = "1";
+        name.style.fontWeight = "600";
+        name.style.fontSize = "0.95rem";
+
+        const score = document.createElement("div");
+        score.textContent = Math.floor(entry.score).toLocaleString();
+        score.style.fontWeight = "800";
+        score.style.color = "#8b5cf6";
+
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(score);
+        listContainer.appendChild(row);
+      });
+    }
+
+    // Period Chips
+    periods.forEach(p => {
+      const chip = document.createElement("button");
+      chip.textContent = periodLabels[p];
+      chip.style.padding = "6px 14px";
+      chip.style.borderRadius = "20px";
+      chip.style.fontSize = "0.75rem";
+      chip.style.fontWeight = "700";
+      chip.style.border = "1px solid rgba(255,255,255,0.1)";
+      chip.style.cursor = "pointer";
+      chip.style.transition = "all 0.2s";
+      
+      const updateStyle = () => {
+        chip.style.background = currentPeriod === p ? "#8b5cf6" : "rgba(255,255,255,0.05)";
+        chip.style.color = currentPeriod === p ? "#fff" : "#94a3b8";
+      };
+      
+      updateStyle();
+      chip.onclick = () => {
+        currentPeriod = p;
+        filterRow.querySelectorAll('.period-chip').forEach(c => {
+          c.style.background = "rgba(255,255,255,0.05)";
+          c.style.color = "#94a3b8";
+        });
+        updateStyle();
+        refreshList();
+      };
+      chip.className = "period-chip";
+      filterRow.appendChild(chip);
+    });
+
+    // Divider
+    const divider = document.createElement("div");
+    divider.style.width = "1px";
+    divider.style.height = "24px";
+    divider.style.background = "rgba(255,255,255,0.1)";
+    divider.style.margin = "0 4px";
+    filterRow.appendChild(divider);
+
+    // Scope Chips
+    scopes.forEach(s => {
+      const chip = document.createElement("button");
+      chip.textContent = scopeLabels[s];
+      chip.style.padding = "6px 14px";
+      chip.style.borderRadius = "20px";
+      chip.style.fontSize = "0.75rem";
+      chip.style.fontWeight = "700";
+      chip.style.border = "1px solid rgba(255,255,255,0.1)";
+      chip.style.cursor = "pointer";
+      chip.style.transition = "all 0.2s";
+
+      const updateStyle = () => {
+        chip.style.background = currentScope === s ? "#10b981" : "rgba(255,255,255,0.05)";
+        chip.style.color = currentScope === s ? "#fff" : "#94a3b8";
+      };
+
+      updateStyle();
+      chip.onclick = () => {
+        currentScope = s;
+        filterRow.querySelectorAll('.scope-chip').forEach(c => {
+          c.style.background = "rgba(255,255,255,0.05)";
+          c.style.color = "#94a3b8";
+        });
+        updateStyle();
+        refreshList();
+      };
+      chip.className = "scope-chip";
+      filterRow.appendChild(chip);
+    });
+
+    panel.appendChild(filterRow);
+    panel.appendChild(listContainer);
+    overlay.appendChild(panel);
+    body.appendChild(overlay);
+
+    refreshList();
+  }
+
   window.gameHubAchievements = {
     definitions,
     getDefinitions,
     showAchievementsModal,
-    notifyAchievement: (gameId, achId) => {
+    showLeaderboardModal,
+    notifyAchievement: (gameId, achId, rewardValue = null) => {
       const gameDefs = definitions[gameId] || [];
       const ach = gameDefs.find(a => a.id === achId);
       if (!ach) return;
@@ -509,13 +754,31 @@
       textContainer.style.flexDirection = "column";
       textContainer.style.flex = "1";
 
+      const titleWrap = document.createElement("div");
+      titleWrap.style.display = "flex";
+      titleWrap.style.justifyContent = "space-between";
+      titleWrap.style.alignItems = "center";
+
       const title = document.createElement("div");
       title.textContent = "ACHIEVEMENT UNLOCKED";
       title.style.color = "#a78bfa";
       title.style.fontSize = "10px";
       title.style.fontWeight = "800";
       title.style.letterSpacing = "0.1em";
-      title.style.marginBottom = "2px";
+
+      titleWrap.appendChild(title);
+
+      if (rewardValue !== null) {
+        const reward = document.createElement("div");
+        reward.textContent = `+${rewardValue} 🪙`;
+        reward.style.color = "#fbbf24";
+        reward.style.fontSize = "11px";
+        reward.style.fontWeight = "bold";
+        reward.style.background = "rgba(251, 191, 36, 0.1)";
+        reward.style.padding = "2px 6px";
+        reward.style.borderRadius = "6px";
+        titleWrap.appendChild(reward);
+      }
 
       const name = document.createElement("div");
       name.textContent = ach.name;
@@ -523,6 +786,7 @@
       name.style.fontSize = "15px";
       name.style.fontWeight = "700";
       name.style.lineHeight = "1.2";
+      name.style.marginTop = "2px";
 
       const desc = document.createElement("div");
       desc.textContent = ach.description;
@@ -531,7 +795,7 @@
       desc.style.marginTop = "2px";
       desc.style.lineHeight = "1.3";
 
-      textContainer.appendChild(title);
+      textContainer.appendChild(titleWrap);
       textContainer.appendChild(name);
       textContainer.appendChild(desc);
       banner.appendChild(icon);
