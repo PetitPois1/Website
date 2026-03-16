@@ -1642,16 +1642,23 @@
                                 let glow = Math.abs(Math.sin(frames * 0.2)) * 50; 
                                 ctx.fillStyle = `rgb(255, ${100 + glow}, 0)`; 
                                 ctx.fillRect(stripe, drawSY, 1, spriteH);
-                            } else {
-                                let texX = Math.floor((stripe - drawSX) * texWidth / spriteW);
+                          } else {
+                                // Dynamically check the actual size of your specific image
+                                let actualWidth = textureToDraw.width || texWidth;
+                                let actualHeight = textureToDraw.height || texHeight;
+                                let texX = Math.floor((stripe - drawSX) * actualWidth / spriteW);
                                 
-                                // --- CRASH FIX BLOCK ---
+                                // --- UPGRADED CRASH FIX BLOCK ---
                                 try {
+                                    // Make sure the browser has fully downloaded the image before trying to draw it
+                                    if (textureToDraw.complete === false || textureToDraw.naturalWidth === 0) {
+                                        throw new Error("Image not fully loaded yet");
+                                    }
                                     if (spriteH > 0 && spriteW > 0) { 
-                                        ctx.drawImage(textureToDraw, texX, 0, 1, texHeight, stripe, drawSY, 1, spriteH); 
+                                        ctx.drawImage(textureToDraw, texX, 0, 1, actualHeight, stripe, drawSY, 1, spriteH); 
                                     }
                                 } catch (e) {
-                                    ctx.fillStyle = sprite.type === 'enemy' ? 'red' : 'yellow'; 
+                                    ctx.fillStyle = sprite.type === 'enemy' ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 0, 0.5)'; 
                                     ctx.fillRect(stripe, drawSY, 1, spriteH);
                                 }
                                 
