@@ -113,8 +113,9 @@
         
         .rebirth-box { border-color: var(--rebirth-cyan); background: rgba(0, 229, 255, 0.1); box-shadow: inset 0 0 15px rgba(0,229,255,0.2);}
         
-        .pixel-grid { display: grid; grid-template-columns: repeat(8, 25px); grid-template-rows: repeat(8, 25px); gap: 1px; justify-content: center; background: #222; padding: 5px; border-radius: 4px; border: 2px solid #555; margin: 10px auto;}
-        .pixel-cell { background: transparent; width: 25px; height: 25px; cursor: pointer; border: 1px solid #333; }
+        /* UPDATED: 16x16 HIGH RES FLAG MAKER */
+        .pixel-grid { display: grid; grid-template-columns: repeat(16, 12px); grid-template-rows: repeat(16, 12px); gap: 1px; justify-content: center; background: #222; padding: 5px; border-radius: 4px; border: 2px solid #555; margin: 10px auto;}
+        .pixel-cell { background: transparent; width: 12px; height: 12px; cursor: pointer; border: 1px solid #333; }
         .color-palette { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;}
         .color-swatch { width: 25px; height: 25px; border-radius: 4px; cursor: pointer; border: 2px solid #fff; }
 
@@ -179,7 +180,7 @@
     </style>
 </head>
 <body>
-<div id="game-container">
+    <div id="game-container">
         <div id="toast-container"></div>
         
         <div id="boss-cutscene" class="cutscene-overlay">
@@ -298,7 +299,7 @@
 
             <div class="wood-texture" style="padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
                 <h3 style="color: #eee; margin: 0 0 5px 0;">🏴‍☠️ Jolly Roger Canvas</h3>
-                <p style="font-size: 11px; color: #ccc;">Paint your crew's flag!</p>
+                <p style="font-size: 11px; color: #ccc;">Paint your crew's flag! (High Res)</p>
                 <div class="color-palette" id="color-palette">
                     </div>
                 <div class="pixel-grid" id="pixel-grid">
@@ -469,10 +470,11 @@
                 <h2 style="color: var(--gold); margin-top: 0;">💤 Welcome Back, Captain!</h2>
                 <p style="font-size: 13px; color: #ccc;">While you were sleeping, your crew kept working:</p>
                 <div style="font-size: 30px; margin: 15px 0;">🍖 <span id="offline-meat" style="color:var(--hp-green);">0</span></div>
-                <button class="btn-action" onclick="closeModal('offline-modal'); playSound('win');">Claim All</button>
+                <button class="btn-action" onclick="closeModal('offline-modal'); playSound('win'); updateHeader();">Claim All</button>
             </div>
         </div>
     </div>
+
     <script>
         // --- BASE UTC CLOCK ---
         function showTime() {
@@ -522,14 +524,13 @@
         let isBattling = false, currentStarFilter = 0, viewingGearType = 'weapon';
         let bounties = { pulls: 0, kills: 0, levels: 0, claimed: { pulls: false, kills: false, levels: false }, lastReset: Date.now() };
         let lastSaveTime = Date.now();
-        let jollyRogerPixels = Array(64).fill('transparent');
+        let jollyRogerPixels = Array(256).fill('transparent'); // UPGRADED TO 16x16
         let currentPaintColor = '#fff';
         let infamyBounty = 0;
 
         const typeIcons = { 'brawler': '👊 Brawler', 'swordsman': '⚔️ Sword', 'gunner': '🔫 Gunner' };
         const typeColors = { 'brawler': '#ff5252', 'swordsman': '#448aff', 'gunner': '#69f0ae' };
 
-        // --- EXPANDED CHARACTER DATABASE ---
         const characters = [
             { id: 1, name: "Monkey D. Luffy", rarity: 5, type: 'brawler', emoji: "👒", skill: "Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
             { id: 2, name: "Roronoa Zoro", rarity: 5, type: 'swordsman', emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
@@ -588,7 +589,7 @@
         // --- CORE LOGIC & STAT CALCS ---
         function getRebirthMulti() { return 1 + (rebirthCount * 1.0); } 
         function getShipMulti() { return 1 + (shipLevel * 0.05); }
-        function getPullDiscount() { return infamyBounty >= 1000000000 ? 0.9 : 1.0; } // 10% off if 1 Billion+ bounty
+        function getPullDiscount() { return infamyBounty >= 1000000000 ? 0.9 : 1.0; } 
 
         function getCharHp(char) {
             let hp = char.hp;
@@ -602,7 +603,7 @@
             return Math.floor(atk * getShipMulti() * getRebirthMulti() * (char.isAwoken ? 2 : 1));
         }
 
-        // --- INITIALIZATION & OFFLINE PROGRESS ---
+        // --- INITIALIZATION & CLAIM LOOT ---
         function startGame() {
             playSound('coin');
             document.getElementById('title-screen').style.display = 'none';
@@ -611,6 +612,19 @@
             updateHeader(); updateDockUI(); updateTavernUI(); checkBountyAlert(); initJollyRoger();
             setInterval(() => unclaimedMeat += (5 + shipLevel * 2), 1000);
             setInterval(() => { document.getElementById('ui-unclaimed-meat').innerText = unclaimedMeat; }, 1000);
+        }
+
+        // --- FIXED MEAT COLLECTOR ---
+        function claimIdleLoot() {
+            if (unclaimedMeat > 0) {
+                playSound('win');
+                meat += unclaimedMeat;
+                unclaimedMeat = 0;
+                document.getElementById('ui-unclaimed-meat').innerText = "0";
+                updateHeader();
+                showToast("Meat claimed!");
+                saveGame();
+            }
         }
 
         function switchTab(tab, btn) {
@@ -636,7 +650,7 @@
             let p = 0; activeTeamUids.forEach(id => { const c = inventory.find(x => x.uid === id); if(c) p += (getCharHp(c) + getCharAtk(c)); });
             document.getElementById('power-level').innerText = p;
             
-            infamyBounty = (p * 50) + (currentStage * 1000000) + (impelFloor * 500000); // Dynamic bounty
+            infamyBounty = (p * 50) + (currentStage * 1000000) + (impelFloor * 500000); 
             if (rebirthCount > 0) { document.getElementById('rebirth-badge').style.display = 'inline'; document.getElementById('rebirth-count').innerText = rebirthCount; }
             checkBountyAlert();
         }
@@ -648,7 +662,6 @@
             container.appendChild(toast); setTimeout(() => toast.remove(), 2500);
         }
 
-        // --- CUTSCENE OVERLAYS ---
         function triggerCutscene(mainText, subText, callback) {
             playSound('alarm');
             const overlay = document.getElementById('boss-cutscene');
@@ -661,7 +674,6 @@
             }, 2500);
         }
 
-        // --- WANTED POSTER ---
         function updateWantedPoster() {
             document.getElementById('wanted-bounty-amount').innerText = infamyBounty.toLocaleString();
             let perk = "None";
@@ -671,7 +683,6 @@
             document.getElementById('wanted-perk').innerText = `Infamy Perk: ${perk}`;
         }
 
-        // --- HUB: SHIPYARD, NAVAL, FORGE, FISHING, JOLLY ROGER ---
         function upgradeShip() { 
             const cost = shipLevel * 100; 
             if(wood >= cost) { 
@@ -703,13 +714,12 @@
             if (confirm("Are you sure? Rebirth resets your Crew, Meat, Wood, Stages, and Gear. Grants +100% PERMANENT STAT MULTIPLIER!")) {
                 playSound('rebirth');
                 rebirthCount++; meat = 0; wood = 0; inventory = []; activeTeamUids = []; gearInventory = [];
-                currentStage = 0; impelFloor = 1; shipLevel = 1;
+                currentStage = 0; impelFloor = 1; shipLevel = 1; unclaimedMeat = 0;
                 showToast(`✨ REBIRTH SUCCESSFUL! Stats x${getRebirthMulti()}! ✨`);
                 updateHeader(); updateDockUI(); switchTab('tavern', document.querySelector('.nav-btn')); saveGame();
             }
         }
 
-        // Naval Warfare
         function startNavalBattle() {
             if(isBattling) return;
             isBattling = true; playSound('alarm');
@@ -719,7 +729,7 @@
             showToast("Naval Battle Engaged!");
             setTimeout(() => {
                 isBattling = false;
-                if(sHp > eAtk * 3 && sAtk * 3 > eHp) { // Abstract fast calculation
+                if(sHp > eAtk * 3 && sAtk * 3 > eHp) { 
                     playSound('win');
                     let wDrop = 50 * currentStage;
                     if(infamyBounty >= 100000000) wDrop = Math.floor(wDrop * 1.10);
@@ -732,7 +742,6 @@
             }, 1500);
         }
 
-        // Blacksmith Forge
         function openForgeModal() {
             playSound('coin');
             const list = document.getElementById('forge-list'); list.innerHTML = '';
@@ -757,7 +766,6 @@
             }
         }
 
-        // Fishing Minigame
         let fishInt; let fishPos = 0; let fishDir = 1;
         function castLine() {
             if(meat < 100) { showToast("Not enough meat for bait!"); return; }
@@ -766,7 +774,7 @@
             
             if(btn.innerText.includes("Reel")) {
                 clearInterval(fishInt); btn.innerText = "Cast Line (Cost: 100 🍖)";
-                if(fishPos > 35 && fishPos < 55) { // Center target zone roughly
+                if(fishPos > 35 && fishPos < 55) {
                     playSound('win');
                     const roll = Math.random();
                     if(roll < 0.1) { showToast("Caught a Sea King! +1 Ascension Shard!"); gems += 100; }
@@ -787,7 +795,7 @@
             }
         }
 
-        // Jolly Roger Builder
+        // --- UPGRADED FLAG MAKER ---
         function initJollyRoger() {
             const colors = ['#000', '#fff', '#e53935', '#43a047', '#1e88e5', '#fdd835', '#8d6e63', '#9c27b0'];
             const pal = document.getElementById('color-palette'); pal.innerHTML = '';
@@ -809,7 +817,6 @@
         function paintPixel(index) { jollyRogerPixels[index] = currentPaintColor; renderJollyRoger(); saveGame(); }
         function clearCanvas() { jollyRogerPixels.fill('transparent'); renderJollyRoger(); saveGame(); }
 
-        // --- GACHA ---
         function updateTavernUI() {
             const h = document.getElementById('tavern-hint');
             if (currentStage >= 15) h.innerHTML = "<span style='color:var(--danger)'>EMPERORS UNLOCKED! 6⭐ Big Mom & Katakuri!</span>";
@@ -824,7 +831,7 @@
             const pool = characters.filter(c => c.unlockStage <= currentStage);
             const roll = Math.random() * 100;
             let r = 3; 
-            if (currentStage >= 18 && roll <= 0.5) r = 6; // Ultra rare late game
+            if (currentStage >= 18 && roll <= 0.5) r = 6; 
             else if (currentStage >= 12 && roll <= 2) r = 6; 
             else if (roll <= 8) r = 5; else if (roll <= 30) r = 4;
 
@@ -861,7 +868,6 @@
             }, 60); 
         }
 
-        // --- CREW TAB, GEAR & AWAKENING ---
         function setFilter(stars, btn) {
             currentStarFilter = stars; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active'); renderInventory(); playSound('coin');
@@ -919,7 +925,6 @@
             document.getElementById('modal-dupes').innerText = c.dupes || 0; document.getElementById('modal-dupes-req').innerText = reqDupes;
             document.getElementById('modal-ascend-btn').disabled = (c.dupes || 0) < reqDupes;
             
-            // Awakening Check
             const awakenBtn = document.getElementById('modal-awaken-btn');
             if(c.level >= 100 && c.ascensions >= 5 && c.rarity >= 5 && !c.isAwoken) { awakenBtn.style.display = 'block'; } else { awakenBtn.style.display = 'none'; }
             
@@ -949,7 +954,7 @@
             c.hp = c.baseHp + (c.level * c.hpGrowth); c.atk = c.baseAtk + (c.level * c.atkGrowth);
             c.skill = "AWAKENED: " + c.skill;
             
-            if(c.id === 1) { c.name = "Sun God Nika"; c.emoji = "🥁"; c.skill = "Gomu Gomu Gigant!"; } // Special Luffy Exception
+            if(c.id === 1) { c.name = "Sun God Nika"; c.emoji = "🥁"; c.skill = "Gomu Gomu Gigant!"; }
             
             showToast(`🌟 ${c.name} HAS AWAKENED! Stats Doubled!`);
             openModal(c.uid); updateHeader(); renderInventory(); renderTeam(); saveGame();
@@ -971,7 +976,6 @@
             updateHeader(); renderTeam(); renderInventory(); closeModal('char-modal'); saveGame();
         }
 
-        // --- GEAR LOGIC ---
         function dropGear() {
             if (Math.random() < 0.3) { 
                 const g = gearPool[Math.floor(Math.random() * gearPool.length)];
@@ -1010,7 +1014,6 @@
             closeModal('gear-modal'); openModal(currentlyViewedUid); updateHeader(); saveGame();
         }
 
-        // --- BOUNTIES / DAILY ---
         function checkBountyAlert() {
             let alert = false;
             if(bounties.pulls >= 3 && !bounties.claimed.pulls) alert = true;
@@ -1032,7 +1035,6 @@
         function claimBounty(type, reward) { playSound('win'); bounties.claimed[type] = true; gems += reward; updateHeader(); openBountyModal(); showToast(`Claimed ${reward} Gems!`); saveGame(); }
         function openHelpModal() { playSound('coin'); document.getElementById('help-modal').style.display = 'flex'; }
 
-        // --- COMBAT ENGINE ---
         function checkAdvantage(atkType, defType) {
             if (atkType === 'brawler' && defType === 'gunner') return 1.5; if (atkType === 'gunner' && defType === 'swordsman') return 1.5;
             if (atkType === 'swordsman' && defType === 'brawler') return 1.5; if (atkType === defType) return 1.0; return 0.75; 
@@ -1049,7 +1051,7 @@
             const b = document.getElementById(boxId); b.innerHTML += `<div style="color:${color}; border-bottom:1px dotted #444; padding-bottom:3px;">${msg}</div>`; b.scrollTop = b.scrollHeight;
         }
 
-        // VOYAGE (CAMPAIGN)
+        // --- FIXED COMBAT HEALTH TEXT TICKING ---
         function renderVoyageScreen() {
             if (currentStage >= enemies.length) { document.getElementById('stage-title').innerText = "All Stages Cleared! Await Rebirth!"; document.getElementById('battle-btn').disabled = true; return; }
             const e = enemies[currentStage];
@@ -1066,8 +1068,6 @@
 
         function startBattle() {
             if (activeTeamUids.length === 0) { showToast("You need a crew first!"); return; }
-            
-            // Cutscene Checks
             if (currentStage === 9 || currentStage === 14 || currentStage === 19) {
                 triggerCutscene("WARNING", "EMPEROR APPROACHING", executeVoyageBattle);
             } else {
@@ -1094,10 +1094,10 @@
                 turnCounter++; let currentAtk = pAtk; let isSkill = (turnCounter % 4 === 0);
                 
                 if (isSkill && leadChar) {
-                    currentAtk = Math.floor(pAtk * (leadChar.isAwoken ? 3.5 : 2.5)); // Awoken skills do more dmg
+                    currentAtk = Math.floor(pAtk * (leadChar.isAwoken ? 3.5 : 2.5)); 
                     logBattle(`🔥 ${leadChar.name} uses ${leadChar.skill}!`, leadChar.isAwoken?"var(--awaken-glow)":"var(--gold)");
                     document.getElementById('clash-team-sprites').classList.add('anim-skill');
-                    if(leadChar.isAwoken) { pHP = Math.min(maxPHP, Math.floor(pHP + maxPHP*0.1)); spawnFloatingText("+Heal", "var(--hp-green)", "clash-player-side"); } // Awaken heal
+                    if(leadChar.isAwoken) { pHP = Math.min(maxPHP, Math.floor(pHP + maxPHP*0.1)); spawnFloatingText("+Heal", "var(--hp-green)", "clash-player-side"); } 
                     setTimeout(() => document.getElementById('clash-team-sprites').classList.remove('anim-skill'), 600);
                 }
 
@@ -1107,7 +1107,10 @@
                 setTimeout(() => { document.getElementById('clash-team-sprites').classList.remove('anim-attack-player'); document.getElementById('clash-enemy-sprite').classList.remove('anim-hurt'); }, 300);
 
                 spawnFloatingText(`-${dmgToEnemy}`, advantageMulti > 1 ? "var(--gold)" : "#fff", "clash-enemy-side");
+                
+                // FIXED ENEMY HP TEXT UPDATE
                 document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+                document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
                 
                 if(enemy.hp <= 0) {
                     clearInterval(int); isBattling = false; document.getElementById('battle-btn').disabled = false;
@@ -1124,14 +1127,16 @@
                     setTimeout(() => { document.getElementById('clash-enemy-sprite').classList.remove('anim-attack-enemy'); document.getElementById('clash-team-sprites').classList.remove('anim-hurt'); }, 300);
 
                     spawnFloatingText(`-${dmgToPlayer}`, "var(--danger)", "clash-player-side");
+                    
+                    // FIXED PLAYER HP TEXT UPDATE
                     document.getElementById('player-hp-fill').style.width = `${Math.max(0, (pHP/maxPHP)*100)}%`;
+                    document.getElementById('player-hp-text').innerText = `${Math.max(0, pHP)}/${maxPHP}`;
 
                     if(pHP <= 0) { clearInterval(int); isBattling = false; document.getElementById('battle-btn').disabled = false; logBattle("DEFEAT...", "var(--danger)"); renderVoyageScreen(); }
                 }, 500);
             }, 1200);
         }
 
-        // IMPEL DOWN
         function renderImpelScreen() {
             document.getElementById('impel-floor').innerText = impelFloor;
             const hpBase = 5000 * Math.pow(1.3, impelFloor);
@@ -1158,7 +1163,10 @@
                 setTimeout(() => { document.getElementById('impel-team-sprites').classList.remove('anim-attack-player'); document.getElementById('impel-enemy-sprite').classList.remove('anim-hurt'); }, 300);
 
                 spawnFloatingText(`-${currentAtk}`, "white", "impel-enemy-side");
+                
+                // FIXED ENEMY HP TEXT UPDATE
                 document.getElementById('impel-enemy-hp-fill').style.width = `${Math.max(0, (enemyHP/eMax)*100)}%`;
+                document.getElementById('impel-enemy-hp-text').innerText = `${Math.max(0, enemyHP)}/${Math.floor(eMax)}`;
                 
                 if(enemyHP <= 0) {
                     clearInterval(int); isBattling = false; document.getElementById('impel-btn').disabled = false;
@@ -1174,14 +1182,16 @@
                     setTimeout(() => { document.getElementById('impel-enemy-sprite').classList.remove('anim-attack-enemy'); document.getElementById('impel-team-sprites').classList.remove('anim-hurt'); }, 300);
 
                     spawnFloatingText(`-${enemyAtk}`, "var(--danger)", "impel-player-side");
+                    
+                    // FIXED PLAYER HP TEXT UPDATE
                     document.getElementById('impel-player-hp-fill').style.width = `${Math.max(0, (pHP/maxPHP)*100)}%`;
+                    document.getElementById('impel-player-hp-text').innerText = `${Math.max(0, pHP)}/${maxPHP}`;
 
                     if(pHP <= 0) { clearInterval(int); isBattling = false; document.getElementById('impel-btn').disabled = false; logBattle("WIPED OUT...", "var(--danger)", "impel-log"); renderImpelScreen(); }
                 }, 500);
             }, 1200);
         }
 
-        // RAID
         function startRaid() {
             if (activeTeamUids.length === 0) { showToast("You need a crew!"); return; }
             if (meat < 1000) { showToast("Costs 1000 Meat to start Raid!"); return; }
@@ -1219,12 +1229,11 @@
             }, 1000);
         }
 
-        // --- OFFLINE PROGRESS & SAVING ---
         function checkOfflineProgress() {
             const now = Date.now();
-            const timeDiff = Math.floor((now - lastSaveTime) / 1000); // seconds
-            if (timeDiff > 60) { // If gone for more than 1 minute
-                const cappedDiff = Math.min(timeDiff, 86400); // Cap at 24 hours
+            const timeDiff = Math.floor((now - lastSaveTime) / 1000); 
+            if (timeDiff > 60) { 
+                const cappedDiff = Math.min(timeDiff, 86400); 
                 let idleRate = 5 + (shipLevel * 2);
                 if(infamyBounty >= 10000000) idleRate = Math.floor(idleRate * 1.05);
                 const offlineMeat = cappedDiff * idleRate;
@@ -1233,8 +1242,6 @@
                 document.getElementById('offline-modal').style.display = 'flex';
                 playSound('alarm');
             }
-            
-            // Check Daily Reset
             if (now - bounties.lastReset > 86400000) {
                 bounties = { pulls: 0, kills: 0, levels: 0, claimed: { pulls: false, kills: false, levels: false }, lastReset: now };
             }
@@ -1260,7 +1267,9 @@
                 impelFloor = data.impelFloor || 1; rebirthCount = data.rebirthCount || 0;
                 bounties = data.bounties || { pulls: 0, kills: 0, levels: 0, claimed: { pulls: false, kills: false, levels: false }, lastReset: Date.now() };
                 lastSaveTime = data.lastSaveTime || Date.now();
-                jollyRogerPixels = data.jollyRogerPixels || Array(64).fill('transparent');
+                
+                // Safe check for the new 16x16 flag update (256 pixels)
+                jollyRogerPixels = data.jollyRogerPixels && data.jollyRogerPixels.length === 256 ? data.jollyRogerPixels : Array(256).fill('transparent');
             }
             checkOfflineProgress();
         }
