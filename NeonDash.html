@@ -1582,7 +1582,7 @@
                 player.isGrounded = false; player.coyoteTimer -= dt; player.rotation += 4.5 * currentSpeedMulti * dt;
             }
         } else if (playerMode === 'SHIP') {
-            const shipGravity = player.isPressing ? -3500 : 3500;
+            const shipGravity = player.isPressing ? -2500 : 2500;
             player.vy += shipGravity * dt;
             player.vy = Math.max(-1000, Math.min(1000, player.vy)); // Limit vertical speed
             player.y += player.vy * dt;
