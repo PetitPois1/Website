@@ -531,26 +531,48 @@
         const typeIcons = { 'brawler': '👊 Brawler', 'swordsman': '⚔️ Sword', 'gunner': '🔫 Gunner' };
         const typeColors = { 'brawler': '#ff5252', 'swordsman': '#448aff', 'gunner': '#69f0ae' };
 
-        const characters = [
-            { id: 1, name: "Monkey D. Luffy", rarity: 5, type: 'brawler', emoji: "👒", skill: "Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
-            { id: 2, name: "Roronoa Zoro", rarity: 5, type: 'swordsman', emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
+     const characters = [
+            // 3-STAR (Common)
+            { id: 9, name: "Marine Grunt", rarity: 3, type: 'gunner', emoji: "⚓", skill: "Bayonet Charge", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8, unlockStage: 0 },
+            { id: 30, name: "Coby (Cabin Boy)", rarity: 3, type: 'brawler', emoji: "🧹", skill: "Mop Sweep!", baseHp: 550, baseAtk: 70, hpGrowth: 45, atkGrowth: 7, unlockStage: 0 },
+            { id: 31, name: "Helmeppo", rarity: 3, type: 'swordsman', emoji: "👱‍♂️", skill: "Spoiled Slash!", baseHp: 480, baseAtk: 85, hpGrowth: 38, atkGrowth: 9, unlockStage: 1 },
+            { id: 32, name: "Mohji & Richie", rarity: 3, type: 'brawler', emoji: "🦁", skill: "Lion Pounce!", baseHp: 650, baseAtk: 60, hpGrowth: 50, atkGrowth: 6, unlockStage: 2 },
+            { id: 44, name: "gaimon", rarity: 3, type: 'brawler', emoji: "🥡", skill: "strange animal stampeed", baseHp: 600, baseAtk: 70, hpGrowth: 50, atkGrowth: 6, unlockStage: 2 },
+            
+            // 4-STAR (Rare)
             { id: 3, name: "Buggy the Clown", rarity: 4, type: 'swordsman', emoji: "🤡", skill: "Chop Cannon!", baseHp: 1100, baseAtk: 220, hpGrowth: 110, atkGrowth: 22, unlockStage: 0 },
             { id: 7, name: "Nami", rarity: 4, type: 'gunner', emoji: "🌩️", skill: "Thunder Tempo!", baseHp: 900, baseAtk: 180, hpGrowth: 80, atkGrowth: 18, unlockStage: 0 },
             { id: 8, name: "Usopp", rarity: 4, type: 'gunner', emoji: "🤥", skill: "Firebird Star!", baseHp: 850, baseAtk: 190, hpGrowth: 85, atkGrowth: 19, unlockStage: 0 },
-            { id: 9, name: "Marine Grunt", rarity: 3, type: 'gunner', emoji: "⚓", skill: "Bayonet Charge", baseHp: 500, baseAtk: 80, hpGrowth: 40, atkGrowth: 8, unlockStage: 0 },
+            { id: 33, name: "Captain Kuro", rarity: 4, type: 'swordsman', emoji: "🐈‍⬛", skill: "Out of the Bag!", baseHp: 1000, baseAtk: 240, hpGrowth: 100, atkGrowth: 24, unlockStage: 2 },
+            { id: 34, name: "Don Krieg", rarity: 4, type: 'gunner', emoji: "🛡️", skill: "MH5 Gas!", baseHp: 1300, baseAtk: 200, hpGrowth: 130, atkGrowth: 20, unlockStage: 3 },
+            { id: 35, name: "Arlong", rarity: 4, type: 'brawler', emoji: "🦈", skill: "Shark on Darts!", baseHp: 1400, baseAtk: 250, hpGrowth: 140, atkGrowth: 25, unlockStage: 4 },
+            { id: 12, name: "Tony Chopper", rarity: 4, type: 'brawler', emoji: "🦌", skill: "Monster Point!", baseHp: 1200, baseAtk: 250, hpGrowth: 120, atkGrowth: 25, unlockStage: 4 },
+            { id: 36, name: "Smoker", rarity: 4, type: 'brawler', emoji: "💨", skill: "White Blow!", baseHp: 1500, baseAtk: 210, hpGrowth: 150, atkGrowth: 21, unlockStage: 5 },
+            { id: 37, name: "Vivi & Karoo", rarity: 4, type: 'swordsman', emoji: "🦆", skill: "Peacock Slasher!", baseHp: 1100, baseAtk: 230, hpGrowth: 110, atkGrowth: 23, unlockStage: 6 },
+            { id: 16, name: "Franky", rarity: 4, type: 'brawler', emoji: "🤖", skill: "Radical Beam!", baseHp: 1800, baseAtk: 350, hpGrowth: 180, atkGrowth: 35, unlockStage: 9 },
+            { id: 18, name: "Brook", rarity: 4, type: 'swordsman', emoji: "💀", skill: "Arrow Notch!", baseHp: 1500, baseAtk: 400, hpGrowth: 150, atkGrowth: 40, unlockStage: 11 },
+
+            // 5-STAR (Legendary)
+            { id: 1, name: "Monkey D. Luffy", rarity: 5, type: 'brawler', emoji: "👒", skill: "Gomu Pistol!", baseHp: 1500, baseAtk: 300, hpGrowth: 150, atkGrowth: 30, unlockStage: 0 },
+            { id: 2, name: "Roronoa Zoro", rarity: 5, type: 'swordsman', emoji: "⚔️", skill: "Onigiri!", baseHp: 1400, baseAtk: 350, hpGrowth: 140, atkGrowth: 35, unlockStage: 0 },
             { id: 10, name: "Nico Robin", rarity: 5, type: 'brawler', emoji: "🌸", skill: "Seis Fleur!", baseHp: 1600, baseAtk: 420, hpGrowth: 160, atkGrowth: 45, unlockStage: 4 },
             { id: 11, name: "Sir Crocodile", rarity: 5, type: 'gunner', emoji: "🐊", skill: "Desert Spada!", baseHp: 1700, baseAtk: 450, hpGrowth: 170, atkGrowth: 50, unlockStage: 4 },
-            { id: 12, name: "Tony Chopper", rarity: 4, type: 'brawler', emoji: "🦌", skill: "Monster Point!", baseHp: 1200, baseAtk: 250, hpGrowth: 120, atkGrowth: 25, unlockStage: 4 },
             { id: 15, name: "God Enel", rarity: 5, type: 'gunner', emoji: "⚡", skill: "El Thor!", baseHp: 2000, baseAtk: 600, hpGrowth: 200, atkGrowth: 60, unlockStage: 8 },
-            { id: 16, name: "Franky", rarity: 4, type: 'brawler', emoji: "🤖", skill: "Radical Beam!", baseHp: 1800, baseAtk: 350, hpGrowth: 180, atkGrowth: 35, unlockStage: 9 },
             { id: 17, name: "Rob Lucci", rarity: 5, type: 'brawler', emoji: "🐆", skill: "Six King Gun!", baseHp: 2200, baseAtk: 650, hpGrowth: 220, atkGrowth: 65, unlockStage: 10 },
-            { id: 18, name: "Brook", rarity: 4, type: 'swordsman', emoji: "💀", skill: "Arrow Notch!", baseHp: 1500, baseAtk: 400, hpGrowth: 150, atkGrowth: 40, unlockStage: 11 },
+            { id: 38, name: "Portgas D. Ace", rarity: 5, type: 'brawler', emoji: "🔥", skill: "Fire Fist!", baseHp: 2500, baseAtk: 700, hpGrowth: 250, atkGrowth: 70, unlockStage: 11 },
+            { id: 39, name: "Jinbe", rarity: 5, type: 'brawler', emoji: "🥋", skill: "Fishman Karate!", baseHp: 3200, baseAtk: 480, hpGrowth: 320, atkGrowth: 48, unlockStage: 11 },
+            { id: 40, name: "Boa Hancock", rarity: 5, type: 'gunner', emoji: "🐍", skill: "Mero Mero Mellow!", baseHp: 2100, baseAtk: 680, hpGrowth: 210, atkGrowth: 68, unlockStage: 12 },
             { id: 19, name: "Bartholomew Kuma", rarity: 5, type: 'brawler', emoji: "🐻", skill: "Ursus Shock!", baseHp: 3000, baseAtk: 500, hpGrowth: 300, atkGrowth: 50, unlockStage: 12 },
+            { id: 41, name: "Trafalgar Law", rarity: 5, type: 'swordsman', emoji: "⚕️", skill: "Gamma Knife!", baseHp: 2400, baseAtk: 750, hpGrowth: 240, atkGrowth: 75, unlockStage: 14 },
             { id: 25, name: "Charlotte Katakuri", rarity: 5, type: 'brawler', emoji: "🍩", skill: "Buzz Cut Mochi!", baseHp: 3500, baseAtk: 800, hpGrowth: 350, atkGrowth: 80, unlockStage: 15 },
+
+            // 6-STAR (Emperor Tier)
+            { id: 20, name: "Admiral Kizaru", rarity: 6, type: 'gunner', emoji: "✨", skill: "Yasakani no Magatama!", baseHp: 4000, baseAtk: 1000, hpGrowth: 400, atkGrowth: 100, unlockStage: 12 },
+            { id: 42, name: "Red-Haired Shanks", rarity: 6, type: 'swordsman', emoji: "🗡️", skill: "Divine Departure!", baseHp: 4500, baseAtk: 1500, hpGrowth: 450, atkGrowth: 150, unlockStage: 12 },
+            { id: 43, name: "Edward Newgate (Whitebeard)", rarity: 6, type: 'brawler', emoji: "🧔‍♂️", skill: "Heaven and Earth Shake!", baseHp: 7000, baseAtk: 1100, hpGrowth: 700, atkGrowth: 110, unlockStage: 12 },
             { id: 26, name: "Big Mom", rarity: 6, type: 'swordsman', emoji: "🎂", skill: "Ikoku Sovereignty!", baseHp: 5500, baseAtk: 1200, hpGrowth: 550, atkGrowth: 120, unlockStage: 15 },
             { id: 27, name: "Kaido of the Beasts", rarity: 6, type: 'brawler', emoji: "🐉", skill: "Thunder Bagua!", baseHp: 6000, baseAtk: 1100, hpGrowth: 600, atkGrowth: 110, unlockStage: 18 },
-            { id: 28, name: "Sun God Nika", rarity: 6, type: 'brawler', emoji: "🥁", skill: "Dawn Gun!", baseHp: 6500, baseAtk: 1300, hpGrowth: 650, atkGrowth: 130, unlockStage: 19 },
-            { id: 20, name: "Admiral Kizaru", rarity: 6, type: 'gunner', emoji: "✨", skill: "Yasakani no Magatama!", baseHp: 4000, baseAtk: 1000, hpGrowth: 400, atkGrowth: 100, unlockStage: 12 }
+            { id: 28, name: "Sun God Nika", rarity: 6, type: 'brawler', emoji: "🥁", skill: "Dawn Gun!", baseHp: 6500, baseAtk: 1300, hpGrowth: 650, atkGrowth: 130, unlockStage: 19 }
         ];
 
         const enemies = [
