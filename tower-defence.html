@@ -3,160 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced TD - Bloons Style</title>
+    <title>Bloons JS - Advanced Edition</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
-        canvas { background: #2d2d2d; border: 4px solid #444; border-radius: 8px; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .ui-container { display: flex; gap: 20px; margin-top: 15px; width: 800px; }
+        body { background: #1a1a1a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        #menu, #stats-page { position: absolute; width: 100%; height: 100%; background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        canvas { background: #2d2d2d; border: 4px solid #444; cursor: crosshair; }
+        .ui-container { display: flex; gap: 20px; margin-top: 10px; width: 800px; }
         .shop, .inspector { background: #333; padding: 15px; border-radius: 8px; border: 1px solid #555; }
-        .shop { flex: 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .inspector { flex: 1; min-width: 200px; }
-        .stats { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; background: #444; padding: 10px 20px; border-radius: 20px; }
-        button { padding: 8px; cursor: pointer; background: #444; color: white; border: 1px solid #666; border-radius: 4px; transition: 0.2s; font-size: 0.8rem; }
-        button:hover { background: #666; }
-        button.active { background: #2e7d32; border-color: #4caf50; }
-        .tower-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .tower-btn span { font-size: 0.7rem; color: #aaa; }
-        .upgrade-btn { width: 100%; margin-top: 10px; background: #1565c0; }
-        .map-tools { margin-bottom: 10px; display: flex; gap: 5px; }
+        .shop { flex: 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .stats-bar { font-size: 1.2rem; margin: 10px 0; background: #444; padding: 10px 30px; border-radius: 30px; display: flex; gap: 20px; }
+        button { padding: 10px; cursor: pointer; background: #1565c0; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #1e88e5; }
+        .hidden { display: none !important; }
+        .map-card { border: 2px solid #555; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; width: 120px; }
+        .map-card:hover { border-color: #4caf50; background: #333; }
     </style>
 </head>
 <body>
 
-    <div class="stats">
-        💰 $<span id="money">200</span> | ❤️ <span id="lives">20</span> | 🌊 Wave: <span id="wave">1</span>
+    <div id="menu">
+        <h1>BLOONS JS</h1>
+        <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+            <div class="map-card" onclick="startGame('easy')"><h3>EASY</h3><small>Straight Path</small></div>
+            <div class="map-card" onclick="startGame('medium')"><h3>MEDIUM</h3><small>The S-Curve</small></div>
+            <div class="map-card" onclick="startGame('hard')"><h3>HARD</h3><small>The Zig-Zag</small></div>
+        </div>
+        <button onclick="toggleStats(true)">Global Statistics</button>
     </div>
 
-    <div class="map-tools">
-        <button onclick="setMap('easy')">Easy</button>
-        <button onclick="setMap('medium')">Medium</button>
-        <button onclick="setMap('hard')">Hard</button>
+    <div id="stats-page" class="hidden">
+        <h1>All-Time Statistics</h1>
+        <div id="stats-content" style="font-size: 1.5rem; line-height: 2;"></div>
+        <button onclick="toggleStats(false)" style="margin-top: 20px;">Back to Menu</button>
+    </div>
+
+    <div class="stats-bar">
+        <span>💰 $<span id="money">300</span></span>
+        <span>❤️ <span id="lives">20</span></span>
+        <span>🌊 Wave: <span id="wave">1</span></span>
     </div>
 
     <canvas id="gameCanvas" width="800" height="500"></canvas>
 
     <div class="ui-container">
-        <div class="shop" id="shop">
-            </div>
-        <div class="inspector" id="inspector">
-            <strong>Tower Info</strong>
-            <div id="inspect-content">Click a tower to upgrade</div>
-        </div>
+        <div class="shop" id="shop"></div>
+        <div class="inspector" id="inspect-content">Click a tower to upgrade</div>
     </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const moneyEl = document.getElementById('money');
-const livesEl = document.getElementById('lives');
-const waveEl = document.getElementById('wave');
 
-// Game State
-let money = 300;
-let lives = 20;
-let wave = 1;
-let enemies = [];
-let towers = [];
-let projectiles = [];
-let selectedTower = null;
-let placingType = null;
+// --- Game Logic Variables ---
+let money, lives, wave, enemies, towers, projectiles, selectedTower, placingType;
 let mousePos = { x: 0, y: 0 };
+let currentPath = [];
+let gameState = 'MENU';
+let enemiesSpawned = 0;
 let spawnTimer = 0;
-let enemiesKilledInWave = 0;
 
-const TOWER_TYPES = {
-    rock: { name: "Rock Thrower", cost: 50, range: 100, fireRate: 40, damage: 10, color: '#8d6e63', desc: "Basic high damage." },
-    paint: { name: "Paintballer", cost: 75, range: 130, fireRate: 20, damage: 3, color: '#ec407a', desc: "Fast firing." },
-    glue: { name: "Glue-Gun", cost: 100, range: 90, fireRate: 50, damage: 1, color: '#fdd835', desc: "Slows enemies." },
-    sniper: { name: "Sniper", cost: 150, range: 400, fireRate: 100, damage: 40, color: '#2e7d32', desc: "Infinite range." },
-    tack: { name: "Tack-Machine", cost: 120, range: 80, fireRate: 45, damage: 5, color: '#78909c', desc: "8-way burst." },
-    boomerang: { name: "Boomeranger", cost: 130, range: 120, fireRate: 35, damage: 12, color: '#fb8c00', desc: "Piercing arcs." },
-    cannon: { name: "Cannon", cost: 200, range: 150, fireRate: 60, damage: 25, color: '#212121', desc: "Area explosion." }
+// --- Persistence ---
+let globalStats = JSON.parse(localStorage.getItem('bloonsStats')) || {
+    totalKills: 0,
+    totalSpent: 0,
+    wavesCompleted: 0,
+    gamesPlayed: 0
 };
 
-const maps = {
+const TOWER_TYPES = {
+    rock: { name: "Dart Monkey", cost: 50, range: 100, fireRate: 40, damage: 10, color: '#8d6e63' },
+    paint: { name: "Super Monkey", cost: 250, range: 150, fireRate: 5, damage: 2, color: '#ec407a' },
+    boomerang: { name: "Boomeranger", cost: 130, range: 130, fireRate: 45, damage: 12, color: '#fb8c00' },
+    sniper: { name: "Sniper", cost: 150, range: 500, fireRate: 100, damage: 40, color: '#2e7d32' }
+};
+
+const MAPS = {
     easy: [[0, 250], [800, 250]],
     medium: [[0, 100], [400, 100], [400, 400], [800, 400]],
     hard: [[400, 0], [400, 100], [100, 100], [100, 400], [700, 400], [700, 100], [800, 100]]
 };
-let currentPath = maps.easy;
 
-// Initialization
+// --- Initialization ---
 function initShop() {
     const shop = document.getElementById('shop');
     for (let id in TOWER_TYPES) {
         const t = TOWER_TYPES[id];
         const btn = document.createElement('button');
-        btn.className = 'tower-btn';
-        btn.innerHTML = `<b>${t.name}</b><span>$${t.cost}</span>`;
-        btn.onclick = () => selectForPurchase(id);
+        btn.innerHTML = `<b>${t.name}</b><br>$${t.cost}`;
+        btn.onclick = () => { if(money >= t.cost) placingType = id; };
         shop.appendChild(btn);
     }
 }
 
-function selectForPurchase(type) {
-    if (money >= TOWER_TYPES[type].cost) {
-        placingType = type;
-        selectedTower = null;
-    }
-}
-
-function setMap(level) {
-    currentPath = maps[level];
-    resetGame();
-}
-
-function resetGame() {
-    enemies = []; towers = []; projectiles = [];
+function startGame(level) {
+    currentPath = MAPS[level];
     money = 300; lives = 20; wave = 1;
+    enemies = []; towers = []; projectiles = [];
+    gameState = 'PLAYING';
+    globalStats.gamesPlayed++;
+    document.getElementById('menu').classList.add('hidden');
+    saveStats();
     updateUI();
 }
 
-function updateUI() {
-    moneyEl.innerText = money;
-    livesEl.innerText = lives;
-    waveEl.innerText = wave;
-    if (selectedTower) {
-        document.getElementById('inspect-content').innerHTML = `
-            <p><strong>${selectedTower.type.name}</strong></p>
-            <p>Kills: ${selectedTower.kills}</p>
-            <p>Level: ${selectedTower.level}</p>
-            <button class="upgrade-btn" onclick="upgradeSelected()">Upgrade ($${selectedTower.level * 100})</button>
+function toggleStats(show) {
+    const page = document.getElementById('stats-page');
+    if (show) {
+        document.getElementById('stats-content').innerHTML = `
+            Kills: ${globalStats.totalKills}<br>
+            Money Spent: $${globalStats.totalSpent}<br>
+            Waves Defended: ${globalStats.wavesCompleted}<br>
+            Games Started: ${globalStats.gamesPlayed}
         `;
+        page.classList.remove('hidden');
     } else {
-        document.getElementById('inspect-content').innerText = "Click a tower to upgrade";
+        page.classList.add('hidden');
     }
 }
 
-function upgradeSelected() {
-    let cost = selectedTower.level * 100;
-    if (money >= cost) {
-        money -= cost;
-        selectedTower.level++;
-        selectedTower.damage *= 1.2;
-        selectedTower.range *= 1.1;
-        updateUI();
+// --- Rendering Engines ---
+function drawAsset(type, x, y, color, size = 15) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (type === 'monkey') {
+        // Body
+        ctx.fillStyle = "#5d4037";
+        ctx.beginPath(); ctx.arc(0, 0, size, 0, Math.PI*2); ctx.fill();
+        // Face
+        ctx.fillStyle = "#d7ccc8";
+        ctx.beginPath(); ctx.arc(0, 2, size*0.7, 0, Math.PI*2); ctx.fill();
+        // Ears
+        ctx.fillStyle = "#5d4037";
+        ctx.beginPath(); ctx.arc(-size, -2, size*0.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(size, -2, size*0.4, 0, Math.PI*2); ctx.fill();
+        // Accessory color
+        ctx.fillStyle = color;
+        ctx.fillRect(-size*0.5, -size*0.8, size, size*0.3);
+    } else if (type === 'bloon') {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, size);
+        ctx.bezierCurveTo(size, size, size, -size, 0, -size);
+        ctx.bezierCurveTo(-size, -size, -size, size, 0, size);
+        ctx.fill();
+        // String
+        ctx.strokeStyle = "white"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, size); ctx.lineTo(0, size+5); ctx.stroke();
     }
+    ctx.restore();
 }
 
 class Enemy {
-    constructor() {
+    constructor(tier = 1) {
         this.x = currentPath[0][0];
         this.y = currentPath[0][1];
-        this.maxHealth = 15 + (wave * 10);
-        this.health = this.maxHealth;
-        this.speed = 0.8 + (wave * 0.2);
+        this.tier = tier; // 1: Red, 2: Blue (Fast), 3: Green (Fast/Tank)
+        this.health = 10 + (tier * 15) + (wave * 5);
+        this.maxHealth = this.health;
+        this.speed = 0.8 + (tier * 0.4) + (wave * 0.1);
+        this.color = tier === 1 ? '#ff5252' : tier === 2 ? '#448aff' : '#4caf50';
         this.targetIndex = 1;
-        this.radius = 12;
-        this.slowed = 0;
     }
 
     update() {
-        if (this.slowed > 0) {
-            this.slowed--;
-        }
-        let currentSpeed = this.slowed > 0 ? this.speed * 0.5 : this.speed;
-        
         let target = currentPath[this.targetIndex];
         let dx = target[0] - this.x;
         let dy = target[1] - this.y;
@@ -165,29 +174,65 @@ class Enemy {
         if (dist < 5) {
             this.targetIndex++;
             if (this.targetIndex >= currentPath.length) {
-                lives--;
-                this.health = 0;
-                updateUI();
-                return;
+                lives--; this.health = 0; updateUI(); return;
             }
         }
-
-        this.x += (dx / dist) * currentSpeed;
-        this.y += (dy / dist) * currentSpeed;
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
     }
 
     draw() {
-        ctx.fillStyle = this.slowed > 0 ? '#81d4fa' : '#ff5252';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        drawAsset('bloon', this.x, this.y, this.color, 12);
+    }
+}
 
-        // Health Bar
-        const barW = 20;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(this.x - barW/2, this.y - 18, barW, 4);
-        ctx.fillStyle = '#4caf50';
-        ctx.fillRect(this.x - barW/2, this.y - 18, (this.health/this.maxHealth) * barW, 4);
+class Projectile {
+    constructor(x, y, target, parent) {
+        this.x = x; this.y = y;
+        this.target = target;
+        this.parent = parent;
+        this.active = true;
+        this.speed = 8;
+        this.life = 0;
+        this.isBoomerang = parent.typeId === 'boomerang';
+        this.angle = Math.atan2(target.y - y, target.x - x);
+    }
+
+    update() {
+        if (this.isBoomerang) {
+            this.life += 0.1;
+            // Circular "Boomerang" pathing math
+            this.x += Math.cos(this.angle + this.life) * this.speed;
+            this.y += Math.sin(this.angle + this.life) * this.speed;
+            if (this.life > 6.28) this.active = false; // Full circle
+        } else {
+            if (!this.target || this.target.health <= 0) { this.active = false; return; }
+            let dx = this.target.x - this.x;
+            let dy = this.target.y - this.y;
+            let dist = Math.hypot(dx, dy);
+            if (dist < 10) { this.hit(this.target); this.active = false; }
+            this.x += (dx / dist) * this.speed;
+            this.y += (dy / dist) * this.speed;
+        }
+
+        // Collision check for boomerangs (piercing)
+        if (this.isBoomerang) {
+            enemies.forEach(e => {
+                if (Math.hypot(e.x - this.x, e.y - this.y) < 20) this.hit(e);
+            });
+        }
+    }
+
+    hit(enemy) {
+        enemy.health -= this.parent.damage;
+        if (enemy.health <= 0) {
+            money += 15; globalStats.totalKills++; updateUI();
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = "yellow";
+        ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
     }
 }
 
@@ -196,182 +241,111 @@ class Tower {
         this.x = x; this.y = y;
         this.typeId = typeId;
         this.type = TOWER_TYPES[typeId];
-        this.range = this.type.range;
         this.damage = this.type.damage;
-        this.fireRate = this.type.fireRate;
+        this.range = this.type.range;
         this.cooldown = 0;
-        this.kills = 0;
         this.level = 1;
     }
 
     update() {
         if (this.cooldown > 0) this.cooldown--;
-        if (this.cooldown === 0) {
+        else {
             let target = enemies.find(e => Math.hypot(e.x - this.x, e.y - this.y) < this.range);
             if (target) {
-                this.fire(target);
-                this.cooldown = this.fireRate;
+                projectiles.push(new Projectile(this.x, this.y, target, this));
+                this.cooldown = this.type.fireRate;
             }
-        }
-    }
-
-    fire(target) {
-        if (this.typeId === 'tack') {
-            for (let i = 0; i < 8; i++) {
-                projectiles.push(new Projectile(this.x, this.y, null, this, (Math.PI/4) * i));
-            }
-        } else {
-            projectiles.push(new Projectile(this.x, this.y, target, this));
         }
     }
 
     draw() {
-        ctx.fillStyle = this.type.color;
         if (selectedTower === this) {
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(this.x - 17, this.y - 17, 34, 34);
-            
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.range, 0, Math.PI*2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.range, 0, Math.PI*2);
+            ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.stroke();
         }
-        ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
+        drawAsset('monkey', this.x, this.y, this.type.color);
     }
 }
 
-class Projectile {
-    constructor(x, y, target, parent, angle = null) {
-        this.x = x; this.y = y;
-        this.target = target;
-        this.parent = parent;
-        this.speed = 7;
-        this.active = true;
-        this.angle = angle; // For Tacks
-    }
-
-    update() {
-        if (this.angle !== null) {
-            this.x += Math.cos(this.angle) * this.speed;
-            this.y += Math.sin(this.angle) * this.speed;
-            // Check collision with any enemy
-            enemies.forEach(e => {
-                if (Math.hypot(e.x - this.x, e.y - this.y) < 15) {
-                    this.hit(e);
-                    this.active = false;
-                }
-            });
-            if (this.x < 0 || this.x > 800 || this.y < 0 || this.y > 500) this.active = false;
-        } else {
-            if (!this.target || this.target.health <= 0) { this.active = false; return; }
-            let dx = this.target.x - this.x;
-            let dy = this.target.y - this.y;
-            let dist = Math.hypot(dx, dy);
-            if (dist < 10) {
-                this.hit(this.target);
-                this.active = false;
-            }
-            this.x += (dx / dist) * this.speed;
-            this.y += (dy / dist) * this.speed;
-        }
-    }
-
-    hit(enemy) {
-        enemy.health -= this.parent.damage;
-        if (this.parent.typeId === 'glue') enemy.slowed = 60;
-        if (enemy.health <= 0) {
-            money += 15;
-            this.parent.kills++;
-            enemiesKilledInWave++;
-            updateUI();
-        }
-    }
-
-    draw() {
-        ctx.fillStyle = this.parent.type.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
+// --- Main Loop ---
 function gameLoop() {
+    if (gameState !== 'PLAYING') { requestAnimationFrame(gameLoop); return; }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw Path
-    ctx.strokeStyle = '#444'; ctx.lineWidth = 45; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(currentPath[0][0], currentPath[0][1]);
-    currentPath.forEach(p => ctx.lineTo(p[0], p[1]));
-    ctx.stroke();
-    ctx.strokeStyle = '#555'; ctx.lineWidth = 35;
-    ctx.stroke();
+    ctx.strokeStyle = '#3d2b1f'; ctx.lineWidth = 40; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(currentPath[0][0], currentPath[0][1]);
+    currentPath.forEach(p => ctx.lineTo(p[0], p[1])); ctx.stroke();
 
-    // Wave Logic
+    // Spawning logic
     spawnTimer++;
-    if (spawnTimer > Math.max(20, 100 - (wave * 5))) {
-        enemies.push(new Enemy());
-        spawnTimer = 0;
+    if (spawnTimer > 60 - (wave * 2)) {
+        let tier = wave > 5 ? Math.floor(Math.random() * 3) + 1 : 1;
+        enemies.push(new Enemy(tier));
+        spawnTimer = 0; enemiesSpawned++;
     }
-    if (enemiesKilledInWave >= 10 + wave) {
-        wave++;
-        enemiesKilledInWave = 0;
-        updateUI();
+    if (enemiesSpawned > 10 + wave) {
+        wave++; enemiesSpawned = 0; globalStats.wavesCompleted++; updateUI();
     }
 
-    // Update & Draw
     enemies = enemies.filter(e => e.health > 0);
     enemies.forEach(e => { e.update(); e.draw(); });
-
     towers.forEach(t => { t.update(); t.draw(); });
-
     projectiles = projectiles.filter(p => p.active);
     projectiles.forEach(p => { p.update(); p.draw(); });
 
-    // Ghost placement
     if (placingType) {
         ctx.globalAlpha = 0.5;
-        ctx.fillStyle = TOWER_TYPES[placingType].color;
-        ctx.fillRect(mousePos.x - 15, mousePos.y - 15, 30, 30);
-        ctx.beginPath();
-        ctx.arc(mousePos.x, mousePos.y, TOWER_TYPES[placingType].range, 0, Math.PI*2);
-        ctx.strokeStyle = 'white';
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
+        drawAsset('monkey', mousePos.x, mousePos.y, TOWER_TYPES[placingType].color);
+        ctx.globalAlpha = 1;
     }
 
     if (lives <= 0) {
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(0,0,800,500);
-        ctx.fillStyle = "white";
-        ctx.font = "bold 48px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", 400, 250);
-        return;
+        alert("Game Over! Wave: " + wave);
+        location.reload();
     }
 
     requestAnimationFrame(gameLoop);
 }
 
+// --- Helpers ---
+function updateUI() {
+    document.getElementById('money').innerText = money;
+    document.getElementById('lives').innerText = lives;
+    document.getElementById('wave').innerText = wave;
+    if (selectedTower) {
+        document.getElementById('inspect-content').innerHTML = `
+            <strong>${selectedTower.type.name}</strong><br>
+            Level: ${selectedTower.level}<br>
+            <button onclick="upgradeTower()" style="width:100%">Upgrade ($${selectedTower.level * 100})</button>
+        `;
+    }
+}
+
+function upgradeTower() {
+    let cost = selectedTower.level * 100;
+    if (money >= cost) {
+        money -= cost; globalStats.totalSpent += cost;
+        selectedTower.level++; selectedTower.damage *= 1.5; updateUI(); saveStats();
+    }
+}
+
+function saveStats() { localStorage.setItem('bloonsStats', JSON.stringify(globalStats)); }
+
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
-    mousePos.x = e.clientX - rect.left;
-    mousePos.y = e.clientY - rect.top;
+    mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top;
 });
 
-canvas.addEventListener('mousedown', (e) => {
+canvas.addEventListener('mousedown', () => {
     if (placingType) {
-        const typeData = TOWER_TYPES[placingType];
-        if (money >= typeData.cost) {
-            towers.push(new Tower(mousePos.x, mousePos.y, placingType));
-            money -= typeData.cost;
-            placingType = null;
-            updateUI();
-        }
+        towers.push(new Tower(mousePos.x, mousePos.y, placingType));
+        money -= TOWER_TYPES[placingType].cost;
+        globalStats.totalSpent += TOWER_TYPES[placingType].cost;
+        placingType = null; updateUI(); saveStats();
     } else {
-        // Select existing tower
-        selectedTower = towers.find(t => Math.hypot(t.x - mousePos.x, t.y - mousePos.y) < 20) || null;
+        selectedTower = towers.find(t => Math.hypot(t.x - mousePos.x, t.y - mousePos.y) < 20);
         updateUI();
     }
 });
