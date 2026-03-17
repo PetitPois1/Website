@@ -3,1251 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Defense (Upgrades)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Simple TD - HTML5</title>
     <style>
-        /* Using Inter font, as it's a nice default included with Tailwind */
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Add a visual cue for the selected tower */
-        .tower-button.selected {
-            border-color: #3b82f6 !important; /* blue-500 */
-            box-shadow: 0 0 10px #3b82f6;
-        }
-        
-        /* Base button style for consistent hover/active states */
-        .game-button {
-            transition: all 0.1s ease-in-out;
-        }
-        .game-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .game-button:active:not(:disabled) {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-        
-        /* This container is crucial. It holds the canvas and gives it a 
-          responsive 4:3 aspect ratio, which our resizeCanvas() function uses.
-        */
-        #game-canvas-container {
-            width: 100%;
-            max-width: 800px; /* Corresponds to canvas.width */
-            aspect-ratio: 4 / 3;
-            margin-left: auto;
-            margin-right: auto;
-            position: relative; /* For turret menu positioning */
-        }
-        canvas {
-            display: block;
-            background-color: #374151; /* gray-700, to see the game area */
-        }
+        body { background: #222; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        canvas { background: #333; border: 4px solid #555; cursor: crosshair; }
+        .controls { margin: 10px; display: flex; gap: 10px; }
+        button { padding: 10px; cursor: pointer; background: #444; color: white; border: 1px solid #777; }
+        button:hover { background: #666; }
+        .stats { font-size: 1.2rem; margin-bottom: 5px; }
     </style>
-    
-    <script type="module">
-        // === GAME SETUP ===
-        
-        // Local game state
-        let gameLoopId = null; // To stop the game loop
-        
-        // --- UI Elements ---
-        // These will be assigned in init() after the page loads
-        let loadingOverlay, mainMenu, gameContainer, levelSelectContainer, armoryContainer, gemDisplay;
-        let canvas, ctx, moneyDisplay, livesDisplay, levelDisplay, waveDisplay, startWaveBtn, towerSelectionUI, backToMenuBtn;
-        let messageBox, messageTitle, messageText, messageButton1, messageButton2;
-        // --- NEW UPGRADE UI ELEMENTS ---
-        let turretMenu, turretMenuTitle, turretMenuStats, turretMenuUpgrade, turretMenuSell, turretMenuClose;
+</head>
+<body>
 
-        let canvasWidth, canvasHeight;
+    <div class="stats">
+        Money: $<span id="money">200</span> | Lives: <span id="lives">20</span> | Wave: <span id="wave">1</span>
+    </div>
 
-        // Game State (In-Level)
-        let money = 0;
-        let lives = 0; // This is 'Base HP'
-        let currentLevel = 0;
-        let currentWave = 0;
-        let gameState = 'waiting'; // 'waiting', 'playing', 'gameover', 'win'
-        let selectedTowerType = null; // e.g., 'basic' (for building)
-        let selectedTurret = null; // The actual turret object on the map (for upgrading)
-        let mouse = { x: 0, y: 0 };
-        let lastTime = 0;
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
 
-        // Game Objects (In-Level)
-        let turrets = [];
-        let enemies = [];
-        let projectiles = [];
-        let spawnQueue = [];
-        let spawnCounter = 0;
-        let currentPath = []; // Will be set when level loads
-        const pathWidth = 30;
-        
-        // --- Player's Data (Resets on Refresh) ---
-        // NEW DATA STRUCTURE:
-        // 0 = Locked
-        // 1 = Unlocked (Base Level 1)
-        // 2 = Max Level 2
-        // 3 = Max Level 3
-        let playerData = {
-            gems: 10,
-            turretMaxLevels: {
-                'basic': 1,
-                'sniper': 0,
-                'flamethrower': 0
-            }
-        };
+    <div class="controls">
+        <button onclick="setMap('easy')">Easy Map</button>
+        <button onclick="setMap('medium')">Medium Map</button>
+        <button onclick="setMap('hard')">Hard Map</button>
+        <button onclick="placeTowerMode()" style="background: #2e7d32;">Buy Tower ($50)</button>
+    </div>
 
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const moneyEl = document.getElementById('money');
+const livesEl = document.getElementById('lives');
+const waveEl = document.getElementById('wave');
 
-        // === GAME DATA ===
+// Game State
+let money = 200;
+let lives = 20;
+let wave = 1;
+let enemies = [];
+let towers = [];
+let projectiles = [];
+let isPlacingTower = false;
+let spawnTimer = 0;
 
-        // Turret Definitions
-        const turretTypes = {
-            'basic': {
-                name: 'Basic',
-                cost: 100, // Cost to build Level 1
-                damage: 15,
-                range: 120,
-                fireRate: 30, // Frames per shot
-                projectileColor: '#93c5fd',
-                projectileSpeed: 8,
-                color: '#3b82f6', // blue-500
-                description: 'Fast, low damage.',
-                gemUnlockCost: 0, // Free
-                gemUpgradeCost: [50, 150, 300], // Gem cost to unlock Max Lvl 2, 3, 4
-                inGameUpgradeCost: [100, 250, 500], // Money cost to upgrade TO Lvl 2, 3, 4
-                statUpgrades: { // What to add *per level* (starting from Lvl 2)
-                    damage: 5,
-                    range: 10,
-                    fireRate: -2 // Faster
-                }
-            },
-            'sniper': {
-                name: 'Sniper',
-                cost: 250,
-                damage: 80,
-                range: 300,
-                fireRate: 90, // Very slow
-                projectileColor: '#fcd34d',
-                projectileSpeed: 15,
-                color: '#f59e0b', // amber-500
-                description: 'Slow, high damage, long range.',
-                gemUnlockCost: 50,
-                gemUpgradeCost: [100, 200, 400], 
-                inGameUpgradeCost: [200, 400, 800],
-                statUpgrades: {
-                    damage: 20,
-                    range: 25,
-                    fireRate: -10
-                }
-            },
-            'flamethrower': {
-                name: 'Flamethrower',
-                cost: 250,
-                damage: 5, // Low damage, but...
-                range: 80, // Short range
-                fireRate: 5, // ...very fast fire rate
-                projectileColor: '#f97316',
-                projectileSpeed: 6,
-                color: '#dc2626', // red-600
-                description: 'Short range, rapid fire.',
-                gemUnlockCost: 50,
-                gemUpgradeCost: [100, 150, 200],
-                inGameUpgradeCost: [200, 400, 800],
-                statUpgrades: {
-                    damage: 5,
-                    range: 20,
-                    fireRate: 0 // Fire rate doesn't get faster
-                }
-            }
-        };
+// Map Definitions (Path Waypoints)
+const maps = {
+    easy: [[0, 250], [800, 250]],
+    medium: [[0, 100], [400, 100], [400, 400], [800, 400]],
+    hard: [[400, 0], [400, 100], [100, 100], [100, 400], [700, 400], [700, 100], [800, 100]]
+};
+let currentPath = maps.easy;
 
-        // Enemy Definitions
-        const enemyTypes = {
-            'normal': { hp: 15, speed: 1.5, reward: 5, damage: 1, color: '#ef4444', radius: 10 },
-            'fast': { hp: 30, speed: 3, reward: 3, damage: 1, color: '#f97316', radius: 8 },
-            'tank': { hp: 60, speed: 0.8, reward: 15, damage: 5, color: '#a855f7', radius: 15 }
-        };
+function setMap(level) {
+    currentPath = maps[level];
+    resetGame();
+}
 
-        // Level and Wave Definitions
-        const levels = [
-             { // Level 1
-                path: [
-                    { x: -50, y: 100 }, { x: 150, y: 100 }, { x: 150, y: 300 }, { x: 400, y: 300 },
-                    { x: 400, y: 150 }, { x: 600, y: 150 }, { x: 600, y: 400 }, { x: 100, y: 400 },
-                    { x: 100, y: 550 }, { x: 850, y: 550 } // Off-screen end
-                ],
-                startingMoney: 250,
-                startingLives: 20, // This is Base HP
-                difficulty: "Easy",
-                gemReward: 50,
-                waves: [
-                    { enemies: [{ type: 'normal', count: 10, spawnRate: 60 }] },
-                    { enemies: [{ type: 'normal', count: 15, spawnRate: 50 }] },
-                    { enemies: [{ type: 'normal', count: 20, spawnRate: 40 }] },
-                    { enemies: [
-                        { type: 'normal', count: 10, spawnRate: 60 },
-                        { type: 'fast', count: 5, spawnRate: 120, delay: 300 }
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 15, spawnRate: 50 },
-                        { type: 'fast', count: 10, spawnRate: 120, delay: 250}
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 20, spawnRate: 40 },
-                        { type: 'fast', count: 10, spawnRate: 120, delay: 250}
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 25, spawnRate: 40 },
-                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 30, spawnRate: 20 },
-                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 30, spawnRate: 20 },
-                        { type: 'fast', count: 15, spawnRate: 50, delay: 100}
-                    ]},
-                    { enemies: [
-                        { type: 'normal', count: 25, spawnRate: 40 },
-                        { type: 'fast', count: 15, spawnRate: 90, delay: 250}
-                        { type: 'tank', count: 1, spawnRate: 50, delay: 500}
-                    ]}
-                    
-                ]
-            },
-            { // Level 2 - Different Path
-                path: [
-                    { x: 400, y: -50 }, { x: 400, y: 200 }, { x: 100, y: 200 }, { x: 100, y: 400 },
-                    { x: 700, y: 400 }, { x: 700, y: 100 }, { x: 600, y: 100 }, { x: 600, y: 650 }
-                ],
-                startingMoney: 300,
-                startingLives: 15,
-                difficulty: "Medium",
-                gemReward: 75,
-                waves: [
-                    { enemies: [{ type: 'normal', count: 20, spawnRate: 45 }, { type: 'fast', count: 10, spawnRate: 90 }] },
-                    { enemies: [{ type: 'tank', count: 3, spawnRate: 180 }, { type: 'normal', count: 15, spawnRate: 40, delay: 60 }] },
-                    { enemies: [{ type: 'tank', count: 5, spawnRate: 200 }, { type: 'fast', count: 20, spawnRate: 60, delay: 300 }] }
-                ]
-            },
-            { // Level 3 - Another Path
-                path: [
-                    { x: -50, y: 300 }, { x: 700, y: 300 }, { x: 700, y: 100 }, { x: 100, y: 100 },
-                    { x: 100, y: 500 }, { x: 700, y: 500 }, { x: 700, y: 300 }, { x: 850, y: 300 }
-                ],
-                startingMoney: 400,
-                startingLives: 10,
-                difficulty: "Hard",
-                gemReward: 120,
-                waves: [
-                    { enemies: [{ type: 'fast', count: 30, spawnRate: 30 }] },
-                    { enemies: [{ type: 'tank', count: 10, spawnRate: 100 }] },
-                    { enemies: [
-                        { type: 'tank', count: 8, spawnRate: 120 },
-                        { type: 'fast', count: 20, spawnRate: 60, delay: 200 },
-                        { type: 'normal', count: 50, spawnRate: 20, delay: 400 }
-                    ]}
-                ]
-            }
-        ];
-        
-        // === NEW HELPER FUNCTIONS ===
+function resetGame() {
+    enemies = []; towers = []; projectiles = [];
+    money = 200; lives = 20; wave = 1;
+    updateUI();
+}
 
-        /**
-         * Calculates the stats of a turret at a specific level.
-         * This is the single source of truth for all turret stats.
-         */
-        function getTurretStats(type, level) {
-            const baseStats = turretTypes[type];
-            if (!baseStats) return null;
+function updateUI() {
+    moneyEl.innerText = money;
+    livesEl.innerText = lives;
+    waveEl.innerText = wave;
+}
 
-            const calculatedStats = {
-                name: baseStats.name,
-                color: baseStats.color,
-                projectileColor: baseStats.projectileColor,
-                projectileSpeed: baseStats.projectileSpeed,
-                cost: baseStats.cost, // Base cost is always for Lvl 1
-                
-                // Calculate stats based on level
-                damage: baseStats.damage + (baseStats.statUpgrades.damage * (level - 1)),
-                range: baseStats.range + (baseStats.statUpgrades.range * (level - 1)),
-                fireRate: Math.max(1, baseStats.fireRate + (baseStats.statUpgrades.fireRate * (level - 1))), // Don't let fireRate be 0 or less
-                
-                // Calculate total cost (for sell value)
-                totalCost: baseStats.cost,
-                nextUpgradeCost: null
-            };
+// Classes
+class Enemy {
+    constructor() {
+        this.x = currentPath[0][0];
+        this.y = currentPath[0][1];
+        this.health = 10 + (wave * 5);
+        this.speed = 1 + (wave * 0.1);
+        this.targetIndex = 1;
+        this.radius = 12;
+    }
 
-            // Calculate total spent and cost for next upgrade
-            for (let i = 0; i < level - 1; i++) {
-                calculatedStats.totalCost += baseStats.inGameUpgradeCost[i] || 0;
-            }
-            
-            // Get cost for the *next* level
-            if (level < 10) { // Assume a max level cap for safety
-                 calculatedStats.nextUpgradeCost = baseStats.inGameUpgradeCost[level - 1]; // e.g., for Lvl 1, this gets cost to Lvl 2 (index 0)
-            }
-           
-            calculatedStats.sellValue = Math.floor(calculatedStats.totalCost * 0.7);
+    update() {
+        let target = currentPath[this.targetIndex];
+        let dx = target[0] - this.x;
+        let dy = target[1] - this.y;
+        let dist = Math.hypot(dx, dy);
 
-            return calculatedStats;
-        }
-
-        /** Gets a list of turret IDs that are unlocked (max level > 0) */
-        function getUnlockedTurrets() {
-            return Object.keys(playerData.turretMaxLevels).filter(id => playerData.turretMaxLevels[id] > 0);
-        }
-
-        
-        // === MAIN MENU & UI LOGIC ===
-        
-        function showMainMenu() {
-            // Hide game, show menu
-            gameContainer.style.display = 'none';
-            mainMenu.style.display = 'flex';
-            messageBox.style.display = 'none';
-            closeTurretMenu();
-            
-            // Stop game loop if it's running
-            if (gameLoopId) {
-                cancelAnimationFrame(gameLoopId);
-                gameLoopId = null;
-            }
-            
-            // Refresh menu data
-            updateMenuUI();
-        }
-        
-        function updateMenuUI() {
-            if (!playerData) return;
-            
-            gemDisplay.textContent = playerData.gems || 0;
-            
-            // --- Populate Level Select ---
-            levelSelectContainer.innerHTML = ''; // Clear old list
-            levels.forEach((level, index) => {
-                const levelCard = document.createElement('div');
-                levelCard.className = 'bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center';
-                
-                levelCard.innerHTML = `
-                    <div>
-                        <h3 class="text-xl font-bold text-white">Level ${index + 1}</h3>
-                        <p class="text-sm text-gray-400">
-                            Difficulty: <span class="font-semibold ${level.difficulty === 'Easy' ? 'text-green-400' : (level.difficulty === 'Medium' ? 'text-yellow-400' : 'text-red-400')}">${level.difficulty}</span> | 
-                            Waves: <span class="font-semibold text-blue-300">${level.waves.length}</span>
-                        </p>
-                        <p class="text-sm text-gray-400">
-                            Starting: <span class="font-semibold text-green-300">$${level.startingMoney}</span> | 
-                            Reward: <span class="font-semibold text-purple-300">${level.gemReward} Gems</span>
-                        </p>
-                    </div>
-                `;
-                
-                const playButton = document.createElement('button');
-                playButton.textContent = 'Play';
-                playButton.className = 'game-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg';
-                playButton.onclick = () => startGame(index);
-                
-                levelCard.appendChild(playButton);
-                levelSelectContainer.appendChild(levelCard);
-            });
-            
-            // --- Populate Armory ---
-            armoryContainer.innerHTML = ''; // Clear old list
-            Object.entries(turretTypes).forEach(([id, stats]) => {
-                const currentMaxLevel = playerData.turretMaxLevels[id] || 0;
-                
-                const turretCard = document.createElement('div');
-                turretCard.className = 'bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center';
-                
-                // Get stats for Lvl 1 to display
-                const baseStats = getTurretStats(id, 1);
-                
-                turretCard.innerHTML = `
-                    <div>
-                        <h3 class="text-xl font-bold" style="color:${stats.color}">${stats.name}</h3>
-                        <p class="text-sm text-gray-400">${stats.description}</p>
-                        <p class="text-sm text-gray-400">
-                            Lvl 1 Cost: <span class="font-semibold text-green-300">$${baseStats.cost}</span> | 
-                            Lvl 1 Range: <span class="font-semibold text-blue-300">${baseStats.range}</span> |
-                            Lvl 1 DMG: <span class="font-semibold text-red-300">${baseStats.damage}</span>
-                        </p>
-                        <p class="text-sm text-gray-400 mt-1">
-                            Current Max Level: <span class="font-bold text-yellow-400">${currentMaxLevel}</span>
-                        </p>
-                    </div>
-                `;
-                
-                const unlockButton = document.createElement('button');
-                unlockButton.className = 'game-button text-white font-bold py-2 px-4 rounded-lg w-48 text-center';
-                
-                if (currentMaxLevel === 0) {
-                    // --- Turret is LOCKED ---
-                    unlockButton.textContent = `Unlock (${stats.gemUnlockCost} Gems)`;
-                    if (playerData.gems >= stats.gemUnlockCost) {
-                        unlockButton.className += ' bg-purple-600 hover:bg-purple-700';
-                        unlockButton.onclick = () => unlockTurret(id, stats.gemUnlockCost);
-                    } else {
-                        unlockButton.className += ' bg-red-700 cursor-not-allowed';
-                        unlockButton.disabled = true;
-                    }
-                } else {
-                    // --- Turret is UNLOCKED, show MAX LEVEL UPGRADE ---
-                    const nextUpgradeCost = stats.gemUpgradeCost[currentMaxLevel - 1]; // e.g., at Lvl 1, check index 0 for Lvl 2 cost
-                    
-                    if (nextUpgradeCost !== undefined) {
-                        // --- Can be upgraded further ---
-                        unlockButton.textContent = `Upgrade Max (${nextUpgradeCost} Gems)`;
-                        if (playerData.gems >= nextUpgradeCost) {
-                            unlockButton.className += ' bg-purple-600 hover:bg-purple-700';
-                            unlockButton.onclick = () => upgradeMaxTurretLevel(id, nextUpgradeCost);
-                        } else {
-                            unlockButton.className += ' bg-red-700 cursor-not-allowed';
-                            unlockButton.disabled = true;
-                        }
-                    } else {
-                        // --- Fully maxed out ---
-                        unlockButton.textContent = 'Maxed Out';
-                        unlockButton.className += ' bg-gray-600 cursor-not-allowed';
-                        unlockButton.disabled = true;
-                    }
-                }
-                
-                turretCard.appendChild(unlockButton);
-                armoryContainer.appendChild(turretCard);
-            });
-        }
-        
-        function unlockTurret(turretId, cost) {
-            if (playerData.gems >= cost && (playerData.turretMaxLevels[turretId] || 0) === 0) {
-                playerData.gems -= cost;
-                playerData.turretMaxLevels[turretId] = 1; // Set max level to 1
-                updateMenuUI();
-            }
-        }
-        
-        function upgradeMaxTurretLevel(turretId, cost) {
-            if (playerData.gems >= cost && (playerData.turretMaxLevels[turretId] || 0) > 0) {
-                playerData.gems -= cost;
-                playerData.turretMaxLevels[turretId]++;
-                updateMenuUI();
-            }
-        }
-        
-        // === CORE GAME LOGIC ===
-
-        function startGame(levelIndex) {
-            // Hide menu, show game
-            mainMenu.style.display = 'none';
-            gameContainer.style.display = 'block';
-            
-            // Resize canvas *after* it's visible
-            resizeCanvas();
-            
-            loadLevel(levelIndex);
-            
-            // Start game loop
-            gameLoopId = requestAnimationFrame(gameLoop);
-        }
-
-        // Function to resize canvas to fit its container
-        function resizeCanvas() {
-            const container = canvas.parentElement; 
-            const rect = container.getBoundingClientRect();
-
-            canvas.width = 800;
-            canvas.height = 600;
-
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
-            
-            canvasWidth = canvas.width;
-            canvasHeight = canvas.height;
-        }
-
-        // Initialize the game
-        function init() {
-            // --- Assign all UI elements ---
-            loadingOverlay = document.getElementById('loading-overlay');
-            mainMenu = document.getElementById('main-menu');
-            gameContainer = document.getElementById('game-container');
-            levelSelectContainer = document.getElementById('level-select-container');
-            armoryContainer = document.getElementById('armory-container');
-            gemDisplay = document.getElementById('gem-display');
-
-            canvas = document.getElementById('game-canvas');
-            ctx = canvas.getContext('2d');
-            moneyDisplay = document.getElementById('money-display');
-            livesDisplay = document.getElementById('lives-display');
-            levelDisplay = document.getElementById('level-display');
-            waveDisplay = document.getElementById('wave-display');
-            startWaveBtn = document.getElementById('start-wave-btn');
-            towerSelectionUI = document.getElementById('tower-selection-ui');
-            backToMenuBtn = document.getElementById('back-to-menu-btn');
-
-            messageBox = document.getElementById('message-box');
-            messageTitle = document.getElementById('message-title');
-            messageText = document.getElementById('message-text');
-            messageButton1 = document.getElementById('message-button-1');
-            messageButton2 = document.getElementById('message-button-2');
-            
-            // --- Assign new turret menu elements ---
-            turretMenu = document.getElementById('turret-menu');
-            turretMenuTitle = document.getElementById('turret-menu-title');
-            turretMenuStats = document.getElementById('turret-menu-stats');
-            turretMenuUpgrade = document.getElementById('turret-menu-upgrade');
-            turretMenuSell = document.getElementById('turret-menu-sell');
-            turretMenuClose = document.getElementById('turret-menu-close');
-            // --- End of element assignment ---
-
-            window.addEventListener('resize', resizeCanvas);
-            canvas.addEventListener('mousemove', onMouseMove);
-            canvas.addEventListener('click', onMouseClick);
-            startWaveBtn.addEventListener('click', startWave);
-            backToMenuBtn.addEventListener('click', showMainMenu);
-
-            // --- Turret Menu Listeners ---
-            turretMenuClose.addEventListener('click', closeTurretMenu);
-            turretMenuUpgrade.addEventListener('click', upgradeSelectedTurret);
-            turretMenuSell.addEventListener('click', sellSelectedTurret);
-            
-            // Set default data and start
-            playerData = {
-                gems: 10,
-                turretMaxLevels: { 'basic': 1, 'sniper': 0, 'flamethrower': 0 }
-            };
-            
-            updateMenuUI();
-            loadingOverlay.style.display = 'none';
-            mainMenu.style.display = 'flex';
-        }
-
-        // Load a level's data
-        function loadLevel(levelIndex) {
-            currentLevel = levelIndex;
-            currentWave = 0;
-            const levelData = levels[currentLevel];
-            
-            money = levelData.startingMoney;
-            lives = levelData.startingLives;
-            currentPath = levelData.path;
-            
-            turrets = [];
-            enemies = [];
-            projectiles = [];
-            spawnQueue = [];
-            selectedTurret = null;
-            selectedTowerType = null;
-            
-            gameState = 'waiting';
-            updateInGameUI();
-            setupTurretButtons(); // Populate turret bar
-            closeTurretMenu();
-            
-            startWaveBtn.disabled = false;
-            startWaveBtn.textContent = 'Start Wave';
-        }
-        
-        // Dynamically create tower buttons based on unlocks
-        function setupTurretButtons() {
-            towerSelectionUI.innerHTML = ''; // Clear old buttons
-            
-            getUnlockedTurrets().forEach(turretId => {
-                const stats = getTurretStats(turretId, 1); // Get Lvl 1 stats
-                if (!stats) return;
-                
-                const button = document.createElement('button');
-                button.id = `buy-${turretId}`;
-                button.className = 'tower-button game-button bg-gray-800 p-3 rounded-lg border-2 border-gray-600 hover:border-blue-500';
-                button.innerHTML = `
-                    <div class="font-bold text-lg">${stats.name}</div>
-                    <div class="text-sm text-gray-400">Cost: <span class="text-green-400">$${stats.cost}</span></div>
-                    <div class="text-sm text-gray-400">${turretTypes[turretId].description}</div>
-                `;
-                button.onclick = () => selectTower(turretId);
-                
-                towerSelectionUI.appendChild(button);
-            });
-        }
-        
-        // Start the next wave
-        function startWave() {
-            if (gameState !== 'waiting' || !levels[currentLevel] || !levels[currentLevel].waves[currentWave]) return;
-            
-            closeTurretMenu(); // Close menu when wave starts
-            
-            gameState = 'playing';
-            spawnQueue = [];
-            spawnCounter = 0;
-            
-            const waveData = levels[currentLevel].waves[currentWave].enemies;
-            
-            waveData.forEach(group => {
-                let spawnTime = group.delay || 0;
-                for (let i = 0; i < group.count; i++) {
-                    spawnQueue.push({ type: group.type, time: spawnTime });
-                    spawnTime += group.spawnRate;
-                }
-            });
-            
-            spawnQueue.sort((a, b) => a.time - b.time);
-            
-            startWaveBtn.disabled = true;
-            startWaveBtn.textContent = 'Wave in Progress...';
-            updateInGameUI();
-        }
-
-        // Main Game Loop
-        function gameLoop(timestamp) {
-            const deltaTime = (timestamp - lastTime) / 16.67; // Normalize to ~60 FPS
-            lastTime = timestamp;
-
-            if (isNaN(deltaTime) || deltaTime <= 0) { // Skip first frame or bad timestamp
-                gameLoopId = requestAnimationFrame(gameLoop);
+        if (dist < 5) {
+            this.targetIndex++;
+            if (this.targetIndex >= currentPath.length) {
+                lives--;
+                this.health = 0; // Remove
+                updateUI();
                 return;
             }
-
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            drawPath();
-            
-            if (gameState === 'playing') {
-                handleSpawning(deltaTime);
-                updateEnemies(deltaTime);
-            }
-            
-            updateTurrets(deltaTime);
-            updateProjectiles(deltaTime);
-
-            drawTurrets();
-            drawEnemies();
-            drawProjectiles();
-            drawGhostTower();
-            
-            if (gameState !== 'gameover' && gameState !== 'win') {
-                gameLoopId = requestAnimationFrame(gameLoop);
-            } else {
-                gameLoopId = null; // Stop loop
-            }
         }
 
-        // === UPDATE FUNCTIONS ===
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
+    }
 
-        function handleSpawning(deltaTime) {
-            if (spawnQueue.length > 0) {
-                spawnCounter++; // This is a frame-based counter
-                while(spawnQueue.length > 0 && spawnCounter >= spawnQueue[0].time) {
-                    const enemyData = spawnQueue.shift();
-                    spawnEnemy(enemyData.type);
-                }
-            } else if (enemies.length === 0) {
-                // Check if spawnQueue is also empty, meaning all enemies are spawned and defeated
-                endWave();
+    draw() {
+        ctx.fillStyle = '#ff5252';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+class Tower {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.range = 120;
+        this.cooldown = 0;
+        this.fireRate = 30; // Frames
+    }
+
+    update() {
+        if (this.cooldown > 0) this.cooldown--;
+
+        if (this.cooldown === 0) {
+            let target = enemies.find(e => Math.hypot(e.x - this.x, e.y - this.y) < this.range);
+            if (target) {
+                projectiles.push(new Projectile(this.x, this.y, target));
+                this.cooldown = this.fireRate;
             }
         }
-        
-        function spawnEnemy(type) {
-            const enemyData = enemyTypes[type];
-            enemies.push({
-                ...enemyData,
-                x: currentPath[0].x,
-                y: currentPath[0].y,
-                currentHp: enemyData.hp,
-                waypointIndex: 1
-            });
-        }
+    }
 
-        function updateEnemies(deltaTime) {
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                
-                if (enemy.currentHp <= 0) {
-                    money += enemy.reward;
-                    updateInGameUI();
-                    enemies.splice(i, 1);
-                    continue;
-                }
+    draw() {
+        ctx.fillStyle = '#4caf50';
+        ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
+        // Range indicator
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
 
-                const targetWaypoint = currentPath[enemy.waypointIndex];
-                if (!targetWaypoint) continue; 
+class Projectile {
+    constructor(x, y, target) {
+        this.x = x; this.y = y;
+        this.target = target;
+        this.speed = 5;
+        this.active = true;
+    }
 
-                const dx = targetWaypoint.x - enemy.x;
-                const dy = targetWaypoint.y - enemy.y;
-                const dist = Math.hypot(dx, dy);
-                const moveDist = enemy.speed * deltaTime;
+    update() {
+        let dx = this.target.x - this.x;
+        let dy = this.target.y - this.y;
+        let dist = Math.hypot(dx, dy);
 
-                if (dist < moveDist) {
-                    enemy.x = targetWaypoint.x;
-                    enemy.y = targetWaypoint.y;
-                    enemy.waypointIndex++;
-                    
-                    if (enemy.waypointIndex >= currentPath.length) {
-                        lives -= enemy.damage;
-                        enemies.splice(i, 1);
-                        updateInGameUI();
-                        checkGameOver();
-                    }
-                } else {
-                    enemy.x += (dx / dist) * moveDist;
-                    enemy.y += (dy / dist) * moveDist;
-                }
-            }
-        }
-        
-        function updateTurrets(deltaTime) {
-            turrets.forEach(turret => {
-                // Get the turret's stats for its CURRENT level
-                const stats = getTurretStats(turret.type, turret.level);
-                if (!stats) return; 
-                
-                const target = findTarget(turret, stats.range);
-                
-                if (target) {
-                    turret.angle = Math.atan2(target.y - turret.y, target.x - turret.x);
-                    
-                    if (turret.cooldown <= 0) {
-                        fireProjectile(turret, target, stats); // Pass stats in
-                        turret.cooldown = stats.fireRate;
-                    }
-                }
-                
-                turret.cooldown -= 1 * deltaTime;
-            });
-        }
-        
-        function findTarget(turret, range) {
-            let bestTarget = null;
-            let maxDist = 0;
-
-            for (const enemy of enemies) {
-                const dist = Math.hypot(enemy.x - turret.x, enemy.y - turret.y);
-                
-                if (dist <= range) {
-                    const enemyPathDist = getEnemyPathDistance(enemy);
-                    if (enemyPathDist > maxDist) {
-                        maxDist = enemyPathDist;
-                        bestTarget = enemy;
-                    }
-                }
-            }
-            return bestTarget;
-        }
-
-        function getEnemyPathDistance(enemy) {
-            let dist = 0;
-            for (let i = 1; i < enemy.waypointIndex; i++) {
-                dist += Math.hypot(currentPath[i].x - currentPath[i-1].x, currentPath[i].y - currentPath[i-1].y);
-            }
-            dist += Math.hypot(enemy.x - currentPath[enemy.waypointIndex-1].x, enemy.y - currentPath[enemy.waypointIndex-1].y);
-            return dist;
-        }
-        
-        function fireProjectile(turret, target, stats) {
-            const gunTipX = turret.x + 18 * Math.cos(turret.angle);
-            const gunTipY = turret.y + 18 * Math.sin(turret.angle);
-
-            projectiles.push({
-                x: gunTipX, y: gunTipY,
-                damage: stats.damage, // Use calculated damage
-                speed: stats.projectileSpeed, 
-                color: stats.projectileColor,
-                target: target, targetLost: false,
-                lastTargetX: target.x, lastTargetY: target.y
-            });
-        }
-
-        function updateProjectiles(deltaTime) {
-             for (let i = projectiles.length - 1; i >= 0; i--) {
-                const p = projectiles[i];
-                
-                if (!p.target || p.target.currentHp <= 0 || !enemies.includes(p.target)) {
-                    p.targetLost = true;
-                }
-                
-                let targetX = p.targetLost ? p.lastTargetX : p.target.x; 
-                let targetY = p.targetLost ? p.lastTargetY : p.target.y;
-                
-                if (!p.targetLost) {
-                    p.lastTargetX = targetX;
-                    p.lastTargetY = targetY;
-                }
-
-                const dx = targetX - p.x;
-                const dy = targetY - p.y;
-                const dist = Math.hypot(dx, dy);
-                const moveDist = p.speed * deltaTime;
-
-                if (dist < moveDist) {
-                    if (!p.targetLost && p.target) {
-                         p.target.currentHp -= p.damage;
-                    }
-                    projectiles.splice(i, 1);
-                } else {
-                    p.x += (dx / dist) * moveDist;
-                    p.y += (dy / dist) * moveDist;
-                }
-            }
-        }
-        
-        // === DRAW FUNCTIONS ===
-        
-        function drawPath() {
-            if (!currentPath || currentPath.length === 0) return;
-            ctx.strokeStyle = '#1f2937'; // gray-900
-            ctx.lineWidth = pathWidth + 4; 
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            ctx.beginPath();
-            ctx.moveTo(currentPath[0].x, currentPath[0].y);
-            for (let i = 1; i < currentPath.length; i++) ctx.lineTo(currentPath[i].x, currentPath[i].y);
-            ctx.stroke();
-            
-            ctx.strokeStyle = '#9ca3af'; // gray-400
-            ctx.lineWidth = pathWidth;
-            ctx.beginPath();
-            ctx.moveTo(currentPath[0].x, currentPath[0].y);
-            for (let i = 1; i < currentPath.length; i++) ctx.lineTo(currentPath[i].x, currentPath[i].y);
-            ctx.stroke();
-        }
-
-        function drawEnemies() {
-            enemies.forEach(enemy => {
-                ctx.fillStyle = enemy.color;
-                ctx.beginPath(); ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2); ctx.fill();
-                const hpBarWidth = enemy.radius * 2; const hpBarHeight = 5;
-                const hpBarX = enemy.x - enemy.radius; const hpBarY = enemy.y - enemy.radius - 8;
-                ctx.fillStyle = '#1f2937'; ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-                const hpPercent = enemy.currentHp / enemy.hp;
-                ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#f59e0b' : '#ef4444');
-                ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
-            });
-        }
-
-        function drawTurrets() {
-            turrets.forEach(turret => {
-                const stats = getTurretStats(turret.type, turret.level);
-                const x = turret.x; const y = turret.y;
-                
-                // Draw range circle
-                ctx.fillStyle = 'rgba(100, 100, 100, 0.1)';
-                ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
-                ctx.lineWidth = 1; 
-                ctx.beginPath();
-                ctx.arc(x, y, stats.range, 0, Math.PI * 2);
-                ctx.fill(); ctx.stroke();
-
-                // Draw selection circle if this turret is selected
-                if (turret === selectedTurret) {
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 16, 0, Math.PI * 2); // Slightly larger than base
-                    ctx.stroke();
-                }
-
-                // Draw turret base
-                ctx.fillStyle = stats.color;
-                ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
-                
-                // Draw turret gun
-                ctx.save(); ctx.translate(x, y); ctx.rotate(turret.angle); 
-                ctx.fillStyle = '#a0aec0'; ctx.fillRect(0, -3, 18, 6); 
-                ctx.restore(); 
-
-                // Draw level pips
-                ctx.fillStyle = '#f59e0b'; // amber-500
-                const pipCount = turret.level;
-                const pipRadius = 2;
-                const pipSpacing = 5;
-                const totalPipWidth = (pipCount - 1) * pipSpacing;
-                const startX = x - totalPipWidth / 2;
-                const yOffset = 15; // Below the turret
-                for (let i = 0; i < pipCount; i++) {
-                    ctx.beginPath();
-                    ctx.arc(startX + i * pipSpacing, y + yOffset, pipRadius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
-        
-        function drawProjectiles() {
-            projectiles.forEach(p => {
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
-            });
-        }
-
-        function drawGhostTower() {
-            if (!selectedTowerType) return;
-            const stats = getTurretStats(selectedTowerType, 1); // Ghost is always Lvl 1
-            const validPlacement = isPlacementValid(mouse.x, mouse.y, stats.cost);
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = validPlacement ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.2)';
-            ctx.beginPath(); ctx.arc(mouse.x, mouse.y, stats.range, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 0.7;
-            ctx.fillStyle = stats.color;
-            ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 12, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-        }
-
-        // === EVENT HANDLERS ===
-        
-        function onMouseMove(e) {
-            const rect = canvas.getBoundingClientRect();
-            mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
-            mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
-        }
-
-        function onMouseClick(e) {
-            // Priority 1: Placing a new tower
-            if (selectedTowerType) {
-                const stats = getTurretStats(selectedTowerType, 1);
-                if (isPlacementValid(mouse.x, mouse.y, stats.cost)) {
-                    money -= stats.cost;
-                    turrets.push({ x: mouse.x, y: mouse.y, type: selectedTowerType, level: 1, cooldown: 0, angle: 0 });
-                    updateInGameUI();
-                    selectTower(null); // Deselect build mode
-                } else {
-                    console.log('Invalid placement');
-                    selectTower(null); // Deselect build mode
-                }
-                return; // Action taken
-            }
-            
-            // Priority 2: Check if we clicked on an existing turret
-            const clickedTurret = turrets.find(t => Math.hypot(mouse.x - t.x, mouse.y - t.y) < 12);
-            if (clickedTurret) {
-                if (selectedTurret === clickedTurret) {
-                    // Clicked same turret, close menu
-                    closeTurretMenu();
-                } else {
-                    // Clicked a different turret
-                    selectedTurret = clickedTurret;
-                    openTurretMenu(clickedTurret);
-                }
-                return; // Action taken
-            }
-
-            // Priority 3: Clicked on empty space
-            // If we're not building and didn't click a turret, close any open menus
-            selectTower(null); // Close build mode
-            closeTurretMenu(); // Close upgrade menu
-        }
-        
-        function selectTower(type) {
-            if (type) {
-                closeTurretMenu(); // Can't have both open
-            }
-            selectedTowerType = type;
-            // Update button styles
-            document.querySelectorAll('.tower-button').forEach(btn => {
-                if (type && btn.id === `buy-${type}`) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
-            });
-        }
-
-        // === NEW TURRET MENU FUNCTIONS ===
-        
-        function openTurretMenu(turret) {
-            selectedTurret = turret;
-            const stats = getTurretStats(turret.type, turret.level);
-            
-            // 1. Set Title and Stats
-            turretMenuTitle.textContent = `${stats.name} (Level ${turret.level})`;
-            turretMenuStats.innerHTML = `
-                <p>Damage: <span class="font-bold text-white">${stats.damage}</span></p>
-                <p>Range: <span class="font-bold text-white">${stats.range}</span></p>
-                <p>Rate: <span class="font-bold text-white">${stats.fireRate}</span></p>
-            `;
-            
-            // 2. Configure Upgrade Button
-            const maxLevel = playerData.turretMaxLevels[turret.type];
-            if (turret.level >= maxLevel) {
-                turretMenuUpgrade.textContent = 'Max Level';
-                turretMenuUpgrade.disabled = true;
-                turretMenuUpgrade.className = 'flex-1 game-button bg-gray-600 cursor-not-allowed';
-            } else {
-                const upgradeCost = stats.nextUpgradeCost;
-                turretMenuUpgrade.textContent = `Upgrade ($${upgradeCost})`;
-                if (money >= upgradeCost) {
-                    turretMenuUpgrade.disabled = false;
-                    turretMenuUpgrade.className = 'flex-1 game-button bg-green-600 hover:bg-green-700';
-                } else {
-                    turretMenuUpgrade.disabled = true;
-                    turretMenuUpgrade.className = 'flex-1 game-button bg-red-700 cursor-not-allowed';
-                }
-            }
-
-            // 3. Configure Sell Button
-            turretMenuSell.textContent = `Sell ($${stats.sellValue})`;
-            
-            // 4. Position and Show Menu
-            // Convert canvas coords to screen coords
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = rect.width / canvas.width;
-            const scaleY = rect.height / canvas.height;
-
-            // Position relative to the canvas's container
-            let menuLeft = (turret.x * scaleX);
-            let menuTop = (turret.y * scaleY);
-
-            // Offset menu to not cover turret
-            // And prevent going off-screen
-            const menuWidth = 256; // w-64
-            const menuHeight = 160; // Approx
-            
-            if (menuLeft + menuWidth + 20 > rect.width) {
-                menuLeft -= (menuWidth + 30); // Show on left
-            } else {
-                menuLeft += 30; // Show on right
-            }
-            
-            if (menuTop + menuHeight > rect.height) {
-                menuTop = rect.height - menuHeight - 10;
-            }
-
-            turretMenu.style.left = `${Math.max(0, menuLeft)}px`;
-            turretMenu.style.top = `${Math.max(0, menuTop)}px`;
-            turretMenu.style.display = 'block';
-        }
-
-        function closeTurretMenu() {
-            if (selectedTurret) {
-                selectedTurret = null;
-            }
-            if (turretMenu) { // Check if it exists yet
-                turretMenu.style.display = 'none';
+        if (dist < 10) {
+            this.target.health -= 5;
+            this.active = false;
+            if (this.target.health <= 0) {
+                money += 10;
+                updateUI();
             }
         }
 
-        function upgradeSelectedTurret() {
-            if (!selectedTurret) return;
-            
-            const stats = getTurretStats(selectedTurret.type, selectedTurret.level);
-            const upgradeCost = stats.nextUpgradeCost;
-            const maxLevel = playerData.turretMaxLevels[selectedTurret.type];
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
+    }
 
-            if (money >= upgradeCost && selectedTurret.level < maxLevel) {
-                money -= upgradeCost;
-                selectedTurret.level++;
-                updateInGameUI();
-                openTurretMenu(selectedTurret); // Refresh menu
-            }
-        }
+    draw() {
+        ctx.fillStyle = 'yellow';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
 
-        function sellSelectedTurret() {
-            if (!selectedTurret) return;
-            
-            const stats = getTurretStats(selectedTurret.type, selectedTurret.level);
-            money += stats.sellValue;
-            
-            // Remove turret from array
-            turrets = turrets.filter(t => t !== selectedTurret);
-            
-            updateInGameUI();
-            closeTurretMenu();
-        }
+// Game Loop
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // === UTILITY & GAME STATE ===
+    // Draw Path
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 40;
+    ctx.beginPath();
+    ctx.moveTo(currentPath[0][0], currentPath[0][1]);
+    currentPath.forEach(p => ctx.lineTo(p[0], p[1]));
+    ctx.stroke();
 
-        function isPlacementValid(x, y, cost) {
-            if (money < cost) return false;
-            for (const t of turrets) {
-                if (Math.hypot(x - t.x, y - t.y) < 24) return false;
-            }
-            if (!currentPath) return false;
-            for (let i = 0; i < currentPath.length - 1; i++) {
-                if (isPointNearLineSegment(x, y, currentPath[i].x, currentPath[i].y, currentPath[i+1].x, currentPath[i+1].y, pathWidth / 2 + 12)) {
-                    return false;
-                }
-            }
-            return true;
-        }
+    // Spawn Logic
+    spawnTimer++;
+    if (spawnTimer > 100 - (wave * 2)) {
+        enemies.push(new Enemy());
+        spawnTimer = 0;
+    }
 
-        function isPointNearLineSegment(px, py, x1, y1, x2, y2, maxDist) {
-            const L2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
-            if (L2 === 0) return Math.hypot(px - x1, py - y1) < maxDist;
-            const t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / L2;
-            const tClamped = Math.max(0, Math.min(1, t));
-            const nearX = x1 + tClamped * (x2 - x1);
-            const nearY = y1 + tClamped * (y2 - y1);
-            return Math.hypot(px - nearX, py - nearY) < maxDist;
-        }
+    // Update & Draw
+    enemies = enemies.filter(e => e.health > 0);
+    enemies.forEach(e => { e.update(); e.draw(); });
 
-        function updateInGameUI() {
-            moneyDisplay.textContent = money;
-            livesDisplay.textContent = lives;
-            levelDisplay.textContent = currentLevel + 1;
-            waveDisplay.textContent = currentWave + (gameState === 'playing' ? 1 : 0);
-        }
-        
-        function endWave() {
-            if (gameState !== 'playing') return;
-            
-            gameState = 'waiting';
-            currentWave++;
-            startWaveBtn.disabled = false;
-            
-            if (currentWave >= levels[currentLevel].waves.length) {
-                showLevelComplete();
-            } else {
-                startWaveBtn.textContent = 'Start Wave';
-                updateInGameUI();
-            }
-        }
+    towers.forEach(t => { t.update(); t.draw(); });
 
-        function checkGameOver() {
-            if (lives <= 0) {
-                lives = 0;
-                updateInGameUI();
-                gameState = 'gameover';
-                closeTurretMenu();
-                messageTitle.textContent = 'Game Over!';
-                messageText.textContent = `You ran out of base HP on level ${currentLevel + 1}, wave ${currentWave + 1}.`;
-                
-                messageButton1.textContent = 'Restart Level';
-                messageButton1.onclick = () => {
-                    messageBox.style.display = 'none';
-                    loadLevel(currentLevel); // Restart current level
-                    gameLoopId = requestAnimationFrame(gameLoop); // Restart loop
-                };
-                
-                messageButton2.textContent = 'Main Menu';
-                messageButton2.onclick = () => {
-                    showMainMenu();
-                };
-                messageBox.style.display = 'block';
-            }
-        }
-        
-        function showLevelComplete() {
-            gameState = 'win';
-            closeTurretMenu();
-            const reward = levels[currentLevel].gemReward || 0;
-            playerData.gems += reward;
-            
-            // Update menu UI in background so gem count is correct when player returns
-            updateMenuUI(); 
+    projectiles = projectiles.filter(p => p.active);
+    projectiles.forEach(p => { p.update(); p.draw(); });
 
-            messageTitle.textContent = 'Level Complete!';
-            messageText.textContent = `You beat level ${currentLevel + 1}! You earned ${reward} gems.`;
-            
-            messageButton1.textContent = 'Next Level';
-            const nextLevel = currentLevel + 1;
-            
-            if (levels[nextLevel]) {
-                messageButton1.disabled = false;
-                messageButton1.onclick = () => {
-                    messageBox.style.display = 'none';
-                    startGame(nextLevel); // Start next level
-                };
-            } else {
-                messageButton1.textContent = 'All Levels Beat!';
-                messageButton1.disabled = true;
-            }
-            
-            messageButton2.textContent = 'Main Menu';
-            messageButton2.onclick = () => {
-                showMainMenu();
-            };
-            messageBox.style.display = 'block';
-        }
+    if (lives <= 0) {
+        ctx.fillStyle = "white";
+        ctx.font = "40px Arial";
+        ctx.fillText("GAME OVER", 300, 250);
+        return;
+    }
 
-        // --- This line starts the entire application ---
-        window.addEventListener('DOMContentLoaded', init);
+    requestAnimationFrame(gameLoop);
+}
 
-    </script>
-</head>
-<body class="bg-gray-900 text-gray-200 h-screen flex items-center justify-center p-4">
+// Interactions
+function placeTowerMode() {
+    if (money >= 50) isPlacingTower = true;
+}
 
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 text-white flex items-center justify-center z-50">
-        <div class="text-2xl font-bold">Loading Game...</div>
-    </div>
+canvas.addEventListener('mousedown', (e) => {
+    if (isPlacingTower) {
+        const rect = canvas.getBoundingClientRect();
+        towers.push(new Tower(e.clientX - rect.left, e.clientY - rect.top));
+        money -= 50;
+        isPlacingTower = false;
+        updateUI();
+    }
+});
 
-    <!-- Main Menu -->
-    <div id="main-menu" class="hidden flex-col w-full max-w-4xl h-full max-h-[90vh] bg-gray-700 rounded-lg shadow-2xl p-6">
-        <div class="flex justify-between items-center border-b border-gray-600 pb-4 mb-4">
-            <h1 class="text-3xl font-bold text-white">Simple Tower Defense</h1>
-            <div class="text-lg font-semibold bg-gray-800 px-4 py-2 rounded-lg">
-                Gems: <span id="gem-display" class="text-purple-400 font-bold">0</span>
-            </div>
-        </div>
-        
-        <div class="flex-1 overflow-y-auto space-y-6">
-            <!-- Level Select Section -->
-            <div>
-                <h2 class="text-2xl font-semibold mb-3 text-blue-300">Select Level</h2>
-                <div id="level-select-container" class="space-y-4">
-                    <!-- Level cards will be injected here -->
-                </div>
-            </div>
-            
-            <!-- Armory Section -->
-            <div>
-                <h2 class="text-2xl font-semibold mb-3 text-purple-300">Armory</h2>
-                <div id="armory-container" class="space-y-4">
-                    <!-- Turret unlock cards will be injected here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Container -->
-    <div id="game-container" class="hidden w-full max-w-5xl">
-        <!-- Top Game UI Bar -->
-        <div class="bg-gray-800 p-4 rounded-t-lg flex justify-between items-center">
-            <div class="flex space-x-6">
-                <div class="text-xl">Money: <span id="money-display" class="font-bold text-green-400">0</span></div>
-                <div class="text-xl">Base HP: <span id="lives-display" class="font-bold text-red-400">0</span></div>
-            </div>
-            <div class="flex space-x-6 text-center">
-                <div class="text-xl">Level: <span id="level-display" class="font-bold text-blue-300">1</span></div>
-                <div class="text-xl">Wave: <span id="wave-display" class="font-bold text-yellow-300">0</span></div>
-            </div>
-            <div class="flex space-x-2">
-                <button id="start-wave-btn" class="game-button bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Start Wave</button>
-                <button id="back-to-menu-btn" class="game-button bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Menu</button>
-            </div>
-        </div>
-
-        <!-- Canvas Container (Handles Aspect Ratio AND Turret Menu) -->
-        <div id="game-canvas-container" class="bg-gray-700">
-            <canvas id="game-canvas" class="rounded-b-lg"></canvas>
-
-            <!-- NEW: Turret Upgrade Menu -->
-            <div id="turret-menu" class="hidden absolute bg-gray-800 rounded-lg shadow-xl p-4 w-64 text-gray-300 border-2 border-gray-600 z-20">
-                <h3 id="turret-menu-title" class="text-xl font-bold mb-2 text-white">Turret</h3>
-                <div id="turret-menu-stats" class="text-sm space-y-1 mb-3">
-                    <!-- Stats injected here -->
-                </div>
-                <div class="flex space-x-2">
-                    <button id="turret-menu-upgrade" class="flex-1 game-button bg-green-600 hover:bg-green-700">Upgrade</button>
-                    <button id="turret-menu-sell" class="flex-1 game-button bg-red-600 hover:bg-red-700">Sell</button>
-                </div>
-                <button id="turret-menu-close" class="absolute -top-3 -right-3 text-gray-200 bg-red-600 hover:bg-red-700 w-7 h-7 rounded-full font-bold text-lg flex items-center justify-center border-2 border-white">&times;</button>
-            </div>
-        </div>
-
-        <!-- Bottom Tower Selection Bar -->
-        <div id="tower-selection-ui" class="mt-4 bg-gray-800 p-4 rounded-lg flex space-x-4 justify-center">
-            <!-- Tower buttons will be injected here -->
-        </div>
-    </div>
-
-    <!-- Message Box (Game Over / Win) -->
-    <div id="message-box" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-40">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center w-full max-w-md">
-            <h2 id="message-title" class="text-3xl font-bold mb-4">Game Over!</h2>
-            <p id="message-text" class="text-lg mb-6">You lost.</p>
-            <div class="flex justify-center space-x-4">
-                <button id="message-button-1" class="game-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Restart</button>
-                <button id="message-button-2" class="game-button bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg">Main Menu</button>
-            </div>
-        </div>
-    </div>
-
+gameLoop();
+</script>
 </body>
 </html>
