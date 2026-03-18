@@ -219,8 +219,11 @@
                 <div style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 16px;">
                     Cost: <strong style="color:var(--xp-blue);">300 💎</strong>
                 </div>
-                <button id="pull-btn" class="btn-action" onclick="pullGacha()">🎲 Summon 1x 🎲</button>
-                <div id="pull-result" style="margin-top: 15px; font-weight: bold; font-size: 18px; min-height: 45px; display: flex; align-items: center; justify-content: center;"></div>
+             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="pull-btn" class="btn-action" style="margin-bottom: 0;" onclick="pullGacha(1)">🎲 Summon 1x</button>
+                    <button id="pull-max-btn" class="btn-action" style="margin-bottom: 0; background: linear-gradient(to bottom, #ef5350, var(--danger));" onclick="pullGacha('max')">💥 MAX Summon</button>
+                </div>
+                <div id="pull-result" style="margin-top: 15px; font-weight: bold; font-size: 14px; min-height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;"></div>
             </div>
         </section>
 
@@ -871,49 +874,109 @@
             else if (currentStage >= 12) h.innerHTML = "<span style='color:var(--danger)'>MARINEFORD UNLOCKED! 6⭐ Kizaru!</span>";
         }
 
-        function pullGacha() {
-            const cost = Math.floor(300 * getPullDiscount());
-            if (gems < cost) { showToast("Not enough Gems!"); return; }
-            gems -= cost; updateHeader(); bounties.pulls++; checkBountyAlert();
+        function pullGacha(amount = 1) {
+            const costPerPull = Math.floor(300 * getPullDiscount());
+            let pullsToMake = amount;
+            
+            // Calculate how many pulls we can afford for MAX
+            if (amount === 'max') {
+                pullsToMake = Math.floor(gems / costPerPull);
+                if (pullsToMake <= 0) { showToast("Not enough Gems!"); return; }
+            }
+
+            const totalCost = pullsToMake * costPerPull;
+            if (gems < totalCost) { showToast("Not enough Gems!"); return; }
+            
+            gems -= totalCost; 
+            updateHeader(); 
+            bounties.pulls += pullsToMake; 
+            checkBountyAlert();
             
             const pool = characters.filter(c => c.unlockStage <= currentStage);
-            const roll = Math.random() * 100;
-            let r = 3; 
-            if (currentStage >= 18 && roll <= 0.5) r = 6; 
-            else if (currentStage >= 12 && roll <= 2) r = 6; 
-            else if (roll <= 8) r = 5; else if (roll <= 30) r = 4;
+            const pullBtn = document.getElementById('pull-btn'); 
+            const resultDiv = document.getElementById('pull-result');
+            
+            // IF SINGLE PULL: Keep the fun slot machine animation!
+            if (pullsToMake === 1) {
+                const roll = Math.random() * 100;
+                let r = 3; 
+                if (currentStage >= 18 && roll <= 0.5) r = 6; 
+                else if (currentStage >= 12 && roll <= 2) r = 6; 
+                else if (roll <= 8) r = 5; else if (roll <= 30) r = 4;
 
-            let rarPool = pool.filter(c => c.rarity === r);
-            if(rarPool.length === 0) rarPool = pool.filter(c => c.rarity === 3);
-            const pulledBase = rarPool[Math.floor(Math.random() * rarPool.length)];
-            
-            let existingChar = inventory.find(c => c.id === pulledBase.id);
-            let isDupe = !!existingChar;
-            
-            if (isDupe) existingChar.dupes = (existingChar.dupes || 0) + 1;
-            else {
-                const newChar = { ...pulledBase, uid: globalUidCounter++, level: 1, dupes: 0, ascensions: 0, isAwoken: false, equipment: { weapon: null, armor: null } };
-                newChar.hp = newChar.baseHp; newChar.atk = newChar.baseAtk;
-                inventory.push(newChar);
-            }
-            
-            const pullBtn = document.getElementById('pull-btn'); const resultDiv = document.getElementById('pull-result');
-            pullBtn.disabled = true; 
-            
-            let ticks = 0; let slotChars = [pool[0], pool[1] || pool[0], pool[2] || pool[0]];
-            const slotInterval = setInterval(() => {
-                slotChars = [pool[Math.floor(Math.random()*pool.length)], pool[Math.floor(Math.random()*pool.length)], pool[Math.floor(Math.random()*pool.length)]];
-                resultDiv.innerHTML = `<span style="letter-spacing: 5px; font-size: 28px; filter: blur(1px);">[${slotChars[0].emoji}|${slotChars[1].emoji}|${slotChars[2].emoji}]</span>`;
-                playSound('hit'); ticks++;
-                if (ticks > 15) {
-                    clearInterval(slotInterval);
-                    resultDiv.innerHTML = `<span style="color:${r>=5?'var(--gold)':'white'}; font-size: 20px;">
-                        ${pulledBase.emoji} ${pulledBase.name} <br>(${'⭐'.repeat(r)}) ${isDupe ? '<br><span style="color:var(--raid-purple); font-size:12px;">+1 Shard</span>' : ''}
-                    </span>`;
-                    if (r >= 5) { playSound('win'); showToast(`JACKPOT! You pulled a ${r}⭐!`); resultDiv.style.animation = "floatLogo 1s ease-in-out"; setTimeout(() => resultDiv.style.animation = "", 1000); }
-                    pullBtn.disabled = false; saveGame();
+                let rarPool = pool.filter(c => c.rarity === r);
+                if(rarPool.length === 0) rarPool = pool.filter(c => c.rarity === 3);
+                const pulledBase = rarPool[Math.floor(Math.random() * rarPool.length)];
+                
+                let existingChar = inventory.find(c => c.id === pulledBase.id);
+                let isDupe = !!existingChar;
+                
+                if (isDupe) existingChar.dupes = (existingChar.dupes || 0) + 1;
+                else {
+                    const newChar = { ...pulledBase, uid: globalUidCounter++, level: 1, dupes: 0, ascensions: 0, isAwoken: false, equipment: { weapon: null, armor: null } };
+                    newChar.hp = newChar.baseHp; newChar.atk = newChar.baseAtk;
+                    inventory.push(newChar);
                 }
-            }, 60); 
+                
+                pullBtn.disabled = true; 
+                let ticks = 0; let slotChars = [pool[0], pool[1] || pool[0], pool[2] || pool[0]];
+                const slotInterval = setInterval(() => {
+                    slotChars = [pool[Math.floor(Math.random()*pool.length)], pool[Math.floor(Math.random()*pool.length)], pool[Math.floor(Math.random()*pool.length)]];
+                    resultDiv.innerHTML = `<span style="letter-spacing: 5px; font-size: 28px; filter: blur(1px);">[${slotChars[0].emoji}|${slotChars[1].emoji}|${slotChars[2].emoji}]</span>`;
+                    playSound('hit'); ticks++;
+                    if (ticks > 15) {
+                        clearInterval(slotInterval);
+                        resultDiv.innerHTML = `<span style="color:${r>=5?'var(--gold)':'white'}; font-size: 20px;">
+                            ${pulledBase.emoji} ${pulledBase.name} <br>(${'⭐'.repeat(r)}) ${isDupe ? '<br><span style="color:var(--raid-purple); font-size:12px;">+1 Shard</span>' : ''}
+                        </span>`;
+                        if (r >= 5) { playSound('win'); showToast(`JACKPOT! You pulled a ${r}⭐!`); resultDiv.style.animation = "floatLogo 1s ease-in-out"; setTimeout(() => resultDiv.style.animation = "", 1000); }
+                        pullBtn.disabled = false; saveGame(); renderInventory();
+                    }
+                }, 60); 
+            } 
+            // IF MAX PULL: Instant results to prevent lag!
+            else {
+                let highestR = 0;
+                let bestPull = null;
+                let newCharsCount = 0;
+                let dupesCount = 0;
+
+                for(let i = 0; i < pullsToMake; i++) {
+                    const roll = Math.random() * 100;
+                    let r = 3; 
+                    if (currentStage >= 18 && roll <= 0.5) r = 6; 
+                    else if (currentStage >= 12 && roll <= 2) r = 6; 
+                    else if (roll <= 8) r = 5; else if (roll <= 30) r = 4;
+
+                    let rarPool = pool.filter(c => c.rarity === r);
+                    if(rarPool.length === 0) rarPool = pool.filter(c => c.rarity === 3);
+                    const pulledBase = rarPool[Math.floor(Math.random() * rarPool.length)];
+                    
+                    let existingChar = inventory.find(c => c.id === pulledBase.id);
+                    if (existingChar) {
+                        existingChar.dupes = (existingChar.dupes || 0) + 1;
+                        dupesCount++;
+                    } else {
+                        const newChar = { ...pulledBase, uid: globalUidCounter++, level: 1, dupes: 0, ascensions: 0, isAwoken: false, equipment: { weapon: null, armor: null } };
+                        newChar.hp = newChar.baseHp; newChar.atk = newChar.baseAtk;
+                        inventory.push(newChar);
+                        newCharsCount++;
+                    }
+
+                    if (r > highestR) { highestR = r; bestPull = pulledBase; }
+                }
+
+                playSound('win');
+                resultDiv.innerHTML = `
+                    <span style="color:${highestR>=5?'var(--gold)':'white'}; font-size: 16px;">
+                        💥 Spent ${totalCost.toLocaleString()}💎 for ${pullsToMake} Pulls! 💥<br>
+                        <span style="color:var(--success)">New Crew: ${newCharsCount}</span> | <span style="color:var(--raid-purple)">Shards: ${dupesCount}</span><br>
+                        Best Pull: ${bestPull.emoji} ${bestPull.name} (${'⭐'.repeat(highestR)})
+                    </span>`;
+                if (highestR >= 5) showToast(`JACKPOT! You pulled a ${highestR}⭐!`);
+                saveGame();
+                renderInventory();
+            }
         }
 
         function setFilter(stars, btn) {
