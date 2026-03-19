@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For Piece: Web Voyage V3.0</title>
+    <title>For Piece: Web Voyage V4.0</title>
     <style>
         /* --- THEME & RESET --- */
         :root {
@@ -190,7 +190,7 @@
 
         <div id="title-screen" onclick="startGame()">
             <div class="sunburst"></div>
-            <div class="title-logo">For Piece<br><span style="font-size:24px; color: white;">V3.0 LEGEND</span></div>
+            <div class="title-logo">For Piece<br><span style="font-size:24px; color: white;">V4.0 NEW ERA</span></div>
             <div class="tap-to-start">TAP TO START</div>
             <div style="position: absolute; bottom: 20px; color: rgba(255,255,255,0.5); font-size: 12px;" id="currentTime"></div>
         </div>
@@ -221,7 +221,7 @@
                 </div>
              <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button id="pull-btn" class="btn-action" style="margin-bottom: 0;" onclick="pullGacha(1)">🎲 Summon 1x</button>
-                    <button id="pull-max-btn" class="btn-action" style="margin-bottom: 0; background: linear-gradient(to bottom, #ef5350, var(--danger));" onclick="pullGacha('max')">💥 MAX Summon</button>
+                    <button id="pull-10x-btn" class="btn-action" style="margin-bottom: 0; background: linear-gradient(to bottom, #ba68c8, var(--raid-purple));" onclick="pullGacha(10)">🔮 Summon 10x</button>
                 </div>
                 <div id="pull-result" style="margin-top: 15px; font-weight: bold; font-size: 14px; min-height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;"></div>
             </div>
@@ -1334,7 +1334,8 @@
 
                 if(turnsLeft <= 0) {
                     clearInterval(rInt); isBattling = false; document.getElementById('raid-btn').disabled = false;
-                    const reward = Math.floor(totalDmg / 50); gems += reward; updateHeader(); playSound('win'); dropGear();
+                    // NERFED: Now divides damage by 1000 instead of 50!
+                    const reward = Math.floor(totalDmg / 1000); gems += reward; updateHeader(); playSound('win'); dropGear();
                     logBattle(`RAID COMPLETE! Earned ${reward} 💎`, "var(--gold)", "raid-log"); showToast(`Raid Finished! +${reward} Gems!`); saveGame();
                 }
             }, 1000);
@@ -1362,11 +1363,11 @@
         function saveGame() {
             lastSaveTime = Date.now();
             const saveData = { gems, meat, wood, inventory, gearInventory, activeTeamUids, globalUidCounter, globalGearUidCounter, currentStage, shipLevel, impelFloor, rebirthCount, bounties, lastSaveTime, jollyRogerPixels };
-            localStorage.setItem('forPieceSaveDataV3', JSON.stringify(saveData));
+            localStorage.setItem('forPieceSaveDataV4', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            const saved = localStorage.getItem('forPieceSaveDataV3');
+            const saved = localStorage.getItem('forPieceSaveDataV4');
             if (saved) {
                 const data = JSON.parse(saved);
                 gems = data.gems !== undefined ? data.gems : 3000;
