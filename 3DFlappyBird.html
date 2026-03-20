@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D First Person Flappy</title>
+    <style>
+        /* CSS resets and mobile optimization */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: none;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* Let clicks pass through to the game */
+        }
+
+        /* Animated Title Screen */
+        #title-screen {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+            transition: opacity 0.5s ease;
+        }
+
+        .animated-title {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* In-Game Score */
+        #hud {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+            display: none;
+        }
+
+        /* Game Over Screen */
+        #game-over-screen {
+            display: none;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            pointer-events: auto; /* Re-enable clicks for the button */
+        }
+
+        #game-over-screen h2 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #ff4757;
+        }
+
+        .score-text {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        #restart-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background-color: #2ed573;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(46, 213, 115, 0.4);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        #restart-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="game-container"></div>
+
+    <div id="ui-layer">
+        <div id="title-screen">
+            <h1 class="animated-title">FLAPPY 3D</h1>
+            <p class="subtitle">Tap anywhere to fly</p>
+        </div>
+
+        <div id="hud">0</div>
+
+        <div id="game-over-screen">
+            <h2>CRASH!</h2>
+            <div class="score-text">Score: <span id="final-score">0</span></div>
+            <div class="score-text">High Score: <span id="high-score">0</span></div>
+            <button id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME VARIABLES ---
+        let scene, camera, renderer, light;
+        let pipes = [];
+        let floor, gridHelper;
+        
+        let gameState = 'start'; // start, playing, gameover
+        let score = 0;
+        let highScore = localStorage.getItem('flappy3DHighScore') || 0;
+
+        // Physics variables
+        let playerY = 5;
+        let velocityY = 0;
+        const GRAVITY = -0.012;
+        const JUMP_STRENGTH = 0.25;
+        const FORWARD_SPEED = 0.3; // Speed at which pipes move towards camera
+        
+        const PIPE_SPAWN_Z = -60;
+        const PIPE_DESPAWN_Z = 10;
+        const PIPE_SPAWN_RATE = 80; // frames between spawns
+        let frameCounter = 0;
+
+        // HTML Elements
+        const hud = document.getElementById('hud');
+        const titleScreen = document.getElementById('title-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreEl = document.getElementById('final-score');
+        const highScoreEl = document.getElementById('high-score');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Setup Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 50); // Fog for depth
+
+            // Setup Camera (First Person)
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, playerY, 0);
+
+            // Setup Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            // Lighting (for good graphics)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            light = new THREE.DirectionalLight(0xffffff, 0.8);
+            light.position.set(10, 50, 20);
+            light.castShadow = true;
+            light.shadow.camera.near = 0.5;
+            light.shadow.camera.far = 100;
+            light.shadow.camera.left = -20;
+            light.shadow.camera.right = 20;
+            light.shadow.camera.top = 20;
+            light.shadow.camera.bottom = -20;
+            scene.add(light);
+
+            // Environment: Floor
+            const floorGeo = new THREE.PlaneGeometry(200, 200);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8, metalness: 0.1 });
+            floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Moving Grid to simulate speed
+            gridHelper = new THREE.GridHelper(200, 40, 0x000000, 0x000000);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            gridHelper.position.y = 0.01; // Slightly above floor to prevent z-fighting
+            scene.add(gridHelper);
+
+            // Event Listeners for Input
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Touch & Click controls
+            document.addEventListener('touchstart', handleInput, { passive: false });
+            document.addEventListener('mousedown', handleInput);
+            restartBtn.addEventListener('click', resetGame);
+            restartBtn.addEventListener('touchstart', resetGame, { passive: false });
+
+            // Start the loop
+            animate();
+        }
+
+        // --- PIPE GENERATION ---
+        function spawnPipe() {
+            const gapSize = 4.5; // Space between top and bottom pipe
+            const gapPosition = Math.random() * 8 + 3; // Random height for the gap (Y = 3 to 11)
+
+            const pipeRadius = 1.5;
+            const pipeGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, 30, 32);
+            // Neon/Glossy material for pipes
+            const pipeMat = new THREE.MeshStandardMaterial({ 
+                color: 0xff4757, 
+                roughness: 0.2, 
+                metalness: 0.5 
+            });
+
+            // Bottom Pipe
+            const bottomPipe = new THREE.Mesh(pipeGeo, pipeMat);
+            bottomPipe.position.set(0, gapPosition - gapSize/2 - 15, PIPE_SPAWN_Z); // 15 is half of height 30
+            bottomPipe.castShadow = true;
+            bottomPipe.receiveShadow = true;
+            scene.add(bottomPipe);
+
+            // Top Pipe
+            const topPipe = new THREE.Mesh(pipeGeo, pipeMat);
+            topPipe.position.set(0, gapPosition + gapSize/2 + 15, PIPE_SPAWN_Z);
+            topPipe.castShadow = true;
+            topPipe.receiveShadow = true;
+            scene.add(topPipe);
+
+            pipes.push({
+                bottom: bottomPipe,
+                top: topPipe,
+                gapTop: gapPosition + gapSize/2,
+                gapBottom: gapPosition - gapSize/2,
+                passed: false
+            });
+        }
+
+        // --- INPUT HANDLING ---
+        function handleInput(e) {
+            // Prevent default zooming/scrolling on mobile
+            if(e.type === 'touchstart') e.preventDefault(); 
+            
+            // Don't trigger jump if clicking the restart button
+            if (e.target === restartBtn) return;
+
+            if (gameState === 'start') {
+                gameState = 'playing';
+                titleScreen.style.display = 'none';
+                hud.style.display = 'block';
+                jump();
+            } else if (gameState === 'playing') {
+                jump();
+            }
+        }
+
+        function jump() {
+            velocityY = JUMP_STRENGTH;
+        }
+
+        function resetGame(e) {
+            if(e) e.preventDefault();
+            
+            // Remove old pipes
+            pipes.forEach(p => {
+                scene.remove(p.bottom);
+                scene.remove(p.top);
+            });
+            pipes = [];
+            
+            // Reset variables
+            playerY = 5;
+            velocityY = 0;
+            score = 0;
+            frameCounter = 0;
+            hud.innerText = score;
+            
+            // UI
+            gameOverScreen.style.display = 'none';
+            hud.style.display = 'block';
+            gameState = 'playing';
+            jump();
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            hud.style.display = 'none';
+            gameOverScreen.style.display = 'block';
+            
+            finalScoreEl.innerText = score;
+            
+            // Handle High Score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('flappy3DHighScore', highScore);
+            }
+            highScoreEl.innerText = highScore;
+        }
+
+        // --- GAME LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState === 'playing') {
+                // Player Physics
+                velocityY += GRAVITY;
+                playerY += velocityY;
+                camera.position.y = playerY;
+
+                // Animate Grid to simulate movement
+                gridHelper.position.z += FORWARD_SPEED;
+                if (gridHelper.position.z >= 10) gridHelper.position.z = 0;
+
+                // Floor collision (game over if you hit the ground)
+                if (playerY <= 0.5) {
+                    gameOver();
+                }
+                // Ceiling limit
+                if (playerY > 20) {
+                    playerY = 20;
+                    velocityY = 0;
+                }
+
+                // Pipe Logic
+                frameCounter++;
+                if (frameCounter >= PIPE_SPAWN_RATE) {
+                    spawnPipe();
+                    frameCounter = 0;
+                }
+
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    let p = pipes[i];
+                    
+                    // Move pipes towards camera
+                    p.bottom.position.z += FORWARD_SPEED;
+                    p.top.position.z += FORWARD_SPEED;
+
+                    // Collision Detection
+                    // Camera is at Z=0. If pipe Z is near 0, check Y limits
+                    const pipeZ = p.bottom.position.z;
+                    if (pipeZ > -2 && pipeZ < 2) { // 2 is roughly the radius + camera buffer
+                        if (playerY < p.gapBottom || playerY > p.gapTop) {
+                            gameOver();
+                        }
+                    }
+
+                    // Scoring
+                    if (!p.passed && pipeZ > 0) {
+                        score++;
+                        hud.innerText = score;
+                        p.passed = true;
+                    }
+
+                    // Clean up pipes behind camera
+                    if (pipeZ > PIPE_DESPAWN_Z) {
+                        scene.remove(p.bottom);
+                        scene.remove(p.top);
+                        pipes.splice(i, 1);
+                    }
+                }
+            }
+
+            // Gently bob camera on start screen
+            if (gameState === 'start') {
+                const time = Date.now() * 0.003;
+                camera.position.y = 5 + Math.sin(time) * 0.5;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- UTILS ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Start everything
+        init();
+
+    </script>
+</body>
+</html>
