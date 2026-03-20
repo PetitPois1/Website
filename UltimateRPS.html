@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Rock-Paper-Scissors</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            font-family: 'Fredoka One', cursive, sans-serif;
+            touch-action: none; /* Prevents mobile scrolling */
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlays */
+        #dom-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .overlay-active { pointer-events: auto !important; }
+
+        /* Generic Popup Style */
+        .popup {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            border: 4px solid black;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+
+        /* Newsletter (Aggressive Ad) */
+        #newsletter-popup { background: #FFD166; color: black; position: absolute; z-index: 100; box-shadow: 0 10px 50px rgba(0,0,0,0.8); }
+        #nl-close { position: absolute; top: 5px; right: 5px; width: 25px; height: 25px; background: red; color: white; border: 2px solid darkred; font-size: 14px; cursor: pointer; border-radius: 5px; font-weight: bold;}
+
+        /* Bureaucracy */
+        #bureaucracy-popup { background: #EEE; max-width: 400px; text-align: left; }
+        .legal-text { height: 150px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; font-size: 12px; margin-bottom: 10px; background: white; font-family: sans-serif; line-height: 1.4; }
+        
+        /* Math */
+        #math-popup input { font-size: 24px; text-align: center; width: 100px; margin: 10px auto; border: 2px solid black; border-radius: 5px; }
+        
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #EBF5FB; /* Changed from light pink to cool blue */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        button.btn-primary {
+            font-family: 'Fredoka One', cursive;
+            font-size: 24px;
+            padding: 15px 40px;
+            background: #EF476F;
+            color: white;
+            border: 4px solid #118AB2;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #118AB2;
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin-top: 20px;
+        }
+        button.btn-primary:active {
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #118AB2;
+        }
+
+        h1 { color: #073B4C; font-size: 8vw; margin: 0; text-align: center; text-transform: uppercase; line-height: 1; text-shadow: 3px 3px 0 white; }
+        p.subtitle { color: #118AB2; font-size: 20px; margin-bottom: 20px; text-align: center; }
+
+        .rules-guide {
+            background: rgba(255,255,255,0.9);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 3px solid #073B4C;
+            font-family: sans-serif;
+            font-size: 14px;
+            color: #073B4C;
+            margin-bottom: 15px;
+            box-shadow: 4px 4px 0 #073B4C;
+            max-width: 90%;
+        }
+        .rules-guide h3 { margin: 0 0 10px 0; font-family: 'Fredoka One', cursive; text-align: center; font-size: 18px;}
+        .rules-guide ul { margin: 0; padding: 0; list-style-type: none; }
+        .rules-guide li { margin-bottom: 6px; }
+
+        #flash-bang {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; pointer-events: none; z-index: 999;
+            transition: opacity 0.2s;
+        }
+
+        /* Hides the real cursor when decoy is active */
+        body.decoy-active, body.decoy-active * {
+            cursor: none !important;
+        }
+
+        /* Utility Buttons */
+        .util-btn {
+            position: absolute;
+            top: 15px;
+            z-index: 1000;
+            display: none;
+            font-family: 'Fredoka One', cursive;
+            border: 3px solid white;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .util-btn:active { transform: translateY(4px); box-shadow: 0 0 0; }
+        #pause-btn { right: 15px; width: 50px; height: 50px; font-size: 20px; background: #073B4C; color: white; }
+        #debug-skip-btn { left: 15px; height: 50px; padding: 0 15px; font-size: 16px; background: #FFD166; color: #073B4C; border-color: #073B4C; }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>Ultimate<br>R. P. S.</h1>
+        <p class="subtitle">A physics-based descent into madness.</p>
+        
+        <div class="rules-guide">
+            <h3>What Beats What?</h3>
+            <ul>
+                <li>✂️ <b>Scissors</b> cuts Paper, decapitates Lizard</li>
+                <li>📄 <b>Paper</b> covers Rock, disproves Spock</li>
+                <li>🪨 <b>Rock</b> crushes Scissors, crushes Lizard</li>
+                <li>🦎 <b>Lizard</b> poisons Spock, eats Paper</li>
+                <li>🖖 <b>Spock</b> smashes Scissors, vaporizes Rock</li>
+            </ul>
+        </div>
+
+        <p style="max-width: 400px; text-align: center; font-family: sans-serif; font-size: 14px; margin: 0 10px;">Drag your choice into the Battle Zone (top center). If you lose, you go back to Level 1. Turn on sound.</p>
+        <button class="btn-primary" onclick="startGame()">PLAY GAME</button>
+
+        <!-- DEV TOOL: Remove this entire div before publishing -->
+        <div id="dev-tools" style="margin-top: 30px; padding: 15px; border: 3px dashed #EF476F; border-radius: 10px; background: rgba(255,255,255,0.7);">
+            <label style="font-family: sans-serif; font-weight: bold; color: #073B4C;">🛠️ DEV TOOL - Skip to Level: </label>
+            <select id="level-select" style="font-size: 16px; font-family: 'Fredoka One', cursive; padding: 5px; border-radius: 5px; border: 2px solid #073B4C;">
+            </select>
+        </div>
+        <!-- END DEV TOOL -->
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="dom-layer">
+        <!-- Level 9 / 21: Newsletter -->
+        <div id="newsletter-popup" class="popup">
+            <button id="nl-close" onclick="closePopup()">x</button>
+            <h2>SUBSCRIBE NOW!</h2>
+            <p>Get 10% off your next Rock!<br>Enter email below:</p>
+            <input type="text" placeholder="definitely@not-a-scam.com" style="padding: 10px;">
+        </div>
+
+        <!-- Level 16: Bureaucracy -->
+        <div id="bureaucracy-popup" class="popup">
+            <h2>Terms of Service</h2>
+            <div class="legal-text" id="legal-box" onscroll="checkScroll()">
+                <!-- Text dynamically populated in JS to ensure it's MASSIVELY long -->
+            </div>
+            <label><input type="checkbox" id="agree-chk" disabled> I agree to these terms.</label>
+            <button onclick="submitBureaucracy()" style="margin-top:10px; padding:10px;">Submit</button>
+        </div>
+
+        <!-- Level 17: Math -->
+        <div id="math-popup" class="popup">
+            <h2>Unlock Scissors</h2>
+            <p id="math-question">What is 14 - 6?</p>
+            <input type="number" id="math-input" oninput="checkMath()">
+        </div>
+    </div>
+
+    <!-- Gameplay Utilities -->
+    <button id="pause-btn" class="util-btn" onclick="togglePause()">||</button>
+    <button id="debug-skip-btn" class="util-btn" onclick="debugSkipLevel()">SKIP LVL ⏭</button>
+
+    <div id="flash-bang"></div>
+
+<script>
+/**
+ * ULTIMATE ROCK PAPER SCISSORS
+ * Single-file Canvas Physics Game
+ */
+
+// ---------------------------------------------------------
+// DEVELOPER CONFIGURATION
+// Set DEBUG_MODE to false before publishing to disable Skip.
+const DEBUG_MODE = false; 
+// ---------------------------------------------------------
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const domLayer = document.getElementById('dom-layer');
+const startScreen = document.getElementById('start-screen');
+let scale;
+let gameLoopId;
+let state = 'MENU'; // MENU, LEVEL_INTRO, PLAYING, MINI_*, EVALUATING, ANIMATING, RESULT, END, PAUSED
+let previousState = ''; // Stores state before pausing
+let pauseStartTime = 0;
+let currentLevel = 1;
+let devStartLevel = 1; // Used for the dev tool to remember where to reset you on death
+let lastTime = 0;
+let score = 0;
+
+// Input tracking
+const pointer = { x: -1000, y: -1000, isDown: false, vx: 0, vy: 0, lastX: 0, lastY: 0 };
+const vPointer = { x: -1000, y: -1000 }; // The Virtual Cursor affected by game physics
+
+// Persistent rules accumulator
+let persistentRules = {};
+
+// Audio Context (Synthesized sounds)
+let audioCtx = null;
+
+// Game Entities
+let buttons = [];
+let enemyChoice = '';
+let playerChoice = '';
+let particles = [];
+let battleZone = { x: 0, y: 0, radius: 0 };
+let ruleState = {}; 
+
+// Types
+const TYPES = ['rock', 'paper', 'scissors', 'spock', 'lizard'];
+const COLORS = { rock: '#AEE2FF', paper: '#FFFFFF', scissors: '#FFB7B2', spock: '#CBAACB', lizard: '#E2F0CB' };
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+// The Escalation Document (Rules stack forever. Tweak timers here!)
+const LEVELS = [
+    { id: 1, name: "The Vanilla Trap", desc: "Just Rock, Paper, Scissors. Drag to Battle.", r: {} },
+    { id: 2, name: "The Shot Clock", desc: "Rules stack permanently. 3 secs.", r: { timer: 7 } },
+    { id: 3, name: "The Expansion", desc: "Spock & Lizard enter the fray.", r: { timer: 10, five: true } },
+    { id: 4, name: "Restless Hands", desc: "They move around randomly.", r: { timer: 10, evasive: true } },
+    { id: 5, name: "The Gatekeeper", desc: "Beat Tic-Tac-Toe to unlock choices.", r: { timer: 15, tictactoe: true } },
+    { id: 6, name: "Hurricane Season", desc: isTouchDevice ? "Drag SLOWLY or it blows away." : "Drag against the wind.", r: { timer: 18, wind: true } },
+    { id: 7, name: "Amnesia", desc: "What was what again?", r: { timer: 20, amnesia: true } },
+    { id: 8, name: "Decoy Finger", desc: isTouchDevice ? "Ignore the ghost touch!" : "Don't look at the other cursor.", r: { timer: 20, decoy: true } },
+    { id: 9, name: "Monetization", desc: "Aggressive Ads! Close them to play.", r: { timer: 22, newsletter: true } },
+    { id: 10, name: "Opposite Day", desc: "50/50 chance. Red bg = inverted logic.", r: { timer: 22, opposite: true } },
+    { id: 11, name: "colourblind", desc: "Colors vanish. Track them closely.", r: { timer: 25, colorless: true } },
+    { id: 12, name: "Prove Humanity", desc: "Tap all the Rocks to unlock.", r: { timer: 32, captcha: true } },
+    { id: 13, name: "Hyperactive", desc: "They move MUCH faster now!", r: { timer: 35, fast: true } },
+    { id: 14, name: "The Ban", desc: "One winning move is forbidden!", r: { timer: 35, simonBan: true } },
+    { id: 15, name: "Classified Intel", desc: "Scrub the black bar to reveal the enemy.", r: { timer: 40, censored: 100 } },
+    { id: 16, name: "Bureaucracy", desc: "Read the terms.", r: { timer: 50, bureaucracy: true } },
+    { id: 17, name: "Micro-Math", desc: "Math to unlock Scissors.", r: { timer: 55, math: true } },
+    { id: 18, name: "Flappy Hand", desc: "Navigate the gap to lock in.", r: { timer: 60, flappy: true } },
+    { id: 19, name: "Keyhole", desc: "I can't see...", r: { timer: 65, keyhole: true } },
+    { id: 20, name: "Decoy Enemy", desc: "Counter the solid one.", r: { timer: 65, decoyEnemy: true } },
+    { id: 21, name: "The Singularity", desc: "Everything. The Battle Zone is moving!", r: { timer: 75, spin: true, movingZone: true } }
+];
+
+// Populate Dev Tool Level Selector
+const levelSelect = document.getElementById('level-select');
+if (levelSelect) {
+    LEVELS.forEach(l => {
+        let opt = document.createElement('option');
+        opt.value = l.id;
+        opt.textContent = `Level ${l.id}: ${l.name}`;
+        levelSelect.appendChild(opt);
+    });
+}
+
+const WIN_MAP = {
+    rock: ['scissors', 'lizard'],
+    paper: ['rock', 'spock'],
+    scissors: ['paper', 'lizard'],
+    lizard: ['spock', 'paper'],
+    spock: ['scissors', 'rock']
+};
+
+const ANIM_MAP = {
+    'rock-scissors': 'crush', 'rock-lizard': 'crush', 'spock-scissors': 'crush',
+    'paper-rock': 'cover', 'paper-spock': 'cover',
+    'scissors-paper': 'cut', 'scissors-lizard': 'cut',
+    'lizard-spock': 'vaporize', 'spock-rock': 'vaporize',
+    'lizard-paper': 'eat'
+};
+
+// Physics Entity
+class PhysicsButton {
+    constructor(type, x, y, r) {
+        this.type = type;
+        this.x = x; this.y = y;
+        this.vx = 0; this.vy = 0;
+        this.radius = r;
+        this.baseX = x; this.baseY = y;
+        this.isDragged = false;
+        this.color = COLORS[type];
+        this.locked = false; // For popups/minigames
+        this.visible = true; // For amnesia
+        this.targetX = x; this.targetY = y; // For shuffle
+    }
+
+    update() {
+        if (this.isDragged) {
+            let speed = Math.hypot(pointer.vx, pointer.vy);
+            
+            // Mobile specific mechanics overrides
+            if (ruleState.wind && isTouchDevice && speed > 25 * scale) {
+                // Moving the finger too fast causes the item to slip away!
+                this.isDragged = false;
+                this.vx = 25 * scale; // Ripped away violently
+                this.vy = pointer.vy * 0.5;
+                playTone(150, 'sawtooth', 0.15);
+            } else {
+                // Desktop standard 1:1 map to virtual cursor (and normal mobile drag)
+                this.vx = vPointer.x - this.x;
+                this.vy = vPointer.y - this.y;
+                this.x = vPointer.x;
+                this.y = vPointer.y;
+            }
+        } else {
+            // Spring to target
+            let dx = this.targetX - this.x;
+            let dy = this.targetY - this.y;
+            
+            // Rules Modifiers: Allow physics to continue running during popups!
+            let activePhysicsState = (state === 'PLAYING' || state === 'MINI_DOM');
+
+            if (ruleState.evasive && !this.locked && activePhysicsState) {
+                let timeSec = Date.now() / 1000;
+                
+                // Use the exact index in the array so Scissors and Spock don't overlap
+                let typeIndex = TYPES.indexOf(this.type); 
+                let offset = typeIndex * 2.5; 
+                
+                // Apply hyperactive speed multiplier if rule is active
+                let speedMult = ruleState.fast ? 2.5 : 1;
+                
+                // Give each button a slightly unique speed so their paths cross dynamically
+                let speedX = (0.5 + (typeIndex * 0.1)) * speedMult; 
+                let speedY = (0.7 + ((TYPES.length - typeIndex) * 0.1)) * speedMult;
+                
+                // Calculate safe roaming boundaries to prevent off-screen or entering Battle Zone
+                let minX = this.radius + 10;
+                let maxX = W - this.radius - 10;
+                // Keep them strictly below the battle zone
+                let minY = battleZone.y + battleZone.radius + this.radius + 40 * scale; 
+                let maxY = H - this.radius - 10;
+                
+                let rangeX = (maxX - minX) / 2;
+                let rangeY = (maxY - minY) / 2;
+                let midX = minX + rangeX;
+                let midY = minY + rangeY;
+
+                // Apply the unique speeds and offsets to the math waves
+                let wanderX = Math.sin(timeSec * speedX + offset) * rangeX * 0.85; 
+                let wanderY = Math.cos(timeSec * speedY + offset) * rangeY * 0.85;
+                
+                dx = (midX + wanderX) - this.x;
+                dy = (midY + wanderY) - this.y;
+            }
+
+            if (ruleState.wind && !this.locked && activePhysicsState) {
+                this.vx += 2 * scale; // Wind pushes them right if dropped during ad
+            }
+
+            this.vx += dx * 0.05;
+            this.vy += dy * 0.05;
+            this.vx *= 0.8; // friction
+            this.vy *= 0.8;
+
+            // Constrain to screen bounce
+            if(this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+            if(this.x > W - this.radius) { this.x = W - this.radius; this.vx *= -1; }
+            if(this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+            if(this.y > H - this.radius) { this.y = H - this.radius; this.vy *= -1; }
+
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        // Check Battle Zone lock-in
+        if (!this.isDragged && state === 'PLAYING' && !this.locked) {
+            let distToZone = Math.hypot(this.x - battleZone.x, this.y - battleZone.y);
+            if (distToZone < battleZone.radius) {
+                lockInChoice(this);
+            }
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Wobble based on velocity
+        let speed = Math.hypot(this.vx, this.vy);
+        if (speed > 1) {
+            ctx.rotate(Math.sin(Date.now() / 50) * Math.min(speed * 0.01, 0.5));
+        }
+
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius + (this.isDragged ? 10 : 0), 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        if(ruleState.colorless && !this.visible) ctx.fillStyle = '#CCCCCC'; // Lose color with amnesia
+        if(this.locked) ctx.fillStyle = '#555'; // Greyed out
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#000';
+        ctx.stroke();
+
+        if (this.visible) {
+            drawFace(ctx, this.type);
+            ctx.fillStyle = '#000';
+            ctx.font = `bold ${18 * scale}px "Fredoka One"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.type.toUpperCase(), 0, this.radius + 15*scale);
+        } else {
+            ctx.fillStyle = '#000';
+            ctx.font = `bold ${30 * scale}px "Fredoka One"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText("?", 0, 0);
+        }
+        
+        ctx.restore();
+    }
+}
+
+function drawFace(ctx, type) {
+    ctx.fillStyle = '#000';
+    let r = 20 * scale;
+    // Simple derpy faces based on shape type
+    if (type === 'rock') {
+        ctx.beginPath(); ctx.arc(-10*scale, -5*scale, 3*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(10*scale, -5*scale, 3*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-5*scale, 10*scale); ctx.lineTo(5*scale, 10*scale); ctx.stroke();
+    } else if (type === 'paper') {
+        ctx.beginPath(); ctx.arc(-15*scale, 0, 4*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(15*scale, 0, 4*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 10*scale, 5*scale, 0, Math.PI, false); ctx.stroke();
+    } else {
+        ctx.beginPath(); ctx.arc(-10*scale, 0, 2*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(10*scale, 0, 2*scale, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 5*scale, 3*scale, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+// Particle System
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 20 * scale;
+        this.vy = (Math.random() - 0.5) * 20 * scale;
+        this.life = 1.0;
+        this.color = color;
+        this.size = (Math.random() * 10 + 5) * scale;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        this.vy += 0.5 * scale; // gravity
+        this.life -= 0.02;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+// Initialization & Resize
+function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    scale = Math.min(W, H) / 800; // Base scale reference
+    
+    battleZone = { x: W/2, y: H * 0.4, radius: 120 * scale };
+    
+    // Reposition buttons
+    if (buttons.length > 0 && state === 'PLAYING') {
+        let spacing = W / (buttons.length + 1);
+        buttons.forEach((b, i) => {
+            if(!b.isDragged) {
+                b.targetX = b.baseX = spacing * (i + 1);
+                b.targetY = b.baseY = H * 0.8;
+            }
+        });
+    }
+}
+window.addEventListener('resize', resize);
+
+// Input Handling
+function updatePointer(e) {
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    pointer.vx = clientX - pointer.lastX;
+    pointer.vy = clientY - pointer.lastY;
+    pointer.lastX = pointer.x = clientX;
+    pointer.lastY = pointer.y = clientY;
+}
+
+window.addEventListener('pointerdown', e => {
+    pointer.isDown = true;
+    
+    // Prevent massive velocity spikes on the very first frame of a touch interaction
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    pointer.lastX = pointer.x = clientX;
+    pointer.lastY = pointer.y = clientY;
+    pointer.vx = 0;
+    pointer.vy = 0;
+    
+    // Force immediate sync for instant clicks if physics aren't interfering
+    if (!ruleState.wind || isTouchDevice) {
+        vPointer.x = pointer.x;
+        vPointer.y = pointer.y;
+    }
+
+    // Handle Unpause via Canvas Click
+    if (state === 'PAUSED') {
+        togglePause();
+        return;
+    }
+
+    // Handle Level Intro Dismissal
+    if (state === 'LEVEL_INTRO') {
+        ruleState.startTime = Date.now(); // Start the timer NOW
+        runNextTask();
+        playTone(400, 'square', 0.1);
+        return; // Don't process other clicks on this frame
+    }
+    
+    if (state !== 'PLAYING') {
+        // Handle minigame clicks using the Virtual Cursor's position
+        if(state === 'MINI_TICTACTOE') handleTicTacToeClick();
+        else if(state === 'MINI_CAPTCHA') handleCaptchaClick();
+        else if(state === 'MINI_FLAPPY') flappyJump();
+        return;
+    }
+    
+    // Find clicked button
+    for (let i = buttons.length - 1; i >= 0; i--) {
+        let b = buttons[i];
+        if (!b.locked && Math.hypot(vPointer.x - b.x, vPointer.y - b.y) < b.radius) {
+            b.isDragged = true;
+            playTone(400, 'sine', 0.1);
+            break;
+        }
+    }
+});
+
+window.addEventListener('pointermove', e => {
+    updatePointer(e);
+});
+
+window.addEventListener('pointerup', e => {
+    pointer.isDown = false;
+    buttons.forEach(b => {
+        if (b.isDragged) {
+            b.isDragged = false;
+            // Throw momentum based on real pointer movement
+            b.vx = pointer.vx * 0.5;
+            b.vy = pointer.vy * 0.5;
+            playTone(200, 'sine', 0.1);
+        }
+    });
+});
+
+// Sound Engine
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, type, duration, vol=0.1) {
+    if(!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
+}
+
+function playExplosion() {
+    if(!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        osc.stop(audioCtx.currentTime + 0.3);
+    } catch(e){}
+}
+
+// Game Flow
+function startGame() {
+    initAudio();
+    startScreen.style.display = 'none';
+    resize();
+    
+    // Read the Dev Tool selector
+    let selectEl = document.getElementById('level-select');
+    devStartLevel = selectEl ? parseInt(selectEl.value) : 1;
+    currentLevel = devStartLevel;
+
+    score = 0;
+    loadLevel(currentLevel);
+    if (!gameLoopId) requestAnimationFrame(gameLoop);
+}
+
+function loadLevel(num) {
+    if (num > LEVELS.length) {
+        winGame();
+        return;
+    }
+    
+    // Stack ALL rules from Level 1 up to current level!
+    persistentRules = {};
+    for (let i = 0; i < num; i++) {
+        Object.assign(persistentRules, LEVELS[i].r);
+    }
+    ruleState = Object.assign({}, persistentRules);
+    
+    // Determine Opposite Day logic!
+    if (num === 10) {
+        // Always 100% Opposite Day specifically on Level 10
+        ruleState.isOppositeRound = true;
+    } else {
+        // For levels 11+, it becomes a 50/50 randomized coin toss if the rule is active
+        ruleState.isOppositeRound = ruleState.opposite ? (Math.random() > 0.5) : false;
+    }
+    
+    ruleState.hideColors = false; // Reset the colorblindness background flag
+    
+    // UI clean up
+    domLayer.classList.remove('overlay-active');
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+
+    // Build Task Queue for stacked minigames
+    ruleState.tasks = [];
+    if(ruleState.bureaucracy) ruleState.tasks.push('bureaucracy');
+    if(ruleState.math) ruleState.tasks.push('math');
+    if(ruleState.tictactoe) ruleState.tasks.push('tictactoe');
+    if(ruleState.captcha) ruleState.tasks.push('captcha');
+
+    // Setup Entities
+    buttons = [];
+    let typesToUse = ruleState.five ? TYPES : TYPES.slice(0, 3);
+    let spacing = W / (typesToUse.length + 1);
+    let startLocked = ruleState.tasks.length > 0;
+    
+    typesToUse.forEach((t, i) => {
+        let r = 50 * scale;
+        let b = new PhysicsButton(t, spacing * (i + 1), H * 0.8, r);
+        b.locked = startLocked;
+        buttons.push(b);
+    });
+
+    enemyChoice = typesToUse[Math.floor(Math.random() * typesToUse.length)];
+    if(ruleState.decoyEnemy) {
+        enemyChoice2 = typesToUse[Math.floor(Math.random() * typesToUse.length)];
+    }
+
+    if(ruleState.simonBan) {
+        let winningMoves = [];
+        if (ruleState.isOppositeRound) {
+            // Under Opposite Day rules, you win by playing something the enemy beats
+            winningMoves = WIN_MAP[enemyChoice];
+        } else {
+            // Normally, you win by playing something that beats the enemy
+            winningMoves = TYPES.filter(t => WIN_MAP[t].includes(enemyChoice));
+        }
+        // Forcefully ban one of the correct choices, leaving only one valid winning move!
+        ruleState.bannedTarget = winningMoves[Math.floor(Math.random() * winningMoves.length)];
+    }
+
+    particles = [];
+    playerChoice = null;
+    ruleState.levelTimer = 0;
+
+    // Use the explicit timer defined in the LEVELS object
+    ruleState.timeLeft = ruleState.timer || 0; 
+
+    // Present the intro screen instead of immediately starting the task
+    state = 'LEVEL_INTRO';
+    
+    // Cinematic Auto-Advance after exactly 2.5 seconds
+    setTimeout(() => {
+        if (state === 'LEVEL_INTRO') {
+            ruleState.startTime = Date.now();
+            runNextTask();
+            playTone(400, 'square', 0.1);
+        }
+    }, 2500);
+}
+
+function runNextTask() {
+    domLayer.classList.remove('overlay-active');
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    
+    if (ruleState.tasks && ruleState.tasks.length > 0) {
+        let task = ruleState.tasks.shift();
+        
+        if (task === 'bureaucracy') {
+            domLayer.classList.add('overlay-active');
+            let popup = document.getElementById('bureaucracy-popup');
+            
+            // Programmatically generate a MASSIVE wall of text to ensure scrolling is required
+            let legalBox = document.getElementById('legal-box');
+            let generatedText = "By playing this game, you agree that Rock is legally distinct from Stone. You agree that Paper is capable of causing fatal papercuts. You waive your right to complain about Level 21. If you fail, you accept the emotional damage of returning to Level 1.\n\n";
+            for (let i = 1; i <= 250; i++) {
+                generatedText += `Section ${i}.0: User relinquishes all rights to their free time, sanity, and fine motor skills. `;
+                if (i % 5 === 0) generatedText += "\n\n";
+            }
+            generatedText += "Keep scrolling... Keep scrolling...\n\nYou made it. You may now agree.";
+            legalBox.innerText = generatedText;
+
+            popup.style.display = 'flex';
+            popup.style.position = 'relative'; // Reset positioning for these UI tasks
+            popup.style.margin = 'auto';
+            popup.style.left = 'auto';
+            popup.style.top = 'auto';
+            
+            let chk = document.getElementById('agree-chk');
+            chk.disabled = true;
+            chk.checked = false;
+            legalBox.scrollTop = 0;
+            state = 'MINI_DOM';
+        } else if (task === 'math') {
+            domLayer.classList.add('overlay-active');
+            let popup = document.getElementById('math-popup');
+            
+            // Generate dynamic math problem
+            let ops = ['+', '-', '*'];
+            let op = ops[Math.floor(Math.random() * ops.length)];
+            let num1, num2, answer;
+            
+            if (op === '+') {
+                num1 = Math.floor(Math.random() * 20) + 1;
+                num2 = Math.floor(Math.random() * 20) + 1;
+                answer = num1 + num2;
+            } else if (op === '-') {
+                num1 = Math.floor(Math.random() * 20) + 10;
+                num2 = Math.floor(Math.random() * num1); // Guarantees a positive answer
+                answer = num1 - num2;
+            } else {
+                num1 = Math.floor(Math.random() * 9) + 2;
+                num2 = Math.floor(Math.random() * 9) + 2;
+                answer = num1 * num2;
+            }
+            
+            ruleState.mathAnswer = answer;
+            document.getElementById('math-question').innerText = `What is ${num1} ${op} ${num2}?`;
+
+            popup.style.display = 'flex';
+            popup.style.position = 'relative'; // Reset positioning
+            popup.style.margin = 'auto';
+            popup.style.left = 'auto';
+            popup.style.top = 'auto';
+            document.getElementById('math-input').value = '';
+            document.getElementById('math-input').focus();
+            state = 'MINI_DOM';
+        } else if (task === 'tictactoe') {
+            initTicTacToe();
+        } else if (task === 'captcha') {
+            initCaptcha();
+        }
+    } else {
+        unlockButtonsFinal();
+    }
+}
+
+function unlockButtonsFinal() {
+    buttons.forEach(b => b.locked = false);
+    state = 'PLAYING';
+    playTone(600, 'square', 0.2);
+    
+    if (ruleState.amnesia) {
+        setTimeout(() => {
+            // BUGFIX: We now include 'MINI_DOM' so if an ad interrupts, the colors still safely disappear in the background!
+            if(['PLAYING', 'PAUSED', 'MINI_DOM'].includes(state)) {
+                buttons.forEach(b => b.visible = false);
+                ruleState.hideColors = true; // Trigger the background fade too!
+            }
+        }, 3500); // Increased from 1500ms to 3500ms to allow time for scrubbing
+    }
+    
+    // Initialize aggressive popup scheduler
+    if (ruleState.newsletter) {
+        ruleState.nextPopupTime = Date.now() + 1500 + Math.random() * 2000;
+    }
+}
+
+// Lock in logic
+function lockInChoice(btn) {
+    playerChoice = btn;
+    state = 'EVALUATING';
+    
+    // Snap to center
+    btn.targetX = battleZone.x;
+    btn.targetY = battleZone.y + 120 * scale;
+    btn.isDragged = false;
+    btn.locked = true;
+    
+    // Hide others
+    buttons.forEach(b => {
+        if(b !== btn) b.targetY = H + 200; // fall off screen
+    });
+
+    // Remove the keyhole effect once a choice is safely in the Battle Zone
+    ruleState.keyhole = false;
+
+    if (ruleState.flappy) {
+        initFlappy();
+    } else {
+        setTimeout(resolveCombat, 500); // Shorter delay before animation starts
+    }
+}
+
+function resolveCombat() {
+    let result = ''; // win, lose
+    let failedBan = (ruleState.simonBan && playerChoice.type === ruleState.bannedTarget);
+    let isDraw = (playerChoice.type === enemyChoice);
+
+    // Check strict rules first
+    if (failedBan) {
+        result = 'lose'; // Instant loss for playing the banned move
+    } else if (isDraw) {
+        result = 'lose'; // A draw is now an INSTANT LOSS!
+    } else if (WIN_MAP[playerChoice.type].includes(enemyChoice)) {
+        result = ruleState.isOppositeRound ? 'lose' : 'win';
+    } else {
+        result = ruleState.isOppositeRound ? 'win' : 'lose';
+    }
+
+    let animType = 'draw';
+    let logicalWinner = playerChoice.type;
+    let logicalLoser = enemyChoice;
+
+    if (failedBan) {
+        animType = 'vaporize'; // Destroyed for breaking the ban
+        logicalWinner = enemyChoice; 
+        logicalLoser = playerChoice.type;
+    } else if (!isDraw) {
+        logicalWinner = WIN_MAP[playerChoice.type].includes(enemyChoice) ? playerChoice.type : enemyChoice;
+        logicalLoser = logicalWinner === playerChoice.type ? enemyChoice : playerChoice.type;
+        animType = ANIM_MAP[`${logicalWinner}-${logicalLoser}`] || 'crush';
+    }
+
+    ruleState.combatAnim = {
+        type: animType,
+        logicalWinner: logicalWinner,
+        logicalLoser: logicalLoser,
+        playerWon: (result === 'win'),
+        startTime: Date.now()
+    };
+
+    state = 'ANIMATING';
+    playTone(300, 'sawtooth', 0.5);
+
+    setTimeout(() => {
+        playExplosion();
+
+        let explodeColor = result === 'win' ? COLORS[enemyChoice] : playerChoice.color;
+        let explodeX = battleZone.x;
+        let explodeY = battleZone.y - 30*scale;
+        
+        for(let i=0; i<50; i++) particles.push(new Particle(explodeX, explodeY, explodeColor));
+
+        state = 'RESULT';
+        if (isDraw) {
+            ruleState.resultMsg = "DRAW = DEATH!";
+        } else if (failedBan) {
+            ruleState.resultMsg = "BANNED MOVE!";
+        } else {
+            ruleState.resultMsg = result === 'win' ? "VICTORY!" : "YOU DIED.";
+        }
+        
+        setTimeout(() => {
+            if(ruleState.shuffleInt) clearInterval(ruleState.shuffleInt);
+            if (result === 'win') { // Only wins advance the game now
+                currentLevel++;
+                loadLevel(currentLevel);
+            } else {
+                failGame();
+            }
+        }, 2000);
+    }, 1500); // 1.5 seconds for animation
+}
+
+function failGame() {
+    state = 'RESULT'; // Prevent multiple calls to failGame from the timer
+    
+    // Flash bang
+    let fb = document.getElementById('flash-bang');
+    fb.style.opacity = '1';
+    playTone(100, 'sawtooth', 1.0, 0.5);
+
+    // Hide any active popups or overlays instantly
+    domLayer.classList.remove('overlay-active');
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+
+    setTimeout(() => {
+        fb.style.opacity = '0';
+        state = 'MENU'; // Reset state to the menu
+        startScreen.style.display = 'flex'; // Show the start screen again
+    }, 1000);
+}
+
+function winGame() {
+    state = 'END';
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'black';
+    ctx.font = `bold ${50*scale}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText("YOU SURVIVED", W/2, H/2 - 50);
+    ctx.fillText("THE SINGULARITY", W/2, H/2 + 50);
+}
+
+// --- UTILITY CONTROLS ---
+
+function togglePause() {
+    const canPauseStates = ['PLAYING', 'MINI_DOM', 'MINI_TICTACTOE', 'MINI_CAPTCHA', 'MINI_FLAPPY'];
+    
+    if (state === 'PAUSED') {
+        // Unpause
+        state = previousState;
+        let pauseDuration = Date.now() - pauseStartTime;
+        
+        // Shift all timers forward so no time is lost
+        ruleState.startTime += pauseDuration;
+        if (ruleState.nextPopupTime) ruleState.nextPopupTime += pauseDuration;
+        if (ruleState.combatAnim) ruleState.combatAnim.startTime += pauseDuration;
+        
+        domLayer.style.display = 'flex'; // Restore DOM elements
+        playTone(600, 'square', 0.1);
+    } else if (canPauseStates.includes(state)) {
+        // Pause
+        previousState = state;
+        state = 'PAUSED';
+        pauseStartTime = Date.now();
+        
+        domLayer.style.display = 'none'; // Hide DOM elements to prevent cheating
+        playTone(400, 'square', 0.1);
+    }
+}
+
+function debugSkipLevel() {
+    // Only allow skipping during active gameplay to prevent breaking transitions
+    const canSkipStates = ['PLAYING', 'MINI_DOM', 'MINI_TICTACTOE', 'MINI_CAPTCHA', 'MINI_FLAPPY', 'PAUSED'];
+    if (!canSkipStates.includes(state)) return;
+    
+    if (ruleState.shuffleInt) clearInterval(ruleState.shuffleInt);
+    
+    // If we skip while paused, automatically unpause so the next level plays normally
+    if (state === 'PAUSED') {
+        domLayer.style.display = 'flex';
+    }
+    
+    currentLevel++;
+    loadLevel(currentLevel);
+}
+
+// --- MINIGAMES (CANVAS BASED) ---
+
+// TicTacToe
+let ttt = { grid: [0,0,0,0,0,0,0,0,0], turn: 1 };
+function initTicTacToe() {
+    ttt.grid = [0,0,0,0,0,0,0,0,0];
+    ttt.turn = 1;
+    state = 'MINI_TICTACTOE';
+}
+function drawTicTacToe() {
+    let size = 300 * scale;
+    let startX = W/2 - size/2;
+    let startY = H/2 - size/2;
+    let cell = size/3;
+
+    ctx.fillStyle = '#EBF5FB'; // Changed from pink to cool blue
+    ctx.fillRect(startX, startY, size, size);
+    ctx.lineWidth = 8 * scale;
+    ctx.strokeStyle = '#073B4C';
+    ctx.strokeRect(startX, startY, size, size);
+    
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(startX + cell, startY + 20*scale); ctx.lineTo(startX + cell, startY + size - 20*scale);
+    ctx.moveTo(startX + cell*2, startY + 20*scale); ctx.lineTo(startX + cell*2, startY + size - 20*scale);
+    ctx.moveTo(startX + 20*scale, startY + cell); ctx.lineTo(startX + size - 20*scale, startY + cell);
+    ctx.moveTo(startX + 20*scale, startY + cell*2); ctx.lineTo(startX + size - 20*scale, startY + cell*2);
+    ctx.stroke();
+
+    for(let i=0; i<9; i++) {
+        let x = startX + (i%3)*cell + cell/2;
+        let y = startY + Math.floor(i/3)*cell + cell/2;
+        let p = 25 * scale;
+        if(ttt.grid[i] === 1) { // X
+            ctx.strokeStyle = '#EF476F';
+            ctx.beginPath(); ctx.moveTo(x-p, y-p); ctx.lineTo(x+p, y+p); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x+p, y-p); ctx.lineTo(x-p, y+p); ctx.stroke();
+        } else if(ttt.grid[i] === -1) { // O
+            ctx.strokeStyle = '#118AB2';
+            ctx.beginPath(); ctx.arc(x, y, p, 0, Math.PI*2); ctx.stroke();
+        }
+    }
+    
+    ctx.fillStyle = '#073B4C';
+    ctx.font = `bold ${24*scale}px "Fredoka One"`;
+    ctx.textAlign = 'center';
+    ctx.fillText("BEAT AI TO UNLOCK!", W/2, startY - 20*scale);
+    
+    ctx.fillStyle = '#EF476F';
+    ctx.font = `bold ${16*scale}px sans-serif`;
+    ctx.fillText("Draws will reset the board!", W/2, startY + size + 30*scale);
+    
+    ctx.lineCap = 'butt'; // reset line cap
+}
+function handleTicTacToeClick() {
+    let clientX = vPointer.x;
+    let clientY = vPointer.y;
+    let size = 300 * scale;
+    let startX = W/2 - size/2;
+    let startY = H/2 - size/2;
+    let cell = size/3;
+
+    if(clientX > startX && clientX < startX+size && clientY > startY && clientY < startY+size) {
+        let col = Math.floor((clientX - startX) / cell);
+        let row = Math.floor((clientY - startY) / cell);
+        let idx = row*3 + col;
+        if(ttt.grid[idx] === 0) {
+            ttt.grid[idx] = 1; // player
+            playTone(300, 'square', 0.1);
+            if(!checkTTTWin()) {
+                // AI turn
+                let empty = [];
+                ttt.grid.forEach((v,i) => { if(v===0) empty.push(i); });
+                if(empty.length > 0) {
+                    ttt.grid[empty[Math.floor(Math.random()*empty.length)]] = -1;
+                    checkTTTWin();
+                }
+            }
+        }
+    }
+}
+function checkTTTWin() {
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for(let l of lines) {
+        let sum = ttt.grid[l[0]] + ttt.grid[l[1]] + ttt.grid[l[2]];
+        if (sum === 3) { // Player won
+            runNextTask();
+            return true;
+        } else if (sum === -3) { // AI won
+            playTone(150, 'sawtooth', 0.5); // Error sound
+            ttt.grid = [0,0,0,0,0,0,0,0,0]; // Reset board to punish them!
+            return true;
+        }
+    }
+    if(!ttt.grid.includes(0)) { // draw
+        playTone(150, 'sawtooth', 0.5); // Error sound
+        ttt.grid = [0,0,0,0,0,0,0,0,0]; // MUST WIN! Draw resets board!
+        return true;
+    }
+    return false;
+}
+
+// Captcha
+let capData = [];
+function initCaptcha() {
+    capData = [];
+    for(let i=0; i<9; i++) {
+        capData.push({ type: Math.random() > 0.6 ? 'rock' : (Math.random() > 0.5 ? 'paper' : 'scissors'), active: true });
+    }
+    state = 'MINI_CAPTCHA';
+}
+function drawCaptcha() {
+    let size = 300 * scale;
+    let startX = W/2 - size/2;
+    let startY = H/2 - size/2;
+    let cell = size/3;
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(startX, startY, size, size + 50);
+    ctx.fillStyle = '#118AB2';
+    ctx.fillRect(startX, startY, size, 50);
+    ctx.fillStyle = 'white';
+    ctx.font = `${16*scale}px sans-serif`;
+    ctx.fillText("Select all images with a ROCK", W/2, startY + 30);
+
+    for(let i=0; i<9; i++) {
+        let x = startX + (i%3)*cell;
+        let y = startY + 50 + Math.floor(i/3)*cell;
+        ctx.strokeStyle = '#ccc';
+        ctx.strokeRect(x, y, cell, cell);
+        
+        if (capData[i].active) {
+            ctx.save();
+            ctx.translate(x + cell/2, y + cell/2);
+            ctx.fillStyle = COLORS[capData[i].type];
+            ctx.beginPath(); ctx.arc(0, 0, cell/3, 0, Math.PI*2); ctx.fill();
+            drawFace(ctx, capData[i].type);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = '#0f0';
+            ctx.beginPath(); ctx.arc(x+cell/2, y+cell/2, 15, 0, Math.PI*2); ctx.fill();
+        }
+    }
+}
+function handleCaptchaClick() {
+    let clientX = vPointer.x;
+    let clientY = vPointer.y;
+    let size = 300 * scale;
+    let startX = W/2 - size/2;
+    let startY = H/2 - size/2 + 50;
+    let cell = size/3;
+
+    if(clientX > startX && clientX < startX+size && clientY > startY && clientY < startY+size) {
+        let col = Math.floor((clientX - startX) / cell);
+        let row = Math.floor((clientY - startY) / cell);
+        let idx = row*3 + col;
+        
+        if (capData[idx].active) {
+            if (capData[idx].type === 'rock') {
+                capData[idx].active = false;
+                playTone(500, 'sine', 0.1);
+                // check win
+                if (!capData.find(c => c.type === 'rock' && c.active)) {
+                    runNextTask();
+                }
+            } else {
+                failGame(); // Clicked wrong one
+            }
+        }
+    }
+}
+
+// Flappy Game
+let flappyY, flappyVy, flappyPipes;
+function initFlappy() {
+    state = 'MINI_FLAPPY';
+    flappyY = H/2;
+    flappyVy = 0;
+    flappyPipes = [];
+    for (let i = 0; i < 3; i++) {
+        flappyPipes.push({x: W + i * 350 * scale, y: H/2 + (Math.random()-0.5)*250 * scale});
+    }
+}
+function flappyJump() {
+    flappyVy = -8 * scale;
+    playTone(400, 'square', 0.1);
+}
+function updateFlappy() {
+    flappyVy += 0.4 * scale;
+    flappyY += flappyVy;
+    
+    let hit = false;
+    let r = playerChoice.radius * 0.7; // Forgiving hitbox
+    
+    let allCleared = true;
+    flappyPipes.forEach(p => {
+        p.x -= 4 * scale;
+        let pipeW = 80 * scale;
+        let gap = 110 * scale;
+        
+        // Check collision 
+        if (W/4 + r > p.x && W/4 - r < p.x + pipeW) {
+            if (flappyY - r < p.y - gap || flappyY + r > p.y + gap) hit = true;
+        }
+        
+        if (p.x + pipeW > W/4 - r) {
+            allCleared = false;
+        }
+    });
+
+    if (flappyY > H || flappyY < 0) hit = true;
+
+    if (hit) failGame();
+
+    if (allCleared && !hit && flappyPipes[flappyPipes.length-1].x < W/4 - 100 * scale) {
+        resolveCombat();
+    }
+}
+function drawFlappy() {
+    // Draw pipes
+    flappyPipes.forEach(p => {
+        let pipeW = 80 * scale;
+        let gap = 110 * scale;
+        let capW = 96 * scale;
+        let capH = 30 * scale;
+        let capOff = (capW - pipeW) / 2;
+        
+        ctx.lineWidth = 4 * scale;
+        ctx.strokeStyle = '#000';
+
+        // Top Pipe
+        let topH = p.y - gap;
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(p.x, 0, pipeW, topH);
+        ctx.strokeRect(p.x, -10, pipeW, topH + 10);
+        
+        ctx.fillStyle = '#27ae60';
+        ctx.fillRect(p.x - capOff, topH - capH, capW, capH);
+        ctx.strokeRect(p.x - capOff, topH - capH, capW, capH);
+        
+        // Bottom Pipe
+        let botY = p.y + gap;
+        let botH = H - botY;
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(p.x, botY, pipeW, botH);
+        ctx.strokeRect(p.x, botY, pipeW, botH + 10);
+        
+        ctx.fillStyle = '#27ae60';
+        ctx.fillRect(p.x - capOff, botY, capW, capH);
+        ctx.strokeRect(p.x - capOff, botY, capW, capH);
+    });
+    
+    // Draw player hand
+    playerChoice.x = W/4;
+    playerChoice.y = flappyY;
+    playerChoice.draw(ctx);
+    
+    ctx.fillStyle = 'white'; 
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 6 * scale;
+    ctx.font = `bold ${40*scale}px "Fredoka One"`;
+    ctx.textAlign = 'center';
+    ctx.strokeText("TAP TO FLY", W/2, 100*scale);
+    ctx.fillText("TAP TO FLY", W/2, 100*scale);
+}
+
+
+// --- DOM UI LOGIC ---
+
+function closePopup() {
+    // Only the newsletter popup uses this dedicated function now
+    document.getElementById('newsletter-popup').style.display = 'none';
+    domLayer.classList.remove('overlay-active');
+    state = 'PLAYING';
+    
+    // Schedule the next aggressive ad popup!
+    ruleState.nextPopupTime = Date.now() + 3000 + Math.random() * 2000;
+}
+
+function checkScroll() {
+    let box = document.getElementById('legal-box');
+    // Using Math.ceil to handle fractional pixels on mobile screens, and a small buffer window
+    if (box.scrollHeight - Math.ceil(box.scrollTop) <= box.clientHeight + 20) {
+        document.getElementById('agree-chk').disabled = false;
+    }
+}
+
+function submitBureaucracy() {
+    if (document.getElementById('agree-chk').checked) {
+        document.getElementById('bureaucracy-popup').style.display = 'none';
+        runNextTask();
+    }
+}
+
+function checkMath() {
+    let inputVal = parseInt(document.getElementById('math-input').value);
+    if (inputVal === ruleState.mathAnswer) {
+        document.getElementById('math-popup').style.display = 'none';
+        runNextTask();
+    }
+}
+
+// --- MAIN LOOP ---
+
+function gameLoop(time) {
+    let dt = time - lastTime;
+    lastTime = time;
+
+    // Manage Utility Buttons Visibility
+    let hideUtils = ['MENU', 'LEVEL_INTRO', 'END'].includes(state);
+    document.getElementById('pause-btn').style.display = hideUtils ? 'none' : 'block';
+    if (DEBUG_MODE) {
+        document.getElementById('debug-skip-btn').style.display = hideUtils ? 'none' : 'block';
+    }
+
+    // Virtual Cursor Physics Update
+    // We MUST give the player their real OS cursor back to interact with HTML popups
+    let hideRealCursor = !isTouchDevice && (ruleState.wind || ruleState.decoy || ruleState.keyhole) && state !== 'MINI_DOM' && state !== 'PAUSED';
+
+    if (hideRealCursor) {
+        document.body.classList.add('decoy-active'); // Hides the real OS cursor
+    } else {
+        document.body.classList.remove('decoy-active');
+    }
+
+    if (ruleState.movingZone && state !== 'END') {
+        let moveTime = state === 'PAUSED' ? pauseStartTime : Date.now();
+        battleZone.x = W/2 + Math.sin(moveTime * 0.001) * (150 * scale);
+        battleZone.y = (H * 0.4) + Math.cos(moveTime * 0.0013) * (50 * scale);
+    } else if (state !== 'END') {
+        battleZone.x = W/2;
+        battleZone.y = H * 0.4;
+    }
+
+    if (state !== 'PAUSED') {
+        if (ruleState.wind && state !== 'MINI_DOM' && !isTouchDevice) {
+            // Virtual cursor rubber-bands to the real cursor, but gets violently blown right
+            vPointer.x += (pointer.x - vPointer.x) * 0.15 + (12 * scale);
+            vPointer.y += (pointer.y - vPointer.y) * 0.15;
+        } else {
+            vPointer.x = pointer.x;
+            vPointer.y = pointer.y;
+        }
+
+        // Scrub logic for the Censored rule
+        if (ruleState.censored !== undefined && ruleState.censored > 0 && state === 'PLAYING') {
+            let distToEnemy = Math.hypot(vPointer.x - battleZone.x, vPointer.y - (battleZone.y - 150*scale));
+            // Also check decoy enemy if active
+            let distToDecoy = ruleState.decoyEnemy ? Math.hypot(vPointer.x - (battleZone.x + 100*scale), vPointer.y - (battleZone.y - 150*scale)) : 9999;
+            
+            if (distToEnemy < 60 * scale || distToDecoy < 60 * scale) {
+                let pointerSpeed = Math.hypot(pointer.vx, pointer.vy);
+                if (pointerSpeed > 0) {
+                    // Reduce health of the censor bar based on vigorous mouse rubbing
+                    ruleState.censored = Math.max(0, ruleState.censored - pointerSpeed * 0.05);
+                }
+            }
+        }
+    }
+
+    let bgColor = ruleState.isOppositeRound ? '#FFD1D1' : '#EBF5FB'; // EBF5FB is a cool light blue
+    if (ruleState.colorless && ruleState.hideColors) {
+        bgColor = '#E5E5E5'; // Neutral grey to hide the Opposite Day hint!
+    }
+    
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, W, H);
+
+    if (state === 'END') {
+        winGame();
+        return;
+    }
+
+    // Canvas Transforms
+    ctx.save();
+    if (ruleState.spin && state !== 'PAUSED') {
+        ctx.translate(W/2, H/2);
+        ctx.rotate(time * 0.0005);
+        ctx.translate(-W/2, -H/2);
+    }
+
+    // Draw Battle Zone
+    if (['PLAYING', 'EVALUATING', 'PAUSED'].includes(state)) {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath(); ctx.arc(battleZone.x, battleZone.y, battleZone.radius, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#000'; ctx.setLineDash([10, 10]); ctx.lineWidth = 2; ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#000'; ctx.font = `${14*scale}px sans-serif`; ctx.textAlign='center';
+        ctx.fillText("BATTLE ZONE", battleZone.x, battleZone.y);
+
+        // Draw Enemy Intent
+        ctx.save();
+        ctx.translate(battleZone.x, battleZone.y - 150*scale);
+        
+        // Draw regular enemy
+        ctx.fillStyle = COLORS[enemyChoice];
+        ctx.beginPath(); ctx.arc(0, 0, 40*scale, 0, Math.PI*2); ctx.fill();
+        ctx.stroke(); drawFace(ctx, enemyChoice);
+        ctx.fillStyle='black'; ctx.fillText(enemyChoice.toUpperCase(), 0, -50*scale);
+
+        if (ruleState.censored > 0) {
+            let alpha = Math.min(1, ruleState.censored / 100);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = 'black';
+            ctx.fillRect(-50*scale, -70*scale, 100*scale, 140*scale);
+            ctx.fillStyle = 'red';
+            ctx.font = `bold ${14*scale}px "Fredoka One"`;
+            ctx.fillText("CENSORED", 0, 0);
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Decoy Enemy
+        if (ruleState.decoyEnemy) {
+            ctx.translate(100*scale, 0);
+            ctx.globalAlpha = 0.5; // Decoy is slightly transparent
+            ctx.fillStyle = COLORS[enemyChoice2];
+            ctx.beginPath(); ctx.arc(0, 0, 40*scale, 0, Math.PI*2); ctx.fill();
+            ctx.stroke(); drawFace(ctx, enemyChoice2);
+            
+            if (ruleState.censored > 0) {
+                let alpha = Math.min(1, ruleState.censored / 100);
+                ctx.globalAlpha = alpha; // Keep decoy slightly transparent even with censor block
+                ctx.fillStyle = 'black';
+                ctx.fillRect(-50*scale, -70*scale, 100*scale, 140*scale);
+                ctx.fillStyle = 'red';
+                ctx.font = `bold ${14*scale}px "Fredoka One"`;
+                ctx.fillText("CENSORED", 0, 0);
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        ctx.restore();
+    }
+
+    // Aggressive Popups (Newsletter) Check
+    if (state === 'PLAYING' && ruleState.newsletter) {
+        if (Date.now() > ruleState.nextPopupTime) {
+            state = 'MINI_DOM';
+            domLayer.classList.add('overlay-active');
+            
+            // Drop any held items forcefully!
+            buttons.forEach(b => {
+                if (b.isDragged) {
+                    b.isDragged = false;
+                    b.vx = 0; b.vy = 0;
+                }
+            });
+
+            let popup = document.getElementById('newsletter-popup');
+            popup.style.display = 'flex';
+            
+            // Assign absolute position to spawn it randomly on the screen
+            popup.style.position = 'absolute';
+            popup.style.margin = '0'; // Disables the flex centering from dom-layer
+            
+            let maxLeft = Math.max(0, W - 320); // Prevent spawning completely off-screen
+            let maxTop = Math.max(0, H - 220);
+            popup.style.left = (Math.random() * maxLeft) + 'px';
+            popup.style.top = (Math.random() * maxTop) + 'px';
+            
+            playTone(800, 'square', 0.1);
+        }
+    }
+
+    // Update & Draw Particles
+    if (state !== 'PAUSED') {
+        particles.forEach(p => p.update());
+    }
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => p.draw(ctx));
+
+    // Update & Draw Buttons
+    const drawStates = ['PLAYING', 'EVALUATING', 'MINI_DOM', 'PAUSED'];
+    if (drawStates.includes(state)) {
+        buttons.forEach(b => {
+            if (state !== 'PAUSED') b.update();
+            b.draw(ctx);
+        });
+    } else if (state === 'ANIMATING') {
+        buttons.forEach(b => {
+            if (b !== playerChoice) { b.update(); b.draw(ctx); }
+        });
+        drawCombatAnimation(ctx);
+    }
+
+    // Minigame Draw Overlays
+    if (state === 'MINI_TICTACTOE' || (state === 'PAUSED' && previousState === 'MINI_TICTACTOE')) drawTicTacToe();
+    if (state === 'MINI_CAPTCHA' || (state === 'PAUSED' && previousState === 'MINI_CAPTCHA')) drawCaptcha();
+    if (state === 'MINI_FLAPPY' || (state === 'PAUSED' && previousState === 'MINI_FLAPPY')) {
+        if (state !== 'PAUSED') updateFlappy();
+        drawFlappy();
+    }
+
+    ctx.restore(); // Restore transforms (spin)
+
+    // New Keyhole logic: Draws darkness OVER the game, leaving a hole for the cursor
+    if (ruleState.keyhole && ['PLAYING', 'EVALUATING', 'MINI_DOM', 'MINI_TICTACTOE', 'MINI_CAPTCHA', 'MINI_FLAPPY', 'PAUSED'].includes(state)) {
+        let hx = state === 'PAUSED' ? (pointer.x > -100 ? pointer.x : W/2) : vPointer.x;
+        let hy = state === 'PAUSED' ? (pointer.y > -100 ? pointer.y : H/2) : vPointer.y;
+        
+        ctx.fillStyle = '#050505';
+        ctx.beginPath();
+        ctx.rect(0, 0, W, H);
+        ctx.arc(hx, hy, 150 * scale, 0, Math.PI * 2, true); // Anti-clockwise for the hole
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(hx, hy, 150 * scale, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 5 * scale;
+        ctx.stroke();
+    }
+
+    // Decoy Cursor (draws on top of everything)
+    if (ruleState.decoy && ['PLAYING', 'PAUSED'].includes(state)) {
+        let decoyX = W - pointer.x;
+        let decoyY = H - pointer.y;
+        ctx.fillStyle = 'red';
+        ctx.beginPath(); ctx.arc(decoyX, decoyY, 10, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Wind overlay visual
+    if (ruleState.wind) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 2;
+        for(let i=0; i<5; i++) {
+            let y = ((state === 'PAUSED' ? pauseStartTime : Date.now())/5 + i*100) % H;
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+    }
+
+    // Evil Decoy Cursor Logic - Drawn on top of absolutely everything using the Virtual Pointer
+    if (!isTouchDevice && document.body.classList.contains('decoy-active') && state !== 'END') {
+        
+        // Draw the primary Virtual Cursor
+        drawCursor(ctx, vPointer.x, vPointer.y);
+        
+        // If Decoy is active, draw a second, identically styled drifting cursor
+        if (ruleState.decoy) {
+            let driftTime = state === 'PAUSED' ? pauseStartTime : Date.now();
+            let driftX = Math.sin(driftTime / 800) * 80 * scale;
+            let driftY = Math.cos(driftTime / 900) * 80 * scale;
+            drawCursor(ctx, vPointer.x + driftX, vPointer.y + driftY);
+        }
+    } else if (isTouchDevice && ruleState.decoy && ['PLAYING', 'PAUSED'].includes(state)) {
+        // Mobile Decoy: Fake Touch and Ghost Button
+        let fakeX = W - pointer.x;
+        let fakeY = H - pointer.y;
+
+        // Draw fake touch ripple
+        ctx.beginPath();
+        ctx.arc(fakeX, fakeY, 25 * scale, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 3 * scale;
+        ctx.stroke();
+
+        // If dragging, draw a ghost button mimicking the drag
+        let draggedBtn = buttons.find(b => b.isDragged);
+        if (draggedBtn) {
+            ctx.globalAlpha = 0.5;
+            drawButtonStatic(ctx, draggedBtn.type, fakeX, fakeY, true);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    // UI Overlay (Timer & Info)
+    if (state !== 'MENU' && state !== 'END') {
+        ctx.fillStyle = 'black';
+        ctx.font = `bold ${24*scale}px "Fredoka One"`;
+        ctx.textAlign = 'left';
+        ctx.fillText(`LEVEL ${currentLevel}: ${LEVELS[currentLevel-1].name}`, 20, 40);
+        ctx.font = `${16*scale}px sans-serif`;
+        ctx.fillText(LEVELS[currentLevel-1].desc, 20, 70);
+    }
+
+    if (ruleState.simonBan && state !== 'MENU' && state !== 'END') {
+        let boxW = 280 * scale;
+        let boxH = 45 * scale;
+        let boxX = W/2 - boxW/2;
+        let boxY = 20 * scale;
+
+        // Shadow
+        ctx.fillStyle = '#073B4C';
+        ctx.fillRect(boxX + 4*scale, boxY + 4*scale, boxW, boxH);
+        
+        // Box
+        ctx.fillStyle = '#EF476F';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.lineWidth = 3 * scale;
+        ctx.strokeStyle = '#073B4C';
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        // Text
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${20*scale}px "Fredoka One"`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`BANNED: ${ruleState.bannedTarget.toUpperCase()}`, W/2, boxY + boxH/2);
+        ctx.textBaseline = 'alphabetic'; // Reset baseline
+    }
+
+    // Timer Logic - The timer strictly ticks while you interact with ANYTHING except evaluating screens
+    const activePlayStates = ['PLAYING', 'MINI_DOM', 'MINI_TICTACTOE', 'MINI_CAPTCHA', 'MINI_FLAPPY'];
+    
+    // Always draw timer, but calculate remaining based on if we are paused
+    if (ruleState.timeLeft > 0 && (activePlayStates.includes(state) || state === 'PAUSED')) {
+        
+        let calculationTime = state === 'PAUSED' ? pauseStartTime : Date.now();
+        let elapsed = (calculationTime - ruleState.startTime) / 1000;
+        let remaining = Math.max(0, ruleState.timeLeft - elapsed);
+        
+        ctx.fillStyle = remaining < 2 ? 'red' : 'black';
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 4 * scale;
+        ctx.font = `bold ${40*scale}px "Fredoka One"`;
+        ctx.textAlign = 'right';
+        ctx.strokeText(remaining.toFixed(1), W - 20, 110);
+        ctx.fillText(remaining.toFixed(1), W - 20, 110);
+
+        if (remaining === 0 && state !== 'PAUSED') {
+            failGame();
+        }
+    }
+
+    if (state === 'RESULT') {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${60*scale}px "Fredoka One"`;
+        ctx.textAlign = 'center';
+        ctx.fillText(ruleState.resultMsg, W/2, H/2);
+    } else if (state === 'LEVEL_INTRO') {
+        // Full screen overlay for the level introduction
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillRect(0,0,W,H);
+        
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.font = `bold ${40*scale}px "Fredoka One"`;
+        ctx.fillText(`LEVEL ${currentLevel}`, W/2, H/2 - 60*scale);
+        
+        ctx.fillStyle = '#EF476F';
+        ctx.font = `bold ${50*scale}px "Fredoka One"`;
+        ctx.fillText(LEVELS[currentLevel-1].name.toUpperCase(), W/2, H/2);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = `${20*scale}px sans-serif`;
+        ctx.fillText(LEVELS[currentLevel-1].desc, W/2, H/2 + 60*scale);
+        
+        // Pulsing "Get Ready" text
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 200) * 0.5;
+        ctx.font = `bold ${24*scale}px "Fredoka One"`;
+        ctx.fillText("GET READY...", W/2, H/2 + 140*scale);
+        ctx.globalAlpha = 1.0;
+    } else if (state === 'PAUSED') {
+        // Pause Overlay
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0,0,W,H);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${60*scale}px "Fredoka One"`;
+        ctx.textAlign = 'center';
+        ctx.fillText("PAUSED", W/2, H/2 - 20*scale);
+        
+        ctx.fillStyle = '#EF476F';
+        let btnW = 280 * scale;
+        let btnH = 60 * scale;
+        ctx.fillRect(W/2 - btnW/2, H/2 + 20*scale, btnW, btnH);
+        ctx.lineWidth = 4 * scale;
+        ctx.strokeStyle = '#073B4C';
+        ctx.strokeRect(W/2 - btnW/2, H/2 + 20*scale, btnW, btnH);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${24*scale}px "Fredoka One"`;
+        ctx.fillText("TAP TO RESUME", W/2, H/2 + 58*scale);
+    }
+
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+// --- ANIMATION HELPERS ---
+
+function drawCursor(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(16, 16);
+    ctx.lineTo(9, 16);
+    ctx.lineTo(13, 25);
+    ctx.lineTo(10, 26);
+    ctx.lineTo(6, 17);
+    ctx.lineTo(0, 23);
+    ctx.closePath();
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawCombatAnimation(ctx) {
+    let anim = ruleState.combatAnim;
+    let p = (Date.now() - anim.startTime) / 1500; // 0 to 1 progress
+    if (p > 1) p = 1;
+
+    // Positions
+    let playerStartY = battleZone.y + 120 * scale;
+    let enemyStartY = battleZone.y - 150 * scale;
+    let centerY = battleZone.y - 30 * scale;
+
+    // Move to center in first half of animation
+    let moveP = Math.min(p * 2, 1);
+    let playerY = playerStartY + (centerY - playerStartY) * moveP;
+    let enemyY = enemyStartY + (centerY - enemyStartY) * moveP;
+    
+    let winX = battleZone.x;
+    let actWinner = anim.logicalWinner;
+    let actLoser = anim.logicalLoser;
+    let actWinnerY = (actWinner === playerChoice.type) ? playerY : enemyY;
+    let actLoserY = (actWinner === playerChoice.type) ? enemyY : playerY;
+
+    ctx.save();
+    
+    if (anim.type === 'draw') {
+        drawButtonStatic(ctx, playerChoice.type, winX, playerY);
+        drawButtonStatic(ctx, enemyChoice, winX, enemyY);
+    } else {
+        // Apply specific animations during second half
+        let actionP = Math.max(0, (p - 0.5) * 2);
+
+        if (anim.type === 'crush') {
+            actWinnerY -= Math.sin(actionP * Math.PI) * 100 * scale; // Jump up and smash
+            ctx.save();
+            ctx.translate(winX, actLoserY + actionP * 40 * scale);
+            ctx.scale(1, 1 - actionP * 0.8); // Flatten
+            drawButtonStatic(ctx, actLoser, 0, 0, true);
+            ctx.restore();
+            drawButtonStatic(ctx, actWinner, winX, actWinnerY);
+        } 
+        else if (anim.type === 'cut') {
+            let slide = actionP * 120 * scale;
+            actWinnerY += (actWinner === playerChoice.type ? -slide : slide); // Slice through
+            
+            // Split loser
+            ctx.save();
+            ctx.translate(winX - actionP * 40 * scale, actLoserY);
+            ctx.beginPath(); ctx.rect(-100*scale, -100*scale, 100*scale, 200*scale); ctx.clip();
+            drawButtonStatic(ctx, actLoser, 0, 0, true);
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(winX + actionP * 40 * scale, actLoserY);
+            ctx.beginPath(); ctx.rect(0, -100*scale, 100*scale, 200*scale); ctx.clip();
+            drawButtonStatic(ctx, actLoser, 0, 0, true);
+            ctx.restore();
+
+            drawButtonStatic(ctx, actWinner, winX, actWinnerY);
+        }
+        else if (anim.type === 'cover') {
+            let coverScale = 1 + actionP * 1.5;
+            drawButtonStatic(ctx, actLoser, winX, actLoserY); // Loser is under
+            ctx.save();
+            ctx.translate(winX, actWinnerY);
+            ctx.scale(coverScale, coverScale);
+            drawButtonStatic(ctx, actWinner, 0, 0, true);
+            ctx.restore();
+        }
+        else if (anim.type === 'eat') {
+            let chomp = Math.sin(actionP * Math.PI * 4) * 20 * scale;
+            actWinnerY += chomp;
+            ctx.save();
+            ctx.translate(winX, actLoserY);
+            ctx.scale(1 - actionP * 0.9, 1 - actionP * 0.9); // Shrink
+            drawButtonStatic(ctx, actLoser, 0, 0, true);
+            ctx.restore();
+            drawButtonStatic(ctx, actWinner, winX, actWinnerY);
+        }
+        else if (anim.type === 'vaporize') {
+            ctx.save();
+            ctx.translate(winX, actLoserY);
+            ctx.globalAlpha = 1 - actionP; // Fade out
+            ctx.translate((Math.random()-0.5)*20*actionP*scale, (Math.random()-0.5)*20*actionP*scale); // Shake
+            drawButtonStatic(ctx, actLoser, 0, 0, true);
+            ctx.restore();
+            drawButtonStatic(ctx, actWinner, winX, actWinnerY);
+        }
+    }
+
+    ctx.restore();
+}
+
+function drawButtonStatic(ctx, type, x, y, isCentered=false) {
+    ctx.save();
+    if (!isCentered) ctx.translate(x, y);
+    
+    let r = 50 * scale;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS[type];
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#000';
+    ctx.stroke();
+
+    drawFace(ctx, type);
+    ctx.fillStyle = '#000';
+    ctx.font = `bold ${18 * scale}px "Fredoka One"`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(type.toUpperCase(), 0, r + 15*scale);
+    
+    ctx.restore();
+}
+
+// Ensure fonts load before first render layout
+document.fonts.ready.then(() => {
+    resize();
+});
+
+</script>
+</body>
+</html>
