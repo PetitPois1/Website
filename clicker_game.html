@@ -41,6 +41,26 @@
             overflow-x: hidden;
             transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
+            position: relative;
+        }
+
+        /* SINGULARITY BACKGROUND SUGGESTION */
+        .singularity-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(179,0,255,0.1) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+            display: none;
+            animation: singularity-pulse 4s ease-in-out infinite;
+        }
+        @keyframes singularity-pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
         }
 
         .fixed-top {
@@ -141,20 +161,23 @@
         }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
-        /* TIER VISUALS FIX */
+        /* TIER VISUALS */
         .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #332d26; }
         .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; }
         .tier-2 { border-radius: 15%; background: #9e9e9e; border: 6px solid #555; }
         .tier-3 { border-radius: 8px; background: #4682b4; border: 4px solid #fff; }
         .tier-4 { border-radius: 0; background: #333; border: 5px solid var(--gold); }
-        .tier-5 { border-radius: 20%; background: #1e1e1e; border: 4px solid #00ff00; box-shadow: inset 0 0 10px #00ff00; }
-        .tier-6 { border-radius: 50%; background: #ff4500; border: 6px double #fff; animation: pulse 1.5s infinite; }
+        
+        /* FIXED DIGITAL COLOUR TO FIT BACKGROUND */
+        .tier-5 { border-radius: 12px; background: #001a00; border: 4px solid #004400; box-shadow: inset 0 0 15px #00ff00; color: #00ff00 !important; font-family: var(--font-mono); }
+        
+        .tier-6 { border-radius: 50%; background: #ff4500; border: 6px double #fff; animation: pulse-tier 1.5s infinite; }
         .tier-7 { border-radius: 30%; background: #00ffff; border: 4px solid #0088ff; filter: hue-rotate(45deg); }
-        .tier-9 { animation: pulse 2s infinite; border-radius: 40%; background: var(--quantum); border: 4px solid #fff; }
+        .tier-9 { border-radius: 40%; background: var(--quantum); border: 4px solid #fff; animation: pulse-tier 2s infinite; }
         .tier-10 { border-radius: 20%; background: #000; border: 4px double #ff00ff; animation: glitch 1s infinite; }
         .tier-11 { border-radius: 50%; background: #fff; border: 10px solid #000; filter: invert(1); animation: glitch 0.5s infinite; }
 
-        @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
+        @keyframes pulse-tier { 0% { box-shadow: 0 0 10px currentColor; } 50% { box-shadow: 0 0 30px currentColor; } 100% { box-shadow: 0 0 10px currentColor; } }
         @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
 
         .shop { width: 100%; padding-bottom: 100px; }
@@ -206,6 +229,7 @@
 </head>
 <body>
 
+    <div id="singularity-fx" class="singularity-bg"></div>
     <div id="toast">Saved</div>
 
     <div class="fixed-top">
@@ -303,8 +327,8 @@
             return num + (units[unitIndex - 1] || "e" + (unitIndex * 3));
         }
 
-        const eraBackgrounds = ["#0a0a0b", "#1e140d", "#1a1a1a", "#0d1117", "#161b22", "#0d1117", "#1a0510", "#051a1a", "#000", "#110022", "#000"];
-        const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#1e90ff", "#ff4444", "#00ffff", "#b300ff", "#ff00ff", "#ffffff"];
+        const eraBackgrounds = ["#0a0a0b", "#1e140d", "#1a1a1a", "#0d1117", "#161b22", "#050a05", "#1a0510", "#051a1a", "#000", "#110022", "#000"];
+        const eraAccents = ["#66cc66", "#cd7f32", "#9e9e9e", "#4682b4", "#ffd700", "#00ff00", "#ff4444", "#00ffff", "#b300ff", "#ff00ff", "#ffffff"];
         
         const tickerData = {
             start: ["Local entrepreneur hits rock with rocks.", "Scientists wonder if 'wheel' is a fad."],
@@ -496,6 +520,10 @@
             document.documentElement.style.setProperty('--dynamic-accent', accent);
             document.body.style.backgroundColor = eraBackgrounds[currentTier] || "#000";
             
+            // Singularity Visual Suggestion Trigger
+            const fx = document.getElementById('singularity-fx');
+            if(currentTier >= 9) { fx.style.display = 'block'; } else { fx.style.display = 'none'; }
+
             checkAchievements();
         }
 
@@ -530,8 +558,7 @@
                 const currentData = tierUpgrades[currentTier-1];
                 c.className = currentData.class;
                 c.innerText = currentData.label;
-                // BUG FIX: Reset inline color so CSS classes can apply
-                c.style.color = "white"; 
+                c.style.color = ""; 
             } else {
                 c.className = "tier-0";
                 c.innerText = "STONE";
