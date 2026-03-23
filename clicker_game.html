@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Industrial Clicker: Evolution</title>
+    <title>Industrial Clicker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -235,7 +235,7 @@
         <div class="shop">
             <h2 class="section-title">Evolution Pathway</h2>
             <div id="tier-container"></div>
-            <h2 class="section-title">Industrial Infrastructure</h2>
+            <h2 class="section-title">Upgrades</h2>
             <div id="machine-container"></div>
         </div>
     </div>
@@ -265,13 +265,15 @@
 
     <div id="admin-overlay" class="overlay">
         <button class="nav-btn" onclick="toggleOverlay('admin-overlay')">EXIT CONSOLE</button>
-        <h2 class="section-title" style="color:var(--admin)">Cheat Console</h2>
+        <h2 class="section-title" style="color:var(--admin)">Admin Panel</h2>
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; width: 100%;">
             <button class="nav-btn" onclick="credits *= 10; updateUI();">x10 Current Credits</button>
+            <button class="nav-btn" onclick="credits *= 100; updateUI();">x100 Current Credits</button>
             <button class="nav-btn" onclick="credits += 1e15; updateUI();">Add 1 Quadrillion</button>
             <button class="nav-btn" onclick="currentTier = Math.min(currentTier + 1, tierUpgrades.length); applyTierVisuals(); updateUI(); updateTicker();">Instant Evolve</button>
             <button class="nav-btn" onclick="unlockAllAch();">Unlock All Milestones</button>
-            <button class="nav-btn" onclick="multiplyAllBuildings(10);">Add 10 to All Buildings</button>
+            <button class="nav-btn" onclick="multiplyAllBuildings(100);">Add 100 to All Buildings</button>
+            <button class="nav-btn" onclick="multiplyAllBuildings(1000);">Add 1000 to All Buildings</button>
             <button class="nav-btn" onclick="credits = 0; updateUI();" style="border-color:#ff5555">Reset Credits to 0</button>
         </div>
     </div>
@@ -309,7 +311,8 @@
             atomic: ["Nuclear energy: Glowing in the dark is a feature.", "Fusion is still 20 years away."],
             plasma: ["Neon lights are now mandatory for all citizens.", "Plasma cutters making butter knives obsolete."],
             quantum: ["Reality successfully hacked.", "CEO exists in all offices simultaneously."],
-            singularity: ["Time is just a suggestion now.", "The universe is being compressed into a zip file."]
+            singularity: ["Time is just a suggestion now.", "The universe is being compressed into a zip file."],
+            unknown: ["Nothing's here...", "There is no end."]
         };
 
         const tierUpgrades = [
@@ -321,8 +324,9 @@
             { id: 't6', name: "Industrial Overdrive", cost: 500000000, clickValue: 150000, label: "ATOMIC", class: "tier-6", eraKey: "atomic" },
             { id: 't7', name: "Plasma Fusion", cost: 5000000000, clickValue: 1200000, label: "PLASMA", class: "tier-7", eraKey: "plasma" },
             { id: 't8', name: "Quantum Core", cost: 1e11, clickValue: 5e7, label: "QUANTUM", class: "tier-9", eraKey: "quantum" },
-            { id: 't9', name: "Dimensional Rift", cost: 1e14, clickValue: 2e9, label: "RIFT", class: "tier-9", eraKey: "quantum" },
-            { id: 't10', name: "The Singularity", cost: 1e17, clickValue: 1e12, label: "VOID", class: "tier-10", eraKey: "singularity" }
+            { id: 't9', name: "Dimensional Rift", cost: 1e13, clickValue: 2e9, label: "RIFT", class: "tier-9", eraKey: "quantum" },
+            { id: 't10', name: "The Singularity", cost: 1e15, clickValue: 1e12, label: "VOID", class: "tier-10", eraKey: "singularity" },
+            { id: 't11', name: "What is?...", cost: 1e17, clickValue: 1e12, label: "???", class: "tier-11", eraKey: "unknown" }
         ];
 
         const machineUpgrades = {
@@ -338,7 +342,8 @@
             quantum: { name: "Quantum Rig", addAuto: 6000000, baseCost: 5000000000 },
             swarm: { name: "Dyson Swarm", addAuto: 45000000, baseCost: 80000000000 },
             moon: { name: "Moon Branch", addAuto: 2500000000, baseCost: 1e13 },
-            void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e16 }
+            void: { name: "Void Well", addAuto: 1000000000000, baseCost: 5e15 },
+            quark: { name: "Quark Mine", addAuto: 500000000000000, baseCost: 5e17 }
         };
 
         const achievements = [
@@ -349,7 +354,8 @@
             { id: 'clicker_1000_clicks', name: "Click King", desc: "Click 1,000 times", icon: "👑", check: () => totalClicks >= 1000 },
             { id: 'clicker_50_pickers', name: "Automation", desc: "Own 50 Rock Pickers", icon: "🤖", check: () => inventory.picker >= 50 },
             { id: 'clicker_era_3', name: "Century", desc: "Reach Era 3", icon: "🏗️", check: () => currentTier >= 3 },
-            { id: 'clicker_1q_credits', name: "Godhood", desc: "Earn 1 Quadrillion Credits", icon: "✨", check: () => totalEarned >= 1e15 }
+            { id: 'clicker_1q_credits', name: "Godhood", desc: "Earn 1 Quadrillion Credits", icon: "✨", check: () => totalEarned >= 1e15 },
+            { id: 'clicker_1e18', name: "Capitalist", desc: "Earn 1 Quintillion Credits", icon: "🤑", check: () => totalEarned >= 1e18 }
         ];
 
         let inventory = {};
