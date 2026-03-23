@@ -141,13 +141,18 @@
         }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
 
+        /* TIER VISUALS FIX */
         .tier-0 { border-radius: 50%; background: #4a4238; border: 8px solid #332d26; }
         .tier-1 { border-radius: 50%; background: #cd7f32; border: 6px solid #8b4513; }
         .tier-2 { border-radius: 15%; background: #9e9e9e; border: 6px solid #555; }
         .tier-3 { border-radius: 8px; background: #4682b4; border: 4px solid #fff; }
         .tier-4 { border-radius: 0; background: #333; border: 5px solid var(--gold); }
+        .tier-5 { border-radius: 20%; background: #1e1e1e; border: 4px solid #00ff00; box-shadow: inset 0 0 10px #00ff00; }
+        .tier-6 { border-radius: 50%; background: #ff4500; border: 6px double #fff; animation: pulse 1.5s infinite; }
+        .tier-7 { border-radius: 30%; background: #00ffff; border: 4px solid #0088ff; filter: hue-rotate(45deg); }
         .tier-9 { animation: pulse 2s infinite; border-radius: 40%; background: var(--quantum); border: 4px solid #fff; }
         .tier-10 { border-radius: 20%; background: #000; border: 4px double #ff00ff; animation: glitch 1s infinite; }
+        .tier-11 { border-radius: 50%; background: #fff; border: 10px solid #000; filter: invert(1); animation: glitch 0.5s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 10px var(--quantum); } 50% { box-shadow: 0 0 30px var(--quantum); } 100% { box-shadow: 0 0 10px var(--quantum); } }
         @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
@@ -410,7 +415,6 @@
 
             if (amount === 'max') {
                 if (credits <= 0) return { cost: 0, count: 0 };
-                // Buy Max Precision Fix: We use floor on count and add a tiny epsilon to the log to handle JS math drifts
                 count = Math.floor(Math.log(((credits * (r - 1)) / (b * Math.pow(r, n))) + 1.0000000001) / Math.log(r));
                 count = Math.max(0, count);
             } else {
@@ -421,7 +425,6 @@
                 totalCost = b * (Math.pow(r, n) * (Math.pow(r, count) - 1)) / (r - 1);
             }
             
-            // Safety check for infinity/max buy fix
             if (!isFinite(totalCost) || isNaN(totalCost)) totalCost = 1e60; 
 
             return { cost: totalCost, count: count };
@@ -461,7 +464,6 @@
                 if (btn) {
                     btn.innerHTML = `BUY ${buyData.count > 0 ? buyData.count : (buyMode === 'max' ? 0 : buyMode)}<br>${f(buyData.cost)}`;
                     btn.classList.toggle("disabled", credits < buyData.cost || buyData.count <= 0);
-                    // UI Visibility fix: Ensure borders are always visible even in Dark/Void eras
                     btn.style.borderColor = varAccent();
                 }
                 if (info) {
@@ -528,6 +530,8 @@
                 const currentData = tierUpgrades[currentTier-1];
                 c.className = currentData.class;
                 c.innerText = currentData.label;
+                // BUG FIX: Reset inline color so CSS classes can apply
+                c.style.color = "white"; 
             } else {
                 c.className = "tier-0";
                 c.innerText = "STONE";
@@ -562,8 +566,6 @@
 
         async function loadGame() {
             let data = null;
-            
-            // Try cloud first
             if (window.gameHubProgress && window.gameHubProgress.loadGameProgress) {
                 try {
                     data = await window.gameHubProgress.loadGameProgress("clicker");
@@ -571,8 +573,6 @@
                     console.warn("[Clicker] Cloud load failed", e);
                 }
             }
-            
-            // Fallback to local
             if (!data) {
                 const saved = localStorage.getItem("IndusEvo_V2");
                 if (saved) data = JSON.parse(saved);
@@ -657,7 +657,6 @@
             const isCrit = Math.random() < 0.05;
             if (isCrit) multiplier = 5;
             
-            // Crit Effect: Visual shake/pulse
             const circle = document.getElementById('circle');
             if(isCrit) {
                 circle.style.transform = 'scale(1.2) rotate(10deg)';
