@@ -219,7 +219,7 @@
             <button class="nav-btn" onclick="window.location.href='index.html'">HOME</button>
             <button class="nav-btn" onclick="openSettings()">SETTINGS</button>
             <button class="nav-btn" onclick="saveGame(true)" style="color: var(--save-color); border-color: var(--save-color);">SAVE</button>
-            <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">DEBUG</button>
+            <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">ADMIN</button>
         </div>
 
         <div class="buy-modes">
@@ -230,7 +230,6 @@
 
         <div class="click-area">
             <div id="circle" class="tier-0">STONE</div>
-            <div id="circle" class="tier-11">???</div>
         </div>
 
         <div class="shop">
@@ -486,7 +485,7 @@
                     </div>`;
                 document.getElementById('evolve-btn-ui').style.borderColor = varAccent();
             } else {
-                tBox.innerHTML = `<div class="upgrade-card" style="justify-content:center"><p style="color:var(--quantum); font-weight:900; margin:0">Where are you?</p></div>`;
+                tBox.innerHTML = `<div class="upgrade-card" style="justify-content:center"><p style="color:var(--quantum); font-weight:900; margin:0">Who are you?...</p></div>`;
             }
 
             if(adminUnlocked) document.getElementById('admin-nav-btn').style.display = 'block';
