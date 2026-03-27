@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON VOID OVERDRIVE 3000</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Press+Start+2P&display=swap');
+
+        :root {
+            --ui-color: #0ff;
+            --bg-color: #000;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            /* Built-in CRT-ish distortion */
+            filter: contrast(1.2) saturate(1.5) hue-rotate(0deg);
+            transition: filter 0.1s;
+        }
+
+        /* The Hyper Shake */
+        @keyframes shake {
+            0% { transform: translate(2px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(0px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(2px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(2px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shake-active canvas {
+            animation: shake 0.1s infinite;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            text-shadow: 0 0 10px var(--ui-color), 0 0 20px var(--ui-color);
+        }
+
+        #score-display {
+            font-size: 24px;
+            font-family: 'Black Ops One', cursive;
+            letter-spacing: 2px;
+            transition: transform 0.1s;
+        }
+
+        #multiplier-display {
+            font-size: 32px;
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f, 0 0 30px #f0f;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+
+        #start-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border: 4px solid #0ff;
+            box-shadow: 0 0 30px #0ff, inset 0 0 30px #0ff;
+            pointer-events: auto;
+            border-radius: 10px;
+            max-width: 90%;
+        }
+
+        h1 {
+            font-family: 'Black Ops One', cursive;
+            font-size: 48px;
+            margin: 0 0 10px 0;
+            background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+            background-size: 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-shift 2s linear infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+
+        .warning {
+            color: #ff3333;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #f00;
+        }
+
+        button {
+            font-family: 'Press Start 2P', monospace;
+            background: #0ff;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px #0ff;
+            transition: all 0.1s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #fff;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #fff;
+        }
+
+        button:active {
+            transform: scale(0.9);
+        }
+
+        /* Floating text container */
+        .floating-text {
+            position: absolute;
+            font-family: 'Black Ops One', cursive;
+            pointer-events: none;
+            z-index: 15;
+            animation: floatUp 1s ease-out forwards;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5) rotate(calc(var(--rot) * -1deg)); }
+            50% { transform: translate(-50%, -100px) scale(1.5) rotate(calc(var(--rot) * 1deg)); }
+            100% { opacity: 0; transform: translate(-50%, -150px) scale(2) rotate(calc(var(--rot) * 2deg)); filter: blur(4px); }
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="scanlines"></div>
+    
+    <div id="ui-layer" style="display: none;">
+        <div class="hud-top">
+            <div id="score-display">SCORE: 0</div>
+            <div id="multiplier-display">x1</div>
+        </div>
+    </div>
+
+    <div id="start-menu">
+        <h1>NEON VOID<br>OVERDRIVE 3000</h1>
+        <div class="warning">
+            ⚠️ EPILEPSY WARNING ⚠️<br>
+            This game contains intense flashing lights, extremely bright neon colors, screen shaking, and chaotic visual patterns. Discretion advised.
+        </div>
+        <p style="font-size: 10px; color: #aaa; margin-bottom: 20px;">
+            MOUSE/TOUCH: Move<br>
+            CLICK/TAP: Overdrive Burst (Uses Multiplier)
+        </p>
+        <button id="start-btn">ENGAGE</button>
+    </div>
+</div>
+
+<script>
+/**
+ * AUDIO SYNTHESIS ENGINE (Generative Techno)
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioMaster = audioCtx.createGain();
+audioMaster.gain.value = 0.3; // Global volume
+audioMaster.connect(audioCtx.destination);
+
+// Basic Compressor to make it punchy
+const compressor = audioCtx.createDynamicsCompressor();
+compressor.threshold.setValueAtTime(-20, audioCtx.currentTime);
+compressor.knee.setValueAtTime(10, audioCtx.currentTime);
+compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+compressor.attack.setValueAtTime(0, audioCtx.currentTime);
+compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+audioMaster.connect(compressor);
+compressor.connect(audioCtx.destination);
+
+function playKick() {
+    if(audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioMaster);
+    
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+function playBass(freq) {
+    if(audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.connect(gain);
+    gain.connect(audioMaster);
+    
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    
+    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playExplosion() {
+    if(audioCtx.state === 'suspended') return;
+    const bufferSize = audioCtx.sampleRate * 0.5; 
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.5);
+    
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioMaster);
+    
+    noise.start(audioCtx.currentTime);
+}
+
+function playCollect() {
+    if(audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.connect(gain);
+    gain.connect(audioMaster);
+    
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(2000, audioCtx.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
+}
+
+/**
+ * GAME ENGINE & LOGIC
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency on base
+const container = document.getElementById('game-container');
+const scoreDisplay = document.getElementById('score-display');
+const multiDisplay = document.getElementById('multiplier-display');
+const startMenu = document.getElementById('start-menu');
+const uiLayer = document.getElementById('ui-layer');
+
+let width, height;
+let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER
+let score = 0;
+let multiplier = 1;
+let frameCount = 0;
+let lastTime = 0;
+let hueShift = 0;
+let hyperMode = false;
+
+// Audio Loop vars
+let lastBeat = 0;
+let beatInterval = 400; // ms
+let bassNotes = [32.7, 36.7, 41.2, 29.1]; // C1, D1, E1, Bb0
+let bassIndex = 0;
+
+// Input
+const mouse = { x: -1000, y: -1000, active: false };
+
+function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Input Listeners
+window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+window.addEventListener('touchmove', (e) => {
+    mouse.x = e.touches[0].clientX;
+    mouse.y = e.touches[0].clientY;
+});
+window.addEventListener('mousedown', activateOverdrive);
+window.addEventListener('touchstart', activateOverdrive);
+
+function activateOverdrive() {
+    if (gameState !== 'PLAYING') return;
+    if (multiplier > 5) {
+        multiplier = Math.floor(multiplier / 2);
+        score += 5000 * multiplier;
+        hyperMode = true;
+        createFloatingText("OVERDRIVE!", mouse.x, mouse.y, 60, "#fff");
+        playExplosion();
+        
+        // Spawn massive shockwave
+        for(let i=0; i<100; i++) {
+            particles.push(new Particle(mouse.x, mouse.y, Math.random() * Math.PI * 2, Math.random() * 20 + 5, `hsl(${Math.random()*360}, 100%, 70%)`, 4));
+        }
+
+        // Clear local enemies
+        enemies.forEach(e => {
+            const dist = Math.hypot(e.x - mouse.x, e.y - mouse.y);
+            if(dist < 300) {
+                e.dead = true;
+                spawnExplosion(e.x, e.y, e.color);
+                score += 100 * multiplier;
+            }
+        });
+
+        setTimeout(() => hyperMode = false, 500);
+        updateHUD();
+    }
+}
+
+// Entities
+class Player {
+    constructor() {
+        this.x = width / 2;
+        this.y = height / 2;
+        this.radius = 12;
+        this.color = '#0ff';
+        this.trail = [];
+    }
+
+    update() {
+        // Lerp towards mouse
+        if(mouse.x !== -1000) {
+            this.x += (mouse.x - this.x) * 0.2;
+            this.y += (mouse.y - this.y) * 0.2;
+        }
+
+        // Keep in bounds
+        this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
+
+        // Trail
+        this.trail.push({x: this.x, y: this.y});
+        if (this.trail.length > 20) this.trail.shift();
+    }
+
+    draw() {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Draw trail (Additive)
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.beginPath();
+        if (this.trail.length > 0) {
+            ctx.moveTo(this.trail[0].x, this.trail[0].y);
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x, this.trail[i].y);
+            }
+        }
+        ctx.lineWidth = this.radius * 1.5;
+        ctx.strokeStyle = `hsla(${hueShift}, 100%, 50%, 0.5)`;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0]?.x, this.trail[0]?.y);
+        for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+        }
+        ctx.lineWidth = this.radius * 0.8;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+
+        // Draw Player core
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = `hsl(${hueShift}, 100%, 50%)`;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.shadowBlur = 0; // reset
+    }
+}
+
+class Enemy {
+    constructor() {
+        // Spawn on edges
+        if (Math.random() > 0.5) {
+            this.x = Math.random() > 0.5 ? -30 : width + 30;
+            this.y = Math.random() * height;
+        } else {
+            this.x = Math.random() * width;
+            this.y = Math.random() > 0.5 ? -30 : height + 30;
+        }
+        
+        this.radius = Math.random() * 10 + 5;
+        this.speed = Math.random() * (4 + multiplier*0.1) + 2;
+        const angle = Math.atan2(player.y - this.y, player.x - this.x) + (Math.random() - 0.5);
+        this.vx = Math.cos(angle) * this.speed;
+        this.vy = Math.sin(angle) * this.speed;
+        
+        this.color = `hsl(${Math.random() * 60 + 300}, 100%, 60%)`; // Pink/Reds
+        this.dead = false;
+        this.type = Math.random() > 0.9 ? 'CHASER' : 'DUMB';
+        this.rot = 0;
+        this.rotSpeed = (Math.random() - 0.5) * 0.2;
+        this.vertices = Math.floor(Math.random() * 3) + 3; // Triangles, squares, pentagons
+    }
+
+    update() {
+        if (this.type === 'CHASER') {
+            const angle = Math.atan2(player.y - this.y, player.x - this.x);
+            this.vx += Math.cos(angle) * 0.1;
+            this.vy += Math.sin(angle) * 0.1;
+            // Limit speed
+            const currentSpeed = Math.hypot(this.vx, this.vy);
+            if (currentSpeed > this.speed * 1.5) {
+                this.vx = (this.vx / currentSpeed) * this.speed * 1.5;
+                this.vy = (this.vy / currentSpeed) * this.speed * 1.5;
+            }
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rot += this.rotSpeed;
+
+        if (this.x < -100 || this.x > width + 100 || this.y < -100 || this.y > height + 100) {
+            this.dead = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.beginPath();
+        for (let i = 0; i < this.vertices; i++) {
+            const a = (i / this.vertices) * Math.PI * 2;
+            const px = Math.cos(a) * this.radius;
+            const py = Math.sin(a) * this.radius;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = 0.3;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Collectible {
+    constructor() {
+        this.x = Math.random() * (width - 100) + 50;
+        this.y = Math.random() * (height - 100) + 50;
+        this.radius = 15;
+        this.dead = false;
+        this.color = '#0f0';
+        this.pulse = 0;
+    }
+
+    update() {
+        this.pulse += 0.1;
+    }
+
+    draw() {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + Math.sin(this.pulse) * 5, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${hueShift + 180}, 100%, 50%)`;
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+    }
+}
+
+class Particle {
+    constructor(x, y, angle, speed, color, size = 2) {
+        this.x = x;
+        this.y = y;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.02 + 0.01;
+        this.color = color;
+        this.size = size;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.95; // friction
+        this.vy *= 0.95;
+        this.life -= this.decay;
+    }
+    draw() {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+        ctx.globalCompositeOperation = 'source-over';
+    }
+}
+
+let player;
+let enemies = [];
+let particles = [];
+let collectibles = [];
+const phrases = ["SICK!", "BONKERS!", "INSANE!", "UNREAL!", "HYPER!", "OVERLOAD!", "CRAZY!", "GODLIKE!"];
+
+function createFloatingText(text, x, y, size = 30, color = "var(--ui-color)") {
+    const el = document.createElement('div');
+    el.className = 'floating-text';
+    el.innerText = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.color = color;
+    el.style.fontSize = size + 'px';
+    el.style.textShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
+    el.style.setProperty('--rot', (Math.random() - 0.5) * 40);
+    document.body.appendChild(el);
+    setTimeout(() => { if(el.parentNode) el.parentNode.removeChild(el); }, 1000);
+}
+
+function spawnExplosion(x, y, color) {
+    for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(x, y, Math.random() * Math.PI * 2, Math.random() * 8 + 2, color));
+    }
+    container.classList.add('shake-active');
+    setTimeout(() => container.classList.remove('shake-active'), 50);
+}
+
+function initGame() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    player = new Player();
+    enemies = [];
+    particles = [];
+    collectibles = [];
+    score = 0;
+    multiplier = 1;
+    frameCount = 0;
+    gameState = 'PLAYING';
+    
+    startMenu.style.display = 'none';
+    uiLayer.style.display = 'flex';
+    updateHUD();
+    
+    // Initial spawns
+    collectibles.push(new Collectible());
+}
+
+function updateHUD() {
+    scoreDisplay.innerText = `SCORE: ${Math.floor(score)}`;
+    multiDisplay.innerText = `x${multiplier}`;
+    multiDisplay.style.color = `hsl(${hueShift}, 100%, 60%)`;
+    multiDisplay.style.textShadow = `0 0 10px ${multiDisplay.style.color}`;
+    scoreDisplay.style.transform = `scale(${1 + multiplier * 0.05})`;
+}
+
+function gameOver() {
+    gameState = 'GAMEOVER';
+    playExplosion();
+    uiLayer.style.display = 'none';
+    startMenu.style.display = 'block';
+    startMenu.innerHTML = `
+        <h1>SYSTEM FAILURE</h1>
+        <p>FINAL SCORE: ${Math.floor(score)}</p>
+        <p>MAX MULTIPLIER: x${multiplier}</p>
+        <button id="restart-btn" onclick="initGame()">REBOOT</button>
+    `;
+    container.classList.remove('shake-active');
+}
+
+document.getElementById('start-btn').addEventListener('click', initGame);
+
+// Main Game Loop
+function loop(timestamp) {
+    requestAnimationFrame(loop);
+
+    const deltaTime = timestamp - lastTime;
+    
+    // Audio sync (very basic pseudo-sequencer)
+    if (gameState === 'PLAYING' && timestamp - lastBeat > beatInterval) {
+        lastBeat = timestamp;
+        playKick();
+        if (frameCount % 2 === 0) playBass(bassNotes[bassIndex]);
+        bassIndex = (bassIndex + 1) % bassNotes.length;
+        
+        // Speed up music slightly based on multiplier! Minimum 150ms
+        beatInterval = Math.max(150, 400 - (multiplier * 5));
+        
+        // Background flash to the beat
+        document.body.style.backgroundColor = `hsl(${hueShift}, 100%, 10%)`;
+        setTimeout(() => document.body.style.backgroundColor = '#000', 50);
+    }
+
+    lastTime = timestamp;
+    hueShift = (hueShift + 2) % 360;
+
+    // Intense motion blur by drawing semi-transparent black
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = hyperMode ? `rgba(255,255,255,0.2)` : `rgba(0, 0, 0, ${0.15 - Math.min(0.1, multiplier*0.005)})`;
+    ctx.fillRect(0, 0, width, height);
+
+    // Dynamic camera scale / pulse
+    ctx.save();
+    if (gameState === 'PLAYING') {
+        const scale = 1 + Math.sin(timestamp * 0.005) * 0.02 * (multiplier*0.1);
+        ctx.translate(width/2, height/2);
+        ctx.scale(scale, scale);
+        ctx.translate(-width/2, -height/2);
+    }
+
+    if (gameState === 'PLAYING') {
+        frameCount++;
+        
+        // Score logic
+        score += (0.1 * multiplier);
+        if (frameCount % 10 === 0) updateHUD();
+
+        // Spawn logic (Scales with multiplier to become literally bonkers)
+        let spawnRate = Math.max(2, 20 - Math.floor(multiplier / 5));
+        if (frameCount % spawnRate === 0) {
+            enemies.push(new Enemy());
+        }
+        if (frameCount % 300 === 0 && collectibles.length < 3) {
+            collectibles.push(new Collectible());
+        }
+
+        player.update();
+        player.draw();
+
+        // Collectibles
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+            let c = collectibles[i];
+            c.update();
+            c.draw();
+            
+            // Collision
+            const dist = Math.hypot(player.x - c.x, player.y - c.y);
+            if (dist < player.radius + c.radius) {
+                multiplier += 1;
+                score += 500 * multiplier;
+                playCollect();
+                spawnExplosion(c.x, c.y, '#0f0');
+                createFloatingText(phrases[Math.floor(Math.random()*phrases.length)], c.x, c.y, 40 + multiplier*2, `hsl(${hueShift}, 100%, 50%)`);
+                collectibles.splice(i, 1);
+                updateHUD();
+                
+                // Screen effect
+                canvas.style.filter = `contrast(2) saturate(3) hue-rotate(${Math.random()*360}deg) invert(1)`;
+                setTimeout(() => canvas.style.filter = `contrast(1.2) saturate(1.5) hue-rotate(0deg)`, 100);
+            }
+        }
+
+        // Enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.update();
+            e.draw();
+
+            // Collision with player
+            if (!hyperMode && !e.dead) {
+                const dist = Math.hypot(player.x - e.x, player.y - e.y);
+                if (dist < player.radius + e.radius - 2) { // slightly forgiving hitbox
+                    gameOver();
+                }
+            }
+
+            if (e.dead) enemies.splice(i, 1);
+        }
+    }
+
+    // Particles (always update to allow cool game over explosions)
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    
+    ctx.restore(); // Restore camera pulse transform
+
+    // Visual Hyper Effects based on multiplier
+    if (multiplier > 10) {
+        canvas.style.transform = `rotate(${(Math.random()-0.5)*(multiplier*0.1)}deg) scale(${1 + Math.random()*0.05})`;
+    } else {
+        canvas.style.transform = 'none';
+    }
+}
+
+// Start loop
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
