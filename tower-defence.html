@@ -3,8 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bloonz TDS</title>
-    <style>
+    <meta name="game-hub-id" content="tower-defence">
+        <script src="js/theme.js"></script>
+<title>Bloonz TDS</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+
+<style>
         :root { --sidebar-w: 180px; }
         body { 
             background: #0f0f0f; color: #e0e0e0; font-family: 'Segoe UI', system-ui; 
@@ -90,8 +105,21 @@ let enemiesSpawned = 0;
 let spawnTimer = 0;
 
 let globalStats = JSON.parse(localStorage.getItem('bloonsStatsPro')) || {
-    totalKills: 0, totalSpent: 0, wavesCompleted: 0, gamesPlayed: 0
+    totalKills: 0, totalSpent: 0, wavesCompleted: 0, gamesPlayed: 0, bestWave: 0
 };
+
+async function hydrateStats() {
+    if (window.gameHubCommon) {
+        const cloud = await window.gameHubCommon.loadProgress("tower-defence");
+        if (cloud && cloud.stats) {
+            globalStats = { ...globalStats, ...cloud.stats };
+        }
+        if (cloud && cloud.highScore) {
+            globalStats.bestWave = Math.max(globalStats.bestWave || 0, cloud.highScore);
+        }
+    }
+}
+hydrateStats();
 
 const TOWER_TYPES = {
     dart: { name: "Dart", cost: 50, range: 110, fireRate: 35, damage: 12, color: '#8d6e63' },
@@ -126,7 +154,7 @@ function initShop() {
 
 function startGame(level) {
     currentPath = MAPS[level];
-    money = 500; lives = 100; wave = 1;
+    money = 400; lives = 50; wave = 1;
     enemies = []; towers = []; projectiles = []; particles = [];
     gameState = 'PLAYING'; waveActive = false;
     globalStats.gamesPlayed++;
@@ -259,8 +287,18 @@ function gameLoop() {
         }
         if (enemiesSpawned > 10 + wave) {
             if (enemies.length === 0) {
-                wave++; waveActive = false; 
+                wave++;
+                globalStats.wavesCompleted++;
+                globalStats.bestWave = Math.max(globalStats.bestWave || 0, wave);
+                if (wave === 1 && window.gameHubAchievementHelpers) {
+                    window.gameHubAchievementHelpers.unlock("tower-defence", "td_first_wave");
+                }
+                if (window.gameHubAchievements) {
+                    window.gameHubAchievements.checkThresholdAchievements("tower-defence", wave);
+                }
+                waveActive = false;
                 document.getElementById('wave-btn').disabled = false;
+                saveStats();
                 updateUI();
             }
         }
@@ -322,8 +360,26 @@ canvas.addEventListener('mousedown', () => {
     }
 });
 
-function toggleStats(s){ document.getElementById('stats-page').classList.toggle('hidden', !s); }
-function saveStats() { localStorage.setItem('bloonsStatsPro', JSON.stringify(globalStats)); }
+function toggleStats(show) {
+    document.getElementById('stats-page').classList.toggle('hidden', !show);
+    if (show) {
+        document.getElementById('stats-content').innerHTML = `
+            <p>Games played: <b>${globalStats.gamesPlayed || 0}</b></p>
+            <p>Waves cleared: <b>${globalStats.wavesCompleted || 0}</b></p>
+            <p>Best wave: <b>${globalStats.bestWave || 0}</b></p>
+            <p>Total spent: <b>$${globalStats.totalSpent || 0}</b></p>
+        `;
+    }
+}
+function saveStats() {
+    localStorage.setItem('bloonsStatsPro', JSON.stringify(globalStats));
+    if (window.gameHubCommon) {
+        window.gameHubCommon.saveProgress("tower-defence", {
+            highScore: globalStats.bestWave || 0,
+            stats: globalStats
+        });
+    }
+}
 
 initShop();
 gameLoop();

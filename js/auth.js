@@ -15,9 +15,13 @@
     });
     updateAuthUI(currentUser);
 
-    // Sync existing high scores to All Time leaderboards on login
-    if (currentUser && window.gameHubProgress && window.gameHubProgress.syncAllHighScoresToLeaderboards) {
-      window.gameHubProgress.syncAllHighScoresToLeaderboards();
+    if (currentUser && window.gameHubProgress) {
+      if (window.gameHubProgress.syncAchievementsToAccount) {
+        window.gameHubProgress.syncAchievementsToAccount();
+      }
+      if (window.gameHubProgress.syncAllHighScoresToLeaderboards) {
+        window.gameHubProgress.syncAllHighScoresToLeaderboards();
+      }
     }
   }
 
@@ -112,25 +116,12 @@
       profileLabel.textContent = isLoggedIn ? "Profile" : "Sign In";
     }
 
-    // Helper to render the same SVG as profile page
     function renderAvatarSVG(container, config, classes) {
-        const mouths = {
-            smile: "M40 65 Q50 75 60 65",
-            flat: "M40 65 L60 65",
-            surprised: "M45 70 A5 5 0 1 1 55 70 A5 5 0 1 1 45 70"
-        };
-        container.innerHTML = `
-            <svg viewBox="0 0 100 100" class="${classes}">
-                <circle cx="50" cy="50" r="40" fill="${config.base}" />
-                <g>
-                    <circle cx="40" cy="45" r="5" fill="white" />
-                    <circle cx="40" cy="45" r="2" fill="black" />
-                    <circle cx="60" cy="45" r="5" fill="white" />
-                    <circle cx="60" cy="45" r="2" fill="black" />
-                </g>
-                <path d="${mouths[config.mouth] || mouths.smile}" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
-            </svg>
-        `;
+        if (window.gameHubAvatar && window.gameHubAvatar.render) {
+            window.gameHubAvatar.render(container, config, classes);
+            return;
+        }
+        container.innerHTML = `<svg viewBox="0 0 100 100" class="${classes || ""}"><circle cx="50" cy="50" r="40" fill="${(config && config.base) || "#8b5cf6"}"/></svg>`;
     }
     if (mobileProfileLink) {
       mobileProfileLink.textContent = isLoggedIn ? "Profile" : "Sign In";

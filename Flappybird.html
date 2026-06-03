@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Flappy Bird Pro</title>
+    <meta name="game-hub-id" content="flappy">
+        <script src="js/theme.js"></script>
+<title>Flappy Bird Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/auth.js"></script>
-    <style>
+    <script src="js/game-hub-common.js"></script>
+
+<style>
         body {
             margin: 0;
             padding: 0;
@@ -141,7 +148,7 @@
 
     <div class="btn-group">
         <button onclick="window.location.href='index.html'" class="game-btn">Menu</button>
-        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('flappy')" class="game-btn">Trophies</button>
+        <button onclick="window.gameHubAchievements && window.gameHubAchievements.showAchievementsModal('flappy')" class="game-btn">Achievements</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 

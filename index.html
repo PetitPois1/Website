@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Hub | Premium Gaming Portal</title>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/hub-site.css">
     <!-- Tailwind CSS for utility-first styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDKs (loaded before shared Game Hub scripts) -->
@@ -14,39 +16,22 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
     <script src="js/achievements.js"></script>
+    <script src="js/hub-avatar.js"></script>
     <script src="js/auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #8b5cf6;
-            --primary-dark: #6d28d9;
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
             --card-broken: rgba(15, 23, 42, 0.95);
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
-            background-attachment: fixed;
-            color: #f8fafc;
-            min-height: 100vh;
-        }
-
-        .glass-nav {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
         .game-card {
-            background: var(--card-bg);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
@@ -236,76 +221,10 @@
             background: var(--primary);
         }
 
-        /* Mobile Menu Styles */
-        #mobile-menu {
-            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
-        }
-        #mobile-menu.hidden-menu {
-            max-height: 0;
-            opacity: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        #mobile-menu.active-menu {
-            max-height: 300px;
-            opacity: 1;
-            pointer-events: auto;
-            padding: 1rem 0;
-        }
     </style>
 </head>
-<body class="pt-24 pb-12">
-
-    <!-- Navbar -->
-    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform">
-                    <span class="text-xl">👾</span>
-                </div>
-                <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                    GAME HUB
-                </span>
-            </a>
-            
-            <!-- Desktop Links -->
-            <div class="hidden md:flex items-center gap-8">
-                <a href="index.html" class="text-violet-400 font-semibold">Home</a>
-                <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
-                <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
-                <a href="settings.html" class="text-slate-400 hover:text-white transition-colors">Settings</a>
-                <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
-            </div>
-
-            <!-- Profile / Auth -->
-            <button id="profile-button" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-white/10 hover:border-violet-500 hover:bg-slate-900 text-sm transition-colors">
-                <div id="profile-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold">
-                    ?
-                </div>
-                <span id="profile-label" class="text-slate-200 font-medium">
-                    Sign In
-                </span>
-            </button>
-
-            <!-- Hamburger Button -->
-            <button id="menu-toggle" class="md:hidden text-white focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                </svg>
-            </button>
-        </div>
-
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="md:hidden hidden-menu flex flex-col gap-4 mt-2 border-t border-white/5">
-            <a href="index.html" class="text-violet-400 font-semibold px-2">Home</a>
-            <a href="about.html" class="text-slate-400 hover:text-white transition-colors px-2">About</a>
-            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors px-2">Feedback</a>
-            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors px-2">Bugs</a>
-            <button id="mobile-profile-link" class="text-slate-200 text-left px-2 py-1 rounded-lg bg-slate-900/60 border border-white/5 mt-1">
-                Sign In
-            </button>
-        </div>
-    </nav>
+<body data-hub-page="home" class="hub-site-body pb-12">
+    <script src="js/hub-nav.js"></script>
 
     <!-- Auth Modal -->
     <div id="auth-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
@@ -363,7 +282,7 @@
     <!-- Hero Section -->
     <header class="max-w-6xl mx-auto px-6 text-center mb-12">
         <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
-            Discover Your Next <span class="text-violet-500">Adventure</span>
+            Discover Your Next <span class="text-theme-primary">Adventure</span>
         </h1>
         <p class="text-slate-400 text-lg max-w-2xl mx-auto">
             Explore our collection of hand-crafted arcade experiences. 
@@ -427,38 +346,20 @@
 
     <!-- Footer -->
     <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
-        <p class="mb-2">© 2024 Game Hub. All rights reserved.</p>
+        <p class="mb-2">© 2026 Game Hub. All rights reserved.</p>
         <p class="text-sm">Engine Version <a href="updates.html" class="text-violet-500 hover:underline">v0.1.0</a></p>
     </footer>
 
     <script>
-        // Hamburger Menu Logic
-        const menuToggle = document.getElementById('menu-toggle');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const menuIcon = document.getElementById('menu-icon');
-
-        menuToggle.addEventListener('click', () => {
-            const isOpen = mobileMenu.classList.contains('active-menu');
-            if (isOpen) {
-                mobileMenu.classList.remove('active-menu');
-                mobileMenu.classList.add('hidden-menu');
-                menuIcon.setAttribute('d', 'M4 6h16M4 12h16m-7 6h7');
-            } else {
-                mobileMenu.classList.remove('hidden-menu');
-                mobileMenu.classList.add('active-menu');
-                menuIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12');
-            }
-        });
-
         const games = [
             { id: "snake", name: "Snake Game", url: "snake_game.html", icon: "🐍", beta: false, broken: false, tags: ["arcade"], likes: 124 },
             { id: "tic-tac-toe", name: "Tic-Tac-Toe", url: "tic-tac-toe.html", icon: "❌", beta: false, broken: false, tags: ["puzzle", "multiplayer"], likes: 45, multiplayer: true },
             { id: "pong", name: "Pong", url: "pong_game.html", icon: "🏓", beta: false, broken: false, tags: ["arcade"], likes: 82 },
             { id: "clicker", name: "Industrial Clicker", url: "clicker_game.html", icon: "⚙️", beta: true, broken: false, tags: ["arcade", "beta"], likes: 210 },
             { id: "blockblast", name: "Blockblast", url: "Blockblast.html", icon: "🧱", beta: false, broken: false, tags: ["puzzle"], likes: 342 },
-            { id: "tower-defence", name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true, broken: true, tags: ["arcade", "beta"], likes: 12 },
+            { id: "tower-defence", name: "Tower Defence", url: "tower-defence.html", icon: "🏹", beta: true, broken: false, tags: ["arcade", "beta"], likes: 12 },
             { id: "blackjack", name: "Blackjack", url: "blackjack.html", icon: "🃏", beta: false, broken: false, tags: ["cards"], likes: 156 },
-            { id: "pacman", name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: true, tags: ["arcade"], likes: 5 },
+            { id: "pacman", name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: false, tags: ["arcade"], likes: 5 },
             { id: "flappy", name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false, broken: false, tags: ["arcade"], likes: 189 },
             { id: "poker", name: "Poker", url: "poker.html", icon: "💎", beta: false, broken: false, tags: ["cards"], likes: 98 },
             { id: "mining", name: "Mining", url: "Mining.html", icon: "⛏️", beta: false, broken: false, tags: ["arcade", "beta"], likes: 167 },

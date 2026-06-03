@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Pac-Man Pro Mobile</title>
-    <style>
+    <meta name="game-hub-id" content="pacman">
+        <script src="js/theme.js"></script>
+<title>Pac-Man</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+
+
+<style>
         body {
             margin: 0;
             background-color: #000;
@@ -104,20 +120,29 @@
     ];
 
     let pacman, ghosts, pellets, score, highScore, gameRunning, animationId;
-    highScore = localStorage.getItem("pacmanHighScore") || 0;
-    highEl.innerText = highScore;
+    let mapPixelW = 0, mapPixelH = 0, viewScale = 1;
+
+    async function loadScores() {
+        if (window.gameHubCommon) {
+            highScore = await window.gameHubCommon.loadHighScore("pacman", "pacmanHighScore");
+        } else {
+            highScore = parseInt(localStorage.getItem("pacmanHighScore"), 10) || 0;
+        }
+        highEl.innerText = highScore;
+    }
+    loadScores();
 
     function init() {
-        // Size canvas to fit screen
-        const padding = 60;
+        const padding = 80;
         const availableHeight = window.innerHeight - padding * 2;
-        const mapW = MAP[0].length * TILE_SIZE;
-        const mapH = MAP.length * TILE_SIZE;
-        const scale = Math.min((window.innerWidth - 40) / mapW, availableHeight / mapH);
-        
-        canvas.width = mapW * scale;
-        canvas.height = mapH * scale;
-        ctx.scale(scale, scale);
+        mapPixelW = MAP[0].length * TILE_SIZE;
+        mapPixelH = MAP.length * TILE_SIZE;
+        viewScale = Math.min((window.innerWidth - 40) / mapPixelW, availableHeight / mapPixelH);
+
+        canvas.width = Math.floor(mapPixelW * viewScale);
+        canvas.height = Math.floor(mapPixelH * viewScale);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(viewScale, viewScale);
 
         score = 0;
         scoreEl.innerText = score;
@@ -148,7 +173,7 @@
 
     function draw() {
         ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, mapPixelW, mapPixelH);
 
         // Draw Walls
         for(let row=0; row<MAP.length; row++) {
@@ -199,8 +224,9 @@
     }
 
     function update() {
-        // Pacman Grid Alignment for turning
-        if (pacman.x % TILE_SIZE === TILE_SIZE/2 && pacman.y % TILE_SIZE === TILE_SIZE/2) {
+        const onGrid = Math.abs((pacman.x % TILE_SIZE) - TILE_SIZE / 2) < 0.5 &&
+            Math.abs((pacman.y % TILE_SIZE) - TILE_SIZE / 2) < 0.5;
+        if (onGrid) {
             const col = Math.floor(pacman.x / TILE_SIZE);
             const row = Math.floor(pacman.y / TILE_SIZE);
 
@@ -223,18 +249,26 @@
             if(pacman.mouth > 0.5 || pacman.mouth < 0) pacman.mouthDir *= -1;
         }
 
-        // Pellets collision
-        pellets.forEach((p, i) => {
+        for (let i = pellets.length - 1; i >= 0; i--) {
+            const p = pellets[i];
             if (Math.hypot(p.x - pacman.x, p.y - pacman.y) < 10) {
                 pellets.splice(i, 1);
                 score += 10;
                 scoreEl.innerText = score;
+                if (window.gameHubAchievementHelpers) {
+                    window.gameHubAchievementHelpers.unlock("pacman", "pacman_first_pellet");
+                    if (window.gameHubAchievements) {
+                        window.gameHubAchievements.checkThresholdAchievements("pacman", score);
+                    }
+                }
             }
-        });
+        }
 
         // Ghost Movement (Simple AI)
         ghosts.forEach(g => {
-            if (g.x % TILE_SIZE === TILE_SIZE/2 && g.y % TILE_SIZE === TILE_SIZE/2) {
+            const gOnGrid = Math.abs((g.x % TILE_SIZE) - TILE_SIZE / 2) < 0.5 &&
+                Math.abs((g.y % TILE_SIZE) - TILE_SIZE / 2) < 0.5;
+            if (gOnGrid) {
                 const possible = [
                     {x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}
                 ].filter(d => !isWall(Math.floor(g.x/TILE_SIZE) + d.x, Math.floor(g.y/TILE_SIZE) + d.y));
@@ -253,7 +287,12 @@
             }
         });
 
-        if(pellets.length === 0) gameOver("YOU WIN!");
+        if (pellets.length === 0) {
+            if (window.gameHubAchievementHelpers) {
+                window.gameHubAchievementHelpers.unlock("pacman", "pacman_clear");
+            }
+            gameOver("YOU WIN!");
+        }
     }
 
     function isWall(col, row) {
@@ -264,10 +303,14 @@
     function gameOver(msg = "GAME OVER") {
         gameRunning = false;
         cancelAnimationFrame(animationId);
-        if(score > highScore) {
+        if (score > highScore) {
             highScore = score;
-            localStorage.setItem("pacmanHighScore", highScore);
             highEl.innerText = highScore;
+            if (window.gameHubCommon) {
+                window.gameHubCommon.saveHighScore("pacman", highScore, "pacmanHighScore");
+            } else {
+                localStorage.setItem("pacmanHighScore", highScore);
+            }
         }
         overlay.querySelector('h1').innerText = msg;
         overlay.style.display = 'flex';
@@ -297,9 +340,11 @@
     });
 
     window.addEventListener('touchend', e => {
+        if (!gameRunning) return;
         const dx = e.changedTouches[0].screenX - touchStartX;
         const dy = e.changedTouches[0].screenY - touchStartY;
-        
+        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+
         if (Math.abs(dx) > Math.abs(dy)) {
             pacman.nextDir = { x: dx > 0 ? 1 : -1, y: 0 };
         } else {
@@ -309,6 +354,7 @@
 
     // Keyboard fallback
     window.addEventListener('keydown', e => {
+        if (!gameRunning) return;
         if(e.key === "ArrowUp") pacman.nextDir = {x: 0, y: -1};
         if(e.key === "ArrowDown") pacman.nextDir = {x: 0, y: 1};
         if(e.key === "ArrowLeft") pacman.nextDir = {x: -1, y: 0};

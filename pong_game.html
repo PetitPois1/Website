@@ -3,8 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pong</title>
-    <style>
+    <meta name="game-hub-id" content="pong">
+        <script src="js/theme.js"></script>
+<title>Pong</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+
+<style>
         :root {
             --bg: #0f172a;
             --card: #1e293b;
@@ -118,6 +133,7 @@
         <div class="score-container">
             <div class="score-box" style="color: var(--player)" id="pScore">0</div>
             <div class="score-box" style="color: var(--ai)" id="aScore">0</div>
+            <div class="score-box" style="color: #fbbf24; font-size: 0.75rem;" title="Best run this session">BEST <span id="hsScore">0</span></div>
         </div>
         <select id="difficulty">
             <option value="easy">Casual</option>
@@ -150,6 +166,19 @@
         ball: { x: 0, y: 0, vx: 0, vy: 0, s: 0 },
         scores: { p: 0, a: 0 }
     };
+    let sessionBest = 0;
+    let highScore = 0;
+
+    async function loadHighScore() {
+        if (window.gameHubCommon) {
+            highScore = await window.gameHubCommon.loadHighScore("pong", "pongHighScore");
+        } else {
+            highScore = parseInt(localStorage.getItem("pongHighScore"), 10) || 0;
+        }
+        const hsEl = document.getElementById("hsScore");
+        if (hsEl) hsEl.innerText = highScore;
+    }
+    loadHighScore();
 
     const diffs = {
         easy:   { bSpd: 4, aSpd: 3 },
@@ -222,25 +251,45 @@
         }
         gameState.aY = Math.max(0, Math.min(canvas.height - P_HEIGHT, gameState.aY));
 
-        // Bounce Paddles (No teleporting)
-        // Player Side
-        if (b.vx < 0 && b.x <= P_WIDTH + B_RADIUS) {
-            if (b.y > gameState.pY && b.y < gameState.pY + P_HEIGHT) {
-                handleBounce(gameState.pY);
-                b.x = P_WIDTH + B_RADIUS; // Snap to edge
-            }
-        }
-        // AI Side
-        if (b.vx > 0 && b.x >= canvas.width - P_WIDTH - B_RADIUS) {
-            if (b.y > gameState.aY && b.y < gameState.aY + P_HEIGHT) {
-                handleBounce(gameState.aY);
-                b.x = canvas.width - P_WIDTH - B_RADIUS; // Snap to edge
-            }
+        function tryPaddleBounce(paddleY, isPlayer) {
+            const edge = isPlayer ? P_WIDTH + B_RADIUS : canvas.width - P_WIDTH - B_RADIUS;
+            const approaching = isPlayer ? b.vx < 0 : b.vx > 0;
+            if (!approaching) return false;
+            const nearEdge = isPlayer ? b.x - B_RADIUS <= edge + 2 : b.x + B_RADIUS >= edge - 2;
+            if (!nearEdge) return false;
+            if (b.y + B_RADIUS < paddleY || b.y - B_RADIUS > paddleY + P_HEIGHT) return false;
+            handleBounce(paddleY);
+            b.x = isPlayer ? edge + 1 : edge - 1;
+            return true;
         }
 
+        tryPaddleBounce(gameState.pY, true);
+        tryPaddleBounce(gameState.aY, false);
+
         // Scoring
-        if (b.x < 0) { gameState.scores.a++; spawnBall(); }
-        else if (b.x > canvas.width) { gameState.scores.p++; spawnBall(); }
+        if (b.x < -B_RADIUS) {
+            gameState.scores.a++;
+            spawnBall();
+        } else if (b.x > canvas.width + B_RADIUS) {
+            gameState.scores.p++;
+            sessionBest = Math.max(sessionBest, gameState.scores.p);
+            document.getElementById("hsScore").innerText = sessionBest;
+            if (window.gameHubAchievementHelpers) {
+                window.gameHubAchievementHelpers.unlock("pong", "pong_first_point");
+            }
+            if (window.gameHubAchievements) {
+                window.gameHubAchievements.checkThresholdAchievements("pong", gameState.scores.p);
+            }
+            if (sessionBest > highScore) {
+                highScore = sessionBest;
+                if (window.gameHubCommon) {
+                    window.gameHubCommon.saveHighScore("pong", highScore, "pongHighScore");
+                } else {
+                    localStorage.setItem("pongHighScore", highScore);
+                }
+            }
+            spawnBall();
+        }
 
         document.getElementById("pScore").innerText = gameState.scores.p;
         document.getElementById("aScore").innerText = gameState.scores.a;
@@ -310,6 +359,8 @@
         gameState.active = !gameState.active;
         document.getElementById("startBtn").innerText = gameState.active ? "Pause" : "Resume";
     }
+
+    document.getElementById("hsScore").innerText = "0";
 
     init();
 </script>

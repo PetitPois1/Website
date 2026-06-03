@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Arcade - GitHub Edition</title>
+    <meta name="game-hub-id" content="snake">
+        <script src="js/theme.js"></script>
+<title>Snake Arcade - GitHub Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/auth.js"></script>
-    <style>
+    <script src="js/game-hub-common.js"></script>
+
+<style>
         :root {
             --primary: #6200ea;
             --secondary: #03dac6;
@@ -317,6 +324,8 @@
         }
 
         function gameOver(win = false) {
+            clearTimeout(gameTimeout);
+            speed = 150;
             if (win) {
                 alert("CONGRATULATIONS!\nYou filled the whole board!");
             } else {
@@ -353,8 +362,10 @@
         });
 
         canvas.addEventListener('touchend', e => {
+            if (waitingForStart) return;
             const dx = e.changedTouches[0].clientX - touchStartX;
             const dy = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (dx > 0 && direction !== 'LEFT') nextDirection = 'RIGHT';
                 else if (dx < 0 && direction !== 'RIGHT') nextDirection = 'LEFT';

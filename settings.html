@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | Game Hub</title>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/hub-site.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -11,190 +14,142 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-init.js"></script>
     <script src="js/progress.js"></script>
+    <script src="js/hub-avatar.js"></script>
     <script src="js/auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style id="theme-style">
-        :root {
-            --primary: #8b5cf6;
-            --bg-dark: #0f172a;
-            --text-main: #f8fafc;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-        .glass-nav {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .settings-card {
+    <style>
+        .theme-preset-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+            padding: 1rem; border-radius: 1rem;
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 1.5rem;
-            padding: 2rem;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
         }
+        .theme-preset-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .theme-preset-btn.is-selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+        .theme-swatch { width: 100%; height: 3rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
     </style>
 </head>
-<body class="pt-24 pb-12">
-    <!-- Navbar -->
-    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform">
-                    <span class="text-xl">👾</span>
-                </div>
-                <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                    GAME HUB
-                </span>
-            </a>
-            <div class="flex items-center gap-4">
-                <a href="profile.html" class="text-slate-400 hover:text-white transition-colors">Profile</a>
-                <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Games</a>
-            </div>
-        </div>
-    </nav>
+<body data-hub-page="settings" class="hub-site-body pb-12">
+    <script src="js/hub-nav.js"></script>
 
     <main class="max-w-4xl mx-auto px-6">
         <header class="mb-10">
             <h1 class="text-4xl font-extrabold mb-2">Settings</h1>
-            <p class="text-slate-400">Personalize your Game Hub experience.</p>
+            <p class="text-theme-muted">Personalize your Game Hub experience. Themes apply across the hub and game menus.</p>
         </header>
 
-        <section class="settings-card mb-8">
+        <section class="hub-settings-card p-8 mb-8">
             <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
-                <span class="text-2xl">🌈</span> Website Theme
+                <span class="text-2xl">🌈</span> Website theme
             </h2>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <!-- Theme Presets -->
-                <button onclick="applyThemePreset('default')" class="flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-800 border-2 border-transparent hover:border-violet-500 transition-all group">
-                    <div class="w-full h-12 rounded-lg bg-[#0f172a] border border-white/10"></div>
-                    <span class="text-sm font-semibold">Default</span>
-                </button>
-                <button onclick="applyThemePreset('dark')" class="flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-800 border-2 border-transparent hover:border-violet-500 transition-all group">
-                    <div class="w-full h-12 rounded-lg bg-[#000000] border border-white/10"></div>
-                    <span class="text-sm font-semibold">Pitch Black</span>
-                </button>
-                <button onclick="applyThemePreset('neon')" class="flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-800 border-2 border-transparent hover:border-violet-500 transition-all group">
-                    <div class="w-full h-12 rounded-lg bg-[#000] shadow-[0_0_10px_#00f2ff] border border-[#00f2ff]"></div>
-                    <span class="text-sm font-semibold">Neon</span>
-                </button>
-                <button onclick="applyThemePreset('pastel')" class="flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-800 border-2 border-transparent hover:border-violet-500 transition-all group">
-                    <div class="w-full h-12 rounded-lg bg-[#fdf2f8] border border-pink-200"></div>
-                    <span class="text-sm font-semibold">Pastel</span>
-                </button>
-            </div>
 
-            <div class="border-t border-white/5 pt-8">
-                <h3 class="text-sm font-bold text-slate-400 mb-4 uppercase tracking-wider">Custom Scheme</h3>
+            <div id="theme-presets-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8"></div>
+
+            <div class="border-t pt-8" style="border-color: var(--border-color)">
+                <h3 class="text-sm font-bold text-theme-muted mb-4 uppercase tracking-wider">Custom colors</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <label class="block text-xs text-slate-500 mb-2">Background</label>
-                        <input type="color" id="custom-bg" onchange="updateCustomTheme()" class="w-full h-10 rounded bg-transparent border-none cursor-pointer">
+                        <label class="block text-xs text-theme-muted mb-2">Background</label>
+                        <input type="color" id="custom-bg" class="w-full h-10 rounded cursor-pointer bg-transparent border-none">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-500 mb-2">Primary Color</label>
-                        <input type="color" id="custom-primary" onchange="updateCustomTheme()" class="w-full h-10 rounded bg-transparent border-none cursor-pointer">
+                        <label class="block text-xs text-theme-muted mb-2">Accent</label>
+                        <input type="color" id="custom-primary" class="w-full h-10 rounded cursor-pointer bg-transparent border-none">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-500 mb-2">Text Color</label>
-                        <input type="color" id="custom-text" onchange="updateCustomTheme()" class="w-full h-10 rounded bg-transparent border-none cursor-pointer">
+                        <label class="block text-xs text-theme-muted mb-2">Text</label>
+                        <input type="color" id="custom-text" class="w-full h-10 rounded cursor-pointer bg-transparent border-none">
                     </div>
                 </div>
             </div>
         </section>
 
         <div class="flex justify-end gap-4">
-            <button onclick="window.location.href='index.html'" class="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold transition-all">Cancel</button>
-            <button id="save-settings-btn" class="px-8 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold shadow-lg shadow-violet-500/20 transition-all">Save Changes</button>
+            <a href="index.html" class="px-6 py-2 rounded-xl font-bold transition-all" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);">Cancel</a>
+            <button id="save-settings-btn" type="button" class="px-8 py-2 rounded-xl font-bold text-white btn-theme-primary shadow-lg transition-all">Save changes</button>
         </div>
     </main>
 
     <script>
-        const themePresets = {
-            default: { bg: '#0f172a', primary: '#8b5cf6', text: '#f8fafc', card: 'rgba(30, 41, 59, 0.7)', border: 'rgba(255, 255, 255, 0.1)' },
-            dark: { bg: '#000000', primary: '#ffffff', text: '#e5e7eb', card: '#111111', border: '#222222' },
-            neon: { bg: '#000000', primary: '#00f2ff', text: '#00f2ff', card: 'rgba(0, 242, 255, 0.05)', border: 'rgba(0, 242, 255, 0.3)' },
-            pastel: { bg: '#fff1f2', primary: '#f472b6', text: '#831843', card: '#fff', border: '#fbcfe8' }
-        };
+        let currentTheme = window.gameHubTheme.getPreset("default");
 
-        let currentTheme = {...themePresets.default};
-
-        function applyTheme(theme) {
-            currentTheme = theme;
-            const root = document.documentElement;
-            root.style.setProperty('--bg-dark', theme.bg);
-            root.style.setProperty('--primary', theme.primary);
-            root.style.setProperty('--text-main', theme.text);
-            root.style.setProperty('--card-bg', theme.card);
-            root.style.setProperty('--border-color', theme.border);
-            
-            // Sync custom inputs
-            document.getElementById('custom-bg').value = theme.bg.startsWith('#') ? theme.bg : '#0f172a';
-            document.getElementById('custom-primary').value = theme.primary.startsWith('#') ? theme.primary : '#8b5cf6';
-            document.getElementById('custom-text').value = theme.text.startsWith('#') ? theme.text : '#f8fafc';
+        function renderPresets() {
+            const grid = document.getElementById("theme-presets-grid");
+            grid.innerHTML = "";
+            Object.keys(window.gameHubTheme.PRESETS).forEach((key) => {
+                const p = window.gameHubTheme.PRESETS[key];
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "theme-preset-btn" + (currentTheme.id === key ? " is-selected" : "");
+                btn.innerHTML = `<div class="theme-swatch" style="background:${p.bg}; box-shadow: inset 0 0 0 2px ${p.primary}"></div><span class="text-sm font-semibold" style="color:var(--text-main)">${p.name}</span>`;
+                btn.onclick = () => {
+                    currentTheme = window.gameHubTheme.getPreset(key);
+                    window.gameHubTheme.applyTheme(currentTheme);
+                    syncColorInputs();
+                    renderPresets();
+                };
+                grid.appendChild(btn);
+            });
         }
 
-        function applyThemePreset(key) {
-            applyTheme(themePresets[key]);
+        function syncColorInputs() {
+            const hex = (v, fallback) => (v && v.startsWith("#") ? v : fallback);
+            document.getElementById("custom-bg").value = hex(currentTheme.bg, "#0f172a");
+            document.getElementById("custom-primary").value = hex(currentTheme.primary, "#8b5cf6");
+            document.getElementById("custom-text").value = hex(currentTheme.text, "#f8fafc");
         }
 
         function updateCustomTheme() {
-            const theme = {
-                bg: document.getElementById('custom-bg').value,
-                primary: document.getElementById('custom-primary').value,
-                text: document.getElementById('custom-text').value,
-                card: 'rgba(255, 255, 255, 0.05)',
-                border: 'rgba(255, 255, 255, 0.1)'
+            currentTheme = {
+                id: "custom",
+                name: "Custom",
+                bg: document.getElementById("custom-bg").value,
+                primary: document.getElementById("custom-primary").value,
+                primaryDark: document.getElementById("custom-primary").value,
+                text: document.getElementById("custom-text").value,
+                textMuted: document.getElementById("custom-text").value,
+                card: "rgba(255, 255, 255, 0.06)",
+                border: "rgba(255, 255, 255, 0.12)",
+                nav: "rgba(0, 0, 0, 0.85)",
+                glow: "rgba(128, 128, 128, 0.12)",
+                glowSecondary: "rgba(128, 128, 128, 0.06)",
             };
-            applyTheme(theme);
+            window.gameHubTheme.applyTheme(currentTheme);
+            renderPresets();
         }
 
-        // Save to Firestore
-        document.getElementById('save-settings-btn').onclick = async () => {
-            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
-            if (!user) {
-                // Save locally for guests
-                localStorage.setItem('gamehub_theme', JSON.stringify(currentTheme));
-                alert('Theme saved locally! Sign in to sync across devices.');
-                return;
-            }
+        ["custom-bg", "custom-primary", "custom-text"].forEach((id) => {
+            document.getElementById(id).addEventListener("input", updateCustomTheme);
+        });
 
-            const db = window.gameHubFirebase.db;
+        document.getElementById("save-settings-btn").onclick = async () => {
+            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
             try {
-                await db.collection("users").doc(user.uid).set({
-                    settings: { theme: currentTheme }
-                }, { merge: true });
-                localStorage.setItem('gamehub_theme', JSON.stringify(currentTheme));
-                alert('Settings saved to your account!');
+                await window.gameHubTheme.saveTheme(currentTheme, !!user);
+                alert(user ? "Settings saved to your account!" : "Theme saved on this device. Sign in to sync everywhere.");
             } catch (e) {
-                console.error("Save failed:", e);
-                alert("Failed to save settings: " + e.message);
+                alert("Save failed: " + (e.message || e));
             }
         };
 
-        // Load theme on startup
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('gamehub_theme');
-            if (saved) applyTheme(JSON.parse(saved));
-            
-            // If signed in, try to fetch from cloud
-            setTimeout(async () => {
-                const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
-                if (user && window.gameHubFirebase.db) {
-                    const doc = await window.gameHubFirebase.db.collection("users").doc(user.uid).get();
-                    if (doc.exists && doc.data().settings && doc.data().settings.theme) {
-                        applyTheme(doc.data().settings.theme);
-                        localStorage.setItem('gamehub_theme', JSON.stringify(doc.data().settings.theme));
-                    }
+        document.addEventListener("DOMContentLoaded", async () => {
+            const saved = localStorage.getItem("gamehub_theme");
+            if (saved) {
+                try {
+                    currentTheme = JSON.parse(saved);
+                    window.gameHubTheme.applyTheme(currentTheme);
+                } catch (e) {}
+            }
+            syncColorInputs();
+            renderPresets();
+            setTimeout(() => window.gameHubTheme.loadFromCloud().then((t) => {
+                if (t) {
+                    currentTheme = t;
+                    syncColorInputs();
+                    renderPresets();
                 }
-            }, 2000);
+            }), 1500);
         });
     </script>
 </body>

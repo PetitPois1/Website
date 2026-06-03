@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/hub-site.css">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upcoming Games | Game Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/auth.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -50,28 +60,10 @@
         }
     </style>
 </head>
-<body class="pt-32 pb-20">
+<body data-hub-page="upcoming" class="hub-site-body pb-12">
+    <script src="js/hub-nav.js"></script>
 
-    <!-- Navbar -->
-    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <span class="text-xl">👾</span>
-            </div>
-            <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                GAME HUB
-            </span>
-        </div>
-        
-        <div class="hidden md:flex items-center gap-8">
-            <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
-            <a href="about.html" class="text-slate-400 hover:text-white transition-colors">About</a>
-            <a href="feedback.html" class="text-slate-400 hover:text-white transition-colors">Feedback</a>
-            <a href="bugs.html" class="text-slate-400 hover:text-white transition-colors">Bugs</a>
-        </div>
-    </nav>
-
-    <!-- Header Section -->
+<!-- Header Section -->
     <div class="max-w-4xl mx-auto px-6 text-center mb-16">
         <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
             Upcoming <span class="accent-gradient">Releases</span>

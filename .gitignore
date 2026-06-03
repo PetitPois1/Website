@@ -1,1 +1,50 @@
+# Local / private
+.env
+.env.*
+!.env.example
+*.local.js
+js/firebase-config.local.js
 backup_original_do_not_edit/
+
+# Editor & tooling
+.cursor/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Dependencies & build
+node_modules/
+dist/
+build/
+.cache/
+
+# Logs & debug
+*.log
+npm-debug.log*
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Firebase local
+.firebase/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets / internal assets (do not publish)
+**/Secret
+**/secret/
+*.pem
+*.key
+credentials.json
+serviceAccount*.json

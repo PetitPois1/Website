@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Pro</title>
+    <meta name="game-hub-id" content="tic-tac-toe">
+        <script src="js/theme.js"></script>
+<title>Tic-Tac-Toe Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+        <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
     <script src="js/auth.js"></script>
-    <style>
+    <script src="js/game-hub-common.js"></script>
+
+<style>
         :root {
             --bg: #0f0c29;
             --cell-bg: #1b1b3a;
@@ -374,6 +383,16 @@
 
             if (win) {
                 updateScore(player);
+                if (window.gameHubAchievementHelpers && difficulty.value !== 'coop' && difficulty.value !== 'online') {
+                    if (player === 'X') {
+                        window.gameHubAchievementHelpers.unlock("tic-tac-toe", "ttt_first_win");
+                        const wins = (parseInt(localStorage.getItem("ttt_wins"), 10) || 0) + 1;
+                        localStorage.setItem("ttt_wins", String(wins));
+                        if (wins >= 5) {
+                            window.gameHubAchievementHelpers.unlock("tic-tac-toe", "ttt_win_5");
+                        }
+                    }
+                }
                 const winMsg = (difficulty.value !== 'coop' && player === 'O') ? "AI Wins!" : player + " Wins!";
                 announceResult(winMsg);
                 return true;
@@ -772,6 +791,10 @@
                     } else {
                         statusDisplay.textContent = amIWinner ? "You Won!" : "You Lost!";
                         statusDisplay.style.color = amIWinner ? "#4ade80" : "#fb7185";
+                        if (amIWinner && window.gameHubAchievementHelpers) {
+                            window.gameHubAchievementHelpers.unlock("tic-tac-toe", "ttt_online_win");
+                            window.gameHubAchievementHelpers.unlock("tic-tac-toe", "ttt_first_win");
+                        }
                     }
                     statusDisplay.classList.add('show-status');
                     turnDisplay.textContent = "Round Over";

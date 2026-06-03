@@ -158,18 +158,23 @@
     return localData;
   }
 
-  async function unlockAchievement(gameId, achievementId) {
+  function resolveAchievementReward(gameId, achievementId) {
+    if (window.gameHubAchievements && window.gameHubAchievements.getAchievementValue) {
+      return window.gameHubAchievements.getAchievementValue(gameId, achievementId);
+    }
+    return 10;
+  }
+
+  async function unlockAchievement(gameId, achievementId, options = {}) {
     if (!gameId || !achievementId) return;
 
+    const silent = options.silent === true;
     const existingLocal = loadLocalAchievements(gameId);
-    if (existingLocal.includes(achievementId)) {
-      return;
-    }
-
     const user = getUser();
     const db = getDb();
+    const reward = resolveAchievementReward(gameId, achievementId);
 
-    // If signed in, check cloud before notifying or adding locally
+    // Signed in: cloud is source of truth; still upload guest progress not yet synced
     if (user && db) {
       try {
         const docRef = db
@@ -180,58 +185,142 @@
 
         const doc = await docRef.get();
         if (doc.exists) {
-          // Sync local if missing but skip notification/reward
           if (!existingLocal.includes(achievementId)) {
             saveLocalAchievements(gameId, existingLocal.concat(achievementId));
           }
           return;
         }
 
-        // Proceed with unlock
         await docRef.set({
           gameId,
-          unlockedAt: firebase.firestore.FieldValue.serverTimestamp()
+          reward,
+          unlockedAt: firebase.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-
-        // Award currency based on difficulty
-        let reward = 10;
-        if (window.gameHubAchievements && window.gameHubAchievements.getAchievementValue) {
-          reward = window.gameHubAchievements.getAchievementValue(gameId, achievementId);
-        }
 
         const userRef = db.collection("users").doc(user.uid);
         await userRef.update({
           currency: firebase.firestore.FieldValue.increment(reward),
-          achievementsCount: firebase.firestore.FieldValue.increment(1)
+          achievementsCount: firebase.firestore.FieldValue.increment(1),
         });
-        
-        // Save locally after cloud success
+
         saveLocalAchievements(gameId, existingLocal.concat(achievementId));
 
-        // Trigger visual notification
-        if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+        if (!silent && window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
           window.gameHubAchievements.notifyAchievement(gameId, achievementId, reward);
         }
-        
+
         console.log(`[GameHub] Awarded ${reward} coins for achievement:`, achievementId);
 
-        // Check for "The Perfectionist"
-        if (achievementId !== 'perfectionist') {
+        if (achievementId !== "perfectionist") {
           checkPerfectionist();
         }
       } catch (e) {
         console.warn("[GameHub] Failed to unlock cloud achievement or award currency", e);
       }
-    } else {
-      // Guest mode - just local
-      saveLocalAchievements(gameId, existingLocal.concat(achievementId));
-      if (window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
-        window.gameHubAchievements.notifyAchievement(gameId, achievementId);
-      }
-      if (achievementId !== 'perfectionist') {
-        checkPerfectionist();
+      return;
+    }
+
+    // Guest: local only (coins awarded after sign-in via sync)
+    if (existingLocal.includes(achievementId)) return;
+
+    saveLocalAchievements(gameId, existingLocal.concat(achievementId));
+    if (!silent && window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+      window.gameHubAchievements.notifyAchievement(gameId, achievementId, reward);
+    }
+    if (achievementId !== "perfectionist") {
+      checkPerfectionist();
+    }
+  }
+
+  /** Push guest/local unlocks to Firestore and grant coins once per achievement. */
+  async function syncAchievementsToAccount() {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db || !window.gameHubAchievements) return;
+
+    const allDefs = window.gameHubAchievements.getDefinitions();
+    const gameIds = Object.keys(allDefs).filter((id) => id !== "global");
+
+    for (const gameId of gameIds) {
+      const localIds = loadLocalAchievements(gameId);
+      for (const achId of localIds) {
+        await unlockAchievement(gameId, achId, { silent: true });
       }
     }
+
+    try {
+      window.dispatchEvent(new CustomEvent("gamehub:achievements-synced"));
+    } catch (_) { /* ignore */ }
+  }
+
+  function findAchievementDef(allDefs, gameId, achievementId) {
+    const inGame = (allDefs[gameId] || []).find((d) => d.id === achievementId);
+    if (inGame) return { gameId, def: inGame };
+    for (const gid of Object.keys(allDefs)) {
+      const def = (allDefs[gid] || []).find((d) => d.id === achievementId);
+      if (def) return { gameId: gid, def };
+    }
+    return null;
+  }
+
+  async function getAllUserAchievementsDetailed() {
+    if (!window.gameHubAchievements) return [];
+
+    const allDefs = window.gameHubAchievements.getDefinitions();
+    const getReward =
+      window.gameHubAchievements.getCoinReward ||
+      ((def) => resolveAchievementReward("", def && def.id));
+
+    const byId = new Map();
+
+    function addEntry(gameId, achievementId, extra = {}) {
+      const resolved = findAchievementDef(allDefs, gameId, achievementId);
+      if (!resolved) return;
+      const defaultReward = getReward(resolved.def);
+      byId.set(achievementId, {
+        id: achievementId,
+        gameId: resolved.gameId,
+        name: resolved.def.name,
+        description: resolved.def.description,
+        difficulty: resolved.def.difficulty || "easy",
+        reward: typeof extra.reward === "number" ? extra.reward : defaultReward,
+        unlockedAt: extra.unlockedAt || null,
+        source: extra.source || "local",
+      });
+    }
+
+    Object.keys(allDefs).forEach((gameId) => {
+      if (gameId === "global") return;
+      loadLocalAchievements(gameId).forEach((achId) => addEntry(gameId, achId, { source: "local" }));
+    });
+
+    const globalLocal = loadLocalAchievements("global");
+    globalLocal.forEach((achId) => addEntry("global", achId, { source: "local" }));
+
+    const user = getUser();
+    const db = getDb();
+    if (user && db) {
+      try {
+        const snap = await db
+          .collection("users")
+          .doc(user.uid)
+          .collection("achievements")
+          .get();
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          const gid = data.gameId || "global";
+          addEntry(gid, doc.id, {
+            source: "cloud",
+            reward: typeof data.reward === "number" ? data.reward : undefined,
+            unlockedAt: data.unlockedAt || null,
+          });
+        });
+      } catch (e) {
+        console.warn("[GameHub] Failed to load achievement details", e);
+      }
+    }
+
+    return Array.from(byId.values());
   }
 
   async function checkPerfectionist() {
@@ -318,27 +407,10 @@
     setTimeout(() => startHeartbeat(null), 2000);
   }
 
-  // Global Theme Application
-  (function applyGlobalTheme() {
-    const saved = localStorage.getItem('gamehub_theme');
-    if (saved) {
-      try {
-        const theme = JSON.parse(saved);
-        const root = document.documentElement;
-        root.style.setProperty('--bg-dark', theme.bg);
-        root.style.setProperty('--primary', theme.primary);
-        root.style.setProperty('--text-main', theme.text);
-        root.style.setProperty('--card-bg', theme.card);
-        root.style.setProperty('--border-color', theme.border);
-        
-        // Apply custom styles to body directly if needed
-        document.addEventListener('DOMContentLoaded', () => {
-          document.body.style.backgroundColor = theme.bg;
-          document.body.style.color = theme.text;
-        });
-      } catch(e) {}
-    }
-  })();
+  // Theme applied by js/theme.js (loaded before this file on hub + game pages)
+  if (window.gameHubTheme && window.gameHubTheme.applySaved) {
+    window.gameHubTheme.applySaved();
+  }
 
   async function getCurrency() {
     const user = getUser();
@@ -518,11 +590,13 @@
     loadGameProgress,
     unlockAchievement,
     getUserAchievements,
+    getAllUserAchievementsDetailed,
+    syncAchievementsToAccount,
     getCurrency,
     spendCurrency,
     startHeartbeat,
     getLeaderboard,
-    syncAllHighScoresToLeaderboards
+    syncAllHighScoresToLeaderboards,
   };
 })();
 
