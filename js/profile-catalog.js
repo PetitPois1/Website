@@ -27,6 +27,9 @@
     "3DFlappyBird": { name: "3D Flappy Bird", icon: "🐦‍🔥", tagline: "Sky dodge", statLabel: "High score", progressKey: "highScore" },
     Astroids: { name: "Asteroids", icon: "☄️", tagline: "Space shooter", statLabel: "High score", progressKey: "highScore" },
     UltimateRPS: { name: "Ultimate RPS", icon: "✂️", tagline: "Rock paper scissors", statLabel: "Wins", progressKey: "wins" },
+    chess: { name: "Chess", icon: "♟️", tagline: "Strategy classic", statLabel: "Games played", progressKey: "gamesPlayed" },
+    connect4: { name: "Connect 4", icon: "🔴", tagline: "Four in a row", statLabel: "Wins", progressKey: "wins" },
+    wordscramble: { name: "Word Scramble", icon: "🔤", tagline: "Unscramble the word", statLabel: "High score", progressKey: "highScore" },
   };
 
   function titleCaseId(id) {
@@ -37,23 +40,41 @@
     const reg = window.gameHubAchievementRegistry;
     if (!reg) return [];
     const all = reg.getAllDefinitions();
-    return Object.keys(all)
-      .filter((id) => id !== "global" && (all[id] || []).length > 0)
-      .map((id) => {
-        const meta = GAME_META[id] || {
-          name: titleCaseId(id),
-          icon: "🎮",
-          tagline: "",
-          statLabel: "Best score",
-          progressKey: "highScore",
-        };
-        return {
-          id,
-          achievementTotal: all[id].length,
-          ...meta,
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+    console.log("getGamesForProfile: all definitions keys are:", Object.keys(all));
+    console.log("getGamesForProfile: all definitions object:", all);
+
+    const uniqueGameIds = new Set();
+    
+    // First pass: collect unique game IDs
+    Object.keys(all).forEach(id => {
+      console.log("Checking id:", id, "id !== global:", id !== "global", "isArray:", Array.isArray(all[id]), "length >0:", all[id]?.length >0);
+      if (id !== "global" && Array.isArray(all[id]) && all[id].length > 0) {
+        uniqueGameIds.add(id);
+      }
+    });
+    
+    console.log("getGamesForProfile: uniqueGameIds Set has:", Array.from(uniqueGameIds));
+    
+    // Convert to array and sort by name
+    const games = Array.from(uniqueGameIds).map(id => {
+      const meta = GAME_META[id] || {
+        name: titleCaseId(id),
+        icon: "🎮",
+        tagline: "",
+        statLabel: "Best score",
+        progressKey: "highScore",
+      };
+      return {
+        id,
+        achievementTotal: all[id].length,
+        ...meta,
+      };
+    });
+    
+    // Explicitly sort by display name
+    games.sort((a, b) => a.name.localeCompare(b.name));
+    console.log("getGamesForProfile returning:", games.length, "games with names:", games.map(g => g.name));
+    return games;
   }
 
   function getGameDisplayName(gameId) {

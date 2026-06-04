@@ -31,12 +31,17 @@
 
         body {
             font-family: 'Fredoka', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            background-color: var(--bg-dark, #0f172a);
+            background-image:
+                radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main, #f8fafc);
             touch-action: none;
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
+            padding-top: 80px;
         }
 
         /* Start Screen Styles */
@@ -57,10 +62,11 @@
             width: 100%;
             max-width: 400px;
             aspect-ratio: 1 / 1;
-            background-color: var(--board-bg);
+            background-color: var(--card-bg, #1e293b);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
             border-radius: 0.75rem;
             padding: 0.5rem;
-            box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
         .grid-board {
@@ -73,7 +79,7 @@
         }
 
         .cell {
-            background-color: var(--cell-bg);
+            background-color: var(--card-bg, #334155);
             border-radius: 4px;
             transition: background-color 0.1s;
             position: relative;

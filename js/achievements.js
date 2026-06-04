@@ -41,7 +41,18 @@
     if (!H) return;
     const defs = getDefinitions(gameId);
     defs.forEach((ach) => {
-      if (ach.threshold != null && value >= ach.threshold) {
+      if (ach.threshold != null && !ach.statKey && value >= ach.threshold) {
+        H.unlock(gameId, ach.id);
+      }
+    });
+  }
+
+  function checkStatThresholdAchievements(gameId, statKey, value) {
+    const H = window.gameHubAchievementHelpers;
+    if (!H || !statKey) return;
+    const defs = getDefinitions(gameId);
+    defs.forEach((ach) => {
+      if (ach.statKey === statKey && ach.threshold != null && value >= ach.threshold) {
         H.unlock(gameId, ach.id);
       }
     });
@@ -51,8 +62,13 @@
     const body = document.body;
     if (!body) return;
 
+    console.log("showAchievementsModal called for:", gameId);
+
     const existing = document.getElementById("gamehub-achievements-modal");
-    if (existing) existing.remove();
+    if (existing) {
+      console.log("Existing modal found, removing it first!");
+      existing.remove();
+    }
 
     const allDefs = getDefinitions(gameId);
     let unlockedIds = [];
@@ -67,9 +83,13 @@
     const overlay = document.createElement("div");
     overlay.id = "gamehub-achievements-modal";
     overlay.style.cssText =
-      "position:fixed;inset:0;background:rgba(15,23,42,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;";
+      "position:fixed;inset:0;background:rgba(15,23,42,0.85);background-image:radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%), radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);display:flex;align-items:center;justify-content:center;z-index:9999;";
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
+      console.log("Achievement modal overlay clicked!", e.target);
+      if (e.target === overlay) {
+        console.log("Removing achievement modal!");
+        overlay.remove();
+      }
     });
 
     const panel = document.createElement("div");
@@ -88,7 +108,10 @@
     closeBtn.textContent = "✕";
     closeBtn.style.cssText =
       "background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:1rem;";
-    closeBtn.onclick = () => overlay.remove();
+    closeBtn.onclick = () => {
+      console.log("Achievement modal close button clicked!");
+      overlay.remove();
+    };
 
     title.appendChild(h);
     title.appendChild(closeBtn);
@@ -181,13 +204,18 @@
     const body = document.body;
     if (!body) return;
 
+    console.log("showLeaderboardModal called for:", gameId);
+
     const existing = document.getElementById("gamehub-leaderboard-modal");
-    if (existing) existing.remove();
+    if (existing) {
+      console.log("Existing leaderboard modal found, removing it first!");
+      existing.remove();
+    }
 
     const overlay = document.createElement("div");
     overlay.id = "gamehub-leaderboard-modal";
     overlay.style.cssText =
-      "position:fixed;inset:0;background:rgba(15,23,42,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;";
+      "position:fixed;inset:0;background:rgba(15,23,42,0.85);background-image:radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%), radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);display:flex;align-items:center;justify-content:center;z-index:9999;";
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) overlay.remove();
     });
@@ -208,7 +236,10 @@
     closeBtn.textContent = "✕";
     closeBtn.style.cssText =
       "background:rgba(255,255,255,0.05);border:none;color:#9ca3af;width:32px;height:32px;border-radius:50%;cursor:pointer;";
-    closeBtn.onclick = () => overlay.remove();
+    closeBtn.onclick = () => {
+      console.log("Leaderboard modal close button clicked!");
+      overlay.remove();
+    };
 
     header.appendChild(title);
     header.appendChild(closeBtn);
@@ -384,6 +415,7 @@
     getCoinReward,
     getAchievementValue,
     checkThresholdAchievements,
+    checkStatThresholdAchievements,
     showAchievementsModal,
     showLeaderboardModal,
     notifyAchievement,

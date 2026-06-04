@@ -127,6 +127,20 @@
     },
   ]);
 })();
+  // --- chess.js ---
+(function () {
+  const R = window.gameHubAchievementRegistry;
+  if (!R) return;
+  R.registerGameAchievements('chess', [
+    { id: 'chess-win', name: 'Checkmate!', description: 'Win your first chess game.', difficulty: 'easy', value: 10 },
+    { id: 'chess-5-wins', name: 'Chess Master', description: 'Win 5 chess games.', difficulty: 'medium', value: 25 },
+    { id: 'chess-960', name: 'Fischer Fan', description: 'Play a game of Chess960.', difficulty: 'easy', value: 10 },
+    { id: 'chess-king-hill', name: 'King of the Hill', description: 'Win a game of King of the Hill.', difficulty: 'medium', value: 25 },
+    { id: 'chess-three-check', name: 'Three Check Champion', description: 'Win a game of Three Check.', difficulty: 'medium', value: 25 },
+    { id: 'chess-ai-hard', name: 'Beat the Grandmaster', description: 'Win a game against the hard AI.', difficulty: 'hard', value: 50 },
+    { id: 'chess-online-win', name: 'Online Victor', description: 'Win an online chess match.', difficulty: 'hard', value: 50 }
+  ]);
+})();
   // --- clicker.js ---
 (function () {
   const R = window.gameHubAchievementRegistry;
@@ -157,6 +171,16 @@
       difficulty: 'hard', value: 50
     },
   ]);
+})();
+  // --- connect4.js ---
+(function () {
+    const R = window.gameHubAchievementRegistry;
+    if (!R) return;
+    R.registerGameAchievements('connect4', [
+        { id: 'connect4-first-win', name: 'First Victory', description: 'Win your first game of Connect 4', difficulty: 'easy', value: 10, statKey: 'wins', threshold: 1 },
+        { id: 'connect4-5-wins', name: 'Connect 4 Champion', description: 'Win 5 games of Connect 4', difficulty: 'medium', value: 25, statKey: 'wins', threshold: 5 },
+        { id: 'connect4-10-games', name: 'Connect 4 Enthusiast', description: 'Play 10 games of Connect 4', difficulty: 'easy', value: 10, statKey: 'gamesPlayed', threshold: 10 }
+    ]);
 })();
   // --- flappy.js ---
 (function () {
@@ -474,5 +498,16 @@
       difficulty: 'hard', value: 50
     },
   ]);
+})();
+  // --- wordscramble.js ---
+(function () {
+    const R = window.gameHubAchievementRegistry;
+    if (!R) return;
+    R.registerGameAchievements('wordscramble', [
+        { id: 'wordscramble-first-word', name: 'Word Detective', description: 'Solve your first word', difficulty: 'easy', value: 10, statKey: 'wordsSolved', threshold: 1 },
+        { id: 'wordscramble-10-words', name: 'Word Master', description: 'Solve 10 words', difficulty: 'medium', value: 25, statKey: 'wordsSolved', threshold: 10 },
+        { id: 'wordscramble-50-words', name: 'Word Wizard', description: 'Solve 50 words', difficulty: 'hard', value: 50, statKey: 'wordsSolved', threshold: 50 },
+        { id: 'wordscramble-5-games', name: 'Word Enthusiast', description: 'Play 5 games', difficulty: 'easy', value: 10, statKey: 'gamesPlayed', threshold: 5 }
+    ]);
 })();
 })();

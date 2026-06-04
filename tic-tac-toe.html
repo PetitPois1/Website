@@ -21,7 +21,6 @@
 
 <style>
         :root {
-            --bg: #0f0c29;
             --cell-bg: #1b1b3a;
             --accent: #00f2ff;
             --x-color: #ec4899;
@@ -36,33 +35,38 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-color: var(--bg-dark, #0f172a);
+            background-image:
+                radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);
+            background-attachment: fixed;
             font-family: 'Segoe UI', Arial, sans-serif;
-            color: white;
+            color: var(--text-main, #f8fafc);
+            padding-top: 80px;
         }
 
         .score-board {
             display: flex;
             gap: 40px;
-            background: var(--glass);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
             padding: 15px 40px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color, rgba(255,255,255,0.1));
             margin-bottom: 20px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
         .score-item { text-align: center; font-weight: bold; min-width: 100px; }
-        .score-val { display: block; font-size: 28px; color: var(--accent); }
+        .score-val { display: block; font-size: 28px; color: var(--primary, #00f2ff); }
 
         .controls { margin-bottom: 20px; }
         select {
             padding: 8px 15px;
             border-radius: 5px;
-            background: var(--cell-bg);
-            color: white;
-            border: 1px solid var(--accent);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            color: var(--text-main, #f8fafc);
+            border: 1px solid var(--primary, #00f2ff);
             cursor: pointer;
             outline: none;
         }
@@ -78,7 +82,7 @@
         .cell {
             width: 100px;
             height: 100px;
-            background: var(--cell-bg);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
             border-radius: 12px;
             display: flex;
             justify-content: center;
@@ -87,10 +91,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color, rgba(255,255,255,0.05));
         }
 
-        .cell:hover { background: rgba(255, 255, 255, 0.05); transform: scale(1.02); }
+        .cell:hover { background: color-mix(in srgb, var(--card-bg, rgba(30, 41, 59, 0.7)) 80%, var(--primary, #00f2ff) 20%); transform: scale(1.02); }
         .cell.x { color: var(--x-color); text-shadow: 0 0 15px var(--x-color); }
         .cell.o { color: var(--o-color); text-shadow: 0 0 15px var(--o-color); }
 
@@ -107,7 +111,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.4s;
-            border: 2px solid var(--accent);
+            border: 2px solid var(--primary, #00f2ff);
             text-align: center;
             white-space: nowrap;
         }
@@ -117,7 +121,7 @@
         .turn-indicator {
             margin-top: 20px;
             font-size: 18px;
-            color: #ccc;
+            color: var(--text-muted, #ccc);
             height: 24px;
         }
 
@@ -125,8 +129,8 @@
             margin-top: 30px;
             padding: 12px 30px;
             background: transparent;
-            color: var(--accent);
-            border: 2px solid var(--accent);
+            color: var(--primary, #00f2ff);
+            border: 2px solid var(--primary, #00f2ff);
             border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
@@ -134,37 +138,37 @@
             transition: 0.3s;
         }
 
-        button:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
+        button:hover { background: var(--primary, #00f2ff); color: var(--bg-dark, #0f172a); box-shadow: 0 0 20px var(--primary, #00f2ff); }
 
         .online-lobby {
             text-align: center;
             padding: 24px;
-            background: var(--glass);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--border-color, rgba(255,255,255,0.1));
             border-radius: 15px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
             max-width: 400px;
         }
-        .online-lobby h3 { margin: 0 0 16px 0; font-size: 18px; color: var(--accent); }
-        .online-lobby p { margin: 8px 0; font-size: 14px; color: #aaa; }
+        .online-lobby h3 { margin: 0 0 16px 0; font-size: 18px; color: var(--primary, #00f2ff); }
+        .online-lobby p { margin: 8px 0; font-size: 14px; color: var(--text-muted, #aaa); }
         .online-lobby button { margin: 8px; }
-        .online-lobby input { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--cell-bg); color: white; width: 120px; text-align: center; font-size: 14px; }
+        .online-lobby input { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--primary, #00f2ff); background: var(--card-bg, rgba(30, 41, 59, 0.7)); color: var(--text-main, #f8fafc); width: 120px; text-align: center; font-size: 14px; }
         .match-list { list-style: none; padding: 0; margin: 12px 0; max-height: 200px; overflow-y: auto; text-align: left; }
-        .match-list li { padding: 10px 14px; margin: 4px 0; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
-        .match-list li:hover { border-color: var(--accent); }
+        .match-list li { padding: 10px 14px; margin: 4px 0; background: color-mix(in srgb, var(--bg-dark, #0f172a) 50%, var(--card-bg, rgba(30, 41, 59, 0.7))); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
+        .match-list li:hover { border-color: var(--primary, #00f2ff); }
         .online-status { font-size: 12px; color: #8f8; margin-top: 8px; }
 
         /* Improved Multiplayer Score UI */
         .mp-score-card {
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
             border-radius: 20px;
             padding: 20px;
             width: 100%;
             max-width: 500px;
             margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -183,7 +187,7 @@
         .mp-player-name {
             font-size: 14px;
             font-weight: 800;
-            color: #94a3b8;
+            color: var(--text-muted, #94a3b8);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 5px;
@@ -200,9 +204,9 @@
         }
 
         .mp-vs-badge {
-            background: var(--cell-bg);
-            border: 1px solid var(--accent);
-            color: var(--accent);
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--primary, #00f2ff);
+            color: var(--primary, #00f2ff);
             font-size: 12px;
             font-weight: 900;
             padding: 4px 12px;
@@ -219,7 +223,7 @@
             transform: translateX(-50%);
             white-space: nowrap;
             font-size: 8px;
-            color: #64748b;
+            color: var(--text-muted, #64748b);
             margin-top: 4px;
         }
 

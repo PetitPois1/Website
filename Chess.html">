@@ -22,6 +22,8 @@
         :root {
             --light-square: #f0d9b5;
             --dark-square: #b58863;
+            --accent: #8b5cf6;
+            --accent-hover: #7c3aed;
         }
         * { box-sizing: border-box; }
         body {
@@ -31,14 +33,9 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--bg-dark, #0f172a);
-            background-image:
-                radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);
-            background-attachment: fixed;
-            color: var(--text-main, #f8fafc);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
             padding: 20px;
-            padding-top: 80px;
         }
         .game-container {
             max-width: 900px;
@@ -55,16 +52,16 @@
         select, button {
             padding: 10px 18px;
             border-radius: 8px;
-            border: 1px solid var(--primary, #8b5cf6);
-            background: color-mix(in srgb, var(--primary, #8b5cf6) 10%, transparent);
-            color: var(--text-main, #f8fafc);
+            border: 1px solid var(--accent);
+            background: rgba(139, 92, 246, 0.1);
+            color: white;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
         }
         button:hover, select:hover {
-            background: var(--primary, #8b5cf6);
-            border-color: var(--primary-dark, #7c3aed);
+            background: var(--accent);
+            border-color: var(--accent-hover);
         }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         .status-bar {
@@ -73,8 +70,7 @@
             align-items: center;
             margin-bottom: 15px;
             padding: 15px;
-            background: var(--card-bg, rgba(30, 41, 59, 0.7));
-            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            background: rgba(0,0,0,0.3);
             border-radius: 12px;
             gap: 20px;
         }
@@ -84,7 +80,7 @@
             align-items: center;
         }
         .player-info.active {
-            border-bottom: 2px solid var(--primary, #8b5cf6);
+            border-bottom: 2px solid var(--accent);
         }
         .board-container {
             display: flex;
@@ -98,7 +94,7 @@
             height: min(80vw, 560px);
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .square {
             display: flex;
@@ -111,7 +107,7 @@
         }
         .square.light { background: var(--light-square); }
         .square.dark { background: var(--dark-square); }
-        .square.selected { box-shadow: inset 0 0 0 4px var(--primary-dark, #7c3aed); }
+        .square.selected { box-shadow: inset 0 0 0 4px #7c3aed; }
         .square.valid-move { position: relative; }
         .square.valid-move::after {
             content: '';
@@ -129,11 +125,12 @@
             border-radius: 50%;
         }
         .square.last-move { box-shadow: inset 0 0 0 3px rgba(255,200,0,0.6); }
+        .piece-white { color: white; text-shadow: 0 0 2px black; }
+        .piece-black { color: black; text-shadow: 0 0 2px white; }
         .move-history {
             max-height: 200px;
             overflow-y: auto;
-            background: var(--card-bg, rgba(30, 41, 59, 0.7));
-            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            background: rgba(0,0,0,0.2);
             padding: 15px;
             border-radius: 8px;
             margin-top: 15px;
@@ -142,8 +139,7 @@
             width: 100%;
             max-width: 500px;
             padding: 20px;
-            background: var(--card-bg, rgba(30, 41, 59, 0.7));
-            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            background: rgba(0,0,0,0.3);
             border-radius: 12px;
             margin-bottom: 20px;
             display: none;
@@ -159,7 +155,7 @@
         .match-list li {
             padding: 10px 14px;
             margin: 5px 0;
-            background: color-mix(in srgb, var(--bg-dark, #0f172a) 50%, var(--card-bg, rgba(30, 41, 59, 0.7)));
+            background: rgba(0,0,0,0.3);
             border-radius: 8px;
             display: flex;
             justify-content: space-between;
@@ -167,20 +163,52 @@
             cursor: pointer;
             border: 1px solid transparent;
         }
-        .match-list li:hover { border-color: var(--primary, #8b5cf6); }
+        .match-list li:hover { border-color: var(--accent); }
         input {
             padding: 8px 12px;
             border-radius: 8px;
-            border: 1px solid var(--primary, #8b5cf6);
-            background: color-mix(in srgb, var(--bg-dark, #0f172a) 70%, var(--text-main, #f8fafc) 10%);
-            color: var(--text-main, #f8fafc);
+            border: 1px solid var(--accent);
+            background: rgba(0,0,0,0.3);
+            color: white;
             width: 150px;
+        }
+        /* Rules Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .rules-modal {
+            background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+            border-radius: 16px;
+            padding: 24px;
+            color: #e5e7eb;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .rules-modal h2 { margin-top: 0; }
+        .rules-modal ul { list-style-type: disc; margin-left: 20px; }
+        .rules-modal h3 { margin: 15px 0 8px 0; color: var(--accent); }
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1 style="text-align: center; margin-bottom: 20px; font-size: clamp(24px, 5vw, 36px);">♔ Chess ♚</h1>
+        <h1 style="text-align: center; margin-bottom: 10px; font-size: clamp(24px, 5vw, 36px);">♔ Chess ♚</h1>
         
         <div class="controls">
             <select id="gameMode" onchange="changeGameMode()">
@@ -197,7 +225,7 @@
                 <option value="threeCheck">Three Check</option>
             </select>
             <button onclick="resetGame()">New Game</button>
-            <button onclick="undoMove()">Undo</button>
+            <button onclick="showRulesModal()">How to Play</button>
         </div>
 
         <div id="onlineLobby" class="online-lobby">
@@ -232,6 +260,32 @@
         <div class="move-history">
             <h4 style="margin:0 0 10px 0;">Moves</h4>
             <div id="moveHistory"></div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rulesModalOverlay" style="display:none;" onclick="if(event.target === this) hideRulesModal()">
+        <div class="rules-modal" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="hideRulesModal()">✕</button>
+            <h2>Chess Variants Rules</h2>
+            
+            <h3>Standard Chess</h3>
+            <p>Standard chess rules apply. Win by checkmate or opponent resignation.</p>
+            
+            <h3>Chess960 (Fischer Random)</h3>
+            <p>The back row pieces are randomized at the start of each game (same for both players), with the following constraints:</p>
+            <ul>
+                <li>Bishops must be on opposite colors</li>
+                <li>King must be between the rooks</li>
+                <li>Pawns are on the second/7th rank as usual</li>
+            </ul>
+            <p>Standard check/checkmate rules apply, and castling is still possible!</p>
+            
+            <h3>King of the Hill</h3>
+            <p>Bring your king to the center of the board (any of the 4 center squares: d4, d5, e4, e5) to win! Standard check/checkmate rules still apply too.</p>
+            
+            <h3>Three Check</h3>
+            <p>Put your opponent in check three times to win! Again, standard check/checkmate rules still apply as well.</p>
         </div>
     </div>
 
@@ -377,7 +431,12 @@
                     }
                     
                     const piece = board[row][col];
-                    if (piece) square.textContent = PIECES[piece];
+                    if (piece) {
+                        const pieceSpan = document.createElement('span');
+                        pieceSpan.textContent = PIECES[piece];
+                        pieceSpan.className = getPieceColor(piece) === 'white' ? 'piece-white' : 'piece-black';
+                        square.appendChild(pieceSpan);
+                    }
                     
                     square.addEventListener('click', () => handleSquareClick(row, col));
                     el.appendChild(square);
@@ -695,6 +754,7 @@
         }
 
         function handleSquareClick(row, col) {
+            if (gameOver) return;
             if (onlineMatchId && currentPlayer !== onlineRole) return;
             
             const piece = board[row][col];
@@ -1016,6 +1076,14 @@
         function changeVariant() {
             chessVariant = document.getElementById('chessVariant').value;
             resetGame();
+        }
+
+        // Rules modal functions
+        function showRulesModal() {
+            document.getElementById('rulesModalOverlay').style.display = 'flex';
+        }
+        function hideRulesModal() {
+            document.getElementById('rulesModalOverlay').style.display = 'none';
         }
 
         // Online functions

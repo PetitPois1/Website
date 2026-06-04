@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="game-hub-id" content="wordscramble">
+    <script src="js/theme.js"></script>
+    <title>Word Scramble | Game Hub</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+    <style>
+        :root {
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-dark, #0f172a);
+            background-image:
+                radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main, #f8fafc);
+            padding: 20px;
+            padding-top: 80px;
+        }
+        .game-container {
+            max-width: 500px;
+            width: 100%;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 12px;
+            gap: 15px;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary, #8b5cf6);
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted, #94a3b8);
+        }
+        .scramble-display {
+            font-size: clamp(32px, 8vw, 48px);
+            text-align: center;
+            letter-spacing: 8px;
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--primary, #8b5cf6);
+            background: color-mix(in srgb, var(--bg-dark, #0f172a) 70%, var(--text-main, #f8fafc) 10%);
+            color: var(--text-main, #f8fafc);
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 1px solid var(--primary, #8b5cf6);
+            background: var(--primary, #8b5cf6);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        button:hover {
+            background: var(--primary-dark, #7c3aed);
+            border-color: var(--primary-dark, #7c3aed);
+        }
+        button.secondary {
+            background: color-mix(in srgb, var(--primary, #8b5cf6) 10%, transparent);
+        }
+        .feedback {
+            text-align: center;
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 48px;
+        }
+        .feedback.correct {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        .feedback.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .instructions {
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-muted, #94a3b8);
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: var(--text-main, #f8fafc);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 style="text-align: center; margin-bottom: 10px; font-size: clamp(24px, 5vw, 36px);">🔤 Word Scramble</h1>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="scoreValue">0</div>
+                <div class="stat-label">Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="streakValue">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="timeValue">60</div>
+                <div class="stat-label">Seconds</div>
+            </div>
+        </div>
+
+        <div class="scramble-display" id="scramble"></div>
+        
+        <div class="input-area">
+            <input type="text" id="guessInput" placeholder="Enter your guess..." autofocus>
+            <button onclick="submitGuess()">Submit</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+
+        <div class="controls">
+            <button class="secondary" onclick="newWord()">Skip Word</button>
+            <button class="secondary" onclick="resetGame()">New Game</button>
+        </div>
+
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <p>Unscramble the letters to form a word! You have 60 seconds to solve as many words as possible.</p>
+            <ul>
+                <li>Correct answer: +10 points (plus streak bonus)</li>
+                <li>Streak: +2 bonus points per consecutive correct answer</li>
+                <li>Press Enter or click Submit to check your answer</li>
+                <li>Click Skip Word if you get stuck</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const words = [
+            'apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew',
+            'kiwi', 'lemon', 'mango', 'nectarine', 'orange', 'peach', 'pear', 'quince',
+            'raspberry', 'strawberry', 'tangerine', 'watermelon', 'blueberry', 'blackberry',
+            'apricot', 'coconut', 'pineapple', 'pomegranate', 'dragonfruit', 'papaya',
+            'game', 'play', 'code', 'web', 'html', 'css', 'javascript', 'python',
+            'java', 'ruby', 'swift', 'kotlin', 'go', 'rust', 'dart', 'flutter',
+            'react', 'vue', 'angular', 'svelte', 'next', 'nuxt', 'astro', 'remix',
+            'fire', 'water', 'earth', 'air', 'space', 'time', 'energy', 'matter',
+            'light', 'dark', 'sound', 'silence', 'heat', 'cold', 'warm', 'cool',
+            'happy', 'sad', 'angry', 'calm', 'excited', 'bored', 'tired', 'awake',
+            'fast', 'slow', 'big', 'small', 'tall', 'short', 'long', 'wide'
+        ];
+
+        let currentWord = '';
+        let scrambledWord = '';
+        let score = 0;
+        let streak = 0;
+        let timeLeft = 60;
+        let timer = null;
+        let gameOver = false;
+
+        function scrambleWord(word) {
+            let arr = word.split('');
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            const scrambled = arr.join('');
+            return scrambled === word ? scrambleWord(word) : scrambled;
+        }
+
+        function newWord() {
+            currentWord = words[Math.floor(Math.random() * words.length)];
+            scrambledWord = scrambleWord(currentWord);
+            document.getElementById('scramble').textContent = scrambledWord.toUpperCase();
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').focus();
+        }
+
+        function submitGuess() {
+            if (gameOver) return;
+            const guess = document.getElementById('guessInput').value.toLowerCase().trim();
+            const feedback = document.getElementById('feedback');
+            
+            if (guess === currentWord) {
+                score += 10 + (streak * 2);
+                streak++;
+                feedback.textContent = 'Correct! 🎉';
+                feedback.className = 'feedback correct';
+                updateStats();
+                
+                if (window.gameHubAchievementHelpers) {
+                    window.gameHubAchievementHelpers.updateStat('wordscramble', 'wordsSolved', 1, { increment: true });
+                    window.gameHubAchievementHelpers.updateStat('wordscramble', 'highScore', score);
+                }
+
+                setTimeout(newWord, 800);
+            } else {
+                streak = 0;
+                feedback.textContent = `Incorrect. The word was ${currentWord.toUpperCase()}.`;
+                feedback.className = 'feedback incorrect';
+                updateStats();
+                setTimeout(newWord, 1500);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('streakValue').textContent = streak;
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timeValue').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameOver = true;
+            clearInterval(timer);
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = `Game Over! Final Score: ${score} 🎉`;
+            feedback.className = 'feedback';
+            document.getElementById('guessInput').disabled = true;
+        }
+
+        function resetGame() {
+            score = 0;
+            streak = 0;
+            timeLeft = 60;
+            gameOver = false;
+            document.getElementById('guessInput').disabled = false;
+            updateStats();
+            document.getElementById('timeValue').textContent = timeLeft;
+            newWord();
+            startTimer();
+            
+            if (window.gameHubAchievementHelpers) {
+                window.gameHubAchievementHelpers.updateStat('wordscramble', 'gamesPlayed', 1, { increment: true });
+            }
+        }
+
+        document.getElementById('guessInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitGuess();
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>

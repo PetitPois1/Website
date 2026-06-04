@@ -23,6 +23,22 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.creatorId == request.auth.uid;
     }
 
+    // Chess online: one doc per match
+    match /chess_matches/{matchId} {
+      allow read: if request.auth != null && (
+        resource.data.status == 'waiting'
+        || resource.data.creatorId == request.auth.uid
+        || resource.data.opponentId == request.auth.uid
+      );
+      allow create: if request.auth != null && request.resource.data.creatorId == request.auth.uid;
+      allow update: if request.auth != null && (
+        resource.data.creatorId == request.auth.uid
+        || resource.data.opponentId == request.auth.uid
+        || (resource.data.status == 'waiting' && resource.data.opponentId == null)
+      );
+      allow delete: if request.auth != null && resource.data.creatorId == request.auth.uid;
+    }
+
     // Neon Dash: community and personal levels (Play Levels → Built-in / My Levels / Community)
     match /custom_levels/{levelId} {
       // Anyone can read public levels; authors can read their own (including private)

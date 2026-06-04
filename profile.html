@@ -292,6 +292,18 @@
             const pendingRequestsList = document.getElementById("pending-requests-list");
 
             const gameStatsGrid = document.getElementById("game-stats-grid");
+            // Add event delegation listener once, not every time loadStats is called!
+            gameStatsGrid.addEventListener("click", (e) => {
+                console.log("gameStatsGrid clicked!", e.target);
+                const btn = e.target.closest(".profile-view-achievements");
+                if (btn) {
+                    const gid = btn.getAttribute("data-game-id");
+                    console.log("Clicked on achievements button for:", gid);
+                    if (window.gameHubAchievements && gid) {
+                        window.gameHubAchievements.showAchievementsModal(gid);
+                    }
+                }
+            });
             const achievementsSummaryEl = document.getElementById("profile-achievements-summary");
             const unlockedAchievementsListEl = document.getElementById("profile-unlocked-achievements-list");
 
@@ -309,6 +321,8 @@
             const GAMES_PREVIEW = 6;
 
             let currentUid = null;
+            let loadStatsInProgress = false;
+            let loadStatsRequestId = 0;
             const defaultInventory = window.gameHubAvatar
                 ? JSON.parse(JSON.stringify(window.gameHubAvatar.DEFAULT_INVENTORY))
                 : { base: [], mouth: [], hat: [], accessory: ["none"], nameColor: ["inherit"], glow: ["none"], nameEffect: ["none"] };
@@ -841,75 +855,107 @@
             }
 
             async function loadStats() {
+                const currentRequestId = ++loadStatsRequestId;
+                console.log(`=== loadStats() CALLED! (requestId: ${currentRequestId}) ===`);
                 if (!gameStatsGrid || !window.gameHubProfileCatalog) return;
+                
+                if (loadStatsInProgress) {
+                    console.log("loadStats already in progress! Skipping this call!");
+                    return;
+                }
 
-                const games = window.gameHubProfileCatalog.getGamesForProfile();
-                gameStatsGrid.innerHTML = "";
+                loadStatsInProgress = true;
+                console.log(`loadStats starting (requestId: ${currentRequestId})`);
 
-                let totalLinked = 0;
-                let totalAchCount = 0;
+                try {
+                    const games = window.gameHubProfileCatalog.getGamesForProfile();
+                    console.log("loadStats: got games count:", games.length, "games list:", games.map(g => g.id + " - " + g.name));
+                    
+                    console.log("loadStats: gameStatsGrid children BEFORE clear:", gameStatsGrid.children.length, Array.from(gameStatsGrid.children).map(c => c.querySelector('h3')?.textContent));
+                    gameStatsGrid.innerHTML = "";
+                    console.log("loadStats: gameStatsGrid.innerHTML cleared, children count now:", gameStatsGrid.children.length);
 
-                for (const game of games) {
-                    const gameId = game.id;
-                    let progress = null;
-                    let unlocked = [];
-                    try {
-                        progress = await window.gameHubProgress.loadGameProgress(gameId);
-                        unlocked = await window.gameHubProgress.getUserAchievements(gameId);
-                    } catch (e) {
-                        console.warn(`[Profile] Failed to load ${gameId}`, e);
+                    let totalLinked = 0;
+                    let totalAchCount = 0;
+
+                    for (const game of games) {
+                        // Check if this request is still the latest!
+                        if (currentRequestId !== loadStatsRequestId) {
+                            console.log(`loadStats: requestId ${currentRequestId} is outdated! Stopping!`);
+                            return;
+                        }
+                        
+                        const gameId = game.id;
+                        console.log(`loadStats (reqId: ${currentRequestId}): processing game: ${gameId}`);
+                        let progress = null;
+                        let unlocked = [];
+                        try {
+                            progress = await window.gameHubProgress.loadGameProgress(gameId);
+                            unlocked = await window.gameHubProgress.getUserAchievements(gameId);
+                        } catch (e) {
+                            console.warn(`[Profile] Failed to load ${gameId}`, e);
+                        }
+
+                        // Check again after await!
+                        if (currentRequestId !== loadStatsRequestId) {
+                            console.log(`loadStats: requestId ${currentRequestId} is outdated! Stopping!`);
+                            return;
+                        }
+
+                        totalAchCount += unlocked.length;
+                        if (progress) totalLinked++;
+
+                        const statVal = getProgressStatValue(progress, game.progressKey);
+                        const statDisplay = formatStatValue(statVal, game);
+
+                        const article = document.createElement("article");
+                        article.className = "hub-card hub-card-lg shadow-lg";
+                        article.dataset.gameId = gameId;
+                        article.innerHTML = `
+                            <header class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style="background: color-mix(in srgb, var(--primary) 35%, transparent);">${game.icon}</div>
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-slate-100">${game.name}</h3>
+                                        <p class="text-[0.7rem] text-slate-400">${game.tagline || ""}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">${game.statLabel}</p>
+                                    <p class="text-base font-semibold text-slate-50 profile-game-stat">${statDisplay}</p>
+                                </div>
+                            </header>
+                            <footer class="flex items-center justify-between mt-2">
+                                <p class="text-[0.7rem] text-slate-400">
+                                    <span class="font-semibold text-slate-200">${unlocked.length}</span>
+                                    <span class="text-slate-500"> / ${game.achievementTotal} achievements</span>
+                                </p>
+                                <button type="button" data-game-id="${gameId}" class="profile-view-achievements text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
+                                    Achievements
+                                </button>
+                            </footer>
+                        `;
+                        gameStatsGrid.appendChild(article);
+                        console.log(`loadStats (reqId: ${currentRequestId}): added game ${game.name}, children now ${gameStatsGrid.children.length}, game ids: ${Array.from(gameStatsGrid.children).map(c => c.dataset.gameId)}`);
                     }
 
-                    totalAchCount += unlocked.length;
-                    if (progress) totalLinked++;
+                    if (currentRequestId !== loadStatsRequestId) {
+                        console.log(`loadStats: requestId ${currentRequestId} is outdated! Skipping final steps!`);
+                        return;
+                    }
 
-                    const statVal = getProgressStatValue(progress, game.progressKey);
-                    const statDisplay = formatStatValue(statVal, game);
-
-                    const article = document.createElement("article");
-                    article.className =
-                        "hub-card hub-card-lg shadow-lg";
-                    article.innerHTML = `
-                        <header class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style="background: color-mix(in srgb, var(--primary) 35%, transparent);">${game.icon}</div>
-                                <div>
-                                    <h3 class="text-sm font-semibold text-slate-100">${game.name}</h3>
-                                    <p class="text-[0.7rem] text-slate-400">${game.tagline || ""}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[0.65rem] text-slate-400 uppercase tracking-[0.16em]">${game.statLabel}</p>
-                                <p class="text-base font-semibold text-slate-50 profile-game-stat">${statDisplay}</p>
-                            </div>
-                        </header>
-                        <footer class="flex items-center justify-between mt-2">
-                            <p class="text-[0.7rem] text-slate-400">
-                                <span class="font-semibold text-slate-200">${unlocked.length}</span>
-                                <span class="text-slate-500"> / ${game.achievementTotal} achievements</span>
-                            </p>
-                            <button type="button" data-game-id="${gameId}" class="profile-view-achievements text-[0.7rem] px-3 py-1 rounded-full border border-slate-700 text-slate-200 hover:border-violet-500 hover:text-violet-300 transition-colors">
-                                Achievements
-                            </button>
-                        </footer>
-                    `;
-                    gameStatsGrid.appendChild(article);
+                    if (gamesCountEl) gamesCountEl.textContent = totalLinked;
+                    if (achievementsCountEl && !currentUid) {
+                        achievementsCountEl.textContent = totalAchCount;
+                    }
+                    console.log(`loadStats (reqId: ${currentRequestId}): calling attachCollapsible with grid children count ${gameStatsGrid.children.length}`);
+                    attachCollapsible(gamesWrap, gameStatsGrid, gamesExpandBtn, GAMES_PREVIEW);
+                } finally {
+                    if (currentRequestId === loadStatsRequestId) {
+                        loadStatsInProgress = false;
+                        console.log(`loadStats (reqId: ${currentRequestId}): finished!`);
+                    }
                 }
-
-                gameStatsGrid.querySelectorAll(".profile-view-achievements").forEach((btn) => {
-                    btn.addEventListener("click", () => {
-                        const gid = btn.getAttribute("data-game-id");
-                        if (window.gameHubAchievements && gid) {
-                            window.gameHubAchievements.showAchievementsModal(gid);
-                        }
-                    });
-                });
-
-                if (gamesCountEl) gamesCountEl.textContent = totalLinked;
-                if (achievementsCountEl && !currentUid) {
-                    achievementsCountEl.textContent = totalAchCount;
-                }
-                attachCollapsible(gamesWrap, gameStatsGrid, gamesExpandBtn, GAMES_PREVIEW);
             }
 
             window.addEventListener("gamehub:achievements-synced", () => {

@@ -7,7 +7,7 @@ Game Hub achievements are modular: one file per game, bundled for the browser, u
 ```
 js/achievements/
   registry.js              # registerGameAchievements(gameId, list)
-  helpers.js               # unlock(), checkThresholds(), etc.
+  helpers.js               # unlock(), checkThresholds(), updateStat(), etc.
   games/                   # one source file per game (edit these)
     snake.js
     pong.js
@@ -33,6 +33,14 @@ Create or edit `js/achievements/games/<game-id>.js`:
       value: 50,             // coins awarded when unlocked (signed-in users)
       threshold: 10,         // optional — used with checkThresholdAchievements()
     },
+    {
+      id: "pong_games_played_10",
+      name: "Pong Enthusiast",
+      description: "Play 10 games of Pong.",
+      difficulty: "easy",
+      statKey: "gamesPlayed", // stat key to check against
+      threshold: 10,
+    },
   ]);
 })();
 ```
@@ -42,6 +50,7 @@ Rules:
 - `id` must be unique across the entire hub (prefix with game id, e.g. `pong_score_10`).
 - `game-id` must match `<meta name="game-hub-id" content="...">` on the game page and the hub catalog `id` in `index.html`.
 - Secret achievements: put `Secret:` in the description; locked state shows `???` in the modal.
+- Use `statKey` to define thresholds on different stats (e.g., gamesPlayed, totalScore).
 
 ### Coin rewards
 
@@ -83,7 +92,7 @@ Most games already include this block.
 
 ## 4. Unlock from game code
 
-**Score milestones** (uses `threshold` on definitions):
+**Score milestones** (uses `threshold` on definitions without a statKey):
 
 ```javascript
 if (window.gameHubAchievements) {
@@ -114,6 +123,22 @@ window.gameHubAchievementHelpers.checkThresholds("clicker", totalClicks, {
 });
 ```
 
+**Updating game stats and checking thresholds (new!):**
+
+Use `updateStat` to track multiple stats like gamesPlayed, totalScore, etc.
+
+```javascript
+// Increment games played
+if (window.gameHubAchievementHelpers) {
+  await window.gameHubAchievementHelpers.updateStat("pong", "gamesPlayed", 1, { increment: true });
+}
+
+// Set total score
+if (window.gameHubAchievementHelpers) {
+  await window.gameHubAchievementHelpers.updateStat("pong", "totalScore", playerScore);
+}
+```
+
 Progress is stored locally always; signed-in users also sync to Firestore (`users/{uid}/achievements/{achievementId}`) and earn coins.
 
 ## 5. UI labels
@@ -131,5 +156,5 @@ The hub chrome adds an **Achievements** button when the game has at least one de
 1. Add `meta name="game-hub-id"` on the game page.
 2. Add `js/achievements/games/<game-id>.js`.
 3. Run `python3 scripts/bundle-achievements.py`.
-4. Call `unlock()` / `checkThresholdAchievements()` at the right moments in game logic.
+4. Call `unlock()` / `checkThresholdAchievements()` / `updateStat()` at the right moments in game logic.
 5. Test signed out (local) and signed in (Firestore + coin toast).

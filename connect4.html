@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="game-hub-id" content="connect4">
+    <script src="js/theme.js"></script>
+    <title>Connect 4 | Game Hub</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+    <style>
+        :root {
+            --red: #ef4444;
+            --yellow: #facc15;
+        }
+        * { box-sizing: border-box; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-dark, #0f172a);
+            background-image:
+                radial-gradient(circle at 0% 0%, var(--theme-glow, rgba(139, 92, 246, 0.15)) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, var(--theme-glow-secondary, rgba(59, 130, 246, 0.1)) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main, #f8fafc);
+            padding: 20px;
+            padding-top: 80px;
+        }
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        select, button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--primary, #8b5cf6);
+            background: color-mix(in srgb, var(--primary, #8b5cf6) 10%, transparent);
+            color: var(--text-main, #f8fafc);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover, select:hover {
+            background: var(--primary, #8b5cf6);
+            border-color: var(--primary-dark, #7c3aed);
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: var(--card-bg, rgba(30, 41, 59, 0.7));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .board-container {
+            position: relative;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            background: var(--primary, #1e40af);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 0;
+        }
+        .cell {
+            aspect-ratio: 1;
+            background: var(--bg-dark, #0f172a);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: transform 0.1s;
+            position: relative;
+        }
+        .cell:hover { transform: scale(1.05); }
+        .piece {
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+        }
+        .piece.red { background: var(--red); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        .piece.yellow { background: var(--yellow); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        .piece.winning {
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+        /* Falling piece overlay */
+        .falling-piece {
+            position: absolute;
+            width: calc((100% - 12px * 2 - 8px * 6) / 7 * 0.9);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .falling-piece.red { background: var(--red); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        .falling-piece.yellow { background: var(--yellow); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        /* Grid overlay (to show holes on top) */
+        .grid-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .grid-overlay .hole {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle, transparent 0%, transparent 82%, var(--primary, #1e40af) 82%, var(--primary, #1e40af) 100%);
+        }
+        /* Win confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+            animation: fall 3s linear forwards;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 style="text-align: center; margin-bottom: 10px; font-size: clamp(24px, 5vw, 36px);">🔴 Connect 4 🟡</h1>
+        
+        <div class="controls">
+            <select id="gameMode" onchange="resetGame()">
+                <option value="local">Local 2 Player</option>
+                <option value="ai-easy">vs AI (Easy)</option>
+                <option value="ai-medium">vs AI (Medium)</option>
+                <option value="ai-hard">vs AI (Hard)</option>
+            </select>
+            <button onclick="resetGame()">New Game</button>
+        </div>
+
+        <div class="status-bar" id="statusBar">Red's Turn</div>
+
+        <div class="board-container" id="boardContainer">
+            <div class="board" id="board"></div>
+            <div class="grid-overlay" id="gridOverlay">
+                <!-- 7x6 holes -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let board = [];
+        let currentPlayer = 'red';
+        let gameOver = false;
+        let gameMode = 'local';
+        let gameLock = false;
+
+        const ROWS = 6;
+        const COLS = 7;
+
+        function initBoard() {
+            board = [];
+            for (let r = 0; r < ROWS; r++) {
+                board[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    board[r][c] = null;
+                }
+            }
+            gameOver = false;
+            gameLock = false;
+            currentPlayer = 'red';
+            const overlay = document.getElementById('gridOverlay');
+            overlay.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const hole = document.createElement('div');
+                    hole.className = 'hole';
+                    overlay.appendChild(hole);
+                }
+            }
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    if (board[r][c]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[r][c]}`;
+                        cell.appendChild(piece);
+                    }
+                    cell.addEventListener('click', () => handleClick(c));
+                    boardEl.appendChild(cell);
+                }
+            }
+            updateStatusBar();
+        }
+
+        function handleClick(col) {
+            if (gameOver || gameLock) return;
+            if (gameMode.startsWith('ai') && currentPlayer === 'yellow') return;
+            
+            const row = getAvailableRow(col);
+            if (row === -1) return;
+            
+            gameLock = true;
+            makeMoveAnimated(row, col).then(() => {
+                const winningCells = checkWin();
+                if (winningCells) {
+                    gameOver = true;
+                    highlightWinningCells(winningCells);
+                    createConfetti();
+                    updateStatusBar();
+                    endGame(currentPlayer);
+                } else if (checkDraw()) {
+                    gameOver = true;
+                    updateStatusBar();
+                    endGame(null);
+                } else {
+                    if (gameMode.startsWith('ai') && !gameOver) {
+                        setTimeout(makeAIMove, 600);
+                    }
+                }
+            });
+        }
+
+        function getAvailableRow(col) {
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (!board[r][col]) return r;
+            }
+            return -1;
+        }
+
+        function makeMoveAnimated(row, col) {
+            return new Promise((resolve) => {
+                const boardEl = document.getElementById('board');
+                const containerEl = document.getElementById('boardContainer');
+                
+                const cellWidth = (boardEl.offsetWidth - 8 * (COLS - 1) - 24) / COLS;
+                const pieceSize = cellWidth * 0.9;
+                const gap = 8;
+                const padding = 12;
+                
+                const fallingEl = document.createElement('div');
+                fallingEl.className = `falling-piece ${currentPlayer}`;
+                containerEl.insertBefore(fallingEl, document.getElementById('gridOverlay'));
+                
+                const startX = padding + (cellWidth + gap) * col + (cellWidth - pieceSize) / 2;
+                const startY = -pieceSize;
+                const endY = padding + (cellWidth + gap) * row + (cellWidth - pieceSize) / 2;
+                
+                fallingEl.style.left = startX + 'px';
+                fallingEl.style.top = startY + 'px';
+                
+                void fallingEl.offsetWidth;
+                
+                const totalDistance = endY - startY;
+                const duration = Math.sqrt(totalDistance / 200) * 400;
+                
+                fallingEl.style.transition = `top ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+                fallingEl.style.top = endY + 'px';
+                
+                setTimeout(() => {
+                    board[row][col] = currentPlayer;
+                    renderBoard();
+                    fallingEl.remove();
+                    currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+                    updateStatusBar();
+                    gameLock = false;
+                    resolve();
+                }, duration + 100);
+            });
+        }
+
+        function highlightWinningCells(cells) {
+            const boardEl = document.getElementById('board');
+            cells.forEach(({r, c}) => {
+                const idx = r * COLS + c;
+                const cell = boardEl.children[idx];
+                const piece = cell.querySelector('.piece');
+                if (piece) piece.classList.add('winning');
+            });
+        }
+
+        function createConfetti() {
+            const colors = ['#ef4444', '#facc15', '#8b5cf6', '#10b981', '#3b82f6'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+                    conf.className = 'confetti';
+                    conf.style.left = Math.random() * 100 + 'vw';
+                    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(conf);
+                    setTimeout(() => conf.remove(), 3500);
+                }, i * 20);
+            }
+        }
+
+        function checkWin() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (board[r][c] && board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2] && board[r][c] === board[r][c+3]) {
+                        return [{r, c}, {r, c: c+1}, {r, c: c+2}, {r, c: c+3}];
+                    }
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] && board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c] && board[r][c] === board[r+3][c]) {
+                        return [{r, c}, {r: r+1, c}, {r: r+2, c}, {r: r+3, c}];
+                    }
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (board[r][c] && board[r][c] === board[r+1][c+1] && board[r][c] === board[r+2][c+2] && board[r][c] === board[r+3][c+3]) {
+                        return [{r, c}, {r: r+1, c: c+1}, {r: r+2, c: c+2}, {r: r+3, c: c+3}];
+                    }
+                }
+            }
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (board[r][c] && board[r][c] === board[r-1][c+1] && board[r][c] === board[r-2][c+2] && board[r][c] === board[r-3][c+3]) {
+                        return [{r, c}, {r: r-1, c: c+1}, {r: r-2, c: c+2}, {r: r-3, c: c+3}];
+                    }
+                }
+            }
+            return null;
+        }
+
+        function checkDraw() {
+            for (let c = 0; c < COLS; c++) {
+                if (!board[0][c]) return false;
+            }
+            return true;
+        }
+
+        function updateStatusBar() {
+            const statusBar = document.getElementById('statusBar');
+            if (gameOver) {
+                if (checkWin()) {
+                    const winner = currentPlayer === 'red' ? 'yellow' : 'red';
+                    statusBar.textContent = `${winner.charAt(0).toUpperCase() + winner.slice(1)} Wins! 🎉`;
+                } else {
+                    statusBar.textContent = "It's a Draw!";
+                }
+            } else {
+                statusBar.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}'s Turn`;
+            }
+        }
+
+        async function endGame(winner) {
+            if (window.gameHubAchievementHelpers) {
+                await window.gameHubAchievementHelpers.updateStat('connect4', 'gamesPlayed', 1, { increment: true });
+            }
+            if (winner && window.gameHubAchievementHelpers) {
+                await window.gameHubAchievementHelpers.updateStat('connect4', 'wins', 1, { increment: true });
+            }
+        }
+
+        function makeAIMove() {
+            if (gameOver || gameLock) return;
+            gameLock = true;
+            
+            let col;
+            const level = gameMode;
+            if (level === 'ai-easy') {
+                do {
+                    col = Math.floor(Math.random() * COLS);
+                } while (getAvailableRow(col) === -1);
+            } else if (level === 'ai-medium') {
+                col = findBestMove(2);
+            } else {
+                col = findBestMove(4);
+            }
+            
+            const row = getAvailableRow(col);
+            makeMoveAnimated(row, col).then(() => {
+                const winningCells = checkWin();
+                if (winningCells) {
+                    gameOver = true;
+                    highlightWinningCells(winningCells);
+                    createConfetti();
+                    updateStatusBar();
+                    endGame(currentPlayer);
+                } else if (checkDraw()) {
+                    gameOver = true;
+                    updateStatusBar();
+                    endGame(null);
+                }
+            });
+        }
+
+        function findBestMove(depth) {
+            let bestScore = -Infinity;
+            let bestCol = -1;
+            
+            for (let c = 0; c < COLS; c++) {
+                const r = getAvailableRow(c);
+                if (r === -1) continue;
+                
+                const tempBoard = board.map(row => [...row]);
+                tempBoard[r][c] = 'yellow';
+                
+                let score = minimax(tempBoard, depth - 1, -Infinity, Infinity, false);
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCol = c;
+                } else if (score === bestScore && Math.random() < 0.25) {
+                    bestCol = c;
+                }
+            }
+            
+            if (bestCol === -1) {
+                for (let c = 0; c < COLS; c++) {
+                    if (getAvailableRow(c) !== -1) {
+                        bestCol = c;
+                        break;
+                    }
+                }
+            }
+            
+            return bestCol;
+        }
+
+        function minimax(boardState, depth, alpha, beta, isMaximizing) {
+            const tempWin = checkWinTemp(boardState);
+            if (tempWin === 'yellow') return 1000 + depth;
+            if (tempWin === 'red') return -1000 - depth;
+            if (checkDrawTemp(boardState)) return 0;
+            if (depth === 0) return evaluateBoard(boardState);
+
+            if (isMaximizing) {
+                let maxScore = -Infinity;
+                for (let c = 0; c < COLS; c++) {
+                    const r = getAvailableRowTemp(boardState, c);
+                    if (r === -1) continue;
+                    
+                    boardState[r][c] = 'yellow';
+                    const score = minimax(boardState, depth - 1, alpha, beta, false);
+                    boardState[r][c] = null;
+                    
+                    maxScore = Math.max(maxScore, score);
+                    alpha = Math.max(alpha, score);
+                    if (beta <= alpha) break;
+                }
+                return maxScore;
+            } else {
+                let minScore = Infinity;
+                for (let c = 0; c < COLS; c++) {
+                    const r = getAvailableRowTemp(boardState, c);
+                    if (r === -1) continue;
+                    
+                    boardState[r][c] = 'red';
+                    const score = minimax(boardState, depth - 1, alpha, beta, true);
+                    boardState[r][c] = null;
+                    
+                    minScore = Math.min(minScore, score);
+                    beta = Math.min(beta, score);
+                    if (beta <= alpha) break;
+                }
+                return minScore;
+            }
+        }
+
+        function getAvailableRowTemp(boardState, col) {
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (!boardState[r][col]) return r;
+            }
+            return -1;
+        }
+
+        function checkWinTemp(boardState) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (boardState[r][c] === 'yellow' && boardState[r][c+1] === 'yellow' && boardState[r][c+2] === 'yellow' && boardState[r][c+3] === 'yellow') return 'yellow';
+                    if (boardState[r][c] === 'red' && boardState[r][c+1] === 'red' && boardState[r][c+2] === 'red' && boardState[r][c+3] === 'red') return 'red';
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (boardState[r][c] === 'yellow' && boardState[r+1][c] === 'yellow' && boardState[r+2][c] === 'yellow' && boardState[r+3][c] === 'yellow') return 'yellow';
+                    if (boardState[r][c] === 'red' && boardState[r+1][c] === 'red' && boardState[r+2][c] === 'red' && boardState[r+3][c] === 'red') return 'red';
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (boardState[r][c] === 'yellow' && boardState[r+1][c+1] === 'yellow' && boardState[r+2][c+2] === 'yellow' && boardState[r+3][c+3] === 'yellow') return 'yellow';
+                    if (boardState[r][c] === 'red' && boardState[r+1][c+1] === 'red' && boardState[r+2][c+2] === 'red' && boardState[r+3][c+3] === 'red') return 'red';
+                }
+            }
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (boardState[r][c] === 'yellow' && boardState[r-1][c+1] === 'yellow' && boardState[r-2][c+2] === 'yellow' && boardState[r-3][c+3] === 'yellow') return 'yellow';
+                    if (boardState[r][c] === 'red' && boardState[r-1][c+1] === 'red' && boardState[r-2][c+2] === 'red' && boardState[r-3][c+3] === 'red') return 'red';
+                }
+            }
+            return null;
+        }
+
+        function checkDrawTemp(boardState) {
+            for (let c = 0; c < COLS; c++) {
+                if (!boardState[0][c]) return false;
+            }
+            return true;
+        }
+
+        function evaluateBoard(boardState) {
+            let score = 0;
+            score += evaluateSection(boardState, 'yellow') * 10;
+            score -= evaluateSection(boardState, 'red') * 10;
+            return score;
+        }
+
+        function evaluateSection(boardState, player) {
+            let score = 0;
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    score += evaluateWindow([boardState[r][c], boardState[r][c+1], boardState[r][c+2], boardState[r][c+3]], player);
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    score += evaluateWindow([boardState[r][c], boardState[r+1][c], boardState[r+2][c], boardState[r+3][c]], player);
+                }
+            }
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    score += evaluateWindow([boardState[r][c], boardState[r+1][c+1], boardState[r+2][c+2], boardState[r+3][c+3]], player);
+                }
+            }
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    score += evaluateWindow([boardState[r][c], boardState[r-1][c+1], boardState[r-2][c+2], boardState[r-3][c+3]], player);
+                }
+            }
+            return score;
+        }
+
+        function evaluateWindow(window, player) {
+            let score = 0;
+            const opponent = player === 'yellow' ? 'red' : 'yellow';
+            const playerCount = window.filter(cell => cell === player).length;
+            const opponentCount = window.filter(cell => cell === opponent).length;
+            const emptyCount = window.filter(cell => cell === null).length;
+
+            if (playerCount === 4) {
+                score += 100;
+            } else if (playerCount === 3 && emptyCount === 1) {
+                score += 5;
+            } else if (playerCount === 2 && emptyCount === 2) {
+                score += 2;
+            }
+            if (opponentCount === 3 && emptyCount === 1) {
+                score -= 4;
+            }
+            return score;
+        }
+
+        function resetGame() {
+            gameMode = document.getElementById('gameMode').value;
+            initBoard();
+            renderBoard();
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
