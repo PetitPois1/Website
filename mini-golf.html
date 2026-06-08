@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="game-hub-id" content="minigolf">
+    <script src="js/theme.js"></script>
+    <meta name="game-hub-layout" content="immersive">
+    <title>Mini Golf Adventure</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/achievements/registry.js"></script>
+    <script src="js/achievements/helpers.js"></script>
+    <script src="js/achievements/definitions-bundle.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/game-hub-common.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #ff9500;
+            --secondary: #22c55e;
+            --accent: #8b5cf6;
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 10% 20%, rgba(139,92,246,0.15) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(34,197,94,0.1) 0%, transparent 50%);
+            font-family: 'Comic Sans MS', 'Segoe UI', cursive, sans-serif;
+            color: white; user-select: none; touch-action: none;
+        }
+        
+        #gameCanvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
+        #webgl-container { position: absolute; top:0; left:0; z-index:1; display: none; width: 100%; height:100%; cursor: crosshair; }
+        
+        .tutorial-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(15,23,42,0.95); border: 3px solid var(--primary); border-radius: 20px;
+            padding: 30px; max-width: 500px; text-align: center; z-index: 30;
+            pointer-events: auto;
+        }
+        .tutorial-modal h2 { margin: 0 0 15px; color: var(--primary); }
+        .tutorial-modal p { color: #ddd; line-height: 1.6; margin-bottom:20px; }
+        .tutorial-modal .menu-btn { padding: 10px 30px; font-size:1.1rem; }
+        
+        #ui-layer {
+            position: absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 0 0 20px 0;
+        }
+        .hud-buttons button, #shootBtn, #power-meter-wrapper {
+            pointer-events: auto;
+        }
+        
+        .hud { padding: 100px 20px 20px 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .hud-panel {
+            background: rgba(15,23,42,0.9); backdrop-filter: blur(12px);
+            padding: 15px 25px; border-radius: 20px; border:2px solid rgba(255,149,0,0.4);
+            font-weight: bold; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .hud-buttons { display: flex; gap: 12px; pointer-events: auto; }
+        .hud-btn {
+            padding: 10px 18px; border-radius: 15px; border:2px solid white;
+            background: rgba(255,255,255,0.1); color:white; font-weight:bold; font-size:1rem;
+            cursor: pointer; transition: all 0.3s; pointer-events: auto;
+        }
+        .hud-btn:hover { background: var(--primary); border-color: var(--primary); color: black; }
+        
+        #announcer {
+            position: absolute; top: 80px; left:50%; transform: translateX(-50%);
+            font-size: clamp(1.5rem,5vw,3rem); font-weight: 900; text-align: center;
+            text-shadow: 0 0 20px rgba(255,149,0,0.8);
+        }
+        #sub-announcer { font-size: clamp(0.9rem,2.5vw,1.5rem); margin-top:8px; color:#ddd; }
+        
+        #bottom-controls {
+            padding: 20px; display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        
+        #power-meter-wrapper {
+            width: 200px; height: 30px; border-radius: 15px; background: rgba(0,0,0,0.7); border:2px solid var(--primary);
+            overflow: hidden; position: relative;
+        }
+        #power-meter-fill {
+            height: 100%; width: 0%; background: linear-gradient(to right, #22c55e, #eab308, #ef4444);
+            transition: width 0.05s;
+        }
+        
+        #shootBtn {
+            width: 80px; height: 80px; border-radius: 50%; border: none;
+            background: radial-gradient(circle at 30% 30%, #ffb347 0%, #ff9500 50%, #ff5500 100%);
+            color: white; font-size: 1.2rem; font-weight:900; cursor:pointer;
+            box-shadow: 0 8px 20px rgba(255,149,0,0.6);
+            transition: transform 0.1s, box-shadow 0.1s; pointer-events: auto;
+        }
+        #shootBtn:active { transform: scale(0.9); box-shadow:0 2px 10px rgba(255,149,0,0.5); }
+        
+        #menu {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,64,175,0.9) 100%);
+            backdrop-filter: blur(10px); z-index: 20; display:flex; flex-direction: column; align-items:center; justify-content:center;
+            pointer-events: auto; transition: opacity 0.8s, transform 0.8s;
+        }
+        .menu-hidden { opacity:0; transform: scale(1.1); pointer-events: none; }
+        #menu h1 {
+            font-size: clamp(2rem,6vw,4.5rem); margin-bottom: 10px; background: linear-gradient(to right, #ff9500, #22c55e, #8b5cf6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip:text;
+            text-shadow: 0 0 30px rgba(255,149,0,0.4); animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        
+        .course-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; width:90%; max-width:800px; margin: 30px 0;
+        }
+        .course-card {
+            background: rgba(15,23,42,0.9); border-radius: 20px; padding:25px; border:3px solid rgba(255,255,255,0.15);
+            text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .course-card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .course-card.locked { opacity: 0.5; cursor: not-allowed; }
+        .course-icon { font-size: 3.5rem; margin-bottom:10px; }
+        .course-name { font-weight: bold; font-size: 1.3rem; }
+        .course-desc { font-size:0.9rem; color:#aaa; margin-top:5px; }
+        
+        .menu-btn {
+            padding:15px 40px; border-radius:30px; border:3px solid var(--primary);
+            background: linear-gradient(135deg, #ff9500, #ff5500); color:white;
+            font-weight: bold; font-size:1.3rem; cursor:pointer; text-transform: uppercase;
+            box-shadow:0 10px 30px rgba(255,149,0,0.4); transition: all 0.3s;
+        }
+        .menu-btn:hover { transform: scale(1.05); box-shadow:0 15px 40px rgba(255,149,0,0.6); }
+        .menu-btn.secondary { background: rgba(139,92,246,0.3); border-color: var(--accent); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="webgl-container"></div>
+    
+    <div id="ui-layer">
+        <div class="hud">
+            <div class="hud-panel">
+                <div style="font-size:0.8rem; color:#aaa;">COURSE <span id="courseName">Green Meadows</span></div>
+                <div style="font-size:1.8rem;">Hole <span id="holeNum">1</span> / 18</div>
+                <div style="font-size:1rem; margin-top:8px;">Par: <span id="holePar">3</span> | Strokes: <span id="strokes">0</span></div>
+            </div>
+            
+            <div class="hud-buttons">
+                <button class="hud-btn" id="toggleViewBtn" onclick="toggleViewMode()">Switch to 3D</button>
+                <button class="hud-btn" onclick="returnToMenu()">Quit</button>
+            </div>
+        </div>
+        
+        <div id="announcer">Ready?<div id="sub-announcer">Aim and shoot!</div></div>
+        
+        <div id="bottom-controls">
+            <div style="display:flex; flex-direction: column; gap:10px;">
+                <div style="font-weight:bold;">Power</div>
+                <div id="power-meter-wrapper">
+                    <div id="power-meter-fill"></div>
+                </div>
+            </div>
+            <button id="shootBtn">SHOOT!</button>
+        </div>
+    </div>
+    
+    <div id="menu">
+        <h1>MINI GOLF ADVENTURE!</h1>
+        <div style="font-size:1.2rem; color:#ddd; margin-bottom:20px;">Choose a course and tee off!</div>
+        
+        <div class="course-grid" id="courseGrid"></div>
+        
+        <div style="display:flex; gap:15px;">
+            <button class="menu-btn" onclick="returnToMenu()">Back to Hub</button>
+        </div>
+    </div>
+    
+    <div id="tutorialModal" class="tutorial-modal" style="display:none;">
+        <h2>How to Play!</h2>
+        <p>1. Move your mouse (or touch the screen) to aim the ball!<br>
+        2. Use the power meter to choose how hard to hit it!<br>
+        3. Click the SHOOT button to take your shot!<br>
+        4. Get the ball in the hole in as few strokes as possible!</p>
+        <button class="menu-btn" onclick="document.getElementById('tutorialModal').style.display='none'; state.isAiming = true;">Got it!</button>
+    </div>
+    
+    <script>
+        const CANVAS_WIDTH = 1200, CANVAS_HEIGHT = 700;
+        const BALL_RADIUS = 12;
+        
+        const COURSES = [
+            {
+                id: 'green',
+                name: 'Green Meadows',
+                icon: '⛳️',
+                desc: 'Classic, friendly course',
+                parTotal: 54,
+                unlocked: true
+            },
+            {
+                id: 'western',
+                name: 'Wild West',
+                icon: '🤠',
+                desc: 'Cactus, sand, and saloons!',
+                parTotal: 56,
+                unlocked: false
+            },
+            {
+                id: 'space',
+                name: 'Galactic Greens',
+                icon: '🚀',
+                desc: 'Gravity-defying space course',
+                parTotal: 58,
+                unlocked: false
+            }
+        ];
+        
+        const state = {
+            mode: '2d',
+            isMenu: true,
+            currentCourseId: null,
+            currentHole: 0,
+            strokes: 0,
+            totalScore: 0,
+            isAiming: true,
+            aimAngle: 0,
+            power: 30,
+            ballX: 0,
+            ballY: 0,
+            ballVX: 0,
+            ballVY: 0,
+            tutorialShown: false
+        };
+        
+        let canvas, ctx, scene3D, camera3D, renderer3D, ballMesh3D;
+        
+        // --- INIT ---
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            initCourseGrid();
+            init3D();
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('touchmove', onTouchMove, { passive:false });
+            document.getElementById('power-meter-wrapper').addEventListener('click', onPowerClick);
+            document.getElementById('power-meter-wrapper').addEventListener('touchstart', onPowerClick);
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        function initCourseGrid() {
+            const grid = document.getElementById('courseGrid');
+            grid.innerHTML = '';
+            COURSES.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'course-card' + (course.unlocked ? '' : ' locked');
+                card.innerHTML = `
+                    <div class="course-icon">${course.icon}</div>
+                    <div class="course-name">${course.name}</div>
+                    <div class="course-desc">${course.desc}</div>
+                    <div style="margin-top:10px; font-size:0.9rem; color:#aaa;">Par ${course.parTotal}</div>
+                `;
+                if (course.unlocked) {
+                    card.onclick = () => startCourse(course.id);
+                }
+                grid.appendChild(card);
+            });
+        }
+        
+        function init3D() {
+            const container = document.getElementById('webgl-container');
+            scene3D = new THREE.Scene();
+            scene3D.background = new THREE.Color(0x0f172a);
+            
+            camera3D = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera3D.position.set(0, 20, 30);
+            camera3D.lookAt(0,0,0);
+            
+            renderer3D = new THREE.WebGLRenderer({ antialias: true });
+            renderer3D.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer3D.domElement);
+            
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene3D.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(20,30,20);
+            scene3D.add(dirLight);
+            
+            const groundGeo = new THREE.PlaneGeometry(100, 60);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
+            const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            scene3D.add(groundMesh);
+            
+            const ballGeo = new THREE.SphereGeometry(0.5, 32,32);
+            const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            ballMesh3D = new THREE.Mesh(ballGeo, ballMat);
+            ballMesh3D.position.set(0,0.5,0);
+            scene3D.add(ballMesh3D);
+        }
+        
+        // --- COURSE/HOLE ---
+        function startCourse(courseId) {
+            state.currentCourseId = courseId;
+            state.currentHole = 0;
+            state.totalScore = 0;
+            startHole();
+            document.getElementById('menu').classList.add('menu-hidden');
+            document.getElementById('ui-layer').style.display = 'flex';
+            state.isMenu = false;
+        }
+        
+        function startHole() {
+            state.strokes = 0;
+            state.isAiming = false;
+            state.ballX = 150;
+            state.ballY = 80 + (CANVAS_HEIGHT / 2 - 40);
+            state.ballVX = 0;
+            state.ballVY = 0;
+            state.power = 30;
+            
+            const course = COURSES.find(c => c.id === state.currentCourseId);
+            document.getElementById('courseName').textContent = course.name;
+            document.getElementById('holeNum').textContent = state.currentHole + 1;
+            document.getElementById('holePar').textContent = 3;
+            document.getElementById('strokes').textContent = 0;
+            document.getElementById('announcer').innerHTML = `Hole ${state.currentHole + 1}<div id="sub-announcer">Par 3</div>`;
+            
+            // Show tutorial on first hole of Green Meadows, first time
+            if (state.currentCourseId === 'green' && state.currentHole === 0 && !state.tutorialShown) {
+                document.getElementById('tutorialModal').style.display = 'block';
+                state.tutorialShown = true;
+            } else {
+                state.isAiming = true;
+            }
+        }
+        
+        function returnToMenu() {
+            state.isMenu = true;
+            document.getElementById('menu').classList.remove('menu-hidden');
+            document.getElementById('ui-layer').style.display = 'none';
+        }
+        
+        function toggleViewMode() {
+            state.mode = state.mode === '2d' ? '3d' : '2d';
+            const btn = document.getElementById('toggleViewBtn');
+            const canvas2D = document.getElementById('gameCanvas');
+            const container3D = document.getElementById('webgl-container');
+            
+            if (state.mode === '3d') {
+                btn.textContent = 'Switch to 2D';
+                canvas2D.style.display = 'none';
+                container3D.style.display = 'block';
+            } else {
+                btn.textContent = 'Switch to 3D';
+                container3D.style.display = 'none';
+                canvas2D.style.display = 'block';
+            }
+        }
+        
+        // --- CONTROLS ---
+        function onMouseMove(e) {
+            if (!state.isAiming || state.isMenu) return;
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            state.aimAngle = Math.atan2(my - state.ballY, mx - state.ballX);
+        }
+        
+        function onTouchMove(e) {
+            e.preventDefault();
+            if (!state.isAiming || state.isMenu) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const mx = touch.clientX - rect.left;
+            const my = touch.clientY - rect.top;
+            state.aimAngle = Math.atan2(my - state.ballY, mx - state.ballX);
+        }
+        
+        function onPowerClick(e) {
+            if (!state.isAiming || state.isMenu) return;
+            const rect = document.getElementById('power-meter-wrapper').getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            state.power = Math.max(10, Math.min(100, (x / rect.width) * 100));
+            document.getElementById('power-meter-fill').style.width = state.power + '%';
+        }
+        
+        document.getElementById('shootBtn').addEventListener('click', shoot);
+        document.getElementById('shootBtn').addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); });
+        
+        function shoot() {
+            if (!state.isAiming || state.isMenu) return;
+            state.isAiming = false;
+            state.strokes++;
+            document.getElementById('strokes').textContent = state.strokes;
+            
+            const speed = state.power * 0.12;
+            state.ballVX = Math.cos(state.aimAngle) * speed;
+            state.ballVY = Math.sin(state.aimAngle) * speed;
+            document.getElementById('announcer').innerHTML = `Swing!<div id="sub-announcer">Nice hit!</div>`;
+        }
+        
+        // --- GAME LOOP ---
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function update() {
+            if (state.isMenu) return;
+            
+            if (!state.isAiming) {
+                state.ballX += state.ballVX;
+                state.ballY += state.ballVY;
+                
+                state.ballVX *= 0.98;
+                state.ballVY *= 0.98;
+                
+                // Wall bounce (top at 80px)
+                if (state.ballX - BALL_RADIUS < 0) {
+                    state.ballX = BALL_RADIUS;
+                    state.ballVX *= -0.7;
+                }
+                if (state.ballX + BALL_RADIUS > canvas.width) {
+                    state.ballX = canvas.width - BALL_RADIUS;
+                    state.ballVX *= -0.7;
+                }
+                if (state.ballY - BALL_RADIUS < 80) {
+                    state.ballY = 80 + BALL_RADIUS;
+                    state.ballVY *= -0.7;
+                }
+                if (state.ballY + BALL_RADIUS > canvas.height) {
+                    state.ballY = canvas.height - BALL_RADIUS;
+                    state.ballVY *= -0.7;
+                }
+                
+                // Hole check (simple)
+                const holeX = canvas.width - 200;
+                const holeY = 80 + (canvas.height - 80) / 2;
+                const dist = Math.hypot(state.ballX - holeX, state.ballY - holeY);
+                
+                if (dist < 30) {
+                    holeComplete();
+                }
+                
+                // Stop ball if moving too slow
+                const speed = Math.hypot(state.ballVX, state.ballVY);
+                if (speed < 0.1) {
+                    state.ballVX = 0;
+                    state.ballVY = 0;
+                    state.isAiming = true;
+                    document.getElementById('announcer').innerHTML = `Your turn<div id="sub-announcer">Aim and shoot!</div>`;
+                }
+            }
+        }
+        
+        function holeComplete() {
+            state.isAiming = true;
+            document.getElementById('announcer').innerHTML = `HOLE COMPLETE!<div id="sub-announcer">Score: ${state.strokes}</div>`;
+            
+            setTimeout(() => {
+                state.currentHole++;
+                if (state.currentHole >= 18) {
+                    courseComplete();
+                } else {
+                    startHole();
+                }
+            }, 2000);
+        }
+        
+        function courseComplete() {
+            const courseIdx = COURSES.findIndex(c => c.id === state.currentCourseId);
+            if (courseIdx < COURSES.length - 1) {
+                COURSES[courseIdx + 1].unlocked = true;
+            }
+            document.getElementById('announcer').innerHTML = `COURSE COMPLETE!<div id="sub-announcer">Total Score: ${state.totalScore}</div>`;
+            
+            setTimeout(() => {
+                returnToMenu();
+                initCourseGrid();
+            }, 3000);
+        }
+        
+        function render() {
+            if (state.isMenu) return;
+            
+            document.getElementById('power-meter-fill').style.width = state.power + '%';
+            
+            if (state.mode === '2d') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Background green (starts at 80px)
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(0, 80, canvas.width, canvas.height - 80);
+                
+                // Hole
+                const holeX = canvas.width - 200;
+                const holeY = 80 + (canvas.height - 80) / 2;
+                ctx.beginPath();
+                ctx.arc(holeX, holeY, 25, 0, Math.PI*2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth =4;
+                ctx.strokeStyle = '#ff9500';
+                ctx.stroke();
+                
+                // Ball
+                ctx.beginPath();
+                ctx.arc(state.ballX, state.ballY, BALL_RADIUS, 0, Math.PI*2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.lineWidth =3;
+                ctx.strokeStyle = '#ddd';
+                ctx.stroke();
+                
+                // Aim line
+                if (state.isAiming) {
+                    ctx.beginPath();
+                    ctx.moveTo(state.ballX, state.ballY);
+                    ctx.lineTo(state.ballX + Math.cos(state.aimAngle)*100, state.ballY + Math.sin(state.aimAngle)*100);
+                    ctx.strokeStyle = '#ff9500';
+                    ctx.lineWidth =4;
+                    ctx.setLineDash([8,8]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            } else {
+                if (renderer3D) {
+                    // Map ball X/Y to 3D position, ignoring the top 80px
+                    const normalizedX = state.ballX / canvas.width - 0.5;
+                    const normalizedY = (state.ballY - 80) / (canvas.height - 80) - 0.5;
+                    ballMesh3D.position.set(normalizedX * 80, 0.5, -normalizedY * 50);
+                    renderer3D.setSize(window.innerWidth, window.innerHeight);
+                    camera3D.position.set(0,20,30);
+                    renderer3D.render(scene3D, camera3D);
+                }
+            }
+        }
+        
+        // Start
+        window.onload = init;
+    </script>
+</body>
+</html>

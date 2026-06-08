@@ -704,10 +704,10 @@
                 const move = validMoves.find(m => m.row === row && m.col === col);
                 if (move) {
                     makeMove(selectedSquare.row, selectedSquare.col, row, col, move);
+                    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
                     if (onlineMatchId) {
                         syncOnlineMove();
                     }
-                    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
                     selectedSquare = null;
                     validMoves = [];
                     renderBoard();
@@ -1076,7 +1076,9 @@
                     const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
                     if (user && d.creatorId === user.uid) return;
                     const li = document.createElement('li');
-                    li.innerHTML = `<span>${d.creatorName} - ${doc.id}</span>`;
+                    const span = document.createElement('span');
+                    span.textContent = `${d.creatorName} - ${doc.id}`;
+                    li.appendChild(span);
                     li.onclick = () => joinOnlineMatch(doc.id);
                     listEl.appendChild(li);
                 });

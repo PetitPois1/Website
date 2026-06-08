@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Game Hub — a free collection of browser-based arcade games including Chess, Snake, Pac-Man, Flappy Bird, and more. Play instantly, no downloads required.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👾</text></svg>">
     <title>Game Hub | Premium Gaming Portal</title>
     <script src="js/theme.js"></script>
     <link rel="stylesheet" href="css/hub-site.css">
     <!-- Tailwind CSS for utility-first styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
     <!-- Firebase SDKs (loaded before shared Game Hub scripts) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -347,10 +349,16 @@
     <!-- Footer -->
     <footer class="mt-20 border-t border-slate-900 pt-10 text-center text-slate-500">
         <p class="mb-2">© 2026 Game Hub. All rights reserved.</p>
-        <p class="text-sm">Engine Version <a href="updates.html" class="text-violet-500 hover:underline">v0.1.0</a></p>
+        <p class="text-sm">Engine Version <a href="upcoming.html" class="text-violet-500 hover:underline">v0.1.0</a></p>
     </footer>
 
     <script>
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         const games = [
             { id: "chess", name: "Chess", url: "Chess.html", icon: "♟️", beta: false, broken: false, tags: ["strategy", "multiplayer"], multiplayer: true },
             { id: "connect4", name: "Connect 4", url: "connect4.html", icon: "🔴", beta: false, broken: false, tags: ["puzzle", "multiplayer"], multiplayer: true },
@@ -365,7 +373,7 @@
             { id: "pacman", name: "Pac-Man", url: "Pac-Man.html", icon: "🟡", beta: false, broken: false, tags: ["arcade"] },
             { id: "flappy", name: "Flappy Bird", url: "Flappybird.html", icon: "🐦", beta: false, broken: false, tags: ["arcade"] },
             { id: "poker", name: "Poker", url: "poker.html", icon: "💎", beta: false, broken: false, tags: ["cards"] },
-            { id: "mining", name: "Mining", url: "Mining.html", icon: "⛏️", beta: false, broken: false, tags: ["arcade", "beta"] },
+            { id: "mining", name: "Mining", url: "Mining.html", icon: "⛏️", beta: true, broken: false, tags: ["arcade", "beta"] },
             { id: "loopy", name: "Loopy Puzzle", url: "Loopy.html", icon: "➰", beta: false, broken: false, tags: ["puzzle"] },
             { id: "neondash", name: "Neon Dash", url: "NeonDash.html", icon: "🟦", beta: true, broken: false, tags: ["arcade", "beta"] },
             { id: "brickbreaker", name: "Brick Breaker", url: "BrickBreaker.html", icon: "🧱", beta: true, broken: false, tags: ["arcade", "beta"] },
@@ -377,7 +385,7 @@
             { id: "forpiece", name: "For Piece", url: "ForPiece.html", icon: "🏴‍☠️", beta: true, broken: false, tags: ["arcade", "beta"] },
             { id: "Hades", name: "Hades V1.1", url: "hades-v1.1.html", icon: "🏺", beta: true, broken: false, tags: ["arcade", "beta"] },
             { id: "3DFlappyBird", name: "3D Flappy Bird", url: "3DFlappyBird.html", icon: "🐦‍🔥", beta: true, broken: false, tags: ["arcade", "beta"] },
-            { id: "Astroids", name: "Astroids", url: "asteroids.html", icon: "☄️", beta: true, broken: false, tags: ["arcade", "beta"] },
+            { id: "asteroids", name: "Asteroids", url: "asteroids.html", icon: "☄️", beta: true, broken: false, tags: ["arcade", "beta"] },
             { id: "UltimateRPS", name: "Ultimate Rock Paper Scissors", url: "UltimateRPS.html", icon: "✂️", beta: true, broken: false, tags: ["beta"] }
         ];
 
@@ -557,14 +565,14 @@
                     const avatarStack = currentPlayers.slice(0, 3).map(p => {
                         if (p.avatar) {
                             // Render simplified SVG avatar preview
-                            return `<div class="w-6 h-6 rounded-full border border-white/20 bg-slate-800 overflow-hidden" title="${p.username}">
+                            return `<div class="w-6 h-6 rounded-full border border-white/20 bg-slate-800 overflow-hidden" title="${escapeHtml(p.username)}">
                                 <svg viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="40" fill="${p.avatar.base}" />
+                                    <circle cx="50" cy="50" r="40" fill="${escapeHtml(p.avatar.base)}"></circle>
                                 </svg>
                             </div>`;
                         }
-                        return `<div class="w-6 h-6 rounded-full border border-white/20 bg-indigo-600 flex items-center justify-center text-[8px] font-bold" title="${p.username}">
-                            ${p.username[0]}
+                        return `<div class="w-6 h-6 rounded-full border border-white/20 bg-indigo-600 flex items-center justify-center text-[8px] font-bold" title="${escapeHtml(p.username)}">
+                            ${escapeHtml(p.username[0] || '')}
                         </div>`;
                     }).join('');
                     
@@ -601,7 +609,7 @@
                         <span>${game.likes}</span>
                     </button>
 
-                    <div class="mt-2 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-0 transition-opacity hover:opacity-100">
+                    <div class="mt-2 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-70 hover:opacity-100 transition-opacity">
                         PLAY NOW
                     </div>
                 `;

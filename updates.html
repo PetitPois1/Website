@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/hub-site.css">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Updates | Game Hub</title>
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/auth.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #8b5cf6;
+      --bg-dark: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.6);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 0% 0%, var(--theme-glow) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, var(--theme-glow-secondary) 0%, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-top: 80px;
+    }
+
+    .text-theme-primary {
+      color: var(--primary);
+    }
+
+    .text-theme-muted {
+      color: var(--text-muted);
+    }
+
+    .text-theme-main {
+      color: var(--text-main);
+    }
+
+    .border-theme-border {
+      border-color: var(--border-color);
+    }
+  </style>
+</head>
+<body data-hub-page="updates" class="hub-site-body">
+  <script src="js/hub-nav.js"></script>
+
+  <!-- Header Section -->
+  <div class="max-w-4xl mx-auto px-6 text-center mb-12">
+    <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+      Update <span class="hub-accent-gradient">Log</span>
+    </h1>
+    <p class="text-theme-muted text-lg leading-relaxed max-w-2xl mx-auto">
+      What's new in Game Hub — keep track of all the latest changes and improvements!
+    </p>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-6">
+    <div id="updates-container">
+      <!-- Updates will be injected here by js/update-log.js -->
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="hub-footer mt-20 border-t pt-10 text-center">
+    <p class="text-sm">Game Hub is built for the players, by the students.</p>
+  </footer>
+
+  <script src="js/update-log.js"></script>
+</body>
+</html>
