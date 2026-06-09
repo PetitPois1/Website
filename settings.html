@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | Game Hub</title>
     <script src="js/theme.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/daily-rewards.js"></script>
+    <script src="js/xp-system.js"></script>
     <link rel="stylesheet" href="css/hub-site.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
@@ -28,6 +31,77 @@
         .theme-preset-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
         .theme-preset-btn.is-selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
         .theme-swatch { width: 100%; height: 3rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
+
+        /* Toggle switch styles */
+        .toggle-switch {
+            position: relative; width: 48px; height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0; width: 0; height: 0;
+        }
+        .toggle-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(148, 163, 184, 0.3);
+            transition: 0.2s; border-radius: 9999px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px;
+            left: 3px; bottom: 3px; background-color: white;
+            transition: 0.2s; border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Custom select styles */
+        select.custom-select {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 0.75rem !important;
+            padding: 0.75rem 2.5rem 0.75rem 1rem !important;
+            cursor: pointer !important;
+            font-family: inherit !important;
+            font-size: 1rem !important;
+            width: 100% !important;
+            outline: none !important;
+            transition: border-color 0.2s, box-shadow 0.2s !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 1.25rem !important;
+        }
+        select.custom-select:hover {
+            border-color: var(--primary) !important;
+        }
+        select.custom-select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3) !important;
+        }
+        /* Optional: style options for some browsers */
+        .custom-select option {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        /* Accessibility styles */
+        .reduced-motion * {
+            transition: none !important;
+            animation: none !important;
+        }
+        .large-text {
+            font-size: 1.2em;
+        }
+        .large-text h1 { font-size: 2.5rem; }
+        .large-text h2 { font-size: 2rem; }
+        .large-text h3 { font-size: 1.5rem; }
     </style>
 </head>
 <body data-hub-page="settings" class="hub-site-body pb-12">
@@ -36,9 +110,10 @@
     <main class="max-w-4xl mx-auto px-6">
         <header class="mb-10">
             <h1 class="text-4xl font-extrabold mb-2">Settings</h1>
-            <p class="text-theme-muted">Personalize your Game Hub experience. Themes apply across the hub and game menus.</p>
+            <p class="text-theme-muted">Personalize your Game Hub experience.</p>
         </header>
 
+        <!-- Website theme -->
         <section class="hub-settings-card p-8 mb-8">
             <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
                 <span class="text-2xl">🌈</span> Website theme
@@ -65,6 +140,173 @@
             </div>
         </section>
 
+        <!-- Sound & Music -->
+        <section class="hub-settings-card p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-2xl">🔊</span> Sound & Music
+            </h2>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2" style="color: var(--text-main)">Master Volume</label>
+                    <div class="flex items-center gap-4">
+                        <span class="text-theme-muted text-sm w-8">0</span>
+                        <input type="range" id="master-volume" min="0" max="100" class="w-full accent-purple-500">
+                        <span class="text-theme-muted text-sm w-8 text-right">100</span>
+                        <span id="master-volume-value" class="text-sm font-bold w-12 text-right" style="color: var(--primary)">80%</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Mute all sounds</div>
+                        <div class="text-xs text-theme-muted">Silence all game and menu sounds</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="mute-all">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Mute music</div>
+                        <div class="text-xs text-theme-muted">Silence background music</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="mute-music">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gameplay Defaults -->
+        <section class="hub-settings-card p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-2xl">🎮</span> Gameplay Defaults
+            </h2>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2" style="color: var(--text-main)">Default AI Difficulty</label>
+                    <select id="default-difficulty" class="custom-select">
+                        <option>Easy</option>
+                        <option>Medium</option>
+                        <option>Hard</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2" style="color: var(--text-main)">Default Homepage Category</label>
+                    <select id="default-category" class="custom-select">
+                        <option>All Games</option>
+                        <option>Multiplayer</option>
+                        <option>Arcade</option>
+                        <option>Puzzle</option>
+                        <option>Cards</option>
+                        <option>Beta</option>
+                        <option>Most Popular</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Hide beta games from homepage</div>
+                        <div class="text-xs text-theme-muted">Don't show beta tagged games by default</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hide-beta-games">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Privacy & Social -->
+        <section class="hub-settings-card p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-2xl">🔒</span> Privacy & Social
+            </h2>
+
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Show online status to friends</div>
+                        <div class="text-xs text-theme-muted">Let friends see when you're online and what you're playing</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-online-status">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2" style="color: var(--text-main)">Allow friend requests from</label>
+                    <select id="allow-friend-requests" class="custom-select">
+                        <option>Everyone</option>
+                        <option>Nobody</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2" style="color: var(--text-main)">Profile visibility</label>
+                    <select id="profile-visibility" class="custom-select">
+                        <option>Friends Only</option>
+                        <option>Everyone</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accessibility -->
+        <section class="hub-settings-card p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-2xl">♿</span> Accessibility
+            </h2>
+
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Reduced motion</div>
+                        <div class="text-xs text-theme-muted">Disable animations and transitions</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reduced-motion">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold" style="color: var(--text-main)">Larger text</div>
+                        <div class="text-xs text-theme-muted">Increase base font size</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="larger-text">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Management -->
+        <section class="hub-settings-card p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-2xl">🗃️</span> Data Management
+            </h2>
+
+            <div class="space-y-4">
+                <button id="clear-local-data" class="w-full p-4 rounded-xl text-left font-semibold transition-all" style="background: rgba(239, 68, 68, 0.1); color: rgb(251, 113, 133); border: 1px solid rgba(239, 68, 68, 0.3)">
+                    Clear local game data
+                </button>
+
+                <button id="export-my-data" class="w-full p-4 rounded-xl text-left font-semibold transition-all" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color)">
+                    Export my data
+                </button>
+            </div>
+        </section>
+
         <div class="flex justify-end gap-4">
             <a href="index.html" class="px-6 py-2 rounded-xl font-bold transition-all" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);">Cancel</a>
             <button id="save-settings-btn" type="button" class="px-8 py-2 rounded-xl font-bold text-white btn-theme-primary shadow-lg transition-all">Save changes</button>
@@ -73,6 +315,7 @@
 
     <script>
         let currentTheme = window.gameHubTheme.getPreset("default");
+        let currentSettings = window.gameHubSettings.getSettings();
 
         function renderPresets() {
             const grid = document.getElementById("theme-presets-grid");
@@ -100,6 +343,28 @@
             document.getElementById("custom-text").value = hex(currentTheme.text, "#f8fafc");
         }
 
+        function syncSettingsInputs() {
+            // Audio
+            document.getElementById("master-volume").value = currentSettings.audio.masterVolume;
+            document.getElementById("master-volume-value").textContent = currentSettings.audio.masterVolume + "%";
+            document.getElementById("mute-all").checked = currentSettings.audio.muteAll;
+            document.getElementById("mute-music").checked = currentSettings.audio.muteMusic;
+
+            // Gameplay
+            document.getElementById("default-difficulty").value = currentSettings.gameplay.defaultDifficulty;
+            document.getElementById("default-category").value = currentSettings.gameplay.defaultCategory;
+            document.getElementById("hide-beta-games").checked = currentSettings.gameplay.hideBetaGames;
+
+            // Privacy
+            document.getElementById("show-online-status").checked = currentSettings.privacy.showOnlineStatus;
+            document.getElementById("allow-friend-requests").value = currentSettings.privacy.allowFriendRequests;
+            document.getElementById("profile-visibility").value = currentSettings.privacy.profileVisibility;
+
+            // Accessibility
+            document.getElementById("reduced-motion").checked = currentSettings.accessibility.reducedMotion;
+            document.getElementById("larger-text").checked = currentSettings.accessibility.largerText;
+        }
+
         function updateCustomTheme() {
             currentTheme = {
                 id: "custom",
@@ -119,37 +384,127 @@
             renderPresets();
         }
 
+        // Wire up all settings inputs
         ["custom-bg", "custom-primary", "custom-text"].forEach((id) => {
             document.getElementById(id).addEventListener("input", updateCustomTheme);
         });
+
+        document.getElementById("master-volume").addEventListener("input", (e) => {
+            document.getElementById("master-volume-value").textContent = e.target.value + "%";
+            currentSettings.audio.masterVolume = parseInt(e.target.value, 10);
+        });
+
+        ["mute-all", "mute-music", "hide-beta-games", "show-online-status", "reduced-motion", "larger-text"].forEach((id) => {
+            document.getElementById(id).addEventListener("change", (e) => {
+                if (id === "mute-all") currentSettings.audio.muteAll = e.target.checked;
+                if (id === "mute-music") currentSettings.audio.muteMusic = e.target.checked;
+                if (id === "hide-beta-games") currentSettings.gameplay.hideBetaGames = e.target.checked;
+                if (id === "show-online-status") currentSettings.privacy.showOnlineStatus = e.target.checked;
+                if (id === "reduced-motion") {
+                    currentSettings.accessibility.reducedMotion = e.target.checked;
+                    if (e.target.checked) document.documentElement.classList.add("reduced-motion");
+                    else document.documentElement.classList.remove("reduced-motion");
+                }
+                if (id === "larger-text") {
+                    currentSettings.accessibility.largerText = e.target.checked;
+                    if (e.target.checked) document.documentElement.classList.add("large-text");
+                    else document.documentElement.classList.remove("large-text");
+                }
+            });
+        });
+
+        ["default-difficulty", "default-category", "allow-friend-requests", "profile-visibility"].forEach((id) => {
+            document.getElementById(id).addEventListener("change", (e) => {
+                if (id === "default-difficulty") currentSettings.gameplay.defaultDifficulty = e.target.value;
+                if (id === "default-category") currentSettings.gameplay.defaultCategory = e.target.value;
+                if (id === "allow-friend-requests") currentSettings.privacy.allowFriendRequests = e.target.value;
+                if (id === "profile-visibility") currentSettings.privacy.profileVisibility = e.target.value;
+            });
+        });
+
+        // Data management buttons
+        document.getElementById("clear-local-data").onclick = () => {
+            if (confirm("Are you sure you want to clear all local game data (except theme)?")) {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith("gamehub_") && key !== "gamehub_theme") {
+                        localStorage.removeItem(key);
+                    }
+                });
+                alert("Local game data cleared!");
+                currentSettings = window.gameHubSettings.getDefaults();
+                syncSettingsInputs();
+            }
+        };
+
+        document.getElementById("export-my-data").onclick = async () => {
+            const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
+            if (!user) {
+                alert("Please sign in to export your data.");
+                return;
+            }
+            const db = window.gameHubFirebase && window.gameHubFirebase.db;
+            if (!db) return;
+            try {
+                const doc = await db.collection("users").doc(user.uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "gamehub-data.json";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            } catch (e) {
+                console.error("Export failed:", e);
+                alert("Failed to export data: " + (e.message || e));
+            }
+        };
 
         document.getElementById("save-settings-btn").onclick = async () => {
             const user = window.gameHubAuth && window.gameHubAuth.getCurrentUser ? window.gameHubAuth.getCurrentUser() : null;
             try {
                 await window.gameHubTheme.saveTheme(currentTheme, !!user);
-                alert(user ? "Settings saved to your account!" : "Theme saved on this device. Sign in to sync everywhere.");
+                window.gameHubSettings.saveToLocal(currentSettings);
+                if (user) await window.gameHubSettings.saveToCloud(currentSettings);
+                alert(user ? "Settings saved to your account!" : "Settings saved on this device. Sign in to sync everywhere.");
             } catch (e) {
                 alert("Save failed: " + (e.message || e));
             }
         };
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const saved = localStorage.getItem("gamehub_theme");
-            if (saved) {
+            // Load theme
+            const savedTheme = localStorage.getItem("gamehub_theme");
+            if (savedTheme) {
                 try {
-                    currentTheme = JSON.parse(saved);
+                    currentTheme = JSON.parse(savedTheme);
                     window.gameHubTheme.applyTheme(currentTheme);
                 } catch (e) {}
             }
             syncColorInputs();
             renderPresets();
-            setTimeout(() => window.gameHubTheme.loadFromCloud().then((t) => {
-                if (t) {
-                    currentTheme = t;
-                    syncColorInputs();
-                    renderPresets();
-                }
-            }), 1500);
+
+            // Load settings
+            syncSettingsInputs();
+
+            // Load cloud data
+            setTimeout(async () => {
+                await window.gameHubTheme.loadFromCloud().then((t) => {
+                    if (t) {
+                        currentTheme = t;
+                        syncColorInputs();
+                        renderPresets();
+                    }
+                });
+                await window.gameHubSettings.loadFromCloud().then((s) => {
+                    if (s) {
+                        currentSettings = s;
+                        syncSettingsInputs();
+                    }
+                });
+            }, 1500);
         });
     </script>
 </body>

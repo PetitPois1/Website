@@ -7,9 +7,24 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👾</text></svg>">
     <title>Game Hub | Premium Gaming Portal</title>
     <script src="js/theme.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/daily-rewards.js"></script>
+    <script src="js/xp-system.js"></script>
     <link rel="stylesheet" href="css/hub-site.css">
     <!-- Tailwind CSS for utility-first styling -->
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+    <style>
+        .reduced-motion * {
+            transition: none !important;
+            animation: none !important;
+        }
+        .large-text {
+            font-size: 1.2em;
+        }
+        .large-text h1 { font-size: 2.5rem; }
+        .large-text h2 { font-size: 2rem; }
+        .large-text h3 { font-size: 1.5rem; }
+    </style>
     <!-- Firebase SDKs (loaded before shared Game Hub scripts) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -141,9 +156,6 @@
         }
 
         .like-button {
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #94a3b8;
@@ -152,9 +164,10 @@
             font-size: 0.75rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             transition: all 0.2s;
-            z-index: 10;
+            width: 100%;
         }
 
         .like-button:hover {
@@ -293,6 +306,27 @@
             </span>
         </p>
     </header>
+
+    <!-- Game of the Day Spotlight -->
+    <div class="max-w-6xl mx-auto px-6 mb-8">
+        <div id="game-of-day" class="p-3 rounded-2xl border border-white/10 relative overflow-hidden"></div>
+    </div>
+
+    <!-- Continue Playing Section -->
+    <div id="continue-playing" class="max-w-6xl mx-auto px-6 mb-8 hidden">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2" style="color: var(--text-main);">
+            <span>▶️</span> Continue Playing
+        </h3>
+        <div id="continue-playing-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- Recently Played Section -->
+    <div id="recently-played" class="max-w-6xl mx-auto px-6 mb-8 hidden">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2" style="color: var(--text-main);">
+            <span>⌚</span> Recently Played
+        </h3>
+        <div id="recently-played-row" class="flex gap-4 overflow-x-auto pb-2"></div>
+    </div>
 
     <!-- Search Section -->
     <div class="max-w-6xl mx-auto px-6 mb-8 flex flex-col items-center gap-6">
@@ -535,6 +569,12 @@
                 filtered = filtered.filter(g => g.tags.includes(currentFilter));
             }
 
+            // Hide beta games if setting is enabled
+            const settings = window.gameHubSettings ? window.gameHubSettings.getSettings() : window.gameHubSettings.getDefaults();
+            if (settings.gameplay.hideBetaGames) {
+                filtered = filtered.filter(g => !g.beta);
+            }
+
             if (filtered.length === 0) {
                 grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500">No games found</div>`;
                 return;
@@ -602,15 +642,16 @@
                     </div>
                     <p class="text-slate-500 text-sm mb-4">${game.broken ? 'Requires repair' : 'Launch game engine'}</p>
                     
-                    <button onclick="toggleLike(event, '${game.id}')" class="like-button ${isLiked ? 'liked' : ''}">
-                        <svg class="w-4 h-4" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        <span>${game.likes}</span>
-                    </button>
-
-                    <div class="mt-2 w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-70 hover:opacity-100 transition-opacity">
-                        PLAY NOW
+                    <div class="mt-auto w-full">
+                        <button onclick="playGame(event, '${game.id}', '${game.url}')" class="w-full py-2 bg-violet-600/10 text-violet-400 rounded-lg text-sm font-bold opacity-70 hover:opacity-100 transition-opacity mb-2">
+                            PLAY NOW
+                        </button>
+                        <button onclick="toggleLike(event, '${game.id}')" class="like-button ${isLiked ? 'liked' : ''}">
+                            <svg class="w-4 h-4" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>${game.likes}</span>
+                        </button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -632,10 +673,228 @@
             // In a real app, this would query a Firestore collection of "active_sessions"
         }
 
+        // Helper to set filter buttons active
+        function setActiveFilterButton(filter) {
+            document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+            const allButtons = Array.from(document.querySelectorAll('.filter-chip'));
+            const targetButton = allButtons.find(btn => {
+                const text = btn.textContent.trim().toLowerCase();
+                const filterLower = filter.toLowerCase();
+                return (filterLower === 'all games' && text === 'all games') ||
+                       (filterLower === 'multiplayer' && text === 'multiplayer') ||
+                       (filterLower === 'my liked' && text === 'my liked') ||
+                       (filterLower === 'arcade' && text === 'arcade') ||
+                       (filterLower === 'puzzle' && text === 'puzzle') ||
+                       (filterLower === 'cards' && text === 'cards') ||
+                       (filterLower === 'beta' && text === 'beta') ||
+                       (filterLower === 'most popular' && text === 'most popular');
+            });
+            if (targetButton) targetButton.classList.add('active');
+        }
+
         // Init
         fetchGameLikes();
         fetchActivePlayers();
+        renderGameOfTheDay();
+        renderContinuePlaying();
+        renderRecentlyPlayed();
+        
+        // Helper to map settings category name to filter value
+        function mapCategoryToFilter(categoryName) {
+            const mapping = {
+                "All Games": "all",
+                "Multiplayer": "multiplayer",
+                "Arcade": "arcade",
+                "Puzzle": "puzzle",
+                "Cards": "cards",
+                "Beta": "beta",
+                "Most Popular": "popular"
+            };
+            return mapping[categoryName] || "all";
+        }
+
+        // Play game and record to recent
+        function playGame(event, gameId, url) {
+            event.preventDefault();
+            // Record in localStorage
+            let recent = [];
+            try {
+                recent = JSON.parse(localStorage.getItem('gamehub_recent') || '[]');
+            } catch(e) {}
+            
+            // Remove existing entry for this game if present
+            recent = recent.filter(r => r.gameId !== gameId);
+            // Add to front
+            recent.unshift({ gameId, timestamp: Date.now() });
+            // Keep only last 5
+            recent = recent.slice(0,5);
+            localStorage.setItem('gamehub_recent', JSON.stringify(recent));
+            
+            // Also store in Firestore if signed in
+            const user = window.gameHubAuth ? window.gameHubAuth.getCurrentUser() : null;
+            const db = window.gameHubFirebase ? window.gameHubFirebase.db : null;
+            if (user && db) {
+                try {
+                    // Get existing recentGames
+                    const userRef = db.collection('users').doc(user.uid);
+                    userRef.get().then(doc => {
+                        let fireRecent = (doc.data()?.recentGames || []).filter(r => r.gameId !== gameId);
+                        fireRecent.unshift({ gameId, timestamp: Date.now() });
+                        fireRecent = fireRecent.slice(0,10);
+                        userRef.set({ recentGames: fireRecent }, { merge: true });
+                    }).catch(()=>{});
+                } catch(e) {}
+            }
+            
+            // Navigate
+            window.location.href = url;
+        }
+
+        // Render Continue Playing
+        function renderContinuePlaying() {
+            const section = document.getElementById('continue-playing');
+            const grid = document.getElementById('continue-playing-grid');
+            const user = window.gameHubAuth ? window.gameHubAuth.getCurrentUser() : null;
+            const db = window.gameHubFirebase ? window.gameHubFirebase.db : null;
+            const progressKeys = Object.keys(localStorage).filter(k => k.startsWith('gamehub_progress_'));
+            let progressGames = [];
+            progressKeys.forEach(k => {
+                try {
+                    const gameId = k.replace('gamehub_progress_','');
+                    const data = JSON.parse(localStorage.getItem(k));
+                    progressGames.push({ gameId, data });
+                } catch(e) {}
+            });
+            if (progressGames.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            section.classList.remove('hidden');
+            grid.innerHTML = '';
+            progressGames.slice(0,3).forEach(pg => {
+                const game = games.find(g => g.id === pg.gameId);
+                if (!game) return;
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-2xl cursor-pointer hover:scale-105 transition-transform';
+                card.style.background = 'var(--card-bg)';
+                card.style.border = '1px solid var(--border-color)';
+                card.onclick = () => window.location.href = game.url;
+                let statText = 'Progress saved!';
+                if (pg.data.highScore) statText = `High Score: ${pg.data.highScore}`;
+                if (pg.data.level) statText = `Level: ${pg.data.level}`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-4xl">${game.icon}</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold" style="color: var(--text-main);">${game.name}</h4>
+                            <p class="text-sm" style="color: var(--text-muted);">${statText}</p>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Render Recently Played
+        function renderRecentlyPlayed() {
+            const section = document.getElementById('recently-played');
+            const row = document.getElementById('recently-played-row');
+            // Get recent games
+            let recent = [];
+            try {
+                recent = JSON.parse(localStorage.getItem('gamehub_recent') || '[]');
+            } catch(e) {}
+            if (recent.length ===0) {
+                section.classList.add('hidden');
+                return;
+            }
+            section.classList.remove('hidden');
+            row.innerHTML = '';
+            recent.forEach(r => {
+                const game = games.find(g => g.id === r.gameId);
+                if (!game) return;
+                const card = document.createElement('div');
+                card.className = 'p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform flex-shrink-0';
+                card.style.background = 'var(--card-bg)';
+                card.style.border = '1px solid var(--border-color)';
+                card.onclick = () => window.location.href = game.url;
+                card.innerHTML = `
+                    <div class="text-2xl">${game.icon}</div>
+                    <div>
+                        <h4 class="font-semibold" style="color: var(--text-main);">${game.name}</h4>
+                        <p class="text-xs" style="color: var(--text-muted);">${new Date(r.timestamp).toLocaleDateString()}</p>
+                    </div>
+                `;
+                row.appendChild(card);
+            });
+        }
+
+        // Game-of-the-Day Function
+        function renderGameOfTheDay() {
+            const container = document.getElementById('game-of-day');
+            // Filter non-beta games
+            const stableGames = games.filter(g => !g.beta);
+            // Get today's UTC date string
+            const today = new Date();
+            const dateStr = today.getUTCFullYear() + '-' + 
+                String(today.getUTCMonth()+1).padStart(2,'0') + '-' + 
+                String(today.getUTCDate()).padStart(2,'0');
+            
+            // Simple hash function to pick index
+            let hash = 0;
+            for (let i=0; i<dateStr.length; i++) {
+                hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
+                hash = hash & hash;
+            }
+            const index = Math.abs(hash) % stableGames.length;
+            const selectedGame = stableGames[index];
+            
+            // Simple taglines per game (or generic)
+            const taglines = {
+                chess: "Checkmate your mind!",
+                connect4: "Line up 4 for glory!",
+                wordscramble: "Unscramble your way to victory!",
+                snake: "Eat up the fun!",
+                'tic-tac-toe': "X or O, you know the game!",
+                pong: "Bounce back in style!",
+                blockblast: "Break blocks, break records!",
+                blackjack: "Beat the dealer!",
+                pacman: "Waka waka waka!",
+                flappy: "Flap your way to success!",
+                poker: "Bluff your way to glory!",
+                loopy: "Loop your way to victory!"
+            };
+            const tagline = taglines[selectedGame.id] || "Play now and have fun!";
+            
+            // Render
+            container.innerHTML = `
+                <div class="absolute inset-0 opacity-20 pointer-events-none" style="background: radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 70%);"></div>
+                <div class="flex flex-col items-center gap-2 relative z-10">
+                    <div class="text-3xl p-2 rounded-xl" style="background: var(--card-bg); border: 1px solid var(--border-color);">${selectedGame.icon}</div>
+                    <div class="text-center">
+                        <p class="text-xs font-bold uppercase tracking-widest mb-1 flex items-center justify-center gap-2" style="color: var(--primary);"><span>⭐</span> Game of the Day</p>
+                        <h2 class="text-lg font-extrabold mb-1" style="color: var(--text-main);">${selectedGame.name}</h2>
+                        <p class="text-xs mb-2" style="color: var(--text-muted);">${tagline}</p>
+                        <button 
+                            onclick="window.location.href='${selectedGame.url}'"
+                            class="btn-theme-primary px-4 py-1 rounded-full text-sm font-bold shadow-lg transition-all transform hover:scale-105 animate-pulse"
+                            style="animation-duration: 3s;"
+                        >
+                            Play Now
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Apply default category setting
+        const settings = window.gameHubSettings ? window.gameHubSettings.getSettings() : window.gameHubSettings.getDefaults();
+        if (settings.gameplay.defaultCategory) {
+            currentFilter = mapCategoryToFilter(settings.gameplay.defaultCategory);
+            setActiveFilterButton(currentFilter);
+        }
         renderGames();
+
         setInterval(fetchActivePlayers, 30000); // Check every 30s
         setInterval(fetchGameLikes, 60000); // Refresh likes every minute
         setTimeout(fetchActivePlayers, 2000);   // Initial check after auth might load

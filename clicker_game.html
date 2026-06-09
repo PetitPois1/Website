@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="game-hub-id" content="clicker">
         <script src="js/theme.js"></script>
+    <script src="js/settings.js"></script><style>.reduced-motion *{transition:none!important;animation:none!important}.large-text{font-size:1.2em}.large-text h1{font-size:2.5rem}.large-text h2{font-size:2rem}.large-text h3{font-size:1.5rem}</style>
+
 <title>Industrial Clicker</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -252,7 +254,7 @@
 
     <div class="main-content">
         <div class="nav-bar">
-            <button class="nav-btn" onclick="window.location.href='index.html'">HOME</button>
+            <button class="nav-btn" onclick="window.location.href='../index.html'">HOME</button>
             <button class="nav-btn" onclick="openSettings()">SETTINGS</button>
             <button class="nav-btn" onclick="saveGame(true)" style="color: var(--save-color); border-color: var(--save-color);">SAVE</button>
             <button id="admin-nav-btn" class="nav-btn" onclick="toggleOverlay('admin-overlay')" style="display:none; color:var(--admin); border-color:var(--admin);">ADMIN</button>

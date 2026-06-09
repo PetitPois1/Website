@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboards | Game Hub</title>
+    <script src="js/theme.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/daily-rewards.js"></script>
+    <script src="js/xp-system.js"></script>
+    <link rel="stylesheet" href="css/hub-site.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/hub-avatar.js"></script>
+    <script src="js/auth.js"></script>
+    <style>
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn.is-active {
+            background: var(--primary);
+            color: white;
+        }
+        .tab-btn:not(.is-active) {
+            background: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body data-hub-page="leaderboards" class="hub-site-body pb-12">
+    <script src="js/hub-nav.js"></script>
+
+    <main class="max-w-6xl mx-auto px-6 mt-8">
+        <header class="mb-10">
+            <h1 class="text-4xl font-extrabold mb-2" style="color: var(--text-main);">Leaderboards</h1>
+            <p class="text-theme-muted">Compete with other players across the hub!</p>
+        </header>
+
+        <section class="mb-8">
+            <div class="flex gap-2 flex-wrap mb-6" id="game-tabs">
+                <button class="tab-btn" data-tab="global" onclick="switchTab('global', this)">🏆 Global XP</button>
+            </div>
+
+            <div class="hub-card p-6" id="leaderboard-container">
+                <div class="text-center py-10" style="color: var(--text-muted);">Loading...</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const games = [
+            { id: "chess", name: "Chess", icon: "♟️" },
+            { id: "connect4", name: "Connect 4", icon: "🔴" },
+            { id: "wordscramble", name: "Word Scramble", icon: "🔤" },
+            { id: "snake", name: "Snake Game", icon: "🐍" },
+            { id: "tic-tac-toe", name: "Tic-Tac-Toe", icon: "❌" },
+            { id: "pong", name: "Pong", icon: "🏓" },
+            { id: "clicker", name: "Industrial Clicker", icon: "⚙️" },
+            { id: "blockblast", name: "Blockblast", icon: "🧱" },
+            { id: "tower-defence", name: "Tower Defence", icon: "🏹" },
+            { id: "blackjack", name: "Blackjack", icon: "🃏" },
+            { id: "pacman", name: "Pac-Man", icon: "🟡" },
+            { id: "flappy", name: "Flappy Bird", icon: "🐦" },
+            { id: "poker", name: "Poker", icon: "💎" },
+            { id: "mining", name: "Mining", icon: "⛏️" },
+            { id: "loopy", name: "Loopy Puzzle", icon: "➰" },
+            { id: "neondash", name: "Neon Dash", icon: "🟦" },
+            { id: "brickbreaker", name: "Brick Breaker", icon: "🧱" },
+            { id: "island", name: "The Island", icon: "🔫" },
+            { id: "swordbattle", name: "Sword Battle IO", icon: "⚔️" },
+            { id: "voxelcraft", name: "Voxelcraft", icon: "🧊" },
+            { id: "stack", name: "Stack", icon: "🧈" },
+            { id: "pool", name: "Pool", icon: "🎱" },
+            { id: "forpiece", name: "For Piece", icon: "🏴‍☠️" },
+            { id: "hades", name: "Hades V1.1", icon: "🏺" },
+            { id: "3dflappy", name: "3D Flappy Bird", icon: "🐦‍🔥" },
+            { id: "asteroids", name: "Asteroids", icon: "☄️" },
+            { id: "ultimaterps", name: "Ultimate Rock Paper Scissors", icon: "✂️" }
+        ];
+        let currentTab = "global";
+        let currentUserUid = null;
+
+        async function loadGlobalLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            const db = window.gameHubFirebase && window.gameHubFirebase.db;
+            if (!db) {
+                container.innerHTML = '<p class="text-center py-10" style="color: var(--text-muted);">Database not ready</p>';
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection('users').orderBy('xp', 'desc').limit(50).get();
+                if (snapshot.empty) {
+                    container.innerHTML = '<p class="text-center py-10" style="color: var(--text-muted);">No players yet — be the first!</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b" style="border-color: var(--border-color);">
+                                <th class="text-left py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Rank</th>
+                                <th class="text-left py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Player</th>
+                                <th class="text-right py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">XP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="global-leaderboard-body">
+                        </tbody>
+                    </table>
+                `;
+
+                const tbody = document.getElementById('global-leaderboard-body');
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const isCurrentUser = currentUserUid && doc.id === currentUserUid;
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b ' + (isCurrentUser ? 'bg-violet-500/10' : '');
+                    tr.style.borderColor = 'var(--border-color)';
+                    tr.innerHTML = `
+                        <td class="py-3 px-2 font-extrabold" style="color: ${rank === 1 ? '#fbbf24' : rank === 2 ? '#9ca3af' : rank === 3 ? '#f59e0b' : 'var(--text-muted)'};">
+                            ${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                        </td>
+                        <td class="py-3 px-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg" style="background: ${user.avatar && user.avatar.base ? user.avatar.base : '#8b5cf6'};">
+                                    ${(user.username || '?').charAt(0).toUpperCase()}
+                                </div>
+                                <span class="font-semibold" style="color: var(--text-main);">${user.username || 'Anonymous'}</span>
+                                ${isCurrentUser ? '<span class="ml-2 px-2 py-1 rounded text-xs bg-violet-500/20 text-violet-400">You</span>' : ''}
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-right font-extrabold" style="color: var(--primary);">
+                            ${(user.xp || 0).toLocaleString()} XP
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                    rank++;
+                });
+            } catch (e) {
+                console.error('Error loading global leaderboard', e);
+                container.innerHTML = '<p class="text-center py-10" style="color: var(--text-muted);">Could not load leaderboards.</p>';
+            }
+        }
+
+        async function loadGameLeaderboard(gameId) {
+            const container = document.getElementById('leaderboard-container');
+            const entries = await window.gameHubProgress.getLeaderboard(gameId, 'alltime');
+            if (!entries || entries.length === 0) {
+                container.innerHTML = `<p class="text-center py-10" style="color: var(--text-muted);">No scores yet for this game — be the first!</p>`;
+                return;
+            }
+            container.innerHTML = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b" style="border-color: var(--border-color);">
+                            <th class="text-left py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Rank</th>
+                            <th class="text-left py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Player</th>
+                            <th class="text-right py-3 px-2 text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="game-leaderboard-body">
+                    </tbody>
+                </table>
+            `;
+            const tbody = document.getElementById('game-leaderboard-body');
+            let rank = 1;
+            entries.forEach(entry => {
+                const isCurrentUser = currentUserUid && entry.uid === currentUserUid;
+                const tr = document.createElement('tr');
+                tr.className = 'border-b ' + (isCurrentUser ? 'bg-violet-500/10' : '');
+                tr.style.borderColor = 'var(--border-color)';
+                tr.innerHTML = `
+                    <td class="py-3 px-2 font-extrabold" style="color: ${rank === 1 ? '#fbbf24' : rank === 2 ? '#9ca3af' : rank === 3 ? '#f59e0b' : 'var(--text-muted)'};">
+                        ${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                    </td>
+                    <td class="py-3 px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg" style="background: ${entry.avatar && entry.avatar.base ? entry.avatar.base : '#8b5cf6'};">
+                                ${(entry.username || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <span class="font-semibold" style="color: var(--text-main);">${entry.username || 'Anonymous'}</span>
+                            ${isCurrentUser ? '<span class="ml-2 px-2 py-1 rounded text-xs bg-violet-500/20 text-violet-400">You</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="py-3 px-2 text-right font-extrabold" style="color: var(--primary);">
+                        ${Math.floor(entry.score).toLocaleString()}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                rank++;
+            });
+        }
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('is-active'));
+            if (btn) btn.classList.add('is-active');
+            currentTab = tab;
+            if (tab === 'global') loadGlobalLeaderboard();
+            else loadGameLeaderboard(tab);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Populate game tabs
+            const tabsContainer = document.getElementById('game-tabs');
+            games.forEach(game => {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn';
+                btn.dataset.tab = game.id;
+                btn.onclick = () => switchTab(game.id, btn);
+                btn.textContent = `${game.icon} ${game.name}`;
+                tabsContainer.appendChild(btn);
+            });
+
+            // Get current user
+            if (window.gameHubAuth && window.gameHubAuth.onAuthStateChanged) {
+                window.gameHubAuth.onAuthStateChanged(user => {
+                    if (user) currentUserUid = user.uid;
+                    else currentUserUid = null;
+                    // Refresh on change
+                    if (currentTab === 'global') loadGlobalLeaderboard();
+                    else loadGameLeaderboard(currentTab);
+                });
+            }
+
+            // Load default tab
+            const globalBtn = document.querySelector('.tab-btn[data-tab="global"]');
+            if (globalBtn) globalBtn.classList.add('is-active');
+            loadGlobalLeaderboard();
+        });
+    </script>
+</body>
+</html>

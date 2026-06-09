@@ -9,6 +9,7 @@
 (function () {
   const LINKS = [
     { id: "home", href: "index.html", label: "Games" },
+    { id: "leaderboards", href: "leaderboards.html", label: "Leaderboards" },
     { id: "updates", href: "updates.html", label: "Updates" },
     { id: "about", href: "about.html", label: "About" },
     { id: "feedback", href: "feedback.html", label: "Feedback" },
@@ -27,6 +28,7 @@
     if (path === "feedback.html") return "feedback";
     if (path === "bugs.html") return "bugs";
     if (path === "upcoming.html") return "upcoming";
+    if (path === "leaderboards.html") return "leaderboards";
     if (path === "updates.html") return "updates";
     return "";
   }

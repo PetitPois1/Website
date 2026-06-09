@@ -67,10 +67,15 @@
     const user = getUser();
     if (user && getDb()) {
         try {
-            await getDb().collection("users").doc(user.uid).set({
-                currentlyPlaying: gameId,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            const settings = window.gameHubSettings ? window.gameHubSettings.getSettings() : window.gameHubSettings.getDefaults();
+            const updateObj = {};
+            if (settings.privacy.showOnlineStatus) {
+                updateObj.currentlyPlaying = gameId;
+                updateObj.lastSeen = firebase.firestore.FieldValue.serverTimestamp();
+            }
+            if (Object.keys(updateObj).length > 0) {
+                await getDb().collection("users").doc(user.uid).set(updateObj, { merge: true });
+            }
         } catch(e) {}
     }
 
@@ -205,11 +210,16 @@
 
         saveLocalAchievements(gameId, existingLocal.concat(achievementId));
 
-        if (!silent && window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
-          window.gameHubAchievements.notifyAchievement(gameId, achievementId, reward);
-        }
+      // Add XP equal to coin reward
+      if (window.gameHubXP && window.gameHubXP.addXP) {
+        window.gameHubXP.addXP(reward, 'achievement');
+      }
 
-        console.log(`[GameHub] Awarded ${reward} coins for achievement:`, achievementId);
+      if (!silent && window.gameHubAchievements && window.gameHubAchievements.notifyAchievement) {
+        window.gameHubAchievements.notifyAchievement(gameId, achievementId, reward);
+      }
+
+      console.log(`[GameHub] Awarded ${reward} coins for achievement:`, achievementId);
 
         if (achievementId !== "perfectionist") {
           checkPerfectionist();
@@ -361,11 +371,17 @@
     const db = getDb();
     if (!user || !db) return;
 
+    const settings = window.gameHubSettings ? window.gameHubSettings.getSettings() : window.gameHubSettings.getDefaults();
+
     // Initial status update
-    db.collection("users").doc(user.uid).set({
-        currentlyPlaying: gameId || "Exploring Hub",
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    const initialUpdate = {};
+    if (settings.privacy.showOnlineStatus) {
+        initialUpdate.currentlyPlaying = gameId || "Exploring Hub";
+        initialUpdate.lastSeen = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    if (Object.keys(initialUpdate).length > 0) {
+        db.collection("users").doc(user.uid).set(initialUpdate, { merge: true });
+    }
 
     // Update every minute
     playTimeInterval = setInterval(async () => {
@@ -377,11 +393,14 @@
 
         try {
             const userRef = db.collection("users").doc(currentUser.uid);
+            const currentSettings = window.gameHubSettings ? window.gameHubSettings.getSettings() : window.gameHubSettings.getDefaults();
             
             // Increment total play time
-            const updates = {
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            };
+            const updates = {};
+            
+            if (currentSettings.privacy.showOnlineStatus) {
+                updates.lastSeen = firebase.firestore.FieldValue.serverTimestamp();
+            }
             
             if (gameId) {
                 // Update game-specific play time
@@ -389,7 +408,9 @@
                 updates[gameTimeKey] = firebase.firestore.FieldValue.increment(1); // minutes
             }
 
-            await userRef.update(updates);
+            if (Object.keys(updates).length > 0) {
+                await userRef.update(updates);
+            }
         } catch (e) {
             console.warn("[GameHub] Heartbeat failed", e);
         }
@@ -423,6 +444,27 @@
     } catch (e) {
       console.warn("[GameHub] Failed to load currency", e);
       return 0;
+    }
+  }
+
+  async function addCoins(amount) {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db) {
+      // Guest mode: just log or do nothing
+      console.log(`[GameHub] Would add ${amount} coins if signed in`);
+      return false;
+    }
+
+    try {
+      const userRef = db.collection("users").doc(user.uid);
+      await userRef.update({
+        currency: firebase.firestore.FieldValue.increment(amount)
+      });
+      return true;
+    } catch (e) {
+      console.warn("[GameHub] Failed to add currency", e);
+      return false;
     }
   }
 
@@ -594,6 +636,7 @@
     syncAchievementsToAccount,
     getCurrency,
     spendCurrency,
+    addCoins,
     startHeartbeat,
     getLeaderboard,
     syncAllHighScoresToLeaderboards,

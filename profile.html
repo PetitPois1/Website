@@ -2,7 +2,22 @@
 <html lang="en">
 <head>
     <script src="js/theme.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/daily-rewards.js"></script>
+    <script src="js/xp-system.js"></script>
     <link rel="stylesheet" href="css/hub-site.css">
+    <style>
+        .reduced-motion * {
+            transition: none !important;
+            animation: none !important;
+        }
+        .large-text {
+            font-size: 1.2em;
+        }
+        .large-text h1 { font-size: 2.5rem; }
+        .large-text h2 { font-size: 2rem; }
+        .large-text h3 { font-size: 1.5rem; }
+    </style>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,6 +90,19 @@
                         </div>
                     </div>
                     <p id="profile-page-email" class="text-xs text-slate-400">Not signed in</p>
+                    <!-- XP & Rank -->
+                    <div id="xp-container" class="mt-3 w-full md:w-80 hidden">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold" style="color: var(--primary);" id="xp-rank">Rookie</span>
+                                <span class="text-xs text-theme-muted">Level <span id="xp-level">1</span></span>
+                            </div>
+                            <span class="text-xs text-theme-muted"><span id="xp-current">0</span>/<span id="xp-needed">100</span> XP</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full overflow-hidden" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                            <div id="xp-progress-bar" class="h-full transition-all duration-500" style="width: 0%; background: var(--primary);"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex flex-col md:items-end gap-3">
@@ -213,6 +241,9 @@
                     <span class="text-2xl">👥</span> Friends
                 </h2>
                 <div class="flex gap-2">
+                    <button id="refresh-friends-btn" class="px-4 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:border-violet-500 transition-colors">
+                        🔄 Refresh
+                    </button>
                     <input type="text" id="friend-search-input" placeholder="Email or username..." class="bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-1.5 text-sm focus:outline-none focus:border-violet-500 transition-colors">
                     <button id="add-friend-btn" class="px-4 py-1.5 rounded-lg bg-violet-600 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
                         Send Request
@@ -230,6 +261,18 @@
 
             <div id="friends-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center py-10 bg-slate-900/30 border border-slate-800/50 rounded-2xl">
                 <p class="col-span-full text-slate-500">No friends added yet. Add friends to see their achievements!</p>
+            </div>
+        </section>
+
+        <!-- Social Activity Feed Section -->
+        <section class="mb-12">
+            <header class="flex items-center gap-3 mb-6">
+                <h2 class="text-xl font-bold text-slate-50 flex items-center gap-2">
+                    <span class="text-2xl">📡</span> What's Happening
+                </h2>
+            </header>
+            <div id="activity-feed-container" class="space-y-3">
+                <p class="text-sm text-slate-500">Loading activity…</p>
             </div>
         </section>
      </main>
@@ -278,6 +321,28 @@
     </footer>
 
     <script>
+        function refreshXPUI() {
+            const xpContainer = document.getElementById("xp-container");
+            const xpRankEl = document.getElementById("xp-rank");
+            const xpLevelEl = document.getElementById("xp-level");
+            const xpCurrentEl = document.getElementById("xp-current");
+            const xpNeededEl = document.getElementById("xp-needed");
+            const xpProgressBarEl = document.getElementById("xp-progress-bar");
+
+            if (!window.gameHubXP) {
+                xpContainer.classList.add('hidden');
+                return;
+            }
+            
+            const xpData = window.gameHubXP.getXPProgress();
+            xpContainer.classList.remove('hidden');
+            xpRankEl.textContent = xpData.rank;
+            xpLevelEl.textContent = xpData.level;
+            xpCurrentEl.textContent = xpData.currentXP;
+            xpNeededEl.textContent = xpData.neededXP;
+            xpProgressBarEl.style.width = xpData.percentage + "%";
+        }
+
         document.addEventListener("DOMContentLoaded", async () => {
             const nameEl = document.getElementById("profile-page-name");
             const emailEl = document.getElementById("profile-page-email");
@@ -290,6 +355,7 @@
             const friendSearchInput = document.getElementById("friend-search-input");
             const pendingRequestsContainer = document.getElementById("pending-requests-container");
             const pendingRequestsList = document.getElementById("pending-requests-list");
+            const refreshFriendsBtn = document.getElementById("refresh-friends-btn");
 
             const gameStatsGrid = document.getElementById("game-stats-grid");
             // Add event delegation listener once, not every time loadStats is called!
@@ -448,6 +514,7 @@
                 loadCurrency();
                 loadFriends();
                 loadPendingRequests();
+                loadActivityFeed();
                 loadAchievementShowcase();
                 loadStats();
             }
@@ -750,6 +817,11 @@
                             const db = window.gameHubFirebase.db;
                             const doc = await db.collection("users").doc(user.uid).get();
                             applyUser(user, doc.exists ? doc.data() : null);
+                            // Load XP from cloud
+                            if (window.gameHubXP && window.gameHubXP.loadFromCloud) {
+                                await window.gameHubXP.loadFromCloud();
+                            }
+                            refreshXPUI();
                         } catch (e) {
                             console.warn("[Profile] Could not load user data from Firestore. Check Security Rules.", e);
                             applyUser(user, null); // Fallback: still show as user, but without custom data
@@ -759,6 +831,14 @@
                     }
                 });
             }
+            
+            // Listen for XP changes to refresh UI
+            window.addEventListener('gamehub:xp-added', () => {
+                refreshXPUI();
+            });
+            
+            // Initial refresh
+            refreshXPUI();
 
             function getProgressStatValue(progress, progressKey) {
                 if (!progress || !progressKey) return 0;
@@ -988,10 +1068,13 @@
 
             // ... rest of scripts ...
             async function loadFriends() {
+                console.log('[Profile] loadFriends() called, currentUid:', currentUid);
                 if (!currentUid) return;
                 const db = window.gameHubFirebase.db;
                 const friendsRef = db.collection("users").doc(currentUid).collection("friends");
+                console.log('[Profile] Fetching friends from:', friendsRef.path);
                 const snapshot = await friendsRef.get();
+                console.log('[Profile] Friends snapshot size:', snapshot.size);
                 
                 if (snapshot.empty) {
                     friendsListEl.innerHTML = '<p class="col-span-full text-slate-500 py-4">No friends added yet. Add friends to see their achievements!</p>';
@@ -999,14 +1082,130 @@
                 }
 
                 friendsListEl.innerHTML = '';
-                snapshot.forEach(async doc => {
+                // Use Promise.all() instead of async forEach!
+                const friendPromises = [];
+                snapshot.forEach(doc => {
                     const friendUid = doc.id;
-                    const friendDoc = await db.collection("users").doc(friendUid).get();
+                    console.log('[Profile] Found friend UID:', friendUid);
+                    friendPromises.push(
+                        db.collection("users").doc(friendUid).get()
+                    );
+                });
+                const friendDocs = await Promise.all(friendPromises);
+                console.log('[Profile] Loaded friend docs:', friendDocs.map(d => ({id: d.id, exists: d.exists})));
+                friendDocs.forEach(friendDoc => {
                     if (friendDoc.exists) {
                         const friendData = friendDoc.data();
-                        renderFriendCard(friendUid, friendData);
+                        console.log('[Profile] Rendering friend card:', friendDoc.id, friendData);
+                        renderFriendCard(friendDoc.id, friendData);
                     }
                 });
+            }
+
+            async function loadActivityFeed() {
+                if (!currentUid) return;
+                const activityFeedContainer = document.getElementById("activity-feed-container");
+                const db = window.gameHubFirebase.db;
+                
+                // Get the current user's friends list to know whose activity to show
+                const friendsRef = db.collection("users").doc(currentUid).collection("friends");
+                const friendsSnapshot = await friendsRef.get();
+                const friendUids = [];
+                friendsSnapshot.forEach(doc => friendUids.push(doc.id));
+                
+                if (friendUids.length === 0) {
+                    activityFeedContainer.innerHTML = '<p class="text-sm text-slate-500">Add friends to see their activity!</p>';
+                    return;
+                }
+
+                // Get activity from activity_feed collection (we'll write this later)
+                // For now, let's show a placeholder or get some recent events from friends' achievements
+                // Let's fetch achievements from friends!
+                const activityItems = [];
+                
+                for (const friendUid of friendUids) {
+                    const friendDoc = await db.collection("users").doc(friendUid).get();
+                    if (!friendDoc.exists) continue;
+                    const friendData = friendDoc.data();
+                    
+                    // Get friend's recent achievements
+                    const achievementsRef = db.collection("users").doc(friendUid).collection("achievements").orderBy("unlockedAt", "desc").limit(3);
+                    const achievementsSnapshot = await achievementsRef.get();
+                    achievementsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        activityItems.push({
+                            type: 'achievement',
+                            uid: friendUid,
+                            username: friendData.username || 'Anonymous',
+                            avatar: friendData.avatar,
+                            achievementId: doc.id,
+                            gameId: data.gameId,
+                            timestamp: data.unlockedAt
+                        });
+                    });
+                }
+                
+                // Sort by timestamp descending
+                activityItems.sort((a, b) => {
+                    if (!a.timestamp) return 1;
+                    if (!b.timestamp) return -1;
+                    return b.timestamp.toMillis() - a.timestamp.toMillis();
+                });
+
+                if (activityItems.length === 0) {
+                    activityFeedContainer.innerHTML = '<p class="text-sm text-slate-500">No recent activity from friends!</p>';
+                    return;
+                }
+
+                activityFeedContainer.innerHTML = '';
+                activityItems.slice(0, 20).forEach(item => {
+                    renderActivityItem(item);
+                });
+            }
+
+            function renderActivityItem(item) {
+                const activityFeedContainer = document.getElementById("activity-feed-container");
+                const card = document.createElement("div");
+                card.className = "hub-card p-4 flex items-start gap-3";
+                
+                let icon = '🏆';
+                let text = '';
+                
+                if (item.type === 'achievement') {
+                    icon = '🏆';
+                    text = `${item.username} unlocked an achievement in ${item.gameId}!`;
+                }
+                
+                let relativeTime = 'Recently';
+                if (item.timestamp) {
+                    const now = Date.now();
+                    const itemTime = item.timestamp.toMillis();
+                    const diff = now - itemTime;
+                    if (diff < 60000) relativeTime = 'Just now';
+                    else if (diff < 3600000) relativeTime = `${Math.floor(diff / 60000)} min ago`;
+                    else if (diff < 86400000) relativeTime = `${Math.floor(diff / 3600000)} hours ago`;
+                    else relativeTime = `${Math.floor(diff / 86400000)} days ago`;
+                }
+                
+                const avatarContainer = document.createElement("div");
+                avatarContainer.className = "w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0 text-lg";
+                if (item.avatar) {
+                    renderAvatarSVG(avatarContainer, item.avatar, "w-full h-full");
+                } else {
+                    avatarContainer.textContent = (item.username || "?")[0].toUpperCase();
+                }
+                
+                const contentDiv = document.createElement("div");
+                contentDiv.className = "flex-1 min-w-0";
+                contentDiv.innerHTML = `
+                    <p class="text-sm font-semibold text-theme-main">${icon} ${text}</p>
+                    <p class="text-xs text-theme-muted">${relativeTime}</p>
+                `;
+                
+                card.appendChild(avatarContainer);
+                card.appendChild(contentDiv);
+                
+                activityFeedContainer.appendChild(card);
             }
 
             async function loadPendingRequests() {
@@ -1255,6 +1454,21 @@
 
             window.closeFriendModal = () => {
                 document.getElementById('friend-modal').classList.add('hidden');
+            };
+
+            refreshFriendsBtn.onclick = async () => {
+                console.log('[Profile] Refresh Friends button clicked!');
+                if (!currentUid) {
+                    alert('Please sign in first!');
+                    return;
+                }
+                refreshFriendsBtn.textContent = 'LOADING...';
+                refreshFriendsBtn.disabled = true;
+                await loadFriends();
+                await loadPendingRequests();
+                await loadActivityFeed();
+                refreshFriendsBtn.textContent = '🔄 Refresh';
+                refreshFriendsBtn.disabled = false;
             };
 
             addFriendBtn.onclick = async () => {

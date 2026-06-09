@@ -63,14 +63,14 @@
 }
 
 #hub-site-nav .hub-links {
-  display: none;
+  display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 @media (min-width: 768px) {
   #hub-site-nav .hub-links {
-    display: flex;
+    gap: 1.5rem;
   }
   #hub-site-nav .hub-menu-toggle {
     display: none;

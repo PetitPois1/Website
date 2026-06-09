@@ -4,6 +4,33 @@
  */
 const UPDATES = [
   {
+    id: "2026-06-09-new-features",
+    date: "June 9, 2026",
+    title: "Leaderboards, Daily Rewards, XP & More!",
+    icon: "🎊",
+    categories: [
+      {
+        title: "New Features",
+        items: [
+          "Added Leaderboards page (global XP rankings + per-game leaderboards)",
+          "Implemented Daily Login Rewards system with streak tracker",
+          "Added XP Leveling System with ranks (Rookie → Champion)",
+          "Added Game of the Day banner (rotates automatically)",
+          "Added 'Continue Playing' and 'Recently Played' sections on home",
+          "Added Social Activity Feed on profile page",
+        ],
+      },
+      {
+        title: "Bug Fixes",
+        items: [
+          "Fixed back/nav button links for all games",
+          "Fixed friends list loading (added Refresh button)",
+          "Simplified Firestore security rules for easier permissions",
+        ],
+      },
+    ],
+  },
+  {
     id: "2026-06-08-bug-fixes",
     date: "June 8, 2026",
     title: "Bug Fixes & Improvements",
