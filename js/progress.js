@@ -1,8 +1,12 @@
 (function () {
-  const firebaseRef = window.gameHubFirebase;
+    const firebaseRef = window.gameHubFirebase;
 
-  const LOCAL_PROGRESS_KEY = "gamehub_progress_";
-  const LOCAL_ACHIEVEMENTS_KEY = "gamehub_achievements_";
+    const LOCAL_PROGRESS_KEY = "gamehub_progress_";
+    const LOCAL_ACHIEVEMENTS_KEY = "gamehub_achievements_";
+    
+    // Cache for user data to reduce repeated reads
+    let cachedUserDoc = null;
+    let cachedUserDocExpiry = 0;
 
   function getUser() {
     if (!window.gameHubAuth || !window.gameHubAuth.getCurrentUser) return null;
@@ -11,6 +15,27 @@
 
   function getDb() {
     return firebaseRef && firebaseRef.db ? firebaseRef.db : null;
+  }
+
+  async function getCachedUserDoc() {
+    const user = getUser();
+    const db = getDb();
+    if (!user || !db) return null;
+
+    const now = Date.now();
+    if (cachedUserDoc && now < cachedUserDocExpiry) {
+      return cachedUserDoc;
+    }
+
+    try {
+      const doc = await db.collection("users").doc(user.uid).get();
+      cachedUserDoc = doc;
+      cachedUserDocExpiry = now + 60000; // Cache for 1 minute
+      return doc;
+    } catch (e) {
+      console.warn("[GameHub] Failed to fetch user doc:", e);
+      return null;
+    }
   }
 
   function localProgressKey(gameId) {
@@ -250,12 +275,41 @@
 
     const allDefs = window.gameHubAchievements.getDefinitions();
     const gameIds = Object.keys(allDefs).filter((id) => id !== "global");
+    const batch = db.batch();
+    let totalCoinsToAdd = 0;
+    let achievementsToUnlockCount = 0;
 
     for (const gameId of gameIds) {
       const localIds = loadLocalAchievements(gameId);
       for (const achId of localIds) {
-        await unlockAchievement(gameId, achId, { silent: true });
+        // First check if achievement is already unlocked in cloud
+        const achRef = db.collection("users").doc(user.uid).collection("achievements").doc(achId);
+        const achDoc = await achRef.get();
+        if (!achDoc.exists) {
+          // Unlock the achievement
+          const reward = resolveAchievementReward(gameId, achId);
+          batch.set(achRef, {
+            gameId,
+            reward,
+            unlockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+          totalCoinsToAdd += reward;
+          achievementsToUnlockCount++;
+        }
       }
+    }
+
+    // Update user's coins and achievement count
+    if (achievementsToUnlockCount > 0) {
+      const userRef = db.collection("users").doc(user.uid);
+      batch.set(userRef, {
+        currency: firebase.firestore.FieldValue.increment(totalCoinsToAdd),
+        achievementsCount: firebase.firestore.FieldValue.increment(achievementsToUnlockCount),
+      }, { merge: true });
+
+      // Commit the batch!
+      await batch.commit();
+      console.log(`[GameHub] Synced ${achievementsToUnlockCount} achievements, awarded ${totalCoinsToAdd} coins!`);
     }
 
     try {
@@ -439,8 +493,8 @@
     if (!user || !db) return 0;
 
     try {
-      const doc = await db.collection("users").doc(user.uid).get();
-      return doc.exists ? (doc.data().currency || 0) : 0;
+      const doc = await getCachedUserDoc();
+      return doc?.exists ? (doc.data().currency || 0) : 0;
     } catch (e) {
       console.warn("[GameHub] Failed to load currency", e);
       return 0;

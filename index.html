@@ -437,6 +437,46 @@
 
         const grid = document.getElementById('game-grid');
 
+        // Store unsubscribe functions for cleanup
+        let unsubscribeGameLikes = null;
+        let unsubscribeUserDoc = null;
+
+        function setupFirestoreListeners() {
+            if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
+            const db = window.gameHubFirebase.db;
+
+            // Listener for global game likes
+            if (!unsubscribeGameLikes) {
+                unsubscribeGameLikes = db.collection("game_likes").onSnapshot(snapshot => {
+                    const newLikes = {};
+                    snapshot.forEach(doc => {
+                        newLikes[doc.id] = doc.data().count || 0;
+                    });
+                    gameLikes = newLikes;
+                    renderGames(document.getElementById('search-bar').value);
+                }, err => {
+                    console.error("[Index] Game likes listener failed:", err);
+                });
+            }
+
+            // Listener for user's own document (liked games, etc.)
+            const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
+            if (user && !unsubscribeUserDoc) {
+                unsubscribeUserDoc = db.collection("users").doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.likedGames) {
+                            likedGames = data.likedGames;
+                            localStorage.setItem("gamehub_liked_games", JSON.stringify(likedGames));
+                            renderGames(document.getElementById('search-bar').value);
+                        }
+                    }
+                }, err => {
+                    console.error("[Index] User doc listener failed:", err);
+                });
+            }
+        }
+
         async function fetchActivePlayers() {
             if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
             const db = window.gameHubFirebase.db;
@@ -463,41 +503,6 @@
                 renderGames(document.getElementById('search-bar').value);
             } catch (e) {
                 console.warn("[Index] Failed to fetch active players:", e);
-            }
-        }
-
-        async function fetchGameLikes() {
-            if (!window.gameHubFirebase || !window.gameHubFirebase.db) return;
-            const db = window.gameHubFirebase.db;
-            try {
-                // Fetch ALL global likes once
-                const snapshot = await db.collection("game_likes").get();
-                const newLikes = {};
-                snapshot.forEach(doc => {
-                    newLikes[doc.id] = doc.data().count || 0;
-                });
-                gameLikes = newLikes;
-
-                // Sync personal likes from the cloud profile
-                const user = (window.gameHubAuth && window.gameHubAuth.getCurrentUser) ? window.gameHubAuth.getCurrentUser() : null;
-                if (user) {
-                    const userDoc = await db.collection("users").doc(user.uid).get();
-                    if (userDoc.exists) {
-                        const data = userDoc.data();
-                        if (data.likedGames) {
-                            likedGames = data.likedGames;
-                            // Ensure local cache stays in sync
-                            localStorage.setItem("gamehub_liked_games", JSON.stringify(likedGames));
-                        }
-                    }
-                }
-
-                renderGames(document.getElementById('search-bar').value);
-            } catch(e) { 
-                console.error("[Index] Failed to fetch likes from Firestore:", e);
-                // Fallback to local storage if offline
-                likedGames = JSON.parse(localStorage.getItem("gamehub_liked_games") || "[]");
-                renderGames(document.getElementById('search-bar').value);
             }
         }
 
@@ -693,7 +698,7 @@
         }
 
         // Init
-        fetchGameLikes();
+        setupFirestoreListeners();
         fetchActivePlayers();
         renderGameOfTheDay();
         renderContinuePlaying();
